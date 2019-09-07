@@ -25,6 +25,7 @@ type ApiResponse =
         Status     : string
         ReturnCode : ApiRetCode
         Data       : IReadOnlyDictionary<string, string>
+        Echo       : string
     }
 and ApiResponse_Converter() =
     inherit JsonConverter<ApiResponse>()
@@ -42,45 +43,50 @@ and ApiResponse_Converter() =
                     if obj.["data"].HasValues then
                         let child = obj.["data"].Value<JObject>()
                         for p in child.Properties() do
-                            printfn "%s %s" p.Name (p.Value.ToString())
                             yield (p.Name, p.Value.ToString())
                 |] |> readOnlyDict
+            Echo = obj.["echo"].Value<string>()
         }
 
 [<AbstractClass>]
 type ApiRequestBase(action : string) as x =
-    let p = new Dictionary<string, string>()
     let logger = NLog.LogManager.GetLogger(x.GetType().Name)
 
     member internal x.Logger = logger
 
-    member x.RequestJson =
+    member x.GetRequestJson(?echo : string) =
+        let echo = defaultArg echo ""
         let sb = new StringBuilder()
         let sw = new StringWriter(sb)
         let js = new JsonSerializer()
         use w = new JsonTextWriter(sw, Formatting = Formatting.Indented)
         w.WriteStartObject()
+        if not <| String.IsNullOrEmpty(echo) then
+            w.WritePropertyName("echo")
+            w.WriteValue(echo)
+
         w.WritePropertyName("action")
         w.WriteValue(action)
-        for item in p do
-            w.WritePropertyName(item.Key)
-            w.WriteValue(item.Value)
-        x.AddCustomeProperty(w, js)
+        w.WritePropertyName("params")
+        w.WriteStartObject()
+        x.WriteParams(w, js)
+        w.WriteEndObject()
         w.WriteEndObject()
         sb.ToString()
 
     abstract HandleResponseData : IReadOnlyDictionary<string, string> -> unit
 
-    abstract AddCustomeProperty : JsonTextWriter * JsonSerializer-> unit
+    abstract WriteParams : JsonTextWriter * JsonSerializer-> unit
+
+    default x.HandleResponseData _ = ()
+    default x.WriteParams(_,_) = ()
 
 type QuickOperation(context : string) =
     inherit ApiRequestBase(".handle_quick_operation")
 
     member val Reply = KPX.TheBot.WebSocket.DataType.Response.EmptyResponse with get, set
 
-    override x.AddCustomeProperty(w, js) =
-        w.WritePropertyName("params")
-        w.WriteStartObject()
+    override x.WriteParams(w, js) =
         w.WritePropertyName("context")
         w.WriteRawValue(context)
         w.WritePropertyName("operation")
@@ -88,6 +94,43 @@ type QuickOperation(context : string) =
         js.Serialize(w, x.Reply)
         w.WriteEndObject()
 
-        w.WriteEndObject()
 
-    override x.HandleResponseData(r) = ()
+/// 获取登录号信息
+type GetLoginInfo() = 
+    inherit ApiRequestBase("get_login_info")
+
+    let mutable data = [||] |> readOnlyDict
+
+    member x.UserId = data.["user_id"] |> int64
+
+    member x.Nickname = data.["nickname"]
+
+    override x.HandleResponseData(r) = 
+        data <- r
+
+/// 获取插件运行状态 
+type GetStatus() = 
+    inherit ApiRequestBase("get_status")
+
+    let mutable data = [||] |> readOnlyDict
+
+    member x.Online = data.["online"]
+    member x.Good   = data.["good"]
+
+    override x.HandleResponseData(r) = 
+        data <- r
+
+/// 获取 酷Q 及 HTTP API 插件的版本信息 
+type GetVersionInfo() = 
+    inherit ApiRequestBase("get_version_info")
+
+    let mutable data = [||] |> readOnlyDict
+
+    member x.CoolqDirectory             = data.["coolq_directory"]
+    member x.CoolqEdition               = data.["coolq_edition"]
+    member x.PluginVersion              = data.["plugin_version"]
+    member x.PluginBuildNumber          = data.["plugin_build_number"]
+    member x.PluginBuildConfiguration   = data.["plugin_build_configuration"]
+
+    override x.HandleResponseData(r) = 
+        data <- r

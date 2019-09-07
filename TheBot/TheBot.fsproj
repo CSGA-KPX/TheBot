@@ -12,8 +12,7 @@
     <Compile Include="CqHttp\DataType\Event\MesssageEvent.fs" />
     <Compile Include="CqHttp\DataType\Event\RequestEvent.fs" />
     <Compile Include="CqHttp\Api\CqHttpApi.fs" />
-    <Compile Include="CqHttp\WebSocket.fs" />
-    <Compile Include="Utils.fs" />
+    <Compile Include="CqHttp\Instance\WebSocket.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 

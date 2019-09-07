@@ -24,10 +24,31 @@ type MessageSection =
             Other (name, data)
 
 [<JsonConverter(typeof<MessageConverter>)>]
-type Message() =
+type Message(sec : MessageSection[]) as x =
     inherit ResizeArray<MessageSection>()
 
+    do
+        x.AddRange(sec)
+
+    new () = 
+        new Message([||])
+
     static member Empty = new Message()
+
+    /// 提取所有文本段为string
+    override x.ToString() = 
+        let sb = 
+            x
+            |> Seq.fold (fun (sb : Text.StringBuilder) item -> 
+                match item with
+                | Text str -> sb.Append(str)
+                | _ -> sb) (new Text.StringBuilder())
+        sb.ToString()
+    
+    static member TextMessage(str) =
+        let msg = new Message()
+        msg.Add(Text str)
+        msg
 
 and internal MessageConverter() =
     inherit JsonConverter<Message>()
