@@ -81,6 +81,16 @@ type ApiRequestBase(action : string) as x =
     default x.HandleResponseData _ = ()
     default x.WriteParams(_,_) = ()
 
+    override x.ToString() = 
+        let sb = new StringBuilder()
+        let props = x.GetType().GetProperties(Reflection.BindingFlags.Instance ||| Reflection.BindingFlags.Public ||| Reflection.BindingFlags.DeclaredOnly)
+        let header = sprintf "%s---" (x.GetType().Name)
+        sb.AppendLine(header)  |> ignore
+        for prop in props do 
+            sb.AppendFormat("{0} => {1}\r\n", prop.Name, prop.GetValue(x)) |> ignore
+        sb.AppendLine("".PadRight(header.Length, '-'))  |> ignore
+        sb.ToString()
+
 type QuickOperation(context : string) =
     inherit ApiRequestBase(".handle_quick_operation")
 
@@ -119,6 +129,7 @@ type GetStatus() =
 
     override x.HandleResponseData(r) = 
         data <- r
+
 
 /// 获取 酷Q 及 HTTP API 插件的版本信息 
 type GetVersionInfo() = 

@@ -1,9 +1,9 @@
 ﻿// Learn more about F# at http://fsharp.org
-
 open System
 open KPX.TheBot.WebSocket
 open KPX.TheBot.WebSocket.Instance
 
+let logger = NLog.LogManager.GetCurrentClassLogger()
 let accessUrl = "wss://coolqapi.danmaku.org"
 let token     = "0194caec-12a2-473d-bc08-962049999446"
 let admins =
@@ -69,10 +69,9 @@ let main argv =
     client.Connect()
     client.StartListen()
 
-    let req = new Api.GetLoginInfo()
-    client.CallApi(req) 
-
-    printfn "当前登用户%i:%s" req.UserId req.Nickname
-
+    "\r\n" + 
+        client.CallApi<Api.GetLoginInfo>(new Api.GetLoginInfo()).ToString() + "\r\n" + 
+        client.CallApi<Api.GetStatus>(new Api.GetStatus()).ToString() + "\r\n" + 
+        client.CallApi<Api.GetVersionInfo>(new Api.GetVersionInfo()).ToString() |> logger.Info
     Console.ReadLine() |> ignore
     0 // return an integer exit code

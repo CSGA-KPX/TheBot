@@ -45,7 +45,7 @@ type ApiCallManager(ws : ClientWebSocket, token : CancellationToken) =
         req :?> 'T
 
     member x.Process(ret : Api.ApiResponse) =
-        logger.Info("收到API调用结果：{0}", sprintf "%A" ret)
+        logger.Trace("收到API调用结果：{0}", sprintf "%A" ret)
         let notEmpty = not <| String.IsNullOrEmpty(ret.Echo)
         lock.EnterReadLock()
         let hasPending = pendingApi.ContainsKey(ret.Echo)
@@ -93,8 +93,7 @@ type HandlerModuleBase() as x=
 and CqWebSocketClient(url, token) =
     let ws  = new ClientWebSocket()
     let cts = new CancellationTokenSource()
-    let getEcho() = (Guid.NewGuid().ToString())
-    let pendingApi = new Dictionary<string, ManualResetEvent * ApiRequestBase>()
+    let man = new ApiCallManager(ws, cts.Token)
     let utf8 = Text.Encoding.UTF8
     let logger = NLog.LogManager.GetCurrentClassLogger()
 
@@ -168,43 +167,18 @@ and CqWebSocketClient(url, token) =
                 elif obj.ContainsKey("retcode") then
                     //API调用结果
                     let ret = obj.ToObject<Api.ApiResponse>()
-                    logger.Info("收到API调用结果：{0}", sprintf "%A" ret)
-                    let notEmpty = not <| String.IsNullOrEmpty(ret.Echo)
-                    let hasPending = pendingApi.ContainsKey(ret.Echo)
-                    if notEmpty && hasPending then
-                        let (mre, api) = pendingApi.[ret.Echo]
-                        api.HandleResponseData(ret.Data)
-                        mre.Set() |> ignore
+                    man.Process(ret)
 
         } |> Async.Start
 
     member x.StopListen() =
         cts.Cancel()
 
-    member x.CallApi(req : ApiRequestBase) =
-        async {
-            let echo = getEcho()
-            let mre = new ManualResetEvent(false)
-            let json = req.GetRequestJson(echo)
-            pendingApi.Add(echo, (mre, req)) |> ignore
-            logger.Trace("请求API：{0}", json)
-            let data = json |> utf8.GetBytes
-            do! ws.SendAsync(new ArraySegment<byte>(data), WebSocketMessageType.Text, true, cts.Token) |> Async.AwaitTask
-            let! ret = Async.AwaitWaitHandle (mre :> WaitHandle)
-            pendingApi.Remove(echo) |> ignore
-        }
-        |> Async.RunSynchronously
-        
+    member x.CallApi<'T when 'T :> ApiRequestBase>(req : ApiRequestBase) =
+        man.Call<'T>(req)
 
-        
     member x.SendQuickResponse(context : string, r : KPX.TheBot.WebSocket.DataType.Response.Response) =
         if r <> DataType.Response.EmptyResponse then
             let rep = new KPX.TheBot.WebSocket.Api.QuickOperation(context)
             rep.Reply <- r
-
-            let json = rep.GetRequestJson()
-            logger.Trace("发送回复：{0}", json)
-            let data = json |> utf8.GetBytes
-            ws.SendAsync(new ArraySegment<byte>(data), WebSocketMessageType.Text, true, cts.Token)
-            |> Async.AwaitTask
-            |> Async.Start
+            x.CallApi<QuickOperation>(rep) |> ignore
