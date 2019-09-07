@@ -8,7 +8,9 @@
   <ItemGroup>
     <Compile Include="CqHttp\DataType\Message.fs" />
     <Compile Include="CqHttp\DataType\Response.fs" />
+    <Compile Include="CqHttp\DataType\Event\NoticeEvent.fs" />
     <Compile Include="CqHttp\DataType\Event\MesssageEvent.fs" />
+    <Compile Include="CqHttp\DataType\Event\RequestEvent.fs" />
     <Compile Include="CqHttp\Api\CqHttpApi.fs" />
     <Compile Include="CqHttp\WebSocket.fs" />
     <Compile Include="Utils.fs" />

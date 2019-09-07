@@ -7,7 +7,14 @@ open KPX.TheBot.WebSocket.Api
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 
-type CqWebSocketClient(url, token) =
+
+type ClientEventArgs<'Sender, 'Data>(sender : 'Sender, data : 'Data) = 
+    inherit EventArgs()
+    member val Sender = sender
+    member val Data = data
+    member val Response = DataType.Response.EmptyResponse with get, set
+
+type  CqWebSocketClient(url, token) =
     let ws  = new ClientWebSocket()
     let cts = new CancellationTokenSource()
     let getEcho() = (Guid.NewGuid().ToString())
@@ -15,12 +22,20 @@ type CqWebSocketClient(url, token) =
     let utf8 = Text.Encoding.UTF8
     let logger = NLog.LogManager.GetCurrentClassLogger()
 
-    let msgEvent = new Event<_>()
-
+    let msgEvent     = new Event<_>()
+    let noticeEvent  = new Event<_>()
+    let requestEvent = new Event<_>()
     do
         ws.Options.SetRequestHeader("Authorization", sprintf "Bearer %s" token)
 
+    [<CLIEvent>]
     member x.MessageEvent = msgEvent.Publish
+
+    [<CLIEvent>]
+    member x.NoticeEvent = noticeEvent.Publish
+
+    [<CLIEvent>]
+    member x.RequestEvent = requestEvent.Publish
 
     member x.IsAvailable  = ws.State = WebSocketState.Open
 
@@ -33,7 +48,6 @@ type CqWebSocketClient(url, token) =
         async {
             let buffer = Array.zeroCreate<byte> 4096
             let seg    = new ArraySegment<byte>(buffer)
-            //use ms = new IO.MemoryStream()
 
             let rec readMessage (ms : IO.MemoryStream) =
                 let s = ws.ReceiveAsync(seg, cts.Token) |> Async.AwaitTask |> Async.RunSynchronously
@@ -52,11 +66,21 @@ type CqWebSocketClient(url, token) =
                     | "message" ->
                         let msg = obj.ToObject<KPX.TheBot.WebSocket.DataType.Event.Message.MessageEvent>()
                         logger.Info("收到消息上报：{0}", sprintf "%A" msg)
-                        if msg.IsPrivate then
-                            x.SendQuickResponse(json, KPX.TheBot.WebSocket.DataType.Response.PrivateMessageResponse(msg.Message))
-                    | "notice" -> ()
-                    | "request" -> ()
-                    | _ -> ()
+                        let args = new ClientEventArgs<CqWebSocketClient, DataType.Event.Message.MessageEvent>(x, msg)
+                        msgEvent.Trigger(args)
+                        x.SendQuickResponse(json, args.Response)
+                    | "notice" ->
+                        let notice = obj.ToObject<DataType.Event.Notice.NoticeEvent>()
+                        let args = new ClientEventArgs<CqWebSocketClient, DataType.Event.Notice.NoticeEvent>(x, notice)
+                        noticeEvent.Trigger(args)
+                        x.SendQuickResponse(json, args.Response)
+                    | "request" -> 
+                        let request = obj.ToObject<DataType.Event.Request.RequestEvent>()
+                        let args = new ClientEventArgs<CqWebSocketClient, DataType.Event.Request.RequestEvent>(x, request)
+                        requestEvent.Trigger(args)
+                        x.SendQuickResponse(json, args.Response)
+                    | other ->
+                        logger.Fatal("未知上报类型：{0}", other)
                 elif obj.ContainsKey("retcode") then
                     //API调用结果
                     let ret = obj.ToObject<KPX.TheBot.WebSocket.Api.ApiResponse>()
