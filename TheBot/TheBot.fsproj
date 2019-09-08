@@ -13,6 +13,8 @@
     <Compile Include="CqHttp\DataType\Event\RequestEvent.fs" />
     <Compile Include="CqHttp\Api\CqHttpApi.fs" />
     <Compile Include="CqHttp\Instance\WebSocket.fs" />
+    <Compile Include="DiceModule.fs" />
+    <Compile Include="XivModule.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
@@ -20,6 +22,12 @@
     <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
     <PackageReference Include="NLog.Config" Version="4.6.7" />
     <PackageReference Include="System.Net.WebSockets.Client" Version="4.3.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="K:\KPX\Documents\Visual Studio 2017\Projects\FFXIVNetwork\LibFFXIV.ClientData\LibFFXIV.ClientData.fsproj" />
+    <ProjectReference Include="K:\KPX\Documents\Visual Studio 2017\Projects\FFXIVNetwork\LibFFXIV\LibFFXIV.Network.fsproj" />
+    <ProjectReference Include="K:\KPX\Documents\Visual Studio 2017\Projects\FFXIVNetwork\LibXIVDMF\LibXIVServer.fsproj" />
   </ItemGroup>
 
 </Project>

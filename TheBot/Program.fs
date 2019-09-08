@@ -66,6 +66,8 @@ type SudoModule() =
 let main argv =
     let client = new CqWebSocketClient(new Uri(accessUrl), token)
     client.RegisterModule(new SudoModule())
+    client.RegisterModule(new XivModule.XivModule())
+    client.RegisterModule(new DiceModule.DiceModule())
     client.Connect()
     client.StartListen()
 

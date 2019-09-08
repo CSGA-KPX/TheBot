@@ -5,19 +5,62 @@ VisualStudioVersion = 16.0.29215.179
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "TheBot", "TheBot\TheBot.fsproj", "{3C4E3455-9CBA-4450-AB7B-85956A7C86F0}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "FFXIVNetwork", "FFXIVNetwork", "{23438C37-1119-422B-8EC9-D0BB0ED93EFB}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "LibFFXIV.ClientData", "K:\KPX\Documents\Visual Studio 2017\Projects\FFXIVNetwork\LibFFXIV.ClientData\LibFFXIV.ClientData.fsproj", "{2C3E47EE-B8E5-4E05-8999-84C0C4859BCB}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "LibXIVServer", "K:\KPX\Documents\Visual Studio 2017\Projects\FFXIVNetwork\LibXIVDMF\LibXIVServer.fsproj", "{8A3C2B67-647D-431A-9AC1-7695667B0DE7}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "LibFFXIV.Network", "K:\KPX\Documents\Visual Studio 2017\Projects\FFXIVNetwork\LibFFXIV\LibFFXIV.Network.fsproj", "{DA1D6501-6350-47D5-84D3-6AA1D5C1A70C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
+		Debug|x86 = Debug|x86
 		Release|Any CPU = Release|Any CPU
+		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{3C4E3455-9CBA-4450-AB7B-85956A7C86F0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{3C4E3455-9CBA-4450-AB7B-85956A7C86F0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3C4E3455-9CBA-4450-AB7B-85956A7C86F0}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{3C4E3455-9CBA-4450-AB7B-85956A7C86F0}.Debug|x86.Build.0 = Debug|Any CPU
 		{3C4E3455-9CBA-4450-AB7B-85956A7C86F0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3C4E3455-9CBA-4450-AB7B-85956A7C86F0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3C4E3455-9CBA-4450-AB7B-85956A7C86F0}.Release|x86.ActiveCfg = Release|Any CPU
+		{3C4E3455-9CBA-4450-AB7B-85956A7C86F0}.Release|x86.Build.0 = Release|Any CPU
+		{2C3E47EE-B8E5-4E05-8999-84C0C4859BCB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2C3E47EE-B8E5-4E05-8999-84C0C4859BCB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2C3E47EE-B8E5-4E05-8999-84C0C4859BCB}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{2C3E47EE-B8E5-4E05-8999-84C0C4859BCB}.Debug|x86.Build.0 = Debug|Any CPU
+		{2C3E47EE-B8E5-4E05-8999-84C0C4859BCB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2C3E47EE-B8E5-4E05-8999-84C0C4859BCB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2C3E47EE-B8E5-4E05-8999-84C0C4859BCB}.Release|x86.ActiveCfg = Release|Any CPU
+		{2C3E47EE-B8E5-4E05-8999-84C0C4859BCB}.Release|x86.Build.0 = Release|Any CPU
+		{8A3C2B67-647D-431A-9AC1-7695667B0DE7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8A3C2B67-647D-431A-9AC1-7695667B0DE7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8A3C2B67-647D-431A-9AC1-7695667B0DE7}.Debug|x86.ActiveCfg = Debug|x86
+		{8A3C2B67-647D-431A-9AC1-7695667B0DE7}.Debug|x86.Build.0 = Debug|x86
+		{8A3C2B67-647D-431A-9AC1-7695667B0DE7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8A3C2B67-647D-431A-9AC1-7695667B0DE7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8A3C2B67-647D-431A-9AC1-7695667B0DE7}.Release|x86.ActiveCfg = Release|x86
+		{8A3C2B67-647D-431A-9AC1-7695667B0DE7}.Release|x86.Build.0 = Release|x86
+		{DA1D6501-6350-47D5-84D3-6AA1D5C1A70C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DA1D6501-6350-47D5-84D3-6AA1D5C1A70C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DA1D6501-6350-47D5-84D3-6AA1D5C1A70C}.Debug|x86.ActiveCfg = Debug|x86
+		{DA1D6501-6350-47D5-84D3-6AA1D5C1A70C}.Debug|x86.Build.0 = Debug|x86
+		{DA1D6501-6350-47D5-84D3-6AA1D5C1A70C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DA1D6501-6350-47D5-84D3-6AA1D5C1A70C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DA1D6501-6350-47D5-84D3-6AA1D5C1A70C}.Release|x86.ActiveCfg = Release|x86
+		{DA1D6501-6350-47D5-84D3-6AA1D5C1A70C}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{2C3E47EE-B8E5-4E05-8999-84C0C4859BCB} = {23438C37-1119-422B-8EC9-D0BB0ED93EFB}
+		{8A3C2B67-647D-431A-9AC1-7695667B0DE7} = {23438C37-1119-422B-8EC9-D0BB0ED93EFB}
+		{DA1D6501-6350-47D5-84D3-6AA1D5C1A70C} = {23438C37-1119-422B-8EC9-D0BB0ED93EFB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {3AF12164-7EE6-4EA6-9BC7-909375A608C1}
