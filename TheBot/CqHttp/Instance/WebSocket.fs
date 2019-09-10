@@ -57,7 +57,7 @@ type ApiCallManager(ws : ClientWebSocket, token : CancellationToken) =
         lock.ExitReadLock()
 
 [<AbstractClass>]
-type HandlerModuleBase() as x= 
+type HandlerModuleBase() as x = 
     let logger = NLog.LogManager.GetLogger(x.GetType().Name)
     let tryToOption (ret, v) = 
         if ret then
@@ -86,6 +86,14 @@ type HandlerModuleBase() as x=
         | _ when ctx.IsPrivate -> arg.Response <- DataType.Response.PrivateMessageResponse(msg)
         | _ -> 
             logger.Fatal("？")
+
+    /// 转换名称
+    member x.ToNicknameOrCard(msg : DataType.Event.Message.MessageEvent) = 
+        match msg with
+        | msg when msg.IsPrivate -> msg.Sender.NickName
+        | msg when msg.IsDiscuss -> msg.Sender.NickName
+        | msg when msg.IsGroup -> msg.Sender.Card
+        | _ -> failwithf ""
 
     ///用于访问共享配置
     member x.Item with get (k:string)   = 

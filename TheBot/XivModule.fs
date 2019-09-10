@@ -5,7 +5,7 @@ open KPX.TheBot.WebSocket.Instance
 open LibFFXIV.ClientData
 open LibXIVServer
 
-module Utils = 
+module MarketUtils = 
     let internal TakeMarketSample (samples : LibXIVServer.MarketV2.ServerMarkerOrder [] , cutPct : int) = 
         [|
             //(price, count)
@@ -81,10 +81,36 @@ module Utils =
         let ev  = sum / itemCount
         { Average = average; Deviation = sqrt ev }
 
+module MentorUtils = 
+    let fortune = 
+        [|
+            "大吉", "行会令连送/三导师高铁四人本/假风火土白给".Split('/')
+            "小吉", "豆芽已看攻略/稳定7拖1".Split('/')
+            "平"  , "听话懂事初见/不急不缓四人本/超越之力25%".Split('/')
+            "小凶", "塔三团灭/遇假火/260T白山堡".Split('/')
+            "大凶", "嘴臭椰新/装会假火/极神小龙虾".Split('/')
+        |]
+    let shouldOrAvoid = "行会令，水晶塔，魔航船，马哈，影之国，欧米伽时空狭缝，亚历山大机工城，幻龙残骸秘约之塔，魔科学研究所，极水神，极雷神，极冰神，极莫古力，极三斗神，神龙歼灭战，动画城，血亏堡，中途参战，红色划水，蓝色carry，绿色擦屁股，辱骂毒豆芽，辱骂假火，副职导随".Split('，')
+    let classJob = 
+        [|
+            "红", "近战，远敏，复活机，法系".Split('，')
+            "绿", "崩石怪，小仙女，游戏王".Split('，')
+            "蓝", "裂石飞环，神圣领域，暗技人".Split('，')
+        |]
+    let allowedLocation = Collections.Generic.HashSet<byte>([|0uy; 1uy; 2uy; 6uy; 13uy; 14uy; 15uy;|])
+
+    let location = 
+        TerritoryType.AllTerritory
+        |> Seq.filter (fun x -> allowedLocation.Contains(x.TerritoryIntendedUse))
+        |> Seq.distinctBy (fun x -> x.ToString())
+        |> Array.ofSeq
+
 type XivModule() = 
     inherit HandlerModuleBase()
     let tradelog = new TradeLogV2.TradeLogDAO()
     let market   = new MarketV2.MarketOrderDAO()
+    let rm       = Recipe.RecipeManager.GetInstance()
+    let cutoff   = 25
     let itemNames= Item.AllItems.Value |> Array.map (fun x -> (x.Name.ToLowerInvariant(), x))
     let isNumber(str : string) = 
         if str.Length <> 0 then
@@ -100,7 +126,7 @@ type XivModule() =
     member private x.HandleTradelog(query : string) = 
         let sw = new IO.StringWriter()
         sw.WriteLine("服务器：拉诺西亚")
-        sw.WriteLine("名称 低 中 高 更新时间")
+        sw.WriteLine("名称 平均 低 中 高 更新时间")
         for i in query.Split(' ').[1..] do 
             match strToItem(i) with
             | None -> sw.WriteLine("找不到物品{0}，请尝试#is {0}", i)
@@ -113,7 +139,7 @@ type XivModule() =
                     sw.WriteLine("{0} 无记录", i.Name)
                 | _ ->
                     let o = ret.Record.Value
-                    let stdev= Utils.GetStdEvTrade(o)
+                    let stdev= MarketUtils.GetStdEvTrade(o)
                     let low  = o |> Array.map (fun item -> item.Price) |> Array.min
                     let high = o |> Array.map (fun item -> item.Price) |> Array.max
                     let avg  = o |> Array.averageBy (fun item -> item.Price |> float)
@@ -124,7 +150,7 @@ type XivModule() =
     member private x.HandleMarket(query : string) = 
         let sw = new IO.StringWriter()
         sw.WriteLine("服务器：拉诺西亚")
-        sw.WriteLine("名称 价格(前25%订单) 低 中 高 更新时间")
+        sw.WriteLine("名称 价格(前25%订单) 低 更新时间")
         for i in query.Split(' ').[1..] do 
             match strToItem(i) with
             | None -> sw.WriteLine("找不到物品{0}，请尝试#is {0}", i)
@@ -136,13 +162,11 @@ type XivModule() =
                 | _ when ret.Record.Value.Length = 0 ->
                     sw.WriteLine("{0} 无记录", i.Name)
                 | _ ->
-                    let o = ret.Record.Value
-                    let stdev= Utils.GetStdEvMarket(o, 25)
+                    let o    = ret.Record.Value
+                    let stdev= MarketUtils.GetStdEvMarket(o, 25)
                     let low  = o |> Array.map (fun item -> item.Price) |> Array.min
-                    let high = o |> Array.map (fun item -> item.Price) |> Array.max
-                    let avg  = o |> Array.averageBy (fun item -> item.Price |> float)
                     let upd  = ret.UpdateDate
-                    sw.WriteLine("{0} {1} {2:n} {3:n} {4:n} {5}", i.Name, stdev, low, avg, high, upd)
+                    sw.WriteLine("{0} {1} {2:n} {3}", i.Name, stdev, low, upd)
         sw.ToString()
 
     member private x.HandleItemSearch (query : string) = 
@@ -160,6 +184,53 @@ type XivModule() =
                     sw.WriteLine("{0} {1} {2}", i, item.Name, item.Id)
         sw.ToString()
 
+    member private x.HandleItemFinalRecipe (query : string) = 
+        let sw = new IO.StringWriter()
+        sw.WriteLine("服务器：拉诺西亚")
+        sw.WriteLine("查询 物品 价格(前25%订单) 需求 总价 更新时间")
+        for i in query.Split(' ').[1..] do 
+            match strToItem(i) with
+            | None -> sw.WriteLine("找不到物品{0}，请尝试#is {0}", i)
+            | Some(i) ->
+                let recipe = rm.GetMaterialsRec(i)
+                let mutable sum = MarketUtils.StdEv.Zero
+                for (item, count) in recipe do 
+                    let ret = market.Get(item.Id |> uint32)
+                    let price = MarketUtils.GetStdEvMarket(ret.Record.Value, cutoff)
+                    let total = price * count
+                    sum <- sum + total
+                    sw.WriteLine("{0} {1} {2} {3} {4} {5}",
+                        i, item.Name, price, count, total, ret.UpdateDate )
+                sw.WriteLine("{0} 总计 {1} -- -- --", i, sum)
+                sw.WriteLine()
+        sw.ToString()
+
+    member private x.HandleMentor(msg : DataType.Event.Message.MessageEvent) = 
+        let sw = new IO.StringWriter()
+        let dicer = new Utils.Dicer(Utils.SeedOption.SeedByUserDay, msg)
+        let s,a   = 
+            let a = dicer.GetRandomItems(MentorUtils.shouldOrAvoid, 3 * 2)
+            a.[0..2], a.[3..]
+        
+        let fortune, events = 
+            match dicer.GetRandom(100u) with
+            | x when x <= 5  -> MentorUtils.fortune.[0]
+            | x when x <= 20 -> MentorUtils.fortune.[1]
+            | x when x <= 80 -> MentorUtils.fortune.[2]
+            | x when x <= 95 -> MentorUtils.fortune.[3]
+            | _              -> MentorUtils.fortune.[4]
+        let event = dicer.GetRandomItem(events)
+
+        sw.WriteLine("{0} 今日导随运势为：", x.ToNicknameOrCard(msg))
+        sw.WriteLine("{0} : {1}", fortune, event)
+        sw.WriteLine("宜：{0}", String.concat "/" s)
+        sw.WriteLine("忌：{0}", String.concat "/" a)
+        let c, jobs = dicer.GetRandomItem(MentorUtils.classJob)
+        let job = dicer.GetRandomItem(jobs)
+        sw.WriteLine("推荐职业: {0} {1}", c, job)
+        sw.WriteLine("推荐排本场所: {0}", dicer.GetRandomItem(MentorUtils.location).ToString())
+        sw.ToString()
+
     override x.MessageHandler _ arg =
         let str = arg.Data.Message.ToString()
         match str.ToLowerInvariant() with
@@ -169,5 +240,9 @@ type XivModule() =
             x.QuickMessageReply(arg, x.HandleMarket(s))
         | s when s.StartsWith("#is") -> 
             x.QuickMessageReply(arg, x.HandleItemSearch(s))
+        | s when s.StartsWith("#recipefinal") -> 
+            x.QuickMessageReply(arg, x.HandleItemFinalRecipe(s))
+        | s when s.StartsWith("#mentor") -> 
+            x.QuickMessageReply(arg, x.HandleMentor(arg.Data))
         | _ -> ()
 
