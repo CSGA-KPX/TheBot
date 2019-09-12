@@ -2,7 +2,7 @@
 open System
 open Mono.Unix
 open Mono.Unix.Native
-open KPX.TheBot.WebSocket.Instance
+open KPX.FsCqHttp.Instance
 
 let logger = NLog.LogManager.GetCurrentClassLogger()
 let accessUrl = "wss://coolqapi.danmaku.org"

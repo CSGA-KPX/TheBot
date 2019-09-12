@@ -1,0 +1,29 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="DateType\Message.fs" />
+    <Compile Include="DateType\MessageResponse.fs" />
+    <Compile Include="DateType\ApiResponse.fs" />
+    <Compile Include="DateType\Event\NoticeEvent.fs" />
+    <Compile Include="DateType\Event\MesssageEvent.fs" />
+    <Compile Include="DateType\Event\RequestEvent.fs" />
+    <Compile Include="DateType\Event\MetaEvent.fs" />
+    <Compile Include="DateType\Event\Event.fs" />
+    <Compile Include="Api\ApiBase.fs" />
+    <Compile Include="Api\ApiCallManager.fs" />
+    <Compile Include="Api\SystemApi.fs" />
+    <Compile Include="Instance\Base.fs" />
+    <Compile Include="Instance\WebSocket.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
+    <PackageReference Include="NLog" Version="4.6.7" />
+    <PackageReference Include="System.Net.WebSockets.Client" Version="4.3.2" />
+  </ItemGroup>
+
+</Project>

@@ -13,6 +13,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "LibXIVServer", "K:\KPX\Docu
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "LibFFXIV.Network", "K:\KPX\Documents\Visual Studio 2017\Projects\FFXIVNetwork\LibFFXIV\LibFFXIV.Network.fsproj", "{DA1D6501-6350-47D5-84D3-6AA1D5C1A70C}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FsCqHttp", "FsCqHttp\FsCqHttp.fsproj", "{3E558F6E-6A04-4912-837F-AF00CC91AFAE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -53,6 +55,14 @@ Global
 		{DA1D6501-6350-47D5-84D3-6AA1D5C1A70C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{DA1D6501-6350-47D5-84D3-6AA1D5C1A70C}.Release|x86.ActiveCfg = Release|x86
 		{DA1D6501-6350-47D5-84D3-6AA1D5C1A70C}.Release|x86.Build.0 = Release|x86
+		{3E558F6E-6A04-4912-837F-AF00CC91AFAE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3E558F6E-6A04-4912-837F-AF00CC91AFAE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3E558F6E-6A04-4912-837F-AF00CC91AFAE}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{3E558F6E-6A04-4912-837F-AF00CC91AFAE}.Debug|x86.Build.0 = Debug|Any CPU
+		{3E558F6E-6A04-4912-837F-AF00CC91AFAE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3E558F6E-6A04-4912-837F-AF00CC91AFAE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3E558F6E-6A04-4912-837F-AF00CC91AFAE}.Release|x86.ActiveCfg = Release|Any CPU
+		{3E558F6E-6A04-4912-837F-AF00CC91AFAE}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

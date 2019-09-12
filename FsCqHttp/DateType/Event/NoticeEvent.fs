@@ -1,4 +1,4 @@
-﻿namespace KPX.TheBot.WebSocket.DataType.Event.Notice
+﻿namespace KPX.FsCqHttp.DataType.Event.Notice
 open System
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq

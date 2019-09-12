@@ -1,4 +1,4 @@
-﻿namespace KPX.TheBot.WebSocket.DataType.Event.Message
+﻿namespace KPX.FsCqHttp.DataType.Event.Message
 open Newtonsoft.Json
 
 /// 发送人信息
@@ -61,7 +61,7 @@ type MessageEvent =
         [<JsonProperty("user_id")>]
         UserId      : int64
         [<JsonProperty("message")>]
-        Message     : KPX.TheBot.WebSocket.DataType.Message.Message
+        Message     : KPX.FsCqHttp.DataType.Message.Message
         [<JsonProperty("raw_message")>]
         RawMessage  : string
         [<JsonProperty("font")>]

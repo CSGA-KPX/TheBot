@@ -1,4 +1,4 @@
-﻿namespace KPX.TheBot.WebSocket.DataType.Event.Request
+﻿namespace KPX.FsCqHttp.DataType.Event.Request
 open System
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq

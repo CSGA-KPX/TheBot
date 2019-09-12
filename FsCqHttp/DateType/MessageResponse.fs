@@ -1,22 +1,22 @@
-﻿namespace KPX.TheBot.WebSocket.DataType.Response
-open KPX.TheBot.WebSocket.DataType
+﻿namespace KPX.FsCqHttp.DataType.Response
+open KPX.FsCqHttp.DataType
 open System
 open System.IO
 open System.Text
 open Newtonsoft.Json
 
-[<JsonConverter(typeof<ResponseConverter>)>]
-type Response =
+[<JsonConverter(typeof<MessageResponseConverter>)>]
+type MessageResponse =
     | EmptyResponse
     | PrivateMessageResponse of reply : Message.Message
     | GroupMessageResponse of reply : Message.Message * at_sender : bool * delete :bool * kick : bool * ban : bool * ban_duration : int
     | DiscusMessageResponse of reply : Message.Message * at_sender : bool
     | FriendAddResponse of approve : bool * remark : string
     | GroupAddResponse of approve : bool * reason : string
-and ResponseConverter() =
-    inherit JsonConverter<Response>()
+and MessageResponseConverter() =
+    inherit JsonConverter<MessageResponse>()
 
-    override x.WriteJson(w:JsonWriter , r : Response, js:JsonSerializer) =
+    override x.WriteJson(w:JsonWriter , r : MessageResponse, js:JsonSerializer) =
         let sb = new StringBuilder()
         let sw = new StringWriter(sb)
         //w.WriteStartObject()
@@ -26,5 +26,5 @@ and ResponseConverter() =
                 js.Serialize(w, prop.GetValue(r))
         //w.WriteEndObject()
 
-    override x.ReadJson(r : JsonReader, objType : Type, existingValue : Response, hasExistingValue : bool, s : JsonSerializer) =
-        raise<Response> <| NotImplementedException()
+    override x.ReadJson(r : JsonReader, objType : Type, existingValue : MessageResponse, hasExistingValue : bool, s : JsonSerializer) =
+        raise<MessageResponse> <| NotImplementedException()

@@ -1,7 +1,7 @@
 ﻿module Utils
 open System
-open KPX.TheBot.WebSocket.DataType
-open KPX.TheBot.WebSocket.Instance
+open KPX.FsCqHttp.DataType
+open KPX.FsCqHttp.Instance
 
 let private CSTOffset = TimeSpan.FromHours(8.0)
 

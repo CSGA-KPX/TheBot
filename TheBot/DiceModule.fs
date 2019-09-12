@@ -1,15 +1,14 @@
 ﻿module DiceModule
 open System
-open System.Security.Cryptography
-open KPX.TheBot.WebSocket
-open KPX.TheBot.WebSocket.Instance
+open KPX.FsCqHttp.Instance.Base
 
 type DiceModule() = 
     inherit HandlerModuleBase()
 
     override x.MessageHandler _ arg =
-        let str = arg.Data.Message.ToString()
-        let dicer = new Utils.Dicer(Utils.SeedOption.SeedByUserDay, arg.Data)
+        let msg = arg.Data.AsMessageEvent
+        let str = msg.Message.ToString()
+        let dicer = new Utils.Dicer(Utils.SeedOption.SeedByUserDay, msg)
         match str.ToLowerInvariant() with
         | s when s.StartsWith("#c") ->
             //让每一个选项不同顺序的情况下都一样
@@ -21,11 +20,10 @@ type DiceModule() =
                 |> Array.map (fun c ->
                     (c, dicer.GetRandomFromString(c, 100u)))
                 |> Array.sortBy (fun (_, n) -> n)
-            let sum = choices |> Array.sumBy (fun (_, n) -> n) |> float
             for (c,n) in choices do 
                 sw.WriteLine("{0} {1}", c, n)
-            x.QuickMessageReply(arg, sw.ToString())
+            arg.QuickMessageReply(sw.ToString())
         | s when s.StartsWith("#jrrp") -> 
             let jrrp = dicer.GetRandom(100u)
-            x.QuickMessageReply(arg, sprintf "%s今日人品值是%i" (x.ToNicknameOrCard(arg.Data)) jrrp)
+            arg.QuickMessageReply(sprintf "%s今日人品值是%i" (x.ToNicknameOrCard(msg)) jrrp)
         | _ -> ()

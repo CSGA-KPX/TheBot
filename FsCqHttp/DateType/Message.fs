@@ -1,4 +1,4 @@
-﻿namespace KPX.TheBot.WebSocket.DataType.Message
+﻿namespace KPX.FsCqHttp.DataType.Message
 open System
 open System.Collections.Generic
 open Newtonsoft.Json
@@ -50,7 +50,7 @@ type Message(sec : MessageSection[]) as x =
         msg.Add(Text str)
         msg
 
-and internal MessageConverter() =
+and MessageConverter() =
     inherit JsonConverter<Message>()
 
     override x.WriteJson(w:JsonWriter , r : Message, s:JsonSerializer) =

@@ -1,6 +1,8 @@
 ﻿module SudoModule
-open KPX.TheBot.WebSocket
-open KPX.TheBot.WebSocket.Instance
+open KPX.FsCqHttp.Api
+open KPX.FsCqHttp.DataType.Response
+open KPX.FsCqHttp.DataType.Event
+open KPX.FsCqHttp.Instance.Base
 
 let admins =
         [|
@@ -15,36 +17,37 @@ type SudoModule() =
     let mutable allow = false
 
     override x.MessageHandler _ arg =
-        let str = arg.Data.Message.ToString()
+        let msg = arg.Data.AsMessageEvent
+        let str = msg.Message.ToString()
         match str.ToLowerInvariant() with
         | s when s.StartsWith("#allowrequest") ->
-            if admins.Contains(arg.Data.UserId) then
-                x.QuickMessageReply(arg, "已允许加群")
+            if admins.Contains(msg.UserId) then
+                arg.QuickMessageReply("已允许加群")
                 allow <- true
             else
-                x.QuickMessageReply(arg, "朋友你不是狗管理")
+                arg.QuickMessageReply("朋友你不是狗管理")
 
         | s when s.StartsWith("#disallowrequest") ->
-            if admins.Contains(arg.Data.UserId) then
-                x.QuickMessageReply(arg, "已关闭加群")
+            if admins.Contains(msg.UserId) then
+                arg.QuickMessageReply( "已关闭加群")
                 allow <- false
             else
-                x.QuickMessageReply(arg, "朋友你不是狗管理")
+                arg.QuickMessageReply("朋友你不是狗管理")
         | s when s.StartsWith("#selftest") ->
-            if admins.Contains(arg.Data.UserId) then
+            if admins.Contains(arg.Data.AsMessageEvent.UserId) then
                 let info = 
                     "\r\n" + 
-                        arg.Sender.CallApi<Api.GetLoginInfo>(new Api.GetLoginInfo()).ToString() + "\r\n" + 
-                        arg.Sender.CallApi<Api.GetStatus>(new Api.GetStatus()).ToString() + "\r\n" + 
-                        arg.Sender.CallApi<Api.GetVersionInfo>(new Api.GetVersionInfo()).ToString()
-                x.QuickMessageReply(arg, info)
+                        arg.CallApi<SystemApi.GetLoginInfo>().ToString() + "\r\n" + 
+                        arg.CallApi<SystemApi.GetStatus>().ToString() + "\r\n" + 
+                        arg.CallApi<SystemApi.GetVersionInfo>().ToString()
+                arg.QuickMessageReply(info)
             else
-                x.QuickMessageReply(arg, "朋友你不是狗管理")
+                arg.QuickMessageReply("朋友你不是狗管理")
         | _ -> ()
 
     override x.RequestHandler _ arg =
-        match arg.Data with
-        | DataType.Event.Request.FriendRequest x ->
-            arg.Response <- DataType.Response.FriendAddResponse(allow, "")
-        | DataType.Event.Request.GroupRequest x ->
-            arg.Response <- DataType.Response.GroupAddResponse(allow, "")
+        match arg.Data.AsRequestEvent with
+        | Request.FriendRequest x ->
+            arg.SendResponse(FriendAddResponse(allow, ""))
+        | Request.GroupRequest x ->
+           arg.SendResponse(GroupAddResponse(allow, ""))

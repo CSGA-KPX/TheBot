@@ -1,7 +1,7 @@
 ﻿module XivModule
 open System
-open KPX.TheBot.WebSocket
-open KPX.TheBot.WebSocket.Instance
+open KPX.FsCqHttp
+open KPX.FsCqHttp.Instance.Base
 open LibFFXIV.ClientData
 open LibXIVServer
 
@@ -90,7 +90,22 @@ module MentorUtils =
             "小凶", "塔三团灭/遇假火/260T白山堡".Split('/')
             "大凶", "嘴臭椰新/装会假火/极神小龙虾".Split('/')
         |]
-    let shouldOrAvoid = "行会令，水晶塔，魔航船，马哈，影之国，欧米伽时空狭缝，亚历山大机工城，幻龙残骸秘约之塔，魔科学研究所，极水神，极雷神，极冰神，极莫古力，极三斗神，神龙歼灭战，动画城，血亏堡，中途参战，红色划水，蓝色carry，绿色擦屁股，辱骂毒豆芽，辱骂假火，副职导随".Split('，')
+    let shouldOrAvoid = 
+        [|
+            yield! "中途参战，红色划水，蓝色carry，绿色擦屁股，辱骂毒豆芽，辱骂假火，副职导随".Split('，')
+            let mentor = 
+                ContentFinderCondition.ContentFinderCondition
+                |> Seq.filter (fun x -> x.IsMentor)
+            yield! 
+                mentor
+                |> Seq.map (fun x -> x.Name)
+                |> Seq.toArray
+            yield!
+                mentor
+                |> Seq.map (fun x -> x.ContentType)
+                |> Seq.distinct
+                |> Seq.toArray
+        |]
     let classJob = 
         [|
             "红", "近战，远敏，复活机，法系".Split('，')
@@ -208,10 +223,7 @@ type XivModule() =
     member private x.HandleMentor(msg : DataType.Event.Message.MessageEvent) = 
         let sw = new IO.StringWriter()
         let dicer = new Utils.Dicer(Utils.SeedOption.SeedByUserDay, msg)
-        let s,a   = 
-            let a = dicer.GetRandomItems(MentorUtils.shouldOrAvoid, 3 * 2)
-            a.[0..2], a.[3..]
-        
+
         let fortune, events = 
             match dicer.GetRandom(100u) with
             | x when x <= 5  -> MentorUtils.fortune.[0]
@@ -220,9 +232,12 @@ type XivModule() =
             | x when x <= 95 -> MentorUtils.fortune.[3]
             | _              -> MentorUtils.fortune.[4]
         let event = dicer.GetRandomItem(events)
-
         sw.WriteLine("{0} 今日导随运势为：", x.ToNicknameOrCard(msg))
         sw.WriteLine("{0} : {1}", fortune, event)
+
+        let s,a   = 
+            let a = dicer.GetRandomItems(MentorUtils.shouldOrAvoid, 3 * 2)
+            a.[0..2], a.[3..]
         sw.WriteLine("宜：{0}", String.concat "/" s)
         sw.WriteLine("忌：{0}", String.concat "/" a)
         let c, jobs = dicer.GetRandomItem(MentorUtils.classJob)
@@ -232,17 +247,17 @@ type XivModule() =
         sw.ToString()
 
     override x.MessageHandler _ arg =
-        let str = arg.Data.Message.ToString()
+        let str = arg.Data.AsMessageEvent.Message.ToString()
         match str.ToLowerInvariant() with
         | s when s.StartsWith("#tradelog") -> 
-            x.QuickMessageReply(arg, x.HandleTradelog(s))
+            arg.QuickMessageReply(x.HandleTradelog(s))
         | s when s.StartsWith("#market") -> 
-            x.QuickMessageReply(arg, x.HandleMarket(s))
+            arg.QuickMessageReply(x.HandleMarket(s))
         | s when s.StartsWith("#is") -> 
-            x.QuickMessageReply(arg, x.HandleItemSearch(s))
+            arg.QuickMessageReply(x.HandleItemSearch(s))
         | s when s.StartsWith("#recipefinal") -> 
-            x.QuickMessageReply(arg, x.HandleItemFinalRecipe(s))
+            arg.QuickMessageReply(x.HandleItemFinalRecipe(s))
         | s when s.StartsWith("#mentor") -> 
-            x.QuickMessageReply(arg, x.HandleMentor(arg.Data))
+            arg.QuickMessageReply(x.HandleMentor(arg.Data.AsMessageEvent))
         | _ -> ()
 

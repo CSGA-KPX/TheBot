@@ -6,13 +6,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="CqHttp\DataType\Message.fs" />
-    <Compile Include="CqHttp\DataType\Response.fs" />
-    <Compile Include="CqHttp\DataType\Event\NoticeEvent.fs" />
-    <Compile Include="CqHttp\DataType\Event\MesssageEvent.fs" />
-    <Compile Include="CqHttp\DataType\Event\RequestEvent.fs" />
-    <Compile Include="CqHttp\Api\CqHttpApi.fs" />
-    <Compile Include="CqHttp\Instance\WebSocket.fs" />
     <Compile Include="Utils.fs" />
     <Compile Include="DiceModule.fs" />
     <Compile Include="SudoModule.fs" />
@@ -28,6 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\FsCqHttp\FsCqHttp.fsproj" />
     <ProjectReference Include="K:\KPX\Documents\Visual Studio 2017\Projects\FFXIVNetwork\LibFFXIV.ClientData\LibFFXIV.ClientData.fsproj" />
     <ProjectReference Include="K:\KPX\Documents\Visual Studio 2017\Projects\FFXIVNetwork\LibFFXIV\LibFFXIV.Network.fsproj" />
     <ProjectReference Include="K:\KPX\Documents\Visual Studio 2017\Projects\FFXIVNetwork\LibXIVDMF\LibXIVServer.fsproj" />
