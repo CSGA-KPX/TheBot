@@ -4,6 +4,14 @@ open KPX.FsCqHttp.DataType.Response
 open KPX.FsCqHttp.DataType.Event
 open KPX.FsCqHttp.Instance.Base
 
+open System
+open KPX.FsCqHttp.DataType.Event
+open KPX.FsCqHttp.Instance.Base
+open CommandHandlerBase
+open Utils
+
+
+
 let admins =
         [|
             313388419L
@@ -13,41 +21,41 @@ let admins =
 
 
 type SudoModule() =
-    inherit HandlerModuleBase()
+    inherit CommandHandlerBase()
     let mutable allow = false
 
-    override x.MessageHandler _ arg =
-        let msg = arg.Data.AsMessageEvent
-        let str = msg.Message.ToString()
-        match str.ToLowerInvariant() with
-        | s when s.StartsWith("#allowrequest") ->
-            if admins.Contains(msg.UserId) then
-                arg.QuickMessageReply("已允许加群")
-                allow <- true
-            else
-                arg.QuickMessageReply("朋友你不是狗管理")
+    [<MessageHandlerMethodAttribute("selftest", "(管理员) 返回系统信息", "")>]
+    member x.HandleSelfTest(str : string, arg : ClientEventArgs, msg : Message.MessageEvent) = 
+        if admins.Contains(msg.UserId) then
+            let info = 
+                "\r\n" + 
+                    arg.CallApi<SystemApi.GetLoginInfo>().ToString() + "\r\n" + 
+                    arg.CallApi<SystemApi.GetStatus>().ToString() + "\r\n" + 
+                    arg.CallApi<SystemApi.GetVersionInfo>().ToString()
+            arg.QuickMessageReply(info)
+        else
+            arg.QuickMessageReply("朋友你不是狗管理")
 
-        | s when s.StartsWith("#disallowrequest") ->
-            if admins.Contains(msg.UserId) then
-                arg.QuickMessageReply( "已关闭加群")
-                allow <- false
-            else
-                arg.QuickMessageReply("朋友你不是狗管理")
-        | s when s.StartsWith("#selftest") ->
-            if admins.Contains(arg.Data.AsMessageEvent.UserId) then
-                let info = 
-                    "\r\n" + 
-                        arg.CallApi<SystemApi.GetLoginInfo>().ToString() + "\r\n" + 
-                        arg.CallApi<SystemApi.GetStatus>().ToString() + "\r\n" + 
-                        arg.CallApi<SystemApi.GetVersionInfo>().ToString()
-                arg.QuickMessageReply(info)
-            else
-                arg.QuickMessageReply("朋友你不是狗管理")
-        | _ -> ()
+    [<MessageHandlerMethodAttribute("allow", "(管理员) 允许好友、加群请求", "")>]
+    member x.HandleAllow(str : string, arg : ClientEventArgs, msg : Message.MessageEvent) = 
+        if admins.Contains(msg.UserId) then
+            arg.QuickMessageReply("已允许加群")
+            allow <- true
+        else
+            arg.QuickMessageReply("朋友你不是狗管理")
 
-    override x.RequestHandler _ arg =
-        match arg.Data.AsRequestEvent with
+    [<MessageHandlerMethodAttribute("disallow", "(管理员) 禁止好友、加群请求", "")>]
+    member x.HandleDisallow(str : string, arg : ClientEventArgs, msg : Message.MessageEvent) = 
+        if admins.Contains(msg.UserId) then
+            arg.QuickMessageReply( "已关闭加群")
+            allow <- false
+        else
+            arg.QuickMessageReply("朋友你不是狗管理")
+
+
+    override x.HandleRequest(args, e)=
+        match e with
         | Request.FriendRequest x ->
-            arg.SendResponse(FriendAddResponse(allow, ""))
+            args.SendResponse(FriendAddResponse(allow, ""))
         | Request.GroupRequest x ->
-           arg.SendResponse(GroupAddResponse(allow, ""))
+            args.SendResponse(GroupAddResponse(allow, ""))

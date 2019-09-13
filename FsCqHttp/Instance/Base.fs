@@ -43,33 +43,21 @@ type ClientEventArgs(api : ApiCallManager, context : string, data : Event.EventU
 
 [<AbstractClass>]
 type HandlerModuleBase() as x = 
-    let tryToOption (ret, v) = 
-        if ret then
-            Some(v)
-        else
-            None
 
     member val Logger = NLog.LogManager.GetLogger(x.GetType().Name)
-    static member SharedConfig = new Collections.Concurrent.ConcurrentDictionary<string, string>()
 
-    abstract MessageHandler : obj -> ClientEventArgs -> unit
-    abstract RequestHandler : obj -> ClientEventArgs -> unit
-    abstract  NoticeHandler : obj -> ClientEventArgs -> unit
+    abstract HandleMessage : ClientEventArgs * Event.Message.MessageEvent -> unit
+    abstract HandleRequest : ClientEventArgs * Event.Request.RequestEvent -> unit
+    abstract  HandleNotice : ClientEventArgs * Event.Notice.NoticeEvent   -> unit
 
-    default x.MessageHandler _ _ = ()
-    default x.RequestHandler _ _ = ()
-    default  x.NoticeHandler _ _ = ()
+    default x.HandleMessage(_,_)  = ()
+    default x.HandleRequest(_,_)  = ()
+    default x. HandleNotice(_,_)  = ()
 
-    /// 转换名称
-    member x.ToNicknameOrCard(msg : Event.Message.MessageEvent) = 
-        match msg with
-        | msg when msg.IsPrivate -> msg.Sender.NickName
-        | msg when msg.IsDiscuss -> msg.Sender.NickName
-        | msg when msg.IsGroup -> msg.Sender.Card
-        | _ -> failwithf ""
-
-    ///用于访问共享配置
-    member x.Item with get (k:string)   = 
-                        tryToOption <| HandlerModuleBase.SharedConfig.TryGetValue(k)
-                   and set k v =
-                        HandlerModuleBase.SharedConfig.AddOrUpdate(k,v,(fun x y -> v)) |> ignore
+    abstract  HandleCqHttpEvent : obj -> ClientEventArgs -> unit
+    default x.HandleCqHttpEvent _ args = 
+        match args.Data with
+        | Event.EventUnion.Message y -> x.HandleMessage(args, y)
+        | Event.EventUnion.Request y -> x.HandleRequest(args, y)
+        | Event.EventUnion.Notice  y -> x.HandleNotice(args, y)
+        | _ -> ()

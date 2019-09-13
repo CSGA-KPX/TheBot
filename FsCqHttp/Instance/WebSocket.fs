@@ -15,26 +15,16 @@ type CqWebSocketClient(url, token) =
     let utf8 = Text.Encoding.UTF8
     let logger = NLog.LogManager.GetCurrentClassLogger()
 
-    let msgEvent     = new Event<_>()
-    let noticeEvent  = new Event<_>()
-    let requestEvent = new Event<_>()
+    let  cqHttpEvent = new Event<_>()
 
     do
         ws.Options.SetRequestHeader("Authorization", sprintf "Bearer %s" token)
 
     [<CLIEvent>]
-    member x.MessageEvent = msgEvent.Publish
-
-    [<CLIEvent>]
-    member x.NoticeEvent = noticeEvent.Publish
-
-    [<CLIEvent>]
-    member x.RequestEvent = requestEvent.Publish
+    member x.OnCqHttpEvent = cqHttpEvent.Publish
 
     member x.RegisterModule(m : #HandlerModuleBase) =
-        x.MessageEvent.AddHandler(new Handler<_>(m.MessageHandler))
-        x. NoticeEvent.AddHandler(new Handler<_>(m. NoticeHandler))
-        x.RequestEvent.AddHandler(new Handler<_>(m.RequestHandler))
+        x. OnCqHttpEvent.AddHandler(new Handler<_>(m.HandleCqHttpEvent))
         
     member x.IsAvailable  = ws.State = WebSocketState.Open
 
@@ -51,16 +41,7 @@ type CqWebSocketClient(url, token) =
             logger.Trace("收到上报：{0}", json)
             let event = EventUnion.From(obj)
             let args  = new ClientEventArgs(man, json, event)
-            match obj.["post_type"].Value<string>() with
-            | "message" ->
-                logger.Info("收到消息上报：{0}", event.AsMessageEvent)
-                msgEvent.Trigger(args)
-            | "notice" ->
-                noticeEvent.Trigger(args)
-            | "request" -> 
-                requestEvent.Trigger(args)
-            | other ->
-                logger.Fatal("未知上报类型：{0}", other)
+            cqHttpEvent.Trigger(args)
         elif obj.ContainsKey("retcode") then
             //API调用结果
             logger.Trace("收到API调用结果：{0}", sprintf "%A" json)
@@ -88,15 +69,3 @@ type CqWebSocketClient(url, token) =
 
     member x.StopListen() =
         cts.Cancel()
-
-    (*
-    member x.CallApi<'T when 'T :> ApiBase.ApiRequestBase>(req : ApiBase.ApiRequestBase) =
-        logger.Info("Calling API")
-        man.Call<'T>(req)
-
-    member x.SendQuickResponse(context : string, r : KPX.FsCqHttp.DataType.Response.MessageResponse) =
-        if r <> Response.EmptyResponse then
-            let rep = new SystemApi.QuickOperation(context)
-            rep.Reply <- r
-            x.CallApi<SystemApi.QuickOperation>(rep) |> ignore
-    *)

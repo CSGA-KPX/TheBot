@@ -1,29 +1,29 @@
 ﻿module DiceModule
 open System
+open KPX.FsCqHttp.DataType.Event
 open KPX.FsCqHttp.Instance.Base
+open CommandHandlerBase
+open Utils
 
 type DiceModule() = 
-    inherit HandlerModuleBase()
+    inherit CommandHandlerBase()
 
-    override x.MessageHandler _ arg =
-        let msg = arg.Data.AsMessageEvent
-        let str = msg.Message.ToString()
-        let dicer = new Utils.Dicer(Utils.SeedOption.SeedByUserDay, msg)
-        match str.ToLowerInvariant() with
-        | s when s.StartsWith("#c") ->
-            //让每一个选项不同顺序的情况下都一样
-            dicer.AutoRefreshSeed <- false
-            let sw = new IO.StringWriter()
-            sw.WriteLine("选项 1d100")
-            let choices =
-                s.TrimEnd().Split(' ', StringSplitOptions.RemoveEmptyEntries).[1..]
-                |> Array.map (fun c ->
-                    (c, dicer.GetRandomFromString(c, 100u)))
-                |> Array.sortBy (fun (_, n) -> n)
-            for (c,n) in choices do 
-                sw.WriteLine("{0} {1}", c, n)
-            arg.QuickMessageReply(sw.ToString())
-        | s when s.StartsWith("#jrrp") -> 
-            let jrrp = dicer.GetRandom(100u)
-            arg.QuickMessageReply(sprintf "%s今日人品值是%i" (x.ToNicknameOrCard(msg)) jrrp)
-        | _ -> ()
+    [<MessageHandlerMethodAttribute("c", "对多个选项1d100", "A B C D")>]
+    member x.HandleChoices(str : string, arg : ClientEventArgs, msg : Message.MessageEvent) = 
+        let dicer = new Dicer(SeedOption.SeedByUserDay, msg, AutoRefreshSeed = false)
+        let sw = new IO.StringWriter()
+        sw.WriteLine("1d100 选项")
+        let choices =
+            str.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            |> Array.map (fun c ->
+                (c, dicer.GetRandomFromString(c, 100u)))
+            |> Array.sortBy (fun (_, n) -> n)
+        for (c,n) in choices do 
+            sw.WriteLine("  {0:000} {1}", n, c)
+        arg.QuickMessageReply(sw.ToString())
+
+    [<MessageHandlerMethodAttribute("jrrp", "今日人品值", "")>]
+    member x.HandleJrrp(str : string, arg : ClientEventArgs, msg : Message.MessageEvent) = 
+        let dicer = new Dicer(SeedOption.SeedByUserDay, msg)
+        let jrrp = dicer.GetRandom(100u)
+        arg.QuickMessageReply(sprintf "%s今日人品值是%i" msg.GetNicknameOrCard jrrp)

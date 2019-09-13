@@ -89,3 +89,11 @@ type MessageEvent =
     member x.IsGroup = x.MessageType = "group"
 
     member x.IsDiscuss = x.MessageType = "discuss"
+
+    /// 获取用户名称，如果是群消息则获取群名片
+    member x.GetNicknameOrCard = 
+        match x with
+        | x when x.IsPrivate -> x.Sender.NickName
+        | x when x.IsDiscuss -> x.Sender.NickName
+        | x when x.IsGroup   -> x.Sender.Card
+        | _ -> failwithf ""

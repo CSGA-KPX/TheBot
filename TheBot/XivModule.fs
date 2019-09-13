@@ -1,6 +1,7 @@
 ﻿module XivModule
 open System
-open KPX.FsCqHttp
+open CommandHandlerBase
+open KPX.FsCqHttp.DataType.Event.Message
 open KPX.FsCqHttp.Instance.Base
 open LibFFXIV.ClientData
 open LibXIVServer
@@ -121,7 +122,7 @@ module MentorUtils =
         |> Array.ofSeq
 
 type XivModule() = 
-    inherit HandlerModuleBase()
+    inherit CommandHandlerBase()
     let tradelog = new TradeLogV2.TradeLogDAO()
     let market   = new MarketV2.MarketOrderDAO()
     let rm       = Recipe.RecipeManager.GetInstance()
@@ -138,11 +139,12 @@ type XivModule() =
         else
             Item.LookupByName(str)
 
-    member private x.HandleTradelog(query : string) = 
+    [<MessageHandlerMethodAttribute("tradelog", "查询交易记录", "物品Id或全名...")>]
+    member x.HandleTradelog(str : string, arg : ClientEventArgs, msg : MessageEvent) = 
         let sw = new IO.StringWriter()
         sw.WriteLine("服务器：拉诺西亚")
         sw.WriteLine("名称 平均 低 中 高 更新时间")
-        for i in query.Split(' ').[1..] do 
+        for i in str.Split(' ').[1..] do 
             match strToItem(i) with
             | None -> sw.WriteLine("找不到物品{0}，请尝试#is {0}", i)
             | Some(i) ->
@@ -160,13 +162,14 @@ type XivModule() =
                     let avg  = o |> Array.averageBy (fun item -> item.Price |> float)
                     let upd  = ret.UpdateDate
                     sw.WriteLine("{0} {1} {2:n} {3:n} {4:n} {5}", i.Name, stdev, low, avg, high, upd)
-        sw.ToString()
+        arg.QuickMessageReply(sw.ToString())
 
-    member private x.HandleMarket(query : string) = 
+    [<MessageHandlerMethodAttribute("market", "查询市场订单", "物品Id或全名...")>]
+    member x.HandleMarket(str : string, arg : ClientEventArgs, msg : MessageEvent) = 
         let sw = new IO.StringWriter()
         sw.WriteLine("服务器：拉诺西亚")
         sw.WriteLine("名称 价格(前25%订单) 低 更新时间")
-        for i in query.Split(' ').[1..] do 
+        for i in str.Split(' ').[1..] do 
             match strToItem(i) with
             | None -> sw.WriteLine("找不到物品{0}，请尝试#is {0}", i)
             | Some(i) ->
@@ -182,12 +185,13 @@ type XivModule() =
                     let low  = o |> Array.map (fun item -> item.Price) |> Array.min
                     let upd  = ret.UpdateDate
                     sw.WriteLine("{0} {1} {2:n} {3}", i.Name, stdev, low, upd)
-        sw.ToString()
+        arg.QuickMessageReply(sw.ToString())
 
-    member private x.HandleItemSearch (query : string) = 
+    [<MessageHandlerMethodAttribute("is", "查找名字包含字符的物品", "关键词...")>]
+    member x.HandleItemSearch(str : string, arg : ClientEventArgs, msg : MessageEvent) = 
         let sw = new IO.StringWriter()
         sw.WriteLine("查询 物品 Id")
-        for i in query.Split(' ').[1..] do 
+        for i in str.Split(' ').[1..] do 
             let q = i.ToLowerInvariant()
             x.Logger.Trace("查询{0}", q)
             let ret = itemNames |> Array.filter (fun (n, _) -> n.Contains(q))
@@ -197,13 +201,14 @@ type XivModule() =
                 for r in ret do 
                     let item= (snd r)
                     sw.WriteLine("{0} {1} {2}", i, item.Name, item.Id)
-        sw.ToString()
+        arg.QuickMessageReply(sw.ToString())
 
-    member private x.HandleItemFinalRecipe (query : string) = 
+    [<MessageHandlerMethodAttribute("recipefinal", "查找物品最终材料", "物品Id或全名...")>]
+    member x.HandleItemFinalRecipe(str : string, arg : ClientEventArgs, msg : MessageEvent) = 
         let sw = new IO.StringWriter()
         sw.WriteLine("服务器：拉诺西亚")
         sw.WriteLine("查询 物品 价格(前25%订单) 需求 总价 更新时间")
-        for i in query.Split(' ').[1..] do 
+        for i in str.Split(' ').[1..] do 
             match strToItem(i) with
             | None -> sw.WriteLine("找不到物品{0}，请尝试#is {0}", i)
             | Some(i) ->
@@ -218,9 +223,10 @@ type XivModule() =
                         i, item.Name, price, count, total, ret.UpdateDate )
                 sw.WriteLine("{0} 总计 {1} -- -- --", i, sum)
                 sw.WriteLine()
-        sw.ToString()
+        arg.QuickMessageReply(sw.ToString())
 
-    member private x.HandleMentor(msg : DataType.Event.Message.MessageEvent) = 
+    [<MessageHandlerMethodAttribute("mentor", "今日导随运势", "")>]
+    member x.HandleMentor(str : string, arg : ClientEventArgs, msg : MessageEvent)= 
         let sw = new IO.StringWriter()
         let dicer = new Utils.Dicer(Utils.SeedOption.SeedByUserDay, msg)
 
@@ -232,7 +238,7 @@ type XivModule() =
             | x when x <= 95 -> MentorUtils.fortune.[3]
             | _              -> MentorUtils.fortune.[4]
         let event = dicer.GetRandomItem(events)
-        sw.WriteLine("{0} 今日导随运势为：", x.ToNicknameOrCard(msg))
+        sw.WriteLine("{0} 今日导随运势为：", msg.GetNicknameOrCard)
         sw.WriteLine("{0} : {1}", fortune, event)
 
         let s,a   = 
@@ -244,20 +250,4 @@ type XivModule() =
         let job = dicer.GetRandomItem(jobs)
         sw.WriteLine("推荐职业: {0} {1}", c, job)
         sw.WriteLine("推荐排本场所: {0}", dicer.GetRandomItem(MentorUtils.location).ToString())
-        sw.ToString()
-
-    override x.MessageHandler _ arg =
-        let str = arg.Data.AsMessageEvent.Message.ToString()
-        match str.ToLowerInvariant() with
-        | s when s.StartsWith("#tradelog") -> 
-            arg.QuickMessageReply(x.HandleTradelog(s))
-        | s when s.StartsWith("#market") -> 
-            arg.QuickMessageReply(x.HandleMarket(s))
-        | s when s.StartsWith("#is") -> 
-            arg.QuickMessageReply(x.HandleItemSearch(s))
-        | s when s.StartsWith("#recipefinal") -> 
-            arg.QuickMessageReply(x.HandleItemFinalRecipe(s))
-        | s when s.StartsWith("#mentor") -> 
-            arg.QuickMessageReply(x.HandleMentor(arg.Data.AsMessageEvent))
-        | _ -> ()
-
+        arg.QuickMessageReply(sw.ToString())

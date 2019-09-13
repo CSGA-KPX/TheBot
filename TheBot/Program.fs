@@ -32,9 +32,9 @@ type AuthToken(secret : string) as x =
 [<EntryPoint>]
 let main argv =
     let client = new CqWebSocketClient(new Uri(accessUrl), token)
-    client.RegisterModule(new SudoModule.SudoModule())
-    client.RegisterModule(new XivModule.XivModule())
-    client.RegisterModule(new DiceModule.DiceModule())
+    for m in CommandHandlerBase.CommandHandlerBase.AllDefinedModules do 
+        logger.Info("正在注册模块{0}", m.GetType().FullName)
+        client.RegisterModule(m)
     client.Connect()
     client.StartListen()
 

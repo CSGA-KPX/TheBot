@@ -7,9 +7,11 @@
 
   <ItemGroup>
     <Compile Include="Utils.fs" />
+    <Compile Include="CommandHandlerBase.fs" />
     <Compile Include="DiceModule.fs" />
     <Compile Include="SudoModule.fs" />
     <Compile Include="XivModule.fs" />
+    <Compile Include="TestModule.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 

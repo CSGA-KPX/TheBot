@@ -1,0 +1,78 @@
+﻿module CommandHandlerBase
+open System
+open System.Reflection
+open KPX.FsCqHttp.DataType.Event
+open KPX.FsCqHttp.Instance.Base
+
+(*
+TODO:
+    把属性定义改为Class
+    每个命令都定义在Class中
+    又一个单独的HelpTextClass用反射从Assembly中拉数据帮助文本
+
+*)
+
+[<AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = true)>]
+type MessageHandlerMethodAttribute(command : string, desc, args) = 
+    inherit Attribute()
+    member val Command  : string = "#" + command.ToLowerInvariant()
+    member val HelpDesc : string = desc
+    member val HelpArgs : string = args
+
+[<AbstractClass>]
+type CommandHandlerBase() as x = 
+    inherit HandlerModuleBase()
+
+    static let allDefinedModules =
+        Reflection.Assembly.GetExecutingAssembly().GetTypes()
+        |> Array.filter(fun t -> 
+            t.IsSubclassOf(typeof<CommandHandlerBase>) &&
+                (not <| t.IsAbstract))
+        |> Array.map (fun t ->
+            Activator.CreateInstance(t) :?> CommandHandlerBase)
+
+    static member AllDefinedModules = allDefinedModules
+
+    member val Commands =
+        [|
+            for method in x.GetType().GetMethods() do 
+                let ret = method.GetCustomAttributes(typeof<MessageHandlerMethodAttribute>, true)
+                for attrib in ret do 
+                    let attrib = attrib :?> MessageHandlerMethodAttribute
+                    yield attrib, method
+        |]
+
+    override x.HandleMessage(args, msgEvent) = 
+        let msgStr = msgEvent.Message.ToString()
+        let msgLower = msgStr.ToLower()
+        let matched = 
+            x.Commands
+            |> Array.filter (fun (a, _) ->
+                msgLower.StartsWith(a.Command)
+            )
+        for (attrib, method) in matched do 
+            //get string without command
+            let substr = msgStr.[attrib.Command.Length ..]
+            x.Logger.Info("Calling handler {0}", method.Name)
+            method.Invoke(x, [|substr; args; msgEvent|]) |> ignore
+
+   
+
+
+type HelpModule() = 
+    inherit CommandHandlerBase()
+
+    [<MessageHandlerMethodAttribute("help", "显示已知命令的文档", "")>]
+    member x.HandleHelp(str : string, arg : ClientEventArgs, msg : Message.MessageEvent) = 
+        let attribs = 
+            [|
+                for t in CommandHandlerBase.AllDefinedModules do 
+                    yield t.GetType().Name, (t.Commands)
+            |]
+
+        let sw = new IO.StringWriter()
+        for (m, cmds) in attribs do 
+            sw.WriteLine("模块：{0}", m)
+            for (attrib,_) in cmds do
+                sw.WriteLine("\t {0} {1} : {2}", attrib.Command, attrib.HelpArgs, attrib.HelpDesc)
+        arg.QuickMessageReply(sw.ToString())
