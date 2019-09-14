@@ -4,10 +4,11 @@ open CommandHandlerBase
 open KPX.FsCqHttp.DataType.Event.Message
 open KPX.FsCqHttp.Instance.Base
 open LibFFXIV.ClientData
-open LibXIVServer
+open LibDmfXiv
+open LibDmfXiv.Client
 
 module MarketUtils = 
-    let internal TakeMarketSample (samples : LibXIVServer.MarketV2.ServerMarkerOrder [] , cutPct : int) = 
+    let internal TakeMarketSample (samples : Shared.MarketOrder.FableMarketOrder [] , cutPct : int) = 
         [|
             //(price, count)
             let samples = samples |> Array.sortBy (fun x -> x.Price)
@@ -58,7 +59,7 @@ module MarketUtils =
             let ev  = sum / (float data.Length)
             { Average = avg; Deviation = sqrt ev }
 
-    let GetStdEvMarket(market : LibXIVServer.MarketV2.ServerMarkerOrder [] , cutPct : int) = 
+    let GetStdEvMarket(market : Shared.MarketOrder.FableMarketOrder [] , cutPct : int) = 
         let samples = TakeMarketSample(market, cutPct)
         let itemCount = samples |> Array.sumBy (fun (a, b) -> (float) b)
         let average = 
@@ -70,7 +71,7 @@ module MarketUtils =
         let ev  = sum / itemCount
         { Average = average; Deviation = sqrt ev }
 
-    let GetStdEvTrade(tradelog : LibXIVServer.TradeLogV2.ServerTradeLog []) = 
+    let GetStdEvTrade(tradelog : Shared.TradeLog.FableTradeLog []) = 
         let samples = tradelog |> Array.map (fun x -> (x.Price, x.Count))
         let itemCount = samples |> Array.sumBy (fun (a, b) -> (float) b)
         let average = 
@@ -123,8 +124,6 @@ module MentorUtils =
 
 type XivModule() = 
     inherit CommandHandlerBase()
-    let tradelog = new TradeLogV2.TradeLogDAO()
-    let market   = new MarketV2.MarketOrderDAO()
     let rm       = Recipe.RecipeManager.GetInstance()
     let cutoff   = 25
     let itemNames= Item.AllItems.Value |> Array.map (fun x -> (x.Name.ToLowerInvariant(), x))
@@ -148,20 +147,25 @@ type XivModule() =
             match strToItem(i) with
             | None -> sw.WriteLine("找不到物品{0}，请尝试#is {0}", i)
             | Some(i) ->
-                let ret = tradelog.Get(i.Id |> uint32)
+                let ret = 
+                    let itemId = i.Id |> uint32
+                    async {
+                        return! TradeLog.TradelogProxy.callSafely <@ fun server -> server.GetByIdWorld 1042us itemId 20 @>
+                    } |> Async.RunSynchronously
                 match ret with
-                | _ when ret.Record.IsNone ->
-                    sw.WriteLine("{0} 服务器处理失败，请稍后重试", i.Name)
-                | _ when ret.Record.Value.Length = 0 ->
+                | Ok logs when logs.Length = 0 ->
                     sw.WriteLine("{0} 无记录", i.Name)
-                | _ ->
-                    let o = ret.Record.Value
+                | Ok o ->
                     let stdev= MarketUtils.GetStdEvTrade(o)
                     let low  = o |> Array.map (fun item -> item.Price) |> Array.min
                     let high = o |> Array.map (fun item -> item.Price) |> Array.max
                     let avg  = o |> Array.averageBy (fun item -> item.Price |> float)
-                    let upd  = ret.UpdateDate
-                    sw.WriteLine("{0} {1} {2:n} {3:n} {4:n} {5}", i.Name, stdev, low, avg, high, upd)
+                    let upd  = 
+                        let max = o |> Array.maxBy (fun item -> item.TimeStamp)
+                        max.GetHumanReadableTimeSpan()
+                    sw.WriteLine("{0} {1} {2:n0} {3:n0} {4:n0} {5}", i.Name, stdev, low, avg, high, upd)
+                | Error err ->
+                    sw.WriteLine("{0} 服务器处理失败，请稍后重试", i.Name)
         arg.QuickMessageReply(sw.ToString())
 
     [<MessageHandlerMethodAttribute("market", "查询市场订单", "物品Id或全名...")>]
@@ -173,18 +177,82 @@ type XivModule() =
             match strToItem(i) with
             | None -> sw.WriteLine("找不到物品{0}，请尝试#is {0}", i)
             | Some(i) ->
-                let ret = market.Get(i.Id |> uint32)
+                let ret =
+                    let itemId = i.Id |> uint32
+                    async {
+                        return! MarketOrder.MarketOrderProxy.callSafely <@ fun server -> server.GetByIdWorld 1042us itemId @>
+                    } |> Async.RunSynchronously
                 match ret with
-                | _ when ret.Record.IsNone ->
-                    sw.WriteLine("{0} 服务器处理失败，请稍后重试", i.Name)
-                | _ when ret.Record.Value.Length = 0 ->
+                | Ok x when x.Orders.Length = 0 ->
                     sw.WriteLine("{0} 无记录", i.Name)
-                | _ ->
-                    let o    = ret.Record.Value
+                | Ok ret ->
+                    let o = ret.Orders
                     let stdev= MarketUtils.GetStdEvMarket(o, 25)
                     let low  = o |> Array.map (fun item -> item.Price) |> Array.min
-                    let upd  = ret.UpdateDate
-                    sw.WriteLine("{0} {1} {2:n} {3}", i.Name, stdev, low, upd)
+                    let upd  = ret.GetHumanReadableTimeSpan()
+                    sw.WriteLine("{0} {1} {2:n0} {3}", i.Name, stdev, low, upd)
+                | Error err ->
+                    sw.WriteLine("{0} 服务器处理失败，请稍后重试", i.Name)
+        arg.QuickMessageReply(sw.ToString())
+    
+    [<MessageHandlerMethodAttribute("alltradelog", "查询全服交易记录", "物品Id或全名...")>]
+    member x.HandleTradelogCrossWorld(str : string, arg : ClientEventArgs, msg : MessageEvent) = 
+        let sw = new IO.StringWriter()
+        sw.WriteLine("名称 土豆 平均 低 中 高 最后成交")
+        for i in str.Split(' ').[1..] do 
+            match strToItem(i) with
+            | None -> sw.WriteLine("找不到物品{0}，请尝试#is {0}", i)
+            | Some(i) ->
+                let ret = 
+                    let itemId = i.Id |> uint32
+                    async {
+                        return! TradeLog.TradelogProxy.callSafely <@ fun server -> server.GetByIdAllWorld itemId 20 @>
+                    } |> Async.RunSynchronously
+                match ret with
+                | Ok logs when logs.Length = 0 ->
+                    sw.WriteLine("{0} 无记录", i.Name)
+                | Ok all ->
+                    let grouped = all |> Array.groupBy (fun x -> x.WorldId)
+                    for worldId, o in grouped do 
+                        let stdev= MarketUtils.GetStdEvTrade(o)
+                        let world = LibFFXIV.ClientData.World.WorldFromId.[worldId]
+                        let low  = o |> Array.map (fun item -> item.Price) |> Array.min
+                        let high = o |> Array.map (fun item -> item.Price) |> Array.max
+                        let avg  = o |> Array.averageBy (fun item -> item.Price |> float)
+                        let upd  = 
+                            let max = o |> Array.maxBy (fun item -> item.TimeStamp)
+                            max.GetHumanReadableTimeSpan()
+                        sw.WriteLine("{0} {1} {2} {3:n0} {4:n0} {5:n0} {6}", i.Name, world.WorldName,  stdev, low, avg, high, upd)
+                | Error err ->
+                    sw.WriteLine("{0} 服务器处理失败，请稍后重试", i.Name)
+        arg.QuickMessageReply(sw.ToString())
+
+    [<MessageHandlerMethodAttribute("allmarket", "查询全服市场订单", "物品Id或全名...")>]
+    member x.HandleMarketCrossWorld(str : string, arg : ClientEventArgs, msg : MessageEvent) =  
+        let sw = new IO.StringWriter()
+        sw.WriteLine("名称 土豆 价格(前25%订单) 低 更新时间")
+        for i in str.Split(' ').[1..] do 
+            match strToItem(i) with
+            | None -> sw.WriteLine("找不到物品{0}，请尝试#is {0}", i)
+            | Some(i) ->
+                let ret =
+                    let itemId = i.Id |> uint32
+                    async {
+                        return! MarketOrder.MarketOrderProxy.callSafely <@ fun server -> server.GetByIdAllWorld itemId @>
+                    } |> Async.RunSynchronously
+                match ret with
+                | Ok ret when ret.Length = 0 ->
+                     sw.WriteLine("{0} 无记录", i.Name)
+                | Ok ret ->
+                    for r in ret do 
+                        let server  = LibFFXIV.ClientData.World.WorldFromId.[r.WorldId]
+                        let o = r.Orders
+                        let stdev= MarketUtils.GetStdEvMarket(o, 25)
+                        let low  = o |> Array.map (fun item -> item.Price) |> Array.min
+                        let upd  = r.GetHumanReadableTimeSpan()
+                        sw.WriteLine("{0} {1} {2} {3:n0} {4}", i.Name, server.WorldName,  stdev, low, upd)
+                | Error err ->
+                    sw.WriteLine("{0} 服务器处理失败，请稍后重试", i.Name)
         arg.QuickMessageReply(sw.ToString())
 
     [<MessageHandlerMethodAttribute("is", "查找名字包含字符的物品", "关键词...")>]
@@ -215,12 +283,16 @@ type XivModule() =
                 let recipe = rm.GetMaterialsRec(i)
                 let mutable sum = MarketUtils.StdEv.Zero
                 for (item, count) in recipe do 
-                    let ret = market.Get(item.Id |> uint32)
-                    let price = MarketUtils.GetStdEvMarket(ret.Record.Value, cutoff)
+                    let ret = 
+                        let itemId = item.Id |> uint32
+                        async {
+                            return! MarketOrder.MarketOrderProxy.call <@ fun server -> server.GetByIdWorld 1042us itemId @>
+                        } |> Async.RunSynchronously
+                    let price = MarketUtils.GetStdEvMarket(ret.Orders, cutoff)
                     let total = price * count
                     sum <- sum + total
-                    sw.WriteLine("{0} {1} {2} {3} {4} {5}",
-                        i, item.Name, price, count, total, ret.UpdateDate )
+                    sw.WriteLine("{0} {1} {2:n0} {3:n0} {4:n0} {5}",
+                        i, item.Name, price, count, total, ret.GetHumanReadableTimeSpan() )
                 sw.WriteLine("{0} 总计 {1} -- -- --", i, sum)
                 sw.WriteLine()
         arg.QuickMessageReply(sw.ToString())

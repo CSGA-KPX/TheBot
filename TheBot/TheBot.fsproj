@@ -16,6 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Fable.Remoting.DotnetClient" Version="2.6.0" />
     <PackageReference Include="Mono.Posix.NETStandard" Version="1.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
     <PackageReference Include="NLog.Config" Version="4.6.7" />
@@ -24,9 +25,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\FsCqHttp\FsCqHttp.fsproj" />
+    <ProjectReference Include="K:\KPX\Documents\Visual Studio 2017\Projects\FFXIVNetwork\LibDmfXivClient\LibDmfXivClient.fsproj" />
     <ProjectReference Include="K:\KPX\Documents\Visual Studio 2017\Projects\FFXIVNetwork\LibFFXIV.ClientData\LibFFXIV.ClientData.fsproj" />
     <ProjectReference Include="K:\KPX\Documents\Visual Studio 2017\Projects\FFXIVNetwork\LibFFXIV\LibFFXIV.Network.fsproj" />
-    <ProjectReference Include="K:\KPX\Documents\Visual Studio 2017\Projects\FFXIVNetwork\LibXIVDMF\LibXIVServer.fsproj" />
+    <ProjectReference Include="K:\KPX\Documents\Visual Studio 2017\Projects\FFXIVNetwork\LibXIVServerFable\LibDmfXivShared.fsproj" />
   </ItemGroup>
 
 </Project>
