@@ -15,9 +15,32 @@ TODO:
 [<AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = true)>]
 type MessageHandlerMethodAttribute(command : string, desc, args) = 
     inherit Attribute()
-    member val Command  : string = "#" + command.ToLowerInvariant()
+    member val Command  : string = MessageHandlerMethodAttribute.CommandStart + command.ToLowerInvariant()
     member val HelpDesc : string = desc
     member val HelpArgs : string = args
+
+    static member CommandStart = "#"
+
+type CommandArgs(msg : Message.MessageEvent, cqArg : ClientEventArgs) = 
+    let rawMsg  = msg.Message.ToString()
+    let cmdLine = rawMsg.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+    let isCmd   = rawMsg.StartsWith(MessageHandlerMethodAttribute.CommandStart)
+
+    member val MessageEvent = msg
+    member val CqEventArgs  = cqArg
+    member val RawMessage = rawMsg
+    member val CommandLine = cmdLine
+    member val Command : string option =    
+        if isCmd then
+            Some(cmdLine.[0].ToLowerInvariant())
+        else
+            None
+
+    member val Arguments    = 
+        [|
+            if isCmd then
+                yield! cmdLine.[1..]
+        |]
 
 [<AbstractClass>]
 type CommandHandlerBase() as x = 
@@ -43,27 +66,23 @@ type CommandHandlerBase() as x =
         |]
 
     override x.HandleMessage(args, msgEvent) = 
-        let msgStr = msgEvent.Message.ToString()
-        let msgLower = msgStr.ToLower()
-        let matched = 
-            x.Commands
-            |> Array.filter (fun (a, _) ->
-                msgLower.StartsWith(a.Command)
-            )
-        for (attrib, method) in matched do 
-            //get string without command
-            let substr = msgStr.[attrib.Command.Length ..]
-            x.Logger.Info("Calling handler {0}", method.Name)
-            method.Invoke(x, [|substr; args; msgEvent|]) |> ignore
-
-   
-
+        let msgArg = new CommandArgs(msgEvent, args)
+        if msgArg.Command.IsSome then
+            let matched = 
+                x.Commands
+                |> Array.filter (fun (a, _) ->
+                    msgArg.Command.Value = a.Command
+                )
+            for (_, method) in matched do 
+                let msgArg = new CommandArgs(msgEvent, args)
+                x.Logger.Info("Calling handler {0}", method.Name)
+                method.Invoke(x, [|msgArg|]) |> ignore
 
 type HelpModule() = 
     inherit CommandHandlerBase()
 
     [<MessageHandlerMethodAttribute("help", "显示已知命令的文档", "")>]
-    member x.HandleHelp(str : string, arg : ClientEventArgs, msg : Message.MessageEvent) = 
+    member x.HandleHelp(msgArg : CommandArgs) = 
         let attribs = 
             [|
                 for t in CommandHandlerBase.AllDefinedModules do 
@@ -75,4 +94,4 @@ type HelpModule() =
             sw.WriteLine("模块：{0}", m)
             for (attrib,_) in cmds do
                 sw.WriteLine("\t {0} {1} : {2}", attrib.Command, attrib.HelpArgs, attrib.HelpDesc)
-        arg.QuickMessageReply(sw.ToString())
+        msgArg.CqEventArgs.QuickMessageReply(sw.ToString())

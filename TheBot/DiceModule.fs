@@ -9,21 +9,21 @@ type DiceModule() =
     inherit CommandHandlerBase()
 
     [<MessageHandlerMethodAttribute("c", "对多个选项1d100", "A B C D")>]
-    member x.HandleChoices(str : string, arg : ClientEventArgs, msg : Message.MessageEvent) = 
-        let dicer = new Dicer(SeedOption.SeedByUserDay, msg, AutoRefreshSeed = false)
+    member x.HandleChoices(msgArg : CommandArgs) = 
+        let dicer = new Dicer(SeedOption.SeedByUserDay, msgArg.MessageEvent, AutoRefreshSeed = false)
         let sw = new IO.StringWriter()
         sw.WriteLine("1d100 选项")
         let choices =
-            str.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            msgArg.Arguments
             |> Array.map (fun c ->
                 (c, dicer.GetRandomFromString(c, 100u)))
             |> Array.sortBy (fun (_, n) -> n)
         for (c,n) in choices do 
             sw.WriteLine("  {0:000} {1}", n, c)
-        arg.QuickMessageReply(sw.ToString())
+        msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
 
     [<MessageHandlerMethodAttribute("jrrp", "今日人品值", "")>]
-    member x.HandleJrrp(str : string, arg : ClientEventArgs, msg : Message.MessageEvent) = 
-        let dicer = new Dicer(SeedOption.SeedByUserDay, msg)
+    member x.HandleJrrp(msgArg : CommandArgs) = 
+        let dicer = new Dicer(SeedOption.SeedByUserDay, msgArg.MessageEvent)
         let jrrp = dicer.GetRandom(100u)
-        arg.QuickMessageReply(sprintf "%s今日人品值是%i" msg.GetNicknameOrCard jrrp)
+        msgArg.CqEventArgs.QuickMessageReply(sprintf "%s今日人品值是%i" msgArg.MessageEvent.GetNicknameOrCard jrrp)
