@@ -122,6 +122,32 @@ module MentorUtils =
         |> Seq.distinctBy (fun x -> x.ToString())
         |> Array.ofSeq
 
+module CommandUtils =
+    /// 拉诺西亚
+    let defaultServer = LibFFXIV.ClientData.World.WorldFromId.[1042us]
+
+    /// 扫描参数，查找第一个服务器名
+    /// 如果没找到，返回None
+    let tryGetWorld (a : string []) = 
+        let (w, args) =
+            a
+            |> Array.partition (fun x -> World.WorldFromName.ContainsKey(x))
+
+        let world = 
+            if w.Length = 0 then
+                None
+            else
+                Some World.WorldFromName.[ w.[0] ]
+
+        world, args
+
+    /// 扫描参数，查找第一个服务器名
+    /// 成功返回 true 服务器，失败返回 false 默认服务器
+    let GetWorldWithDefault (a : string []) =
+        match tryGetWorld(a) with
+        | Some x, args -> (true, x, args)
+        | None , args-> (false, defaultServer, args)
+
 type XivModule() = 
     inherit CommandHandlerBase()
     let rm       = Recipe.RecipeManager.GetInstance()
@@ -141,16 +167,21 @@ type XivModule() =
     [<MessageHandlerMethodAttribute("tradelog", "查询交易记录", "物品Id或全名...")>]
     member x.HandleTradelog(msgArg : CommandArgs) = 
         let sw = new IO.StringWriter()
-        sw.WriteLine("服务器：拉诺西亚")
+        let (succ, world, args) = CommandUtils.GetWorldWithDefault(msgArg.Arguments)
+        if succ then
+            sw.WriteLine("服务器：{0}", world.WorldName)
+        else
+            sw.WriteLine("默认服务器：{0}", world.WorldName)
         sw.WriteLine("名称 平均 低 中 高 更新时间")
-        for i in msgArg.Arguments do 
+        for i in args do 
             match strToItem(i) with
             | None -> sw.WriteLine("找不到物品{0}，请尝试#is {0}", i)
             | Some(i) ->
                 let ret = 
                     let itemId = i.Id |> uint32
                     async {
-                        return! TradeLog.TradelogProxy.callSafely <@ fun server -> server.GetByIdWorld 1042us itemId 20 @>
+                        let worldId = world.WorldId // 必须在代码引用之外处理为简单类型
+                        return! TradeLog.TradelogProxy.callSafely <@ fun server -> server.GetByIdWorld worldId itemId 20 @>
                     } |> Async.RunSynchronously
                 match ret with
                 | Ok logs when logs.Length = 0 ->
@@ -171,16 +202,21 @@ type XivModule() =
     [<MessageHandlerMethodAttribute("market", "查询市场订单", "物品Id或全名...")>]
     member x.HandleMarket(msgArg : CommandArgs) = 
         let sw = new IO.StringWriter()
-        sw.WriteLine("服务器：拉诺西亚")
+        let (succ, world, args) = CommandUtils.GetWorldWithDefault(msgArg.Arguments)
+        if succ then
+            sw.WriteLine("服务器：{0}", world.WorldName)
+        else
+            sw.WriteLine("默认服务器：{0}", world.WorldName)
         sw.WriteLine("名称 价格(前25%订单) 低 更新时间")
-        for i in msgArg.Arguments do 
+        for i in args do 
             match strToItem(i) with
             | None -> sw.WriteLine("找不到物品{0}，请尝试#is {0}", i)
             | Some(i) ->
                 let ret =
                     let itemId = i.Id |> uint32
                     async {
-                        return! MarketOrder.MarketOrderProxy.callSafely <@ fun server -> server.GetByIdWorld 1042us itemId @>
+                        let worldId = world.WorldId // 必须在代码引用之外处理为简单类型
+                        return! MarketOrder.MarketOrderProxy.callSafely <@ fun server -> server.GetByIdWorld worldId itemId @>
                     } |> Async.RunSynchronously
                 match ret with
                 | Ok x when x.Orders.Length = 0 ->
@@ -271,12 +307,36 @@ type XivModule() =
                     sw.WriteLine("{0} {1} {2}", i, item.Name, item.Id)
         msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
 
+    [<MessageHandlerMethodAttribute("recipesum", "查找多个物品的材料，不查询价格", "物品Id或全名...")>]
+    member x.HandleRecipeSum(msgArg : CommandArgs) = 
+        let sw = new IO.StringWriter()
+        let sumer = new LibFFXIV.ClientData.Recipe.FinalMaterials()
+
+        for i in msgArg.Arguments do 
+            match strToItem(i) with
+            | None -> sw.WriteLine("找不到物品{0}，请尝试#is {0}", i)
+            | Some(i) ->
+                let recipe = rm.GetMaterialsOne(i)
+                if recipe.Length = 0 then
+                    sw.WriteLine("{0} 没有生产配方", i.Name)
+                else
+                    recipe
+                    |> Array.iter (fun (item, count) -> sumer.AddOrUpdate(item, count |> float))
+        sw.WriteLine("物品 数量")
+        for (i, c) in sumer.Get() |> Array.sortBy (fun (item,_) -> item.Id) do
+            sw.WriteLine("{0} {1}", i.Name, c)
+        msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
+
     [<MessageHandlerMethodAttribute("recipefinal", "查找物品最终材料", "物品Id或全名...")>]
     member x.HandleItemFinalRecipe(msgArg : CommandArgs) = 
         let sw = new IO.StringWriter()
-        sw.WriteLine("服务器：拉诺西亚")
+        let (succ, world, args) = CommandUtils.GetWorldWithDefault(msgArg.Arguments)
+        if succ then
+            sw.WriteLine("服务器：{0}", world.WorldName)
+        else
+            sw.WriteLine("默认服务器：{0}", world.WorldName)
         sw.WriteLine("查询 物品 价格(前25%订单) 需求 总价 更新时间")
-        for i in msgArg.Arguments do 
+        for i in args do 
             match strToItem(i) with
             | None -> sw.WriteLine("找不到物品{0}，请尝试#is {0}", i)
             | Some(i) ->
@@ -286,7 +346,8 @@ type XivModule() =
                     let ret = 
                         let itemId = item.Id |> uint32
                         async {
-                            return! MarketOrder.MarketOrderProxy.call <@ fun server -> server.GetByIdWorld 1042us itemId @>
+                            let worldId = world.WorldId
+                            return! MarketOrder.MarketOrderProxy.call <@ fun server -> server.GetByIdWorld worldId itemId @>
                         } |> Async.RunSynchronously
                     let price = MarketUtils.GetStdEvMarket(ret.Orders, cutoff)
                     let total = price * count
