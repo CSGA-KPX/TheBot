@@ -1,21 +1,12 @@
-﻿module CommandHandlerBase
+﻿namespace KPX.FsCqHttp.Handler.CommandHandlerBase
 open System
-open System.Reflection
 open KPX.FsCqHttp.DataType.Event
-open KPX.FsCqHttp.Instance.Base
-
-(*
-TODO:
-    把属性定义改为Class
-    每个命令都定义在Class中
-    又一个单独的HelpTextClass用反射从Assembly中拉数据帮助文本
-
-*)
+open KPX.FsCqHttp.Handler.Base
 
 [<AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = true)>]
-type MessageHandlerMethodAttribute(command : string, desc, args) = 
+type CommandHandlerMethodAttribute(command : string, desc, args) = 
     inherit Attribute()
-    member val Command  : string = MessageHandlerMethodAttribute.CommandStart + command.ToLowerInvariant()
+    member val Command  : string = CommandHandlerMethodAttribute.CommandStart + command.ToLowerInvariant()
     member val HelpDesc : string = desc
     member val HelpArgs : string = args
 
@@ -23,8 +14,8 @@ type MessageHandlerMethodAttribute(command : string, desc, args) =
 
 type CommandArgs(msg : Message.MessageEvent, cqArg : ClientEventArgs) = 
     let rawMsg  = msg.Message.ToString()
-    let cmdLine = rawMsg.Split(' ', StringSplitOptions.RemoveEmptyEntries)
-    let isCmd   = rawMsg.StartsWith(MessageHandlerMethodAttribute.CommandStart)
+    let cmdLine = rawMsg.Split([|' '|], StringSplitOptions.RemoveEmptyEntries)
+    let isCmd   = rawMsg.StartsWith(CommandHandlerMethodAttribute.CommandStart)
 
     member val MessageEvent = msg
     member val CqEventArgs  = cqArg
@@ -47,7 +38,11 @@ type CommandHandlerBase() as x =
     inherit HandlerModuleBase()
 
     static let allDefinedModules =
-        Reflection.Assembly.GetExecutingAssembly().GetTypes()
+        [|
+            yield! Reflection.Assembly.GetExecutingAssembly().GetTypes()
+            yield! Reflection.Assembly.GetEntryAssembly().GetTypes()
+        |]
+        
         |> Array.filter(fun t -> 
             t.IsSubclassOf(typeof<CommandHandlerBase>) &&
                 (not <| t.IsAbstract))
@@ -59,9 +54,9 @@ type CommandHandlerBase() as x =
     member val Commands =
         [|
             for method in x.GetType().GetMethods() do 
-                let ret = method.GetCustomAttributes(typeof<MessageHandlerMethodAttribute>, true)
+                let ret = method.GetCustomAttributes(typeof<CommandHandlerMethodAttribute>, true)
                 for attrib in ret do 
-                    let attrib = attrib :?> MessageHandlerMethodAttribute
+                    let attrib = attrib :?> CommandHandlerMethodAttribute
                     yield attrib, method
         |]
 
@@ -81,7 +76,7 @@ type CommandHandlerBase() as x =
 type HelpModule() = 
     inherit CommandHandlerBase()
 
-    [<MessageHandlerMethodAttribute("help", "显示已知命令的文档", "")>]
+    [<CommandHandlerMethodAttribute("help", "显示已知命令的文档", "")>]
     member x.HandleHelp(msgArg : CommandArgs) = 
         let attribs = 
             [|

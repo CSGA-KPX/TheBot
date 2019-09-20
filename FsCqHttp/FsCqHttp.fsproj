@@ -6,7 +6,7 @@
 
   <ItemGroup>
     <Compile Include="DateType\Message.fs" />
-    <Compile Include="DateType\MessageResponse.fs" />
+    <Compile Include="DateType\EventResponse.fs" />
     <Compile Include="DateType\ApiResponse.fs" />
     <Compile Include="DateType\Event\NoticeEvent.fs" />
     <Compile Include="DateType\Event\MesssageEvent.fs" />
@@ -16,7 +16,8 @@
     <Compile Include="Api\ApiBase.fs" />
     <Compile Include="Api\ApiCallManager.fs" />
     <Compile Include="Api\SystemApi.fs" />
-    <Compile Include="Instance\Base.fs" />
+    <Compile Include="Handler\HandlerBase.fs" />
+    <Compile Include="Handler\CommandHandlerBase.fs" />
     <Compile Include="Instance\WebSocket.fs" />
   </ItemGroup>
 

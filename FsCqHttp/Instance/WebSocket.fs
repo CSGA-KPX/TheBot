@@ -4,7 +4,7 @@ open System.Threading
 open System.Net.WebSockets
 open KPX.FsCqHttp.DataType
 open KPX.FsCqHttp.Api
-open KPX.FsCqHttp.Instance.Base
+open KPX.FsCqHttp.Handler.Base
 open KPX.FsCqHttp.DataType.Event
 open Newtonsoft.Json.Linq
 
@@ -34,6 +34,7 @@ type CqWebSocketClient(url, token) =
             ws.ConnectAsync(url, cts.Token)
             |> Async.AwaitTask
             |> Async.RunSynchronously
+            logger.Info("已连接Websocket")
 
     member private x.HandleMessage(json : string) = 
         let obj = JObject.Parse(json)

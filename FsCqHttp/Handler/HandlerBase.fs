@@ -1,6 +1,5 @@
-﻿namespace KPX.FsCqHttp.Instance.Base
+﻿namespace KPX.FsCqHttp.Handler.Base
 open System
-open System.Reflection
 open KPX.FsCqHttp.DataType
 open KPX.FsCqHttp.Api
 
@@ -22,7 +21,7 @@ type ClientEventArgs(api : ApiCallManager, context : string, data : Event.EventU
         let req = Activator.CreateInstance<'T>()
         x.CallApi<'T>(req)
 
-    member x.SendResponse(r : Response.MessageResponse) =
+    member x.SendResponse(r : Response.EventResponse) =
         if r <> Response.EmptyResponse then
             let rep = new SystemApi.QuickOperation(context)
             rep.Reply <- r
@@ -31,6 +30,8 @@ type ClientEventArgs(api : ApiCallManager, context : string, data : Event.EventU
     member x.QuickMessageReply(msg : string, ?atUser : bool) = 
         let atUser = defaultArg atUser false
         match data with
+        | Event.EventUnion.Message ctx when msg.Length >= 3000 ->
+            x.QuickMessageReply("字数太多了，请优化命令或者向管理员汇报bug", true)
         | Event.EventUnion.Message ctx ->
             let msg = Message.Message.TextMessage(msg)
             match ctx with

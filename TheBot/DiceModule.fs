@@ -1,14 +1,12 @@
 ﻿module DiceModule
 open System
-open KPX.FsCqHttp.DataType.Event
-open KPX.FsCqHttp.Instance.Base
-open CommandHandlerBase
+open KPX.FsCqHttp.Handler.CommandHandlerBase
 open Utils
 
 type DiceModule() = 
     inherit CommandHandlerBase()
 
-    [<MessageHandlerMethodAttribute("c", "对多个选项1d100", "A B C D")>]
+    [<CommandHandlerMethodAttribute("c", "对多个选项1d100", "A B C D")>]
     member x.HandleChoices(msgArg : CommandArgs) = 
         let dicer = new Dicer(SeedOption.SeedByUserDay, msgArg.MessageEvent, AutoRefreshSeed = false)
         let sw = new IO.StringWriter()
@@ -22,7 +20,7 @@ type DiceModule() =
             sw.WriteLine("  {0:000} {1}", n, c)
         msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
 
-    [<MessageHandlerMethodAttribute("jrrp", "今日人品值", "")>]
+    [<CommandHandlerMethodAttribute("jrrp", "今日人品值", "")>]
     member x.HandleJrrp(msgArg : CommandArgs) = 
         let dicer = new Dicer(SeedOption.SeedByUserDay, msgArg.MessageEvent)
         let jrrp = dicer.GetRandom(100u)

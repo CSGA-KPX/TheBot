@@ -14,6 +14,7 @@ type ApiCallManager(ws : ClientWebSocket, token : CancellationToken) =
     let pendingApi = new Dictionary<string, ManualResetEvent * ApiRequestBase>()
     let lock = new ReaderWriterLockSlim()
 
+    /// 调用API并等待结果
     member x.Call<'T when 'T :> ApiRequestBase>(req : ApiRequestBase)  =
         async {
             let echo = getEcho()
@@ -36,6 +37,8 @@ type ApiCallManager(ws : ClientWebSocket, token : CancellationToken) =
         |> Async.RunSynchronously
         req :?> 'T
 
+    /// 处理ApiResponse
+    /// 根据Echo让对应调用处理结果
     member x.HandleResponse(ret : Response.ApiResponse) =
         logger.Trace("收到API调用结果：{0}", sprintf "%A" ret)
         lock.EnterReadLock()

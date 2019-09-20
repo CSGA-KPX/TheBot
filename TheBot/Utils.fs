@@ -1,7 +1,6 @@
 ﻿module Utils
 open System
 open KPX.FsCqHttp.DataType
-open KPX.FsCqHttp.Instance
 
 let private CSTOffset = TimeSpan.FromHours(8.0)
 

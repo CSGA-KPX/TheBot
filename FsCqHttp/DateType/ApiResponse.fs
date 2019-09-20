@@ -17,7 +17,7 @@ type ApiRetCode =
     | Http403           = 1403
     | Http404           = 1404
 
-[<JsonConverter(typeof<ApiResponse_Converter>)>]
+[<JsonConverter(typeof<ApiResponseConverter>)>]
 type ApiResponse =
     {
         Status     : string
@@ -25,7 +25,7 @@ type ApiResponse =
         Data       : IReadOnlyDictionary<string, string>
         Echo       : string
     }
-and ApiResponse_Converter() =
+and ApiResponseConverter() =
     inherit JsonConverter<ApiResponse>()
 
     override x.WriteJson(w:JsonWriter , r : ApiResponse, s:JsonSerializer) =

@@ -11,6 +11,7 @@ type ApiRequestBase(action : string) as x =
 
     member internal x.Logger = logger
 
+    /// 生成请求Json
     member x.GetRequestJson(?echo : string) =
         let echo = defaultArg echo ""
         let sb = new StringBuilder()
@@ -33,6 +34,7 @@ type ApiRequestBase(action : string) as x =
 
     abstract HandleResponseData : IReadOnlyDictionary<string, string> -> unit
 
+    /// 写入Params对象内
     abstract WriteParams : JsonTextWriter * JsonSerializer-> unit
 
     default x.HandleResponseData _ = ()

@@ -1,8 +1,6 @@
 ﻿module XivModule
 open System
-open CommandHandlerBase
-open KPX.FsCqHttp.DataType.Event.Message
-open KPX.FsCqHttp.Instance.Base
+open KPX.FsCqHttp.Handler.CommandHandlerBase
 open LibFFXIV.ClientData
 open LibDmfXiv
 open LibDmfXiv.Client
@@ -164,7 +162,7 @@ type XivModule() =
         else
             Item.LookupByName(str)
 
-    [<MessageHandlerMethodAttribute("tradelog", "查询交易记录", "物品Id或全名...")>]
+    [<CommandHandlerMethodAttribute("tradelog", "查询交易记录", "物品Id或全名...")>]
     member x.HandleTradelog(msgArg : CommandArgs) = 
         let sw = new IO.StringWriter()
         let (succ, world, args) = CommandUtils.GetWorldWithDefault(msgArg.Arguments)
@@ -199,7 +197,7 @@ type XivModule() =
                     sw.WriteLine("{0} 服务器处理失败，请稍后重试", i.Name)
         msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
 
-    [<MessageHandlerMethodAttribute("market", "查询市场订单", "物品Id或全名...")>]
+    [<CommandHandlerMethodAttribute("market", "查询市场订单", "物品Id或全名...")>]
     member x.HandleMarket(msgArg : CommandArgs) = 
         let sw = new IO.StringWriter()
         let (succ, world, args) = CommandUtils.GetWorldWithDefault(msgArg.Arguments)
@@ -231,7 +229,7 @@ type XivModule() =
                     sw.WriteLine("{0} 服务器处理失败，请稍后重试", i.Name)
         msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
     
-    [<MessageHandlerMethodAttribute("alltradelog", "查询全服交易记录", "物品Id或全名...")>]
+    [<CommandHandlerMethodAttribute("alltradelog", "查询全服交易记录", "物品Id或全名...")>]
     member x.HandleTradelogCrossWorld(msgArg : CommandArgs) = 
         let sw = new IO.StringWriter()
         sw.WriteLine("名称 土豆 平均 低 中 高 最后成交")
@@ -263,7 +261,7 @@ type XivModule() =
                     sw.WriteLine("{0} 服务器处理失败，请稍后重试", i.Name)
         msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
 
-    [<MessageHandlerMethodAttribute("allmarket", "查询全服市场订单", "物品Id或全名...")>]
+    [<CommandHandlerMethodAttribute("allmarket", "查询全服市场订单", "物品Id或全名...")>]
     member x.HandleMarketCrossWorld(msgArg : CommandArgs) =  
         let sw = new IO.StringWriter()
         sw.WriteLine("名称 土豆 价格(前25%订单) 低 更新时间")
@@ -291,7 +289,7 @@ type XivModule() =
                     sw.WriteLine("{0} 服务器处理失败，请稍后重试", i.Name)
         msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
 
-    [<MessageHandlerMethodAttribute("is", "查找名字包含字符的物品", "关键词...")>]
+    [<CommandHandlerMethodAttribute("is", "查找名字包含字符的物品", "关键词...")>]
     member x.HandleItemSearch(msgArg : CommandArgs) = 
         let sw = new IO.StringWriter()
         sw.WriteLine("查询 物品 Id")
@@ -307,7 +305,7 @@ type XivModule() =
                     sw.WriteLine("{0} {1} {2}", i, item.Name, item.Id)
         msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
 
-    [<MessageHandlerMethodAttribute("recipesum", "查找多个物品的材料，不查询价格", "物品Id或全名...")>]
+    [<CommandHandlerMethodAttribute("recipesum", "查找多个物品的材料，不查询价格", "物品Id或全名...")>]
     member x.HandleRecipeSum(msgArg : CommandArgs) = 
         let sw = new IO.StringWriter()
         let sumer = new LibFFXIV.ClientData.Recipe.FinalMaterials()
@@ -327,7 +325,7 @@ type XivModule() =
             sw.WriteLine("{0} {1}", i.Name, c)
         msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
 
-    [<MessageHandlerMethodAttribute("recipefinal", "查找物品最终材料", "物品Id或全名...")>]
+    [<CommandHandlerMethodAttribute("recipefinal", "查找物品最终材料", "物品Id或全名...")>]
     member x.HandleItemFinalRecipe(msgArg : CommandArgs) = 
         let sw = new IO.StringWriter()
         let (succ, world, args) = CommandUtils.GetWorldWithDefault(msgArg.Arguments)
@@ -358,7 +356,7 @@ type XivModule() =
                 sw.WriteLine()
         msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
 
-    [<MessageHandlerMethodAttribute("mentor", "今日导随运势", "")>]
+    [<CommandHandlerMethodAttribute("mentor", "今日导随运势", "")>]
     member x.HandleMentor(msgArg : CommandArgs)= 
         let sw = new IO.StringWriter()
         let dicer = new Utils.Dicer(Utils.SeedOption.SeedByUserDay, msgArg.MessageEvent)

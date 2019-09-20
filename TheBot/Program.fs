@@ -8,31 +8,10 @@ let logger = NLog.LogManager.GetCurrentClassLogger()
 let accessUrl = "wss://coolqapi.danmaku.org"
 let token     = "0194caec-12a2-473d-bc08-962049999446"
 
-type AuthToken(secret : string) as x =
-    let utf8 = Text.Encoding.UTF8
-    let key  = utf8.GetBytes(secret)
-    let sha  = new System.Security.Cryptography.HMACSHA512(key)
-    let mutable token = ""
-    let mutable expires = DateTimeOffset.UtcNow
-
-    do
-        x.Renew()
-
-    member x.Token = token
-
-    member x.Renew() =
-        token <- Guid.NewGuid().ToString()
-        expires <- DateTimeOffset.UtcNow + TimeSpan.FromMinutes(5.0)
-
-    member x.Sign =
-        sha.ComputeHash(utf8.GetBytes(token))
-        |> Convert.ToBase64String
-
-
 [<EntryPoint>]
 let main argv =
     let client = new CqWebSocketClient(new Uri(accessUrl), token)
-    for m in CommandHandlerBase.CommandHandlerBase.AllDefinedModules do 
+    for m in KPX.FsCqHttp.Handler.CommandHandlerBase.CommandHandlerBase.AllDefinedModules do 
         logger.Info("正在注册模块{0}", m.GetType().FullName)
         client.RegisterModule(m)
     client.Connect()

@@ -5,18 +5,18 @@ open System.IO
 open System.Text
 open Newtonsoft.Json
 
-[<JsonConverter(typeof<MessageResponseConverter>)>]
-type MessageResponse =
+[<JsonConverter(typeof<EventResponseConverter>)>]
+type EventResponse =
     | EmptyResponse
     | PrivateMessageResponse of reply : Message.Message
     | GroupMessageResponse of reply : Message.Message * at_sender : bool * delete :bool * kick : bool * ban : bool * ban_duration : int
     | DiscusMessageResponse of reply : Message.Message * at_sender : bool
     | FriendAddResponse of approve : bool * remark : string
     | GroupAddResponse of approve : bool * reason : string
-and MessageResponseConverter() =
-    inherit JsonConverter<MessageResponse>()
+and EventResponseConverter() =
+    inherit JsonConverter<EventResponse>()
 
-    override x.WriteJson(w:JsonWriter , r : MessageResponse, js:JsonSerializer) =
+    override x.WriteJson(w:JsonWriter , r : EventResponse, js:JsonSerializer) =
         let sb = new StringBuilder()
         let sw = new StringWriter(sb)
         //w.WriteStartObject()
@@ -26,5 +26,5 @@ and MessageResponseConverter() =
                 js.Serialize(w, prop.GetValue(r))
         //w.WriteEndObject()
 
-    override x.ReadJson(r : JsonReader, objType : Type, existingValue : MessageResponse, hasExistingValue : bool, s : JsonSerializer) =
-        raise<MessageResponse> <| NotImplementedException()
+    override x.ReadJson(r : JsonReader, objType : Type, existingValue : EventResponse, hasExistingValue : bool, s : JsonSerializer) =
+        raise<EventResponse> <| NotImplementedException()
