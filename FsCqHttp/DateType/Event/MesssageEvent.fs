@@ -95,5 +95,9 @@ type MessageEvent =
         match x with
         | x when x.IsPrivate -> x.Sender.NickName
         | x when x.IsDiscuss -> x.Sender.NickName
-        | x when x.IsGroup   -> x.Sender.Card
+        | x when x.IsGroup   -> 
+            if System.String.IsNullOrEmpty(x.Sender.Card) then
+                x.Sender.NickName
+            else
+                x.Sender.Card
         | _ -> failwithf ""

@@ -28,6 +28,9 @@ type CqWebSocketClient(url, token) =
         
     member x.IsAvailable  = ws.State = WebSocketState.Open
 
+    member x.CallApi<'T when 'T :> ApiRequestBase>(req) = 
+        man.Call<'T>(req)
+
     member x.Connect() = 
         if not x.IsAvailable then
             logger.Info("正在连接Websocket")
@@ -41,6 +44,7 @@ type CqWebSocketClient(url, token) =
         if obj.ContainsKey("post_type") then
             logger.Trace("收到上报：{0}", json)
             let event = EventUnion.From(obj)
+            logger.Trace("收到事件：{0}", event)
             let args  = new ClientEventArgs(man, json, event)
             cqHttpEvent.Trigger(args)
         elif obj.ContainsKey("retcode") then

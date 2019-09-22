@@ -8,6 +8,7 @@ type SeedOption =
     | SeedDateTime
     | SeedDate
     | SeedUserId
+    | SeedAtUserId
     | SeedGroupId
     | SeedRandom
 
@@ -18,6 +19,12 @@ type SeedOption =
         | SeedUserId   -> msg.UserId.ToString()
         | SeedGroupId  -> if msg.GroupId = 0UL then "" else msg.GroupId.ToString()
         | SeedRandom   -> Guid.NewGuid().ToString()
+        | SeedAtUserId ->
+            let at = msg.Message.GetAts()
+            if at.Length = 0 then
+                raise <| InvalidOperationException("没有用户被At！")
+            else
+                at.[0].ToString()
 
     static member GetSeedString(a : SeedOption [], msg : Event.Message.MessageEvent) =
         a
@@ -29,6 +36,11 @@ type SeedOption =
             SeedUserId
         |]
 
+    static member SeedByAtUserDay = 
+        [|
+            SeedDate
+            SeedAtUserId
+        |]
 type Dicer (seed : SeedOption [], msg : Event.Message.MessageEvent) as x =
     let utf8 = Text.Encoding.UTF8
     let mutable hash = utf8.GetBytes(SeedOption.GetSeedString(seed, msg))

@@ -16,7 +16,10 @@ let main argv =
         client.RegisterModule(m)
     client.Connect()
     client.StartListen()
-
+    
+    let api = new KPX.FsCqHttp.Api.GroupApi.GetGroupMemberInfo(205786383UL, 3084801066UL)
+    let test = client.CallApi<KPX.FsCqHttp.Api.GroupApi.GetGroupMemberInfo>(api) 
+    printfn "%A" test
     if Type.GetType("Mono.Runtime") <> null then
         UnixSignal.WaitAny(
             [|

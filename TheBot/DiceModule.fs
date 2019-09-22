@@ -8,8 +8,23 @@ type DiceModule() =
 
     [<CommandHandlerMethodAttribute("c", "对多个选项1d100", "A B C D")>]
     member x.HandleChoices(msgArg : CommandArgs) = 
-        let dicer = new Dicer(SeedOption.SeedByUserDay, msgArg.MessageEvent, AutoRefreshSeed = false)
+        let atUser = msgArg.MessageEvent.Message.GetAts() |> Array.tryHead
+        let seed = 
+            if atUser.IsSome then
+                SeedOption.SeedByAtUserDay
+            else
+                SeedOption.SeedByUserDay
+        let dicer = new Dicer(seed, msgArg.MessageEvent, AutoRefreshSeed = false)
         let sw = new IO.StringWriter()
+        if atUser.IsSome then
+            let atUserId = 
+                match atUser.Value with
+                | KPX.FsCqHttp.DataType.Message.AtUserType.All ->
+                    failwithf ""
+                | KPX.FsCqHttp.DataType.Message.AtUserType.User x -> x
+            let atUserName = KPX.FsCqHttp.Api.GroupApi.GetGroupMemberInfo(msgArg.MessageEvent.GroupId, atUserId)
+            let ret = msgArg.CqEventArgs.CallApi(atUserName)
+            sw.WriteLine("{0} 为 {1} 投掷：", msgArg.MessageEvent.GetNicknameOrCard, ret.DisplayName)
         sw.WriteLine("1d100 选项")
         let choices =
             msgArg.Arguments

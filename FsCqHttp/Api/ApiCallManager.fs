@@ -47,6 +47,6 @@ type ApiCallManager(ws : ClientWebSocket, token : CancellationToken) =
         if notEmpty && hasPending then
             logger.Trace("Passing {0}", ret.Echo)
             let (mre, api) = pendingApi.[ret.Echo]
-            api.HandleResponseData(ret.Data)
+            api.HandleResponse(ret)
             mre.Set() |> ignore
         lock.ExitReadLock()

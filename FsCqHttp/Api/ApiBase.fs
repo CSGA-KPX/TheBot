@@ -32,12 +32,12 @@ type ApiRequestBase(action : string) as x =
         w.WriteEndObject()
         sb.ToString()
 
-    abstract HandleResponseData : IReadOnlyDictionary<string, string> -> unit
+    abstract HandleResponse : KPX.FsCqHttp.DataType.Response.ApiResponse -> unit
 
     /// 写入Params对象内
     abstract WriteParams : JsonTextWriter * JsonSerializer-> unit
 
-    default x.HandleResponseData _ = ()
+    default x.HandleResponse _ = ()
     default x.WriteParams(_,_) = ()
 
     override x.ToString() = 

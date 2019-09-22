@@ -16,6 +16,9 @@
     <Compile Include="Api\ApiBase.fs" />
     <Compile Include="Api\ApiCallManager.fs" />
     <Compile Include="Api\SystemApi.fs" />
+    <Compile Include="Api\MsgApi.fs" />
+    <Compile Include="Api\GroupApi.fs" />
+    <Compile Include="Api\Request.fs" />
     <Compile Include="Handler\HandlerBase.fs" />
     <Compile Include="Handler\CommandHandlerBase.fs" />
     <Compile Include="Instance\WebSocket.fs" />
@@ -25,6 +28,11 @@
     <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
     <PackageReference Include="NLog" Version="4.6.7" />
     <PackageReference Include="System.Net.WebSockets.Client" Version="4.3.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Api\Group\" />
+    <Folder Include="Api\SendMsg\" />
   </ItemGroup>
 
 </Project>

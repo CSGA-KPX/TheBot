@@ -17,14 +17,25 @@ type ApiRetCode =
     | Http403           = 1403
     | Http404           = 1404
 
+type ApiRetType = 
+    | Object
+    | Array
+    | Null
 [<JsonConverter(typeof<ApiResponseConverter>)>]
 type ApiResponse =
     {
         Status     : string
         ReturnCode : ApiRetCode
+        DataType   : ApiRetType
         Data       : IReadOnlyDictionary<string, string>
         Echo       : string
     }
+
+    member x.TryParseArrayData<'T>() = 
+        let json = x.Data.[ApiResponse.ArrayDataKey]
+        JArray.Parse(json).ToObject<'T []>()
+
+    static member internal ArrayDataKey = "ArrayData"
 and ApiResponseConverter() =
     inherit JsonConverter<ApiResponse>()
 
@@ -36,12 +47,25 @@ and ApiResponseConverter() =
         {
             Status = obj.["status"].Value<string>()
             ReturnCode = enum<ApiRetCode>(obj.["retcode"].Value<int32>())
+            DataType =
+                match obj.["data"].Type with
+                | JTokenType.Array -> Array
+                | JTokenType.Object -> Object
+                | JTokenType.Null -> Null
+                | _ -> failwithf "不应该有其他类型"
             Data =
                 [|
                     if obj.["data"].HasValues then
-                        let child = obj.["data"].Value<JObject>()
-                        for p in child.Properties() do
-                            yield (p.Name, p.Value.ToString())
+                        match obj.["data"].Type with
+                        | JTokenType.Array ->
+                            yield (ApiResponse.ArrayDataKey, obj.["data"].ToString())
+                        | JTokenType.Object -> 
+                            let child = obj.["data"].Value<JObject>()
+                            for p in child.Properties() do
+                                yield (p.Name, p.Value.ToString())
+                        | JTokenType.Null -> ()
+                        | _ -> failwithf "不应该有其他类型"
+
                 |] |> readOnlyDict
             Echo = obj.["echo"].Value<string>()
         }

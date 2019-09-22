@@ -6,18 +6,37 @@ open Newtonsoft.Json.Linq
 
 type RawMessageFmt = string * IReadOnlyDictionary<string, string>
 
+type AtUserType = 
+    | All
+    | User of uint64
+
+    override x.ToString() = 
+        match x with
+        | All -> "all"
+        | User x -> x |> string
+
+    static member FromString(str : string) = 
+        if str = "all" then
+            All
+        else
+            User (str |> uint64)
+
 type MessageSection =
     /// 文本段
     | Text of string
+    | At   of AtUserType
     | Other of RawMessageFmt
 
     member internal x.ToRaw() : RawMessageFmt =
         match x with
+        | At x -> "at", ([|"qq", x.ToString()|] |> readOnlyDict)
         | Text x -> "text", ([|"text", x|] |> readOnlyDict)
         | Other (n,data) -> n, data
 
     static member internal FromRaw(raw : RawMessageFmt) =
         match raw with
+        | ("at", data) ->
+            At (AtUserType.FromString(data.["qq"]))
         | ("text", data) ->
             Text data.["text"]
         | (name, data) ->
@@ -34,6 +53,26 @@ type Message(sec : MessageSection[]) as x =
         new Message([||])
 
     static member Empty = new Message()
+
+    /// 获取At
+    /// 默认不处理at全体成员
+    member x.GetAts(?allowAll : bool) = 
+        let allowAll = defaultArg allowAll false
+        [|
+            yield! x
+                .FindAll(fun x -> 
+                    match x with 
+                    | MessageSection.At t -> 
+                        match t with
+                        | User x -> true
+                        | All when allowAll -> true
+                        | All -> false
+                    | _ -> false)
+                .ConvertAll(fun x ->
+                    match x with 
+                    | MessageSection.At t -> t
+                    | _ -> failwith "")
+        |]
 
     /// 提取所有文本段为string
     override x.ToString() = 
