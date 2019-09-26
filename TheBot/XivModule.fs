@@ -359,7 +359,7 @@ type XivModule() =
     [<CommandHandlerMethodAttribute("mentor", "今日导随运势", "")>]
     member x.HandleMentor(msgArg : CommandArgs)= 
         let sw = new IO.StringWriter()
-        let dicer = new Utils.Dicer(Utils.SeedOption.SeedByUserDay, msgArg.MessageEvent)
+        let dicer = new Utils.Dicer(Utils.SeedOption.SeedByUserDay(msgArg.MessageEvent))
 
         let fortune, events = 
             match dicer.GetRandom(100u) with

@@ -11,10 +11,10 @@ type DiceModule() =
         let atUser = msgArg.MessageEvent.Message.GetAts() |> Array.tryHead
         let seed = 
             if atUser.IsSome then
-                SeedOption.SeedByAtUserDay
+                SeedOption.SeedByAtUserDay(msgArg.MessageEvent)
             else
-                SeedOption.SeedByUserDay
-        let dicer = new Dicer(seed, msgArg.MessageEvent, AutoRefreshSeed = false)
+                SeedOption.SeedByUserDay(msgArg.MessageEvent)
+        let dicer = new Dicer(seed, AutoRefreshSeed = false)
         let sw = new IO.StringWriter()
         if atUser.IsSome then
             let atUserId = 
@@ -37,6 +37,6 @@ type DiceModule() =
 
     [<CommandHandlerMethodAttribute("jrrp", "今日人品值", "")>]
     member x.HandleJrrp(msgArg : CommandArgs) = 
-        let dicer = new Dicer(SeedOption.SeedByUserDay, msgArg.MessageEvent)
+        let dicer = new Dicer(SeedOption.SeedByUserDay(msgArg.MessageEvent))
         let jrrp = dicer.GetRandom(100u)
         msgArg.CqEventArgs.QuickMessageReply(sprintf "%s今日人品值是%i" msgArg.MessageEvent.GetNicknameOrCard jrrp)
