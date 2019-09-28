@@ -10,6 +10,7 @@
     <Compile Include="DiceModule.fs" />
     <Compile Include="SudoModule.fs" />
     <Compile Include="XivModule.fs" />
+    <Compile Include="RepeaterModule.fs" />
     <Compile Include="TestModule.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>

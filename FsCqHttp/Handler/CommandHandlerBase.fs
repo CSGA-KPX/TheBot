@@ -37,20 +37,6 @@ type CommandArgs(msg : Message.MessageEvent, cqArg : ClientEventArgs) =
 type CommandHandlerBase() as x = 
     inherit HandlerModuleBase()
 
-    static let allDefinedModules =
-        [|
-            yield! Reflection.Assembly.GetExecutingAssembly().GetTypes()
-            yield! Reflection.Assembly.GetEntryAssembly().GetTypes()
-        |]
-        
-        |> Array.filter(fun t -> 
-            t.IsSubclassOf(typeof<CommandHandlerBase>) &&
-                (not <| t.IsAbstract))
-        |> Array.map (fun t ->
-            Activator.CreateInstance(t) :?> CommandHandlerBase)
-
-    static member AllDefinedModules = allDefinedModules
-
     member val Commands =
         [|
             for method in x.GetType().GetMethods() do 
@@ -72,21 +58,3 @@ type CommandHandlerBase() as x =
                 let msgArg = new CommandArgs(msgEvent, args)
                 x.Logger.Info("Calling handler {0}", method.Name)
                 method.Invoke(x, [|msgArg|]) |> ignore
-
-type HelpModule() = 
-    inherit CommandHandlerBase()
-
-    [<CommandHandlerMethodAttribute("help", "显示已知命令的文档", "")>]
-    member x.HandleHelp(msgArg : CommandArgs) = 
-        let attribs = 
-            [|
-                for t in CommandHandlerBase.AllDefinedModules do 
-                    yield t.GetType().Name, (t.Commands)
-            |]
-
-        let sw = new IO.StringWriter()
-        for (m, cmds) in attribs do 
-            sw.WriteLine("模块：{0}", m)
-            for (attrib,_) in cmds do
-                sw.WriteLine("\t {0} {1} : {2}", attrib.Command, attrib.HelpArgs, attrib.HelpDesc)
-        msgArg.CqEventArgs.QuickMessageReply(sw.ToString())

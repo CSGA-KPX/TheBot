@@ -21,6 +21,7 @@
     <Compile Include="Api\Request.fs" />
     <Compile Include="Handler\HandlerBase.fs" />
     <Compile Include="Handler\CommandHandlerBase.fs" />
+    <Compile Include="Handler\ModuleManager.fs" />
     <Compile Include="Instance\WebSocket.fs" />
   </ItemGroup>
 

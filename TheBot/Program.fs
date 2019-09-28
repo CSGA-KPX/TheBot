@@ -11,7 +11,8 @@ let token     = "0194caec-12a2-473d-bc08-962049999446"
 [<EntryPoint>]
 let main argv =
     let client = new CqWebSocketClient(new Uri(accessUrl), token)
-    for m in KPX.FsCqHttp.Handler.CommandHandlerBase.CommandHandlerBase.AllDefinedModules do 
+    let ms = KPX.FsCqHttp.Handler.ModuleManager.AllDefinedModules
+    for m in ms do 
         logger.Info("正在注册模块{0}", m.GetType().FullName)
         client.RegisterModule(m)
 
