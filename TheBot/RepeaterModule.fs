@@ -32,6 +32,6 @@ type XivModule() =
                 let obj = 
                     {
                         RawMessage = e.RawMessage
-                        Count      = 0
+                        Count      = 1
                     }
                 col.AddOrUpdate(gid, obj, (fun _ _  -> obj)) |> ignore

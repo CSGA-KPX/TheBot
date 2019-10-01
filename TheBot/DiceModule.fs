@@ -3,6 +3,16 @@ open System
 open KPX.FsCqHttp.Handler.CommandHandlerBase
 open Utils
 
+module ChoiceHelper = 
+    open System.Text.RegularExpressions
+    let YesOrNoRegex = new Regex("(.+)([没不]\1)(.*)", RegexOptions.Compiled)
+    let doDice((dicer : Dicer), (opts : string []))=
+        opts
+        |> Array.map (fun c ->
+            (c, dicer.GetRandomFromString(c, 100u)))
+        |> Array.sortBy (fun (_, n) -> n)
+
+
 type DiceModule() = 
     inherit CommandHandlerBase()
 
@@ -26,12 +36,20 @@ type DiceModule() =
             let ret = msgArg.CqEventArgs.CallApi(atUserName)
             sw.WriteLine("{0} 为 {1} 投掷：", msgArg.MessageEvent.GetNicknameOrCard, ret.DisplayName)
         sw.WriteLine("1d100 选项")
-        let choices =
-            msgArg.Arguments
-            |> Array.map (fun c ->
-                (c, dicer.GetRandomFromString(c, 100u)))
-            |> Array.sortBy (fun (_, n) -> n)
-        for (c,n) in choices do 
+        let opts = 
+            if msgArg.Arguments.Length = 1 then
+                [|
+                    let msg = msgArg.Arguments.[0]
+                    let   m = ChoiceHelper.YesOrNoRegex.Match(msg)
+                    if m.Success then
+                        yield m.Groups.[1].Value + m.Groups.[3].Value 
+                        yield m.Groups.[2].Value + m.Groups.[3].Value 
+                    else
+                        yield! msgArg.Arguments
+                |]
+            else
+                msgArg.Arguments
+        for (c,n) in ChoiceHelper.doDice(dicer, opts) do 
             sw.WriteLine("  {0:000} {1}", n, c)
         msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
 
