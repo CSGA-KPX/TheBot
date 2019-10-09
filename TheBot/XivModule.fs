@@ -146,6 +146,138 @@ module CommandUtils =
         | Some x, args -> (true, x, args)
         | None , args-> (false, defaultServer, args)
 
+module XivExpression = 
+    open System.Text.RegularExpressions
+    open GenericRPN
+
+    let t = new Collections.Generic.HashSet<string>()
+
+    type Accumulator() = 
+        inherit Collections.Generic.Dictionary<Item.ItemRecord, float>()
+
+        member x.AddOrUpdate(item, runs) = 
+            if x.ContainsKey(item) then
+                x.[item] <- x.[item] + runs
+            else
+                x.Add(item, runs)
+
+        member x.MergeWith(a : Accumulator, ?isAdd : bool) = 
+            let add = defaultArg isAdd true
+            for kv in a do 
+                if add then
+                    x.AddOrUpdate(kv.Key, kv.Value)
+                else
+                    x.AddOrUpdate(kv.Key, -(kv.Value))
+            x
+
+        static member Singleton (item : Item.ItemRecord) = 
+            let a = new Accumulator()
+            a.Add(item, 1.0)
+            a
+
+    type XivOperand = 
+        | Number of float
+        | Accumulator of Accumulator
+
+        interface IOperand<XivOperand> with
+            override l.Add(r) = 
+                match l, r with
+                | (Number i1), (Number i2) ->
+                    Number (i1 + i2)
+                | (Accumulator a1), (Accumulator a2) ->
+                    Accumulator (a1.MergeWith(a2))
+                | (Number i), (Accumulator a) ->
+                    raise <| InvalidOperationException("不允许材料和数字相加")
+                | (Accumulator a), (Number i) ->
+                    (r :> IOperand<XivOperand>).Add(l)
+            override l.Sub(r) = 
+                match l, r with
+                | (Number i1), (Number i2) ->
+                    Number (i1 - i2)
+                | (Accumulator a1), (Accumulator a2) ->
+                    Accumulator (a1.MergeWith(a2, false))
+                | (Number i), (Accumulator a) ->
+                     raise <| InvalidOperationException("不允许材料和数字相减")
+                | (Accumulator a), (Number i) ->
+                    (r :> IOperand<XivOperand>).Sub(l)
+            override l.Mul(r) = 
+                match l, r with
+                | (Number i1), (Number i2) ->
+                    Number (i1 * i2)
+                | (Accumulator a1), (Accumulator a2) ->
+                    raise <| InvalidOperationException("不允许材料和材料相乘")
+                | (Number i), (Accumulator a) ->
+                    let keys = a.Keys |> Seq.toArray
+                    for k in keys do 
+                        a.[k] <- a.[k] * i
+                    Accumulator a
+                | (Accumulator a), (Number i) ->
+                    (r :> IOperand<XivOperand>).Mul(l)
+            override l.Div(r) = 
+                match l, r with
+                | (Number i1), (Number i2) ->
+                    Number (i1 / i2)
+                | (Accumulator a1), (Accumulator a2) ->
+                    raise <| InvalidOperationException("不允许材料和材料相减")
+                | (Number i), (Accumulator a) ->
+                    let keys = a.Keys |> Seq.toArray
+                    for k in keys do 
+                        a.[k] <- a.[k] / i
+                    Accumulator a
+                | (Accumulator a), (Number i) ->
+                    (r :> IOperand<XivOperand>).Div(l)
+
+    type XivExpression() = 
+        inherit GenericRPNParser<XivOperand>()
+
+        let itemKeyLimit = 50
+
+        let tokenRegex = new Regex("([0-9]+|[\-+*/()])", RegexOptions.Compiled)
+
+        override x.Tokenize(str) = 
+            [|
+                let strs = tokenRegex.Split(str) |> Array.filter (fun x -> x <> "")
+                for str in strs do
+                    match str with
+                    | _ when Char.IsDigit(str.[0]) ->
+                        let num = str |> int
+                        if num >= itemKeyLimit then
+                            let item = Item.LookupById(num)
+                            if item.IsNone then
+                                failwithf ""
+                            yield Operand (Accumulator (Accumulator.Singleton(item.Value)))
+                        else
+                            yield Operand (Number (num |> float))
+                    | _ when x.Operatos.ContainsKey(str) -> 
+                        yield Operator (x.Operatos.[str])
+                    | _ -> 
+                        let item = Item.LookupByName(str)
+                        if item.IsSome then
+                            yield Operand (Accumulator (Accumulator.Singleton(item.Value)))
+                        else
+                            failwithf "Unknown token %s" str
+            |]
+
+        member x.Eval(str : string) = 
+            let func = new EvalDelegate<XivOperand>(fun (c, l, r) ->
+                let l = l :> IOperand<XivOperand>
+                match c with
+                | '+' -> l.Add(r)
+                | '-' -> l.Sub(r)
+                | '*' -> l.Mul(r)
+                | '/' -> l.Div(r)
+                | _ ->  failwithf ""
+            )
+            x.EvalWith(str, func)
+
+        member x.TryEval(str : string) = 
+            try
+                let ret = x.Eval(str)
+                Ok (ret)
+            with
+            |e -> 
+                Error e
+
 type XivModule() = 
     inherit CommandHandlerBase()
     let rm       = Recipe.RecipeManager.GetInstance()
@@ -305,8 +437,8 @@ type XivModule() =
                     sw.WriteLine("{0} {1} {2}", i, item.Name, item.Id)
         msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
 
-    [<CommandHandlerMethodAttribute("recipesum", "查找多个物品的材料，不查询价格", "物品Id或全名...")>]
-    member x.HandleRecipeSum(msgArg : CommandArgs) = 
+    [<CommandHandlerMethodAttribute("recipesumold", "（备用）查找多个物品的材料，不查询价格", "物品Id或全名...")>]
+    member x.HandleRecipeSumOld(msgArg : CommandArgs) = 
         let sw = new IO.StringWriter()
         let sumer = new LibFFXIV.ClientData.Recipe.FinalMaterials()
 
@@ -323,6 +455,36 @@ type XivModule() =
         sw.WriteLine("物品 数量")
         for (i, c) in sumer.Get() |> Array.sortBy (fun (item,_) -> item.Id) do
             sw.WriteLine("{0} {1}", i.Name, c)
+        msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
+
+    [<CommandHandlerMethodAttribute("recipesum", "根据表达式汇总多个物品的材料，不查询价格\r\n大于50数字视为物品ID", "物品Id或全名...")>]
+    member x.HandleRecipeSumExpr(msgArg : CommandArgs) = 
+        let sw = new IO.StringWriter()
+        let acc = new XivExpression.Accumulator()
+        let parser = new XivExpression.XivExpression()
+        for str in msgArg.Arguments do 
+            match parser.TryEval(str) with
+            | Error err ->
+                sw.WriteLine("对{0}求值时发生错误\r\n{1}", str, err)
+            | Ok (XivExpression.XivOperand.Number i) ->
+                sw.WriteLine("{0} 的返回值为数字 : {1}", str, i)
+            | Ok (XivExpression.XivOperand.Accumulator a) ->
+                for kv in a do
+                    let (item, runs) = kv.Key, kv.Value
+                    let recipe = rm.GetMaterialsOne(item)
+                    if recipe.Length = 0 then
+                        sw.WriteLine("{0} 没有生产配方", item.Name)
+                    else
+                        for (i, r) in recipe do 
+                            acc.AddOrUpdate(i, r * runs)
+        sw.WriteLine("物品 数量")
+        let final =
+            acc
+            |> Seq.toArray
+            |> Array.map (fun x -> (x.Key, (ceil x.Value) |> int))
+            |> Array.sortBy (fun (i, r) -> i.Id)
+        for (item, amount) in final do 
+            sw.WriteLine("{0} {1}", item.Name, amount)
         msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
 
     [<CommandHandlerMethodAttribute("recipefinal", "查找物品最终材料", "物品Id或全名...")>]

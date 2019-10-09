@@ -12,6 +12,67 @@ module ChoiceHelper =
             (c, dicer.GetRandomFromString(c, 100u)))
         |> Array.sortBy (fun (_, n) -> n)
 
+module DiceExpression = 
+    open GenericRPN
+    open System.Text.RegularExpressions
+
+    type DicerOperand(i : int) = 
+        member x.Value = i
+
+        interface IOperand<DicerOperand> with
+            override l.Add(r) = new DicerOperand(l.Value + r.Value)
+            override l.Sub(r) = new DicerOperand(l.Value - r.Value)
+            override l.Div(r) = new DicerOperand(l.Value / r.Value)
+            override l.Mul(r) = new DicerOperand(l.Value * r.Value)
+
+        override x.ToString() = 
+            i.ToString()
+
+    type DiceExpression() as x = 
+        inherit GenericRPNParser<DicerOperand>()
+
+        let tokenRegex = new Regex("([^0-9])", RegexOptions.Compiled)
+        do
+            x.AddOperator(new GenericOperator('D', 5))
+            x.AddOperator(new GenericOperator('d', 5))
+
+        override x.Tokenize(str) = 
+            [|
+                let strs = tokenRegex.Split(str) |> Array.filter (fun x -> x <> "")
+                for str in strs do
+                    match str with
+                    | _ when Char.IsDigit(str.[0]) ->
+                        yield Operand (new DicerOperand(str |> int))
+                    | _ when x.Operatos.ContainsKey(str) -> 
+                        yield Operator (x.Operatos.[str])
+                    | _ -> failwithf "Unknown token %s" str
+            |]
+
+        member x.Eval(str : string, dicer : Utils.Dicer) = 
+            let func = new EvalDelegate<DicerOperand>(fun (c, l, r) ->
+                let d = l.Value
+                let l = l :> IOperand<DicerOperand>
+                match c with
+                | '+' -> l.Add(r)
+                | '-' -> l.Sub(r)
+                | '*' -> l.Mul(r)
+                | '/' -> l.Div(r)
+                | 'D' | 'd' ->
+                    let ret = 
+                        Array.init<int> d (fun _ -> dicer.GetRandom(r.Value |> uint32))
+                        |> Array.sum
+                    new DicerOperand(ret)
+                | _ ->  failwithf ""
+            )
+            x.EvalWith(str, func)
+
+        member x.TryEval(str : string, dicer : Utils.Dicer) = 
+            try
+                let ret = x.Eval(str, dicer)
+                Ok (ret)
+            with
+            |e -> 
+                Error e
 
 type DiceModule() = 
     inherit CommandHandlerBase()

@@ -7,6 +7,7 @@
 
   <ItemGroup>
     <Compile Include="Utils.fs" />
+    <Compile Include="GenericRPN.fs" />
     <Compile Include="DiceModule.fs" />
     <Compile Include="SudoModule.fs" />
     <Compile Include="XivModule.fs" />
