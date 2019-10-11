@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <OutputType>Library</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Utils.fs" />
+    <Compile Include="Item.fs" />
+    <Compile Include="Recipe.fs" />
+    <Compile Include="World.fs" />
+    <Compile Include="Test.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="LiteDB.FSharp" Version="2.14.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\LibFFXIV\LibFFXIV.GameData.Raw\LibFFXIV.GameData.Raw.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="FSharp.Core" Version="4.7.0" />
+  </ItemGroup>
+
+</Project>

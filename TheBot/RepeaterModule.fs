@@ -24,7 +24,7 @@ type XivModule() =
             if col.ContainsKey(gid) && (col.[gid].RawMessage = e.RawMessage) then
                 let obj = col.[gid]
                 let ret = col.AddOrUpdate(gid, obj, (fun id old  -> {old with Count = old.Count + 1}))
-                let isCmd = ret.RawMessage.StartsWith('.') || ret.RawMessage.StartsWith('#')
+                let isCmd = ret.RawMessage.StartsWith(".") || ret.RawMessage.StartsWith("#")
                 if ret.Count = repeatLimit && (not isCmd) then
                     let resp = 
                         KPX.FsCqHttp.DataType.Response.GroupMessageResponse(e.Message, false, false, false, false, 0)

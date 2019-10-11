@@ -4,6 +4,11 @@ open System.Text.RegularExpressions
 open System.Collections.Generic
 open KPX.FsCqHttp.DataType
 
+let FsMapper = new LiteDB.FSharp.FSharpBsonMapper()
+let Db = 
+    let dbFile = @"dmfrss.db"
+    new LiteDB.LiteDatabase(dbFile, FsMapper)
+
 let private CSTOffset = TimeSpan.FromHours(8.0)
 
 type SeedOption = 

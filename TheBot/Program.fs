@@ -10,12 +10,7 @@ let token     = "0194caec-12a2-473d-bc08-962049999446"
 
 [<EntryPoint>]
 let main argv =
-    //let dicer = new Utils.Dicer()
-    //Seq.init 10000000 (fun _ -> dicer.GetRandom(3u))
-    //|> Seq.countBy (id)
-    //|> Seq.sortBy (fun (i, n) -> i)
-    //|> Seq.iter (fun (i, n) -> printfn "%i %i" i n)
-    //Console.ReadLine() |> ignore
+    //XivData
     let client = new CqWebSocketClient(new Uri(accessUrl), token)
     let ms = KPX.FsCqHttp.Handler.ModuleManager.AllDefinedModules
     for m in ms do 

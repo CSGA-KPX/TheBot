@@ -1,9 +1,9 @@
 ﻿module XivModule
 open System
 open KPX.FsCqHttp.Handler.CommandHandlerBase
-open LibFFXIV.ClientData
 open LibDmfXiv
 open LibDmfXiv.Client
+open XivData
 
 module MarketUtils = 
     let internal TakeMarketSample (samples : Shared.MarketOrder.FableMarketOrder [] , cutPct : int) = 
@@ -81,6 +81,7 @@ module MarketUtils =
         let ev  = sum / itemCount
         { Average = average; Deviation = sqrt ev }
 
+(*
 module MentorUtils = 
     let fortune = 
         [|
@@ -119,10 +120,11 @@ module MentorUtils =
         |> Seq.filter (fun x -> allowedLocation.Contains(x.TerritoryIntendedUse))
         |> Seq.distinctBy (fun x -> x.ToString())
         |> Array.ofSeq
+*)
 
 module CommandUtils =
     /// 拉诺西亚
-    let defaultServer = LibFFXIV.ClientData.World.WorldFromId.[1042us]
+    let defaultServer = World.WorldFromId.[1042us]
 
     /// 扫描参数，查找第一个服务器名
     /// 如果没找到，返回None
@@ -242,7 +244,7 @@ module XivExpression =
                     | _ when Char.IsDigit(str.[0]) ->
                         let num = str |> int
                         if num >= itemKeyLimit then
-                            let item = Item.LookupById(num)
+                            let item = Item.ItemCollection.Instance.LookupById(num)
                             if item.IsNone then
                                 failwithf ""
                             yield Operand (Accumulator (Accumulator.Singleton(item.Value)))
@@ -251,7 +253,7 @@ module XivExpression =
                     | _ when x.Operatos.ContainsKey(str) -> 
                         yield Operator (x.Operatos.[str])
                     | _ -> 
-                        let item = Item.LookupByName(str)
+                        let item = Item.ItemCollection.Instance.LookupByName(str)
                         if item.IsSome then
                             yield Operand (Accumulator (Accumulator.Singleton(item.Value)))
                         else
@@ -282,7 +284,8 @@ type XivModule() =
     inherit CommandHandlerBase()
     let rm       = Recipe.RecipeManager.GetInstance()
     let cutoff   = 25
-    let itemNames= Item.AllItems.Value |> Array.map (fun x -> (x.Name.ToLowerInvariant(), x))
+    let itemCol  = Item.ItemCollection.Instance
+
     let isNumber(str : string) = 
         if str.Length <> 0 then
             String.forall (Char.IsDigit) str
@@ -290,9 +293,9 @@ type XivModule() =
             false
     let strToItem(str : string)= 
         if isNumber(str) then
-            Item.LookupById(Convert.ToInt32(str))
+            itemCol.LookupById(Convert.ToInt32(str))
         else
-            Item.LookupByName(str)
+            itemCol.LookupByName(str)
 
     [<CommandHandlerMethodAttribute("tradelog", "查询交易记录", "物品Id或全名...")>]
     member x.HandleTradelog(msgArg : CommandArgs) = 
@@ -381,7 +384,7 @@ type XivModule() =
                     let grouped = all |> Array.groupBy (fun x -> x.WorldId)
                     for worldId, o in grouped do 
                         let stdev= MarketUtils.GetStdEvTrade(o)
-                        let world = LibFFXIV.ClientData.World.WorldFromId.[worldId]
+                        let world = World.WorldFromId.[worldId]
                         let low  = o |> Array.map (fun item -> item.Price) |> Array.min
                         let high = o |> Array.map (fun item -> item.Price) |> Array.max
                         let avg  = o |> Array.averageBy (fun item -> item.Price |> float)
@@ -411,7 +414,7 @@ type XivModule() =
                      sw.WriteLine("{0} 无记录", i.Name)
                 | Ok ret ->
                     for r in ret do 
-                        let server  = LibFFXIV.ClientData.World.WorldFromId.[r.WorldId]
+                        let server  = World.WorldFromId.[r.WorldId]
                         let o = r.Orders
                         let stdev= MarketUtils.GetStdEvMarket(o, 25)
                         let low  = o |> Array.map (fun item -> item.Price) |> Array.min
@@ -426,21 +429,19 @@ type XivModule() =
         let sw = new IO.StringWriter()
         sw.WriteLine("查询 物品 Id")
         for i in msgArg.Arguments do 
-            let q = i.ToLowerInvariant()
-            x.Logger.Trace("查询{0}", q)
-            let ret = itemNames |> Array.filter (fun (n, _) -> n.Contains(q))
+            x.Logger.Trace("查询{0}", i)
+            let ret = itemCol.SearchByName(i)
             if ret.Length = 0 then
                 sw.WriteLine("{0} 无 无 无", i)
             else
-                for r in ret do 
-                    let item= (snd r)
+                for item in ret do 
                     sw.WriteLine("{0} {1} {2}", i, item.Name, item.Id)
         msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
 
     [<CommandHandlerMethodAttribute("recipesumold", "（备用）查找多个物品的材料，不查询价格", "物品Id或全名...")>]
     member x.HandleRecipeSumOld(msgArg : CommandArgs) = 
         let sw = new IO.StringWriter()
-        let sumer = new LibFFXIV.ClientData.Recipe.FinalMaterials()
+        let sumer = new Recipe.FinalMaterials()
 
         for i in msgArg.Arguments do 
             match strToItem(i) with
@@ -520,6 +521,7 @@ type XivModule() =
 
     [<CommandHandlerMethodAttribute("mentor", "今日导随运势", "")>]
     member x.HandleMentor(msgArg : CommandArgs)= 
+        (*
         let sw = new IO.StringWriter()
         let dicer = new Utils.Dicer(Utils.SeedOption.SeedByUserDay(msgArg.MessageEvent))
 
@@ -544,3 +546,5 @@ type XivModule() =
         sw.WriteLine("推荐职业: {0} {1}", c, job)
         sw.WriteLine("推荐排本场所: {0}", dicer.GetRandomItem(MentorUtils.location).ToString())
         msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
+        *)
+        msgArg.CqEventArgs.QuickMessageReply("功能维护")
