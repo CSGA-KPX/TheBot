@@ -86,6 +86,7 @@ type DiceModule() =
             else
                 SeedOption.SeedByUserDay(msgArg.MessageEvent)
         let dicer = new Dicer(seed, AutoRefreshSeed = false)
+        
         let sw = new IO.StringWriter()
         if atUser.IsSome then
             let atUserId = 
@@ -96,7 +97,7 @@ type DiceModule() =
             let atUserName = KPX.FsCqHttp.Api.GroupApi.GetGroupMemberInfo(msgArg.MessageEvent.GroupId, atUserId)
             let ret = msgArg.CqEventArgs.CallApi(atUserName)
             sw.WriteLine("{0} 为 {1} 投掷：", msgArg.MessageEvent.GetNicknameOrCard, ret.DisplayName)
-        sw.WriteLine("1d100 选项")
+        let tt = TextTable.FromHeader([|"1D100"; "选项"|])
         let opts = 
             if msgArg.Arguments.Length = 1 then
                 [|
@@ -111,7 +112,8 @@ type DiceModule() =
             else
                 msgArg.Arguments
         for (c,n) in ChoiceHelper.doDice(dicer, opts) do 
-            sw.WriteLine("  {0:000} {1}", n, c)
+            tt.AddRow((sprintf "%03i" n), c)
+        sw.Write(tt.ToString())
         msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
 
     [<CommandHandlerMethodAttribute("jrrp", "今日人品值", "")>]

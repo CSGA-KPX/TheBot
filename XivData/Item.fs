@@ -1,7 +1,6 @@
 module XivData.Item
 open System
 open LibFFXIV.GameData.Raw
-open LibFFXIV.GameData.Raw.Base
 
 [<CLIMutable>]
 type ItemRecord = 

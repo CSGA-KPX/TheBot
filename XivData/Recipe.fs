@@ -2,7 +2,6 @@
 open System
 open System.Collections.Generic
 open LibFFXIV.GameData.Raw
-open LibFFXIV.GameData.Raw.Base
 open XivData.Item
 
 [<CLIMutable>]

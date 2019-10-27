@@ -81,8 +81,8 @@ module MarketUtils =
         let ev  = sum / itemCount
         { Average = average; Deviation = sqrt ev }
 
-(*
 module MentorUtils = 
+    open XivData.Mentor
     let fortune = 
         [|
             "大吉", "行会令连送/三导师高铁四人本/假风火土白给".Split('/')
@@ -91,38 +91,21 @@ module MentorUtils =
             "小凶", "塔三团灭/遇假火/260T白山堡".Split('/')
             "大凶", "嘴臭椰新/装会假火/极神小龙虾".Split('/')
         |]
-    let shouldOrAvoid = 
-        [|
-            yield! "中途参战，红色划水，蓝色carry，绿色擦屁股，辱骂毒豆芽，辱骂假火，副职导随".Split('，')
-            let mentor = 
-                ContentFinderCondition.ContentFinderCondition
-                |> Seq.filter (fun x -> x.IsMentor)
-            yield! 
-                mentor
-                |> Seq.map (fun x -> x.Name)
-                |> Seq.toArray
-            yield!
-                mentor
-                |> Seq.map (fun x -> x.ContentType)
-                |> Seq.distinct
-                |> Seq.toArray
-        |]
+
+    let shouldOrAvoid = ShouldOrAvoidCollection.Instance
+
     let classJob = 
         [|
             "红", "近战，远敏，复活机，法系".Split('，')
             "绿", "崩石怪，小仙女，游戏王".Split('，')
             "蓝", "裂石飞环，神圣领域，暗技人".Split('，')
         |]
-    let allowedLocation = Collections.Generic.HashSet<byte>([|0uy; 1uy; 2uy; 6uy; 13uy; 14uy; 15uy;|])
 
-    let location = 
-        TerritoryType.AllTerritory
-        |> Seq.filter (fun x -> allowedLocation.Contains(x.TerritoryIntendedUse))
-        |> Seq.distinctBy (fun x -> x.ToString())
-        |> Array.ofSeq
-*)
+    let location = LocationCollection.Instance
 
 module CommandUtils =
+    let formatNumber (i : uint32) = System.String.Format("{0:N0}", i)
+
     /// 拉诺西亚
     let defaultServer = World.WorldFromId.[1042us]
 
@@ -234,14 +217,14 @@ module XivExpression =
 
         let itemKeyLimit = 50
 
-        let tokenRegex = new Regex("([0-9]+|[\-+*/()])", RegexOptions.Compiled)
+        let tokenRegex = new Regex("([\-+*/()])", RegexOptions.Compiled)
 
         override x.Tokenize(str) = 
             [|
                 let strs = tokenRegex.Split(str) |> Array.filter (fun x -> x <> "")
                 for str in strs do
                     match str with
-                    | _ when Char.IsDigit(str.[0]) ->
+                    | _ when String.forall Char.IsDigit str ->
                         let num = str |> int
                         if num >= itemKeyLimit then
                             let item = Item.ItemCollection.Instance.LookupById(num)
@@ -305,7 +288,7 @@ type XivModule() =
             sw.WriteLine("服务器：{0}", world.WorldName)
         else
             sw.WriteLine("默认服务器：{0}", world.WorldName)
-        sw.WriteLine("名称 平均 低 中 高 更新时间")
+        let tt = Utils.TextTable.FromHeader([|"名称"; "平均"; "低"; "高"; "更新时间"|])
         for i in args do 
             match strToItem(i) with
             | None -> sw.WriteLine("找不到物品{0}，请尝试#is {0}", i)
@@ -323,13 +306,13 @@ type XivModule() =
                     let stdev= MarketUtils.GetStdEvTrade(o)
                     let low  = o |> Array.map (fun item -> item.Price) |> Array.min
                     let high = o |> Array.map (fun item -> item.Price) |> Array.max
-                    let avg  = o |> Array.averageBy (fun item -> item.Price |> float)
                     let upd  = 
                         let max = o |> Array.maxBy (fun item -> item.TimeStamp)
                         max.GetHumanReadableTimeSpan()
-                    sw.WriteLine("{0} {1} {2:n0} {3:n0} {4:n0} {5}", i.Name, stdev, low, avg, high, upd)
+                    tt.AddRow(i.Name, stdev, low, high, upd)
                 | Error err ->
                     sw.WriteLine("{0} 服务器处理失败，请稍后重试", i.Name)
+        sw.Write(tt.ToString())
         msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
 
     [<CommandHandlerMethodAttribute("market", "查询市场订单", "物品Id或全名...")>]
@@ -340,7 +323,7 @@ type XivModule() =
             sw.WriteLine("服务器：{0}", world.WorldName)
         else
             sw.WriteLine("默认服务器：{0}", world.WorldName)
-        sw.WriteLine("名称 价格(前25%订单) 低 更新时间")
+        let tt = Utils.TextTable.FromHeader([|"名称"; "价格(前25%订单)"; "低"; "更新时间"|])
         for i in args do 
             match strToItem(i) with
             | None -> sw.WriteLine("找不到物品{0}，请尝试#is {0}", i)
@@ -359,15 +342,16 @@ type XivModule() =
                     let stdev= MarketUtils.GetStdEvMarket(o, 25)
                     let low  = o |> Array.map (fun item -> item.Price) |> Array.min
                     let upd  = ret.GetHumanReadableTimeSpan()
-                    sw.WriteLine("{0} {1} {2:n0} {3}", i.Name, stdev, low, upd)
+                    tt.AddRow(i.Name, stdev, low, upd)
                 | Error err ->
                     sw.WriteLine("{0} 服务器处理失败，请稍后重试", i.Name)
+        sw.Write(tt.ToString())
         msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
     
     [<CommandHandlerMethodAttribute("alltradelog", "查询全服交易记录", "物品Id或全名...")>]
     member x.HandleTradelogCrossWorld(msgArg : CommandArgs) = 
         let sw = new IO.StringWriter()
-        sw.WriteLine("名称 土豆 平均 低 中 高 最后成交")
+        let tt = Utils.TextTable.FromHeader([|"名称"; "土豆"; "平均"; "低"; "高"; "最后成交"|])
         for i in msgArg.Arguments do 
             match strToItem(i) with
             | None -> sw.WriteLine("找不到物品{0}，请尝试#is {0}", i)
@@ -387,19 +371,19 @@ type XivModule() =
                         let world = World.WorldFromId.[worldId]
                         let low  = o |> Array.map (fun item -> item.Price) |> Array.min
                         let high = o |> Array.map (fun item -> item.Price) |> Array.max
-                        let avg  = o |> Array.averageBy (fun item -> item.Price |> float)
                         let upd  = 
                             let max = o |> Array.maxBy (fun item -> item.TimeStamp)
                             max.GetHumanReadableTimeSpan()
-                        sw.WriteLine("{0} {1} {2} {3:n0} {4:n0} {5:n0} {6}", i.Name, world.WorldName,  stdev, low, avg, high, upd)
+                        tt.AddRow(i.Name, world.WorldName,  stdev, low, high, upd)
                 | Error err ->
                     sw.WriteLine("{0} 服务器处理失败，请稍后重试", i.Name)
+        sw.Write(tt.ToString())
         msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
 
     [<CommandHandlerMethodAttribute("allmarket", "查询全服市场订单", "物品Id或全名...")>]
     member x.HandleMarketCrossWorld(msgArg : CommandArgs) =  
         let sw = new IO.StringWriter()
-        sw.WriteLine("名称 土豆 价格(前25%订单) 低 更新时间")
+        let tt = Utils.TextTable.FromHeader([|"名称"; "土豆"; "价格(前25%订单)"; "低"; "更新时间"|])
         for i in msgArg.Arguments do 
             match strToItem(i) with
             | None -> sw.WriteLine("找不到物品{0}，请尝试#is {0}", i)
@@ -419,46 +403,28 @@ type XivModule() =
                         let stdev= MarketUtils.GetStdEvMarket(o, 25)
                         let low  = o |> Array.map (fun item -> item.Price) |> Array.min
                         let upd  = r.GetHumanReadableTimeSpan()
-                        sw.WriteLine("{0} {1} {2} {3:n0} {4}", i.Name, server.WorldName,  stdev, low, upd)
+                        tt.AddRow(i.Name, server.WorldName,  stdev, low, upd)
                 | Error err ->
                     sw.WriteLine("{0} 服务器处理失败，请稍后重试", i.Name)
+        sw.Write(tt.ToString())
         msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
 
     [<CommandHandlerMethodAttribute("is", "查找名字包含字符的物品", "关键词...")>]
     member x.HandleItemSearch(msgArg : CommandArgs) = 
-        let sw = new IO.StringWriter()
-        sw.WriteLine("查询 物品 Id")
+        let tt = Utils.TextTable.FromHeader([|"查询"; "物品"; "Id"|])
         for i in msgArg.Arguments do 
-            x.Logger.Trace("查询{0}", i)
             let ret = itemCol.SearchByName(i)
             if ret.Length = 0 then
-                sw.WriteLine("{0} 无 无 无", i)
+                tt.AddRow(i, "无", "无")
             else
                 for item in ret do 
-                    sw.WriteLine("{0} {1} {2}", i, item.Name, item.Id)
-        msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
+                    tt.AddRow(i, item.Name, item.Id)
 
-    [<CommandHandlerMethodAttribute("recipesumold", "（备用）查找多个物品的材料，不查询价格", "物品Id或全名...")>]
-    member x.HandleRecipeSumOld(msgArg : CommandArgs) = 
-        let sw = new IO.StringWriter()
-        let sumer = new Recipe.FinalMaterials()
-
-        for i in msgArg.Arguments do 
-            match strToItem(i) with
-            | None -> sw.WriteLine("找不到物品{0}，请尝试#is {0}", i)
-            | Some(i) ->
-                let recipe = rm.GetMaterialsOne(i)
-                if recipe.Length = 0 then
-                    sw.WriteLine("{0} 没有生产配方", i.Name)
-                else
-                    recipe
-                    |> Array.iter (fun (item, count) -> sumer.AddOrUpdate(item, count |> float))
-        sw.WriteLine("物品 数量")
-        for (i, c) in sumer.Get() |> Array.sortBy (fun (item,_) -> item.Id) do
-            sw.WriteLine("{0} {1}", i.Name, c)
-        msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
+        msgArg.CqEventArgs.QuickMessageReply(tt.ToString())
 
     [<CommandHandlerMethodAttribute("recipesum", "根据表达式汇总多个物品的材料，不查询价格\r\n大于50数字视为物品ID", "物品Id或全名...")>]
+    [<CommandHandlerMethodAttribute("r", "recipesum的缩写", "")>]
+    [<CommandHandlerMethodAttribute("recipe", "recipesum的缩写", "")>]
     member x.HandleRecipeSumExpr(msgArg : CommandArgs) = 
         let sw = new IO.StringWriter()
         let acc = new XivExpression.Accumulator()
@@ -466,7 +432,7 @@ type XivModule() =
         for str in msgArg.Arguments do 
             match parser.TryEval(str) with
             | Error err ->
-                sw.WriteLine("对{0}求值时发生错误\r\n{1}", str, err)
+                sw.WriteLine("对{0}求值时发生错误\r\n{1}", str, err.Message)
             | Ok (XivExpression.XivOperand.Number i) ->
                 sw.WriteLine("{0} 的返回值为数字 : {1}", str, i)
             | Ok (XivExpression.XivOperand.Accumulator a) ->
@@ -478,14 +444,15 @@ type XivModule() =
                     else
                         for (i, r) in recipe do 
                             acc.AddOrUpdate(i, r * runs)
-        sw.WriteLine("物品 数量")
+        let tt = Utils.TextTable.FromHeader([|"物品"; "数量"|])
         let final =
             acc
             |> Seq.toArray
             |> Array.map (fun x -> (x.Key, (ceil x.Value) |> int))
             |> Array.sortBy (fun (i, r) -> i.Id)
         for (item, amount) in final do 
-            sw.WriteLine("{0} {1}", item.Name, amount)
+            tt.AddRow(item.Name, amount)
+        sw.Write(tt.ToString())
         msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
 
     [<CommandHandlerMethodAttribute("recipefinal", "查找物品最终材料", "物品Id或全名...")>]
@@ -496,7 +463,7 @@ type XivModule() =
             sw.WriteLine("服务器：{0}", world.WorldName)
         else
             sw.WriteLine("默认服务器：{0}", world.WorldName)
-        sw.WriteLine("查询 物品 价格(前25%订单) 需求 总价 更新时间")
+        let tt = Utils.TextTable.FromHeader([|"查询"; "物品"; "价格(前25%订单)"; "需求"; "总价"; "更新时间"|])
         for i in args do 
             match strToItem(i) with
             | None -> sw.WriteLine("找不到物品{0}，请尝试#is {0}", i)
@@ -513,15 +480,13 @@ type XivModule() =
                     let price = MarketUtils.GetStdEvMarket(ret.Orders, cutoff)
                     let total = price * count
                     sum <- sum + total
-                    sw.WriteLine("{0} {1} {2:n0} {3:n0} {4:n0} {5}",
-                        i, item.Name, price, count, total, ret.GetHumanReadableTimeSpan() )
-                sw.WriteLine("{0} 总计 {1} -- -- --", i, sum)
-                sw.WriteLine()
+                    tt.AddRow(i, item.Name, price, count, total, ret.GetHumanReadableTimeSpan())
+                tt.AddRow(i, "总计", sum, "--", "--", "--")
+        sw.Write(tt.ToString())
         msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
 
     [<CommandHandlerMethodAttribute("mentor", "今日导随运势", "")>]
     member x.HandleMentor(msgArg : CommandArgs)= 
-        (*
         let sw = new IO.StringWriter()
         let dicer = new Utils.Dicer(Utils.SeedOption.SeedByUserDay(msgArg.MessageEvent))
 
@@ -537,14 +502,19 @@ type XivModule() =
         sw.WriteLine("{0} : {1}", fortune, event)
 
         let s,a   = 
-            let a = dicer.GetRandomItems(MentorUtils.shouldOrAvoid, 3 * 2)
+            let count = MentorUtils.shouldOrAvoid.Count |> uint32
+            let idx   = dicer.GetRandomArray(count + 1u, 3*2)
+            let a = idx |> Array.map (fun id -> MentorUtils.shouldOrAvoid.[id].Value)
             a.[0..2], a.[3..]
         sw.WriteLine("宜：{0}", String.concat "/" s)
         sw.WriteLine("忌：{0}", String.concat "/" a)
         let c, jobs = dicer.GetRandomItem(MentorUtils.classJob)
         let job = dicer.GetRandomItem(jobs)
         sw.WriteLine("推荐职业: {0} {1}", c, job)
-        sw.WriteLine("推荐排本场所: {0}", dicer.GetRandomItem(MentorUtils.location).ToString())
+        let location = 
+            let count = MentorUtils.location.Count |> uint32
+            let idx = dicer.GetRandom(count + 1u)
+            MentorUtils.location.[idx].Value
+        sw.WriteLine("推荐排本场所: {0}", location)
         msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
-        *)
-        msgArg.CqEventArgs.QuickMessageReply("功能维护")
+        //msgArg.CqEventArgs.QuickMessageReply("功能维护")

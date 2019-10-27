@@ -8,9 +8,8 @@ let logger = NLog.LogManager.GetCurrentClassLogger()
 let accessUrl = "wss://coolqapi.danmaku.org"
 let token     = "0194caec-12a2-473d-bc08-962049999446"
 
-[<EntryPoint>]
-let main argv =
-    //XivData
+
+let StartBot() = 
     let client = new CqWebSocketClient(new Uri(accessUrl), token)
     let ms = KPX.FsCqHttp.Handler.ModuleManager.AllDefinedModules
     for m in ms do 
@@ -32,6 +31,13 @@ let main argv =
         Console.ReadLine() |> ignore
 
     client.StopListen()
+    Console.WriteLine("Stopping TheBot")
 
-    Console.WriteLine("Stopping TheBot");
+[<EntryPoint>]
+let main argv =
+    if argv.Length <> 0 && argv.[0].ToLowerInvariant() = "rebuilddb" then
+        XivData.Test.RebuildDb()
+        printfn "Rebuilt Completed"
+    else
+        StartBot()
     0 // return an integer exit code
