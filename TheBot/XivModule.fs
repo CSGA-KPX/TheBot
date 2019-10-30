@@ -422,9 +422,7 @@ type XivModule() =
 
         msgArg.CqEventArgs.QuickMessageReply(tt.ToString())
 
-    [<CommandHandlerMethodAttribute("recipesum", "根据表达式汇总多个物品的材料，不查询价格\r\n大于50数字视为物品ID", "物品Id或全名...")>]
-    [<CommandHandlerMethodAttribute("r", "recipesum的缩写", "")>]
-    [<CommandHandlerMethodAttribute("recipe", "recipesum的缩写", "")>]
+    [<CommandHandlerMethodAttribute("r", "根据表达式汇总多个物品的材料，不查询价格\r\n大于50数字视为物品ID", "")>]
     member x.HandleRecipeSumExpr(msgArg : CommandArgs) = 
         let sw = new IO.StringWriter()
         let acc = new XivExpression.Accumulator()
@@ -448,15 +446,76 @@ type XivModule() =
         let final =
             acc
             |> Seq.toArray
-            |> Array.map (fun x -> (x.Key, (ceil x.Value) |> int))
+            |> Array.map (fun x -> (x.Key, x.Value))
             |> Array.sortBy (fun (i, r) -> i.Id)
         for (item, amount) in final do 
             tt.AddRow(item.Name, amount)
         sw.Write(tt.ToString())
         msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
 
-    [<CommandHandlerMethodAttribute("recipefinal", "查找物品最终材料", "物品Id或全名...")>]
+    [<CommandHandlerMethodAttribute("rr", "根据表达式汇总多个物品的基础材料，不查询价格\r\n大于50数字视为物品ID", "")>]
+    member x.HandleRecipeSumExprRec(msgArg : CommandArgs) = 
+        let sw = new IO.StringWriter()
+        let acc = new XivExpression.Accumulator()
+        let parser = new XivExpression.XivExpression()
+        for str in msgArg.Arguments do 
+            match parser.TryEval(str) with
+            | Error err ->
+                sw.WriteLine("对{0}求值时发生错误\r\n{1}", str, err.Message)
+            | Ok (XivExpression.XivOperand.Number i) ->
+                sw.WriteLine("{0} 的返回值为数字 : {1}", str, i)
+            | Ok (XivExpression.XivOperand.Accumulator a) ->
+                for kv in a do
+                    let (item, runs) = kv.Key, kv.Value
+                    let recipe = rm.GetMaterialsRec(item)
+                    if recipe.Length = 0 then
+                        sw.WriteLine("{0} 没有生产配方", item.Name)
+                    else
+                        for (i, r) in recipe do 
+                            acc.AddOrUpdate(i, r * runs)
+        let tt = Utils.TextTable.FromHeader([|"物品"; "数量"|])
+        let final =
+            acc
+            |> Seq.toArray
+            |> Array.map (fun x -> (x.Key, x.Value))
+            |> Array.sortBy (fun (i, r) -> i.Id)
+        for (item, amount) in final do 
+            tt.AddRow(item.Name, amount)
+        sw.Write(tt.ToString())
+        msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
+
+    [<CommandHandlerMethodAttribute("rc", "计算物品基础材料成本（不支持表达式）", "物品Id或全名...")>]
     member x.HandleItemFinalRecipe(msgArg : CommandArgs) = 
+        let sw = new IO.StringWriter()
+        let (succ, world, args) = CommandUtils.GetWorldWithDefault(msgArg.Arguments)
+        if succ then
+            sw.WriteLine("服务器：{0}", world.WorldName)
+        else
+            sw.WriteLine("默认服务器：{0}", world.WorldName)
+        let tt = Utils.TextTable.FromHeader([|"查询"; "物品"; "价格(前25%订单)"; "需求"; "总价"; "更新时间"|])
+        for i in args do 
+            match strToItem(i) with
+            | None -> sw.WriteLine("找不到物品{0}，请尝试#is {0}", i)
+            | Some(i) ->
+                let recipe = rm.GetMaterialsOne(i)
+                let mutable sum = MarketUtils.StdEv.Zero
+                for (item, count) in recipe do 
+                    let ret = 
+                        let itemId = item.Id |> uint32
+                        async {
+                            let worldId = world.WorldId
+                            return! MarketOrder.MarketOrderProxy.call <@ fun server -> server.GetByIdWorld worldId itemId @>
+                        } |> Async.RunSynchronously
+                    let price = MarketUtils.GetStdEvMarket(ret.Orders, cutoff)
+                    let total = price * count
+                    sum <- sum + total
+                    tt.AddRow(i, item.Name, price, count, total, ret.GetHumanReadableTimeSpan())
+                tt.AddRow(i, "总计", sum, "--", "--", "--")
+        sw.Write(tt.ToString())
+        msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
+
+    [<CommandHandlerMethodAttribute("rrc", "计算物品基础材料成本（不支持表达式）", "物品Id或全名...")>]
+    member x.HandleItemFinalRecipeRec(msgArg : CommandArgs) = 
         let sw = new IO.StringWriter()
         let (succ, world, args) = CommandUtils.GetWorldWithDefault(msgArg.Arguments)
         if succ then

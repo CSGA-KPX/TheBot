@@ -140,8 +140,15 @@ type TextTable (cols : int) =
             let str = 
                 match o with
                 | :? string as str -> str
+                | :?  int32 as i -> System.String.Format("{0:N0}",i)
                 | :? uint32 as i -> System.String.Format("{0:N0}",i)
-                | :? float as i -> System.String.Format("{0:N0}",i)
+                | :? float as f -> 
+                    let fmt = 
+                        if (f % 1.0) <> 0.0 then
+                            "{0:N2}"
+                        else
+                            "{0:N0}"
+                    System.String.Format(fmt,f)
                 | _ -> o.ToString()
             col.[i].Add(str)
         )

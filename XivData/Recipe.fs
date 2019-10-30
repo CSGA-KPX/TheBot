@@ -179,7 +179,7 @@ type RecipeManager private () =
                 yield! final
         |]
 
-    ///获取物品基本材料
+    /// 生产一个成品的基础材料
     member x.GetMaterialsRec(item : ItemRecord) =
         let rec getMaterialsRec(acc : Dictionary<ItemRecord, (ItemRecord * float)>, item : ItemRecord, runs : float) = 
             let recipe = (x :> IRecipeProvider).TryGetRecipe(item)
@@ -201,7 +201,7 @@ type RecipeManager private () =
             yield! ma
         |]
 
-    ///获取物品以及子物品的直接材料
+    /// 生产一个成品的基础材料，按物品分组
     member x.GetMaterialsRecGroup(item : ItemRecord) = 
         let rec getMaterialsRec(acc : Queue<string * (ItemRecord * float) []>, level : string, item : ItemRecord, runs : float) = 
             let recipe = (x :> IRecipeProvider).TryGetRecipe(item)
