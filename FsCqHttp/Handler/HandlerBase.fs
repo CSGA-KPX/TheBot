@@ -33,7 +33,7 @@ type ClientEventArgs(api : ApiCallManager, context : string, data : Event.EventU
         | Event.EventUnion.Message ctx when msg.Length >= 3000 ->
             x.QuickMessageReply("字数太多了，请优化命令或者向管理员汇报bug", true)
         | Event.EventUnion.Message ctx ->
-            let msg = Message.Message.TextMessage(msg)
+            let msg = Message.Message.TextMessage(msg.Trim())
             match ctx with
             | _ when ctx.IsDiscuss -> x.SendResponse(Response.DiscusMessageResponse(msg, atUser))
             | _ when ctx.IsGroup ->   x.SendResponse(Response.GroupMessageResponse(msg, atUser, false, false, false, 0))
