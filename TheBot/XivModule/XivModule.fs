@@ -251,10 +251,13 @@ type XivModule() =
                             let worldId = world.WorldId
                             return! MarketOrder.MarketOrderProxy.call <@ fun server -> server.GetByIdWorld worldId itemId @>
                         } |> Async.RunSynchronously
-                    let price = MarketUtils.GetStdEvMarket(ret.Orders, cutoff)
-                    let total = price * count
-                    sum <- sum + total
-                    tt.AddRow(i.Name, item.Name, price, count, total, ret.GetHumanReadableTimeSpan())
+                    if ret.Orders.Length <> 0 then
+                        let price = MarketUtils.GetStdEvMarket(ret.Orders, cutoff)
+                        let total = price * count
+                        sum <- sum + total
+                        tt.AddRow(i.Name, item.Name, price, count, total, ret.GetHumanReadableTimeSpan())
+                    else
+                        tt.AddRow(i.Name, item.Name, "无记录", "--", "--", "--")
                 tt.AddRow(i.Name, "总计", sum, "--", "--", "--")
         sw.Write(tt.ToString())
         msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
@@ -281,10 +284,13 @@ type XivModule() =
                             let worldId = world.WorldId
                             return! MarketOrder.MarketOrderProxy.call <@ fun server -> server.GetByIdWorld worldId itemId @>
                         } |> Async.RunSynchronously
-                    let price = MarketUtils.GetStdEvMarket(ret.Orders, cutoff)
-                    let total = price * count
-                    sum <- sum + total
-                    tt.AddRow(i.Name, item.Name, price, count, total, ret.GetHumanReadableTimeSpan())
+                    if ret.Orders.Length <> 0 then
+                        let price = MarketUtils.GetStdEvMarket(ret.Orders, cutoff)
+                        let total = price * count
+                        sum <- sum + total
+                        tt.AddRow(i.Name, item.Name, price, count, total, ret.GetHumanReadableTimeSpan())
+                    else
+                        tt.AddRow(i.Name, item.Name, "无记录", "--", "--", "--")
                 tt.AddRow(i.Name, "总计", sum, "--", "--", "--")
         sw.Write(tt.ToString())
         msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
