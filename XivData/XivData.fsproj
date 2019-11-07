@@ -11,6 +11,7 @@
     <Compile Include="Recipe.fs" />
     <Compile Include="World.fs" />
     <Compile Include="Mentor.fs" />
+    <Compile Include="SpecialShop.fs" />
     <Compile Include="Test.fs" />
   </ItemGroup>
 

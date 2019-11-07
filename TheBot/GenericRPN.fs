@@ -1,4 +1,4 @@
-﻿module GenericRPN
+﻿module TheBot.GenericRPN
 open System.Collections.Generic
 
 type IOperand<'T when 'T :> IOperand<'T>> = 

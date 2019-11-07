@@ -1,7 +1,7 @@
-﻿module DiceModule
+﻿module TheBot.Module.DiceModule
 open System
 open KPX.FsCqHttp.Handler.CommandHandlerBase
-open Utils
+open TheBot.Utils
 
 module ChoiceHelper = 
     open System.Text.RegularExpressions
@@ -13,7 +13,7 @@ module ChoiceHelper =
         |> Array.sortBy (fun (_, n) -> n)
 
 module DiceExpression = 
-    open GenericRPN
+    open TheBot.GenericRPN
     open System.Text.RegularExpressions
 
     type DicerOperand(i : int) = 
@@ -48,7 +48,7 @@ module DiceExpression =
                     | _ -> failwithf "Unknown token %s" str
             |]
 
-        member x.Eval(str : string, dicer : Utils.Dicer) = 
+        member x.Eval(str : string, dicer : Dicer) = 
             let func = new EvalDelegate<DicerOperand>(fun (c, l, r) ->
                 let d = l.Value
                 let l = l :> IOperand<DicerOperand>
@@ -66,7 +66,7 @@ module DiceExpression =
             )
             x.EvalWith(str, func)
 
-        member x.TryEval(str : string, dicer : Utils.Dicer) = 
+        member x.TryEval(str : string, dicer : Dicer) = 
             try
                 let ret = x.Eval(str, dicer)
                 Ok (ret)
@@ -121,3 +121,18 @@ type DiceModule() =
         let dicer = new Dicer(SeedOption.SeedByUserDay(msgArg.MessageEvent))
         let jrrp = dicer.GetRandom(100u)
         msgArg.CqEventArgs.QuickMessageReply(sprintf "%s今日人品值是%i" msgArg.MessageEvent.GetNicknameOrCard jrrp)
+
+
+    [<CommandHandlerMethodAttribute("cal", "计算器", "")>]
+    member x.HandleCalculator(msgArg : CommandArgs) = 
+        let sw = new System.IO.StringWriter()
+        let dicer = new Dicer()
+        let parser = new DiceExpression.DiceExpression()
+        for arg in msgArg.Arguments do 
+            let  ret = parser.TryEval(arg, dicer)
+            match ret with
+            | Error e -> 
+                sw.WriteLine("对{0}失败{1}", arg, e.ToString())
+            | Ok    i ->
+                sw.WriteLine("对{0}求值得{1}", arg, i.Value)
+        msgArg.CqEventArgs.QuickMessageReply(sw.ToString())

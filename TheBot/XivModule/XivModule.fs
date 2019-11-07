@@ -1,267 +1,10 @@
-﻿module XivModule
+﻿namespace TheBot.Module.XivModule
 open System
 open KPX.FsCqHttp.Handler.CommandHandlerBase
-open LibDmfXiv
 open LibDmfXiv.Client
 open XivData
-
-module MarketUtils = 
-    let internal TakeMarketSample (samples : Shared.MarketOrder.FableMarketOrder [] , cutPct : int) = 
-        [|
-            //(price, count)
-            let samples = samples |> Array.sortBy (fun x -> x.Price)
-            let itemCount = samples |> Array.sumBy (fun x -> x.Count |> int)
-            let cutLen = itemCount * cutPct / 100
-            let mutable rest = cutLen
-            match itemCount = 0 , cutLen = 0 with
-            | true, _ -> ()
-            | false, true ->
-                yield ((int) samples.[0].Price, 1)
-            | false, false ->
-                for record in samples do
-                    let takeCount = min rest (record.Count |> int)
-                    if takeCount <> 0 then
-                        rest <- rest - takeCount
-                        yield ((int) record.Price, takeCount)
-        |]
-
-    type StdEv = 
-        {
-            Average   : float
-            Deviation : float
-        }
-        override x.ToString() = 
-            String.Format("{0:n0}±{1:n0}", x.Average, x.Deviation)
-
-        static member (*) (x : StdEv, y : float) = 
-            {
-                Average   = x.Average * y
-                Deviation = x.Deviation * y
-            }
-
-        static member (+) (x : StdEv, y : StdEv) = 
-            {
-                Average   = x.Average + y.Average
-                Deviation = x.Deviation + y.Deviation
-            }
-
-        static member Zero = 
-            {
-                Average   = 0.0
-                Deviation = 0.0
-            }
-
-        static member FromData(data : float []) = 
-            let avg = Array.average data
-            let sum = data |> Array.sumBy (fun x -> (x - avg) ** 2.0)
-            let ev  = sum / (float data.Length)
-            { Average = avg; Deviation = sqrt ev }
-
-    let GetStdEvMarket(market : Shared.MarketOrder.FableMarketOrder [] , cutPct : int) = 
-        let samples = TakeMarketSample(market, cutPct)
-        let itemCount = samples |> Array.sumBy (fun (a, b) -> (float) b)
-        let average = 
-            let priceSum = samples |> Array.sumBy (fun (a, b) -> (float) (a * b))
-            priceSum / itemCount
-        let sum = 
-            samples
-            |> Array.sumBy (fun (a, b) -> (float b) * (( (float a) - average) ** 2.0) )
-        let ev  = sum / itemCount
-        { Average = average; Deviation = sqrt ev }
-
-    let GetStdEvTrade(tradelog : Shared.TradeLog.FableTradeLog []) = 
-        let samples = tradelog |> Array.map (fun x -> (x.Price, x.Count))
-        let itemCount = samples |> Array.sumBy (fun (a, b) -> (float) b)
-        let average = 
-            let priceSum = samples |> Array.sumBy (fun (a, b) -> (float) (a * b))
-            priceSum / itemCount
-        let sum = 
-            samples
-            |> Array.sumBy (fun (a, b) -> (float b) * (( (float a) - average) ** 2.0) )
-        let ev  = sum / itemCount
-        { Average = average; Deviation = sqrt ev }
-
-module MentorUtils = 
-    open XivData.Mentor
-    let fortune = 
-        [|
-            "大吉", "行会令连送/三导师高铁四人本/假风火土白给".Split('/')
-            "小吉", "豆芽已看攻略/稳定7拖1".Split('/')
-            "平"  , "听话懂事初见/不急不缓四人本/超越之力25%".Split('/')
-            "小凶", "塔三团灭/遇假火/260T白山堡".Split('/')
-            "大凶", "嘴臭椰新/装会假火/极神小龙虾".Split('/')
-        |]
-
-    let shouldOrAvoid = ShouldOrAvoidCollection.Instance
-
-    let classJob = 
-        [|
-            "红", "近战，远敏，复活机，法系".Split('，')
-            "绿", "崩石怪，小仙女，游戏王".Split('，')
-            "蓝", "裂石飞环，神圣领域，暗技人".Split('，')
-        |]
-
-    let location = LocationCollection.Instance
-
-module CommandUtils =
-    let formatNumber (i : uint32) = System.String.Format("{0:N0}", i)
-
-    /// 拉诺西亚
-    let defaultServer = World.WorldFromId.[1042us]
-
-    /// 扫描参数，查找第一个服务器名
-    /// 如果没找到，返回None
-    let tryGetWorld (a : string []) = 
-        let (w, args) =
-            a
-            |> Array.partition (fun x -> World.WorldFromName.ContainsKey(x))
-
-        let world = 
-            if w.Length = 0 then
-                None
-            else
-                Some World.WorldFromName.[ w.[0] ]
-
-        world, args
-
-    /// 扫描参数，查找第一个服务器名
-    /// 成功返回 true 服务器，失败返回 false 默认服务器
-    let GetWorldWithDefault (a : string []) =
-        match tryGetWorld(a) with
-        | Some x, args -> (true, x, args)
-        | None , args-> (false, defaultServer, args)
-
-module XivExpression = 
-    open System.Text.RegularExpressions
-    open GenericRPN
-
-    let t = new Collections.Generic.HashSet<string>()
-
-    type Accumulator() = 
-        inherit Collections.Generic.Dictionary<Item.ItemRecord, float>()
-
-        member x.AddOrUpdate(item, runs) = 
-            if x.ContainsKey(item) then
-                x.[item] <- x.[item] + runs
-            else
-                x.Add(item, runs)
-
-        member x.MergeWith(a : Accumulator, ?isAdd : bool) = 
-            let add = defaultArg isAdd true
-            for kv in a do 
-                if add then
-                    x.AddOrUpdate(kv.Key, kv.Value)
-                else
-                    x.AddOrUpdate(kv.Key, -(kv.Value))
-            x
-
-        static member Singleton (item : Item.ItemRecord) = 
-            let a = new Accumulator()
-            a.Add(item, 1.0)
-            a
-
-    type XivOperand = 
-        | Number of float
-        | Accumulator of Accumulator
-
-        interface IOperand<XivOperand> with
-            override l.Add(r) = 
-                match l, r with
-                | (Number i1), (Number i2) ->
-                    Number (i1 + i2)
-                | (Accumulator a1), (Accumulator a2) ->
-                    Accumulator (a1.MergeWith(a2))
-                | (Number i), (Accumulator a) ->
-                    raise <| InvalidOperationException("不允许材料和数字相加")
-                | (Accumulator a), (Number i) ->
-                    (r :> IOperand<XivOperand>).Add(l)
-            override l.Sub(r) = 
-                match l, r with
-                | (Number i1), (Number i2) ->
-                    Number (i1 - i2)
-                | (Accumulator a1), (Accumulator a2) ->
-                    Accumulator (a1.MergeWith(a2, false))
-                | (Number i), (Accumulator a) ->
-                     raise <| InvalidOperationException("不允许材料和数字相减")
-                | (Accumulator a), (Number i) ->
-                    (r :> IOperand<XivOperand>).Sub(l)
-            override l.Mul(r) = 
-                match l, r with
-                | (Number i1), (Number i2) ->
-                    Number (i1 * i2)
-                | (Accumulator a1), (Accumulator a2) ->
-                    raise <| InvalidOperationException("不允许材料和材料相乘")
-                | (Number i), (Accumulator a) ->
-                    let keys = a.Keys |> Seq.toArray
-                    for k in keys do 
-                        a.[k] <- a.[k] * i
-                    Accumulator a
-                | (Accumulator a), (Number i) ->
-                    (r :> IOperand<XivOperand>).Mul(l)
-            override l.Div(r) = 
-                match l, r with
-                | (Number i1), (Number i2) ->
-                    Number (i1 / i2)
-                | (Accumulator a1), (Accumulator a2) ->
-                    raise <| InvalidOperationException("不允许材料和材料相减")
-                | (Number i), (Accumulator a) ->
-                    let keys = a.Keys |> Seq.toArray
-                    for k in keys do 
-                        a.[k] <- a.[k] / i
-                    Accumulator a
-                | (Accumulator a), (Number i) ->
-                    (r :> IOperand<XivOperand>).Div(l)
-
-    type XivExpression() = 
-        inherit GenericRPNParser<XivOperand>()
-
-        let itemKeyLimit = 50
-
-        let tokenRegex = new Regex("([\-+*/()])", RegexOptions.Compiled)
-
-        override x.Tokenize(str) = 
-            [|
-                let strs = tokenRegex.Split(str) |> Array.filter (fun x -> x <> "")
-                for str in strs do
-                    match str with
-                    | _ when String.forall Char.IsDigit str ->
-                        let num = str |> int
-                        if num >= itemKeyLimit then
-                            let item = Item.ItemCollection.Instance.LookupById(num)
-                            if item.IsNone then
-                                failwithf ""
-                            yield Operand (Accumulator (Accumulator.Singleton(item.Value)))
-                        else
-                            yield Operand (Number (num |> float))
-                    | _ when x.Operatos.ContainsKey(str) -> 
-                        yield Operator (x.Operatos.[str])
-                    | _ -> 
-                        let item = Item.ItemCollection.Instance.LookupByName(str)
-                        if item.IsSome then
-                            yield Operand (Accumulator (Accumulator.Singleton(item.Value)))
-                        else
-                            failwithf "Unknown token %s" str
-            |]
-
-        member x.Eval(str : string) = 
-            let func = new EvalDelegate<XivOperand>(fun (c, l, r) ->
-                let l = l :> IOperand<XivOperand>
-                match c with
-                | '+' -> l.Add(r)
-                | '-' -> l.Sub(r)
-                | '*' -> l.Mul(r)
-                | '/' -> l.Div(r)
-                | _ ->  failwithf ""
-            )
-            x.EvalWith(str, func)
-
-        member x.TryEval(str : string) = 
-            try
-                let ret = x.Eval(str)
-                Ok (ret)
-            with
-            |e -> 
-                Error e
+open TheBot.Module.XivModule.Utils
+open TheBot.Utils
 
 type XivModule() = 
     inherit CommandHandlerBase()
@@ -288,7 +31,7 @@ type XivModule() =
             sw.WriteLine("服务器：{0}", world.WorldName)
         else
             sw.WriteLine("默认服务器：{0}", world.WorldName)
-        let tt = Utils.TextTable.FromHeader([|"名称"; "平均"; "低"; "高"; "更新时间"|])
+        let tt = TextTable.FromHeader([|"名称"; "平均"; "低"; "高"; "更新时间"|])
         for i in args do 
             match strToItem(i) with
             | None -> sw.WriteLine("找不到物品{0}，请尝试#is {0}", i)
@@ -323,7 +66,7 @@ type XivModule() =
             sw.WriteLine("服务器：{0}", world.WorldName)
         else
             sw.WriteLine("默认服务器：{0}", world.WorldName)
-        let tt = Utils.TextTable.FromHeader([|"名称"; "价格(前25%订单)"; "低"; "更新时间"|])
+        let tt = TextTable.FromHeader([|"名称"; "价格(前25%订单)"; "低"; "更新时间"|])
         for i in args do 
             match strToItem(i) with
             | None -> sw.WriteLine("找不到物品{0}，请尝试#is {0}", i)
@@ -351,7 +94,7 @@ type XivModule() =
     [<CommandHandlerMethodAttribute("alltradelog", "查询全服交易记录", "物品Id或全名...")>]
     member x.HandleTradelogCrossWorld(msgArg : CommandArgs) = 
         let sw = new IO.StringWriter()
-        let tt = Utils.TextTable.FromHeader([|"名称"; "土豆"; "平均"; "低"; "高"; "最后成交"|])
+        let tt = TextTable.FromHeader([|"名称"; "土豆"; "平均"; "低"; "高"; "最后成交"|])
         for i in msgArg.Arguments do 
             match strToItem(i) with
             | None -> sw.WriteLine("找不到物品{0}，请尝试#is {0}", i)
@@ -383,7 +126,7 @@ type XivModule() =
     [<CommandHandlerMethodAttribute("allmarket", "查询全服市场订单", "物品Id或全名...")>]
     member x.HandleMarketCrossWorld(msgArg : CommandArgs) =  
         let sw = new IO.StringWriter()
-        let tt = Utils.TextTable.FromHeader([|"名称"; "土豆"; "价格(前25%订单)"; "低"; "更新时间"|])
+        let tt = TextTable.FromHeader([|"名称"; "土豆"; "价格(前25%订单)"; "低"; "更新时间"|])
         for i in msgArg.Arguments do 
             match strToItem(i) with
             | None -> sw.WriteLine("找不到物品{0}，请尝试#is {0}", i)
@@ -411,9 +154,11 @@ type XivModule() =
 
     [<CommandHandlerMethodAttribute("is", "查找名字包含字符的物品", "关键词...")>]
     member x.HandleItemSearch(msgArg : CommandArgs) = 
-        let tt = Utils.TextTable.FromHeader([|"查询"; "物品"; "Id"|])
+        let tt = TextTable.FromHeader([|"查询"; "物品"; "Id"|])
         for i in msgArg.Arguments do 
-            let ret = itemCol.SearchByName(i)
+            let ret =
+                itemCol.SearchByName(i)
+                |> Array.sortBy (fun x -> x.Id)
             if ret.Length = 0 then
                 tt.AddRow(i, "无", "无")
             else
@@ -442,12 +187,12 @@ type XivModule() =
                     else
                         for (i, r) in recipe do 
                             acc.AddOrUpdate(i, r * runs)
-        let tt = Utils.TextTable.FromHeader([|"物品"; "数量"|])
+        let tt = TextTable.FromHeader([|"物品"; "数量"|])
         let final =
             acc
             |> Seq.toArray
             |> Array.map (fun x -> (x.Key, x.Value))
-            |> Array.sortBy (fun (i, r) -> i.Id)
+            |> Array.sortBy (fun (i, _) -> i.Id)
         for (item, amount) in final do 
             tt.AddRow(item.Name, amount)
         sw.Write(tt.ToString())
@@ -473,12 +218,12 @@ type XivModule() =
                     else
                         for (i, r) in recipe do 
                             acc.AddOrUpdate(i, r * runs)
-        let tt = Utils.TextTable.FromHeader([|"物品"; "数量"|])
+        let tt = TextTable.FromHeader([|"物品"; "数量"|])
         let final =
             acc
             |> Seq.toArray
             |> Array.map (fun x -> (x.Key, x.Value))
-            |> Array.sortBy (fun (i, r) -> i.Id)
+            |> Array.sortBy (fun (i, _) -> i.Id)
         for (item, amount) in final do 
             tt.AddRow(item.Name, amount)
         sw.Write(tt.ToString())
@@ -492,14 +237,14 @@ type XivModule() =
             sw.WriteLine("服务器：{0}", world.WorldName)
         else
             sw.WriteLine("默认服务器：{0}", world.WorldName)
-        let tt = Utils.TextTable.FromHeader([|"查询"; "物品"; "价格(前25%订单)"; "需求"; "总价"; "更新时间"|])
+        let tt = TextTable.FromHeader([|"查询"; "物品"; "价格(前25%订单)"; "需求"; "总价"; "更新时间"|])
         for i in args do 
             match strToItem(i) with
             | None -> sw.WriteLine("找不到物品{0}，请尝试#is {0}", i)
             | Some(i) ->
                 let recipe = rm.GetMaterialsOne(i)
                 let mutable sum = MarketUtils.StdEv.Zero
-                for (item, count) in recipe do 
+                for (item, count) in recipe |> Array.sortBy (fun x -> (fst x).Id) do 
                     let ret = 
                         let itemId = item.Id |> uint32
                         async {
@@ -509,8 +254,8 @@ type XivModule() =
                     let price = MarketUtils.GetStdEvMarket(ret.Orders, cutoff)
                     let total = price * count
                     sum <- sum + total
-                    tt.AddRow(i, item.Name, price, count, total, ret.GetHumanReadableTimeSpan())
-                tt.AddRow(i, "总计", sum, "--", "--", "--")
+                    tt.AddRow(i.Name, item.Name, price, count, total, ret.GetHumanReadableTimeSpan())
+                tt.AddRow(i.Name, "总计", sum, "--", "--", "--")
         sw.Write(tt.ToString())
         msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
 
@@ -522,14 +267,14 @@ type XivModule() =
             sw.WriteLine("服务器：{0}", world.WorldName)
         else
             sw.WriteLine("默认服务器：{0}", world.WorldName)
-        let tt = Utils.TextTable.FromHeader([|"查询"; "物品"; "价格(前25%订单)"; "需求"; "总价"; "更新时间"|])
+        let tt = TextTable.FromHeader([|"查询"; "物品"; "价格(前25%订单)"; "需求"; "总价"; "更新时间"|])
         for i in args do 
             match strToItem(i) with
             | None -> sw.WriteLine("找不到物品{0}，请尝试#is {0}", i)
             | Some(i) ->
                 let recipe = rm.GetMaterialsRec(i)
                 let mutable sum = MarketUtils.StdEv.Zero
-                for (item, count) in recipe do 
+                for (item, count) in recipe |> Array.sortBy (fun x -> (fst x).Id) do 
                     let ret = 
                         let itemId = item.Id |> uint32
                         async {
@@ -539,15 +284,54 @@ type XivModule() =
                     let price = MarketUtils.GetStdEvMarket(ret.Orders, cutoff)
                     let total = price * count
                     sum <- sum + total
-                    tt.AddRow(i, item.Name, price, count, total, ret.GetHumanReadableTimeSpan())
-                tt.AddRow(i, "总计", sum, "--", "--", "--")
+                    tt.AddRow(i.Name, item.Name, price, count, total, ret.GetHumanReadableTimeSpan())
+                tt.AddRow(i.Name, "总计", sum, "--", "--", "--")
         sw.Write(tt.ToString())
         msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
+
+    [<CommandHandlerMethodAttribute("ssc", "计算部分道具兑换的价格", "兑换所需道具的名称或ID，只处理1个")>]
+    member x.HandleSSS(msgArg : CommandArgs) = 
+        let sw = new IO.StringWriter()
+        let (succ, world, args) = CommandUtils.GetWorldWithDefault(msgArg.Arguments)
+        if succ then
+            sw.WriteLine("服务器：{0}", world.WorldName)
+        else
+            sw.WriteLine("默认服务器：{0}", world.WorldName)
+        if args.Length = 0 then failwithf "参数不足"
+        let item = args.[0]
+        let ret = SpecialShop.SpecialShopCollection.Instance.LookupByName(item)
+        if ret.IsSome then
+            let tt = TextTable.FromHeader([|"道具"; "名称"; "价格(前25%订单)"; "低"; "单道具价值"; "更新时间"|])
+            for info in ret.Value do 
+                let i = itemCol.LookupById(info.ReceiveItem).Value
+                let ret =
+                    let itemId = info.ReceiveItem |> uint32
+                    async {
+                        let worldId = world.WorldId // 必须在代码引用之外处理为简单类型
+                        return! MarketOrder.MarketOrderProxy.callSafely <@ fun server -> server.GetByIdWorld worldId itemId @>
+                    } |> Async.RunSynchronously
+                match ret with
+                | Ok x when x.Orders.Length = 0 ->
+                    tt.AddRow(item, i.Name, "无记录", "--", "--", "--")
+                | Ok ret ->
+                    let o = ret.Orders
+                    let stdev= MarketUtils.GetStdEvMarket(o, 25)
+                    let low  = o |> Array.map (fun item -> item.Price) |> Array.min
+                    let upd  = ret.GetHumanReadableTimeSpan()
+
+                    let v = stdev * (info.ReceiveCount |> float) / (info.CostCount |> float)
+                    tt.AddRow(item, i.Name, stdev, low, v, upd)
+                | Error err ->
+                    sw.WriteLine("{0} 服务器处理失败，请稍后重试", i.Name)
+            sw.Write(tt.ToString())
+            msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
+        else
+            msgArg.CqEventArgs.QuickMessageReply(sprintf "%s 不能兑换道具" item)
 
     [<CommandHandlerMethodAttribute("mentor", "今日导随运势", "")>]
     member x.HandleMentor(msgArg : CommandArgs)= 
         let sw = new IO.StringWriter()
-        let dicer = new Utils.Dicer(Utils.SeedOption.SeedByUserDay(msgArg.MessageEvent))
+        let dicer = new Dicer(SeedOption.SeedByUserDay(msgArg.MessageEvent))
 
         let fortune, events = 
             match dicer.GetRandom(100u) with
@@ -576,4 +360,3 @@ type XivModule() =
             MentorUtils.location.[idx].Value
         sw.WriteLine("推荐排本场所: {0}", location)
         msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
-        //msgArg.CqEventArgs.QuickMessageReply("功能维护")

@@ -1,4 +1,4 @@
-﻿module Utils
+﻿module TheBot.Utils
 open System
 open System.Text.RegularExpressions
 open System.Collections.Generic

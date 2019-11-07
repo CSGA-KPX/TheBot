@@ -1,10 +1,7 @@
-﻿module RepeaterModule
+﻿module TheBot.Module.RepeaterModule
 open System
 open System.Collections
 open KPX.FsCqHttp.Handler.Base
-
-
-
 
 type RepeatMessage = 
     {
@@ -15,7 +12,7 @@ type RepeatMessage =
 
 type XivModule() = 
     inherit HandlerModuleBase()
-    static let repeatLimit = 3
+    static let repeatLimit = 5
     static let col = new Concurrent.ConcurrentDictionary<uint64, RepeatMessage>()
 
     override x.HandleMessage(arg, e) = 

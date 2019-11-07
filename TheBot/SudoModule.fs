@@ -1,4 +1,4 @@
-﻿module SudoModule
+﻿module TheBot.Module.SudoModule
 open KPX.FsCqHttp.Api
 open KPX.FsCqHttp.DataType.Response
 open KPX.FsCqHttp.DataType.Event

@@ -1,26 +1,13 @@
-﻿module TestModule
+﻿module TheBot.Module.TestModule
 open KPX.FsCqHttp.Handler.CommandHandlerBase
 
 type TestModule() = 
     inherit CommandHandlerBase()
 
+    (*
     [<CommandHandlerMethodAttribute("#test", "显示一条测试信息", "")>]
     member x.HandleTest(msgArg : CommandArgs) =
         msgArg.CqEventArgs.QuickMessageReply("Test success!")
-
-    [<CommandHandlerMethodAttribute("#test.dice", "显示一条测试信息", "")>]
-    member x.HandleDice(msgArg : CommandArgs) =
-        let sw = new System.IO.StringWriter()
-        let dicer = new Utils.Dicer()
-        let parser = new DiceModule.DiceExpression.DiceExpression()
-        for arg in msgArg.Arguments do 
-            let  ret = parser.TryEval(arg, dicer)
-            match ret with
-            | Error e -> 
-                sw.WriteLine("对{0}失败{1}", arg, e.ToString())
-            | Ok    i ->
-                sw.WriteLine("对{0}求值得{1}", arg, i.Value)
-        msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
 
     [<CommandHandlerMethodAttribute("#test.coc7d", "显示一条测试信息", "")>]
     member x.HandleCOC7D(msgArg : CommandArgs) =
@@ -47,4 +34,4 @@ type TestModule() =
         for (name, value) in conf do 
             sw.WriteLine("{0} : {1}", name, value.Value)
         sw.WriteLine("总计{0}点", conf |> Array.sumBy (fun (_,v) -> v.Value))
-        msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
+        msgArg.CqEventArgs.QuickMessageReply(sw.ToString())*)

@@ -10,7 +10,8 @@
     <Compile Include="GenericRPN.fs" />
     <Compile Include="DiceModule.fs" />
     <Compile Include="SudoModule.fs" />
-    <Compile Include="XivModule.fs" />
+    <Compile Include="XivModule\XivUtils.fs" />
+    <Compile Include="XivModule\XivModule.fs" />
     <Compile Include="RepeaterModule.fs" />
     <Compile Include="TestModule.fs" />
     <Compile Include="Program.fs" />
