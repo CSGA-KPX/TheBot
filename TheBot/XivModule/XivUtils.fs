@@ -3,7 +3,7 @@ open System
 open LibDmfXiv
 open XivData
 
-module MarketUtils = 
+module MarketUtils =
     let internal TakeMarketSample (samples : Shared.MarketOrder.FableMarketOrder [] , cutPct : int) = 
         [|
             //(price, count)
@@ -85,6 +85,42 @@ module MarketUtils =
         let ev  = sum / itemCount
         { Average = average; Deviation = sqrt ev }
 
+    type Analyzer<'T>(data : 'T []) = 
+        
+        member x.IsEmpty = data.Length = 0
+
+        member x.MinRow(func) = data |> Array.minBy func
+        member x.Min(func)    = x.MinRow(func) |> func
+
+        member x.MaxRow(func) = data |> Array.maxBy func
+        member x.Max(func)    = x.MaxRow(func) |> func
+
+        member x.Avg(func : 'T -> float)    = data |> Array.averageBy func
+
+        member x.Sum(func : 'T -> float)    = data |> Array.sumBy func
+
+        member x.StdEv(func : 'T -> float)  = data |> Array.map (func) |> StdEv.FromData
+
+        member x.TakeSample(sortFunc, countFunc : 'T -> int, cutPct : int) = 
+            let data = 
+                [|
+                    let sorted = data |> Array.sortBy sortFunc
+                    let count  = data |> Array.sumBy countFunc
+                    let cutoff = count * cutPct / 100
+                    let mutable rest = cutoff
+            
+                    match count = 0, cutoff = 0 with
+                    | true, _ -> ()
+                    | false, true ->
+                        yield (sorted.[0])
+                    | false, false ->
+                        for item in sorted do
+                            let takeCount = min rest (item |> countFunc)
+                            if takeCount <> 0 then
+                                rest <- rest - takeCount
+                                yield (item)
+                |]
+            new Analyzer<'T>(data)
 module MentorUtils = 
     open XivData.Mentor
     let fortune = 
@@ -216,13 +252,15 @@ module XivExpression =
                 | (Accumulator a), (Number i) ->
                     (r :> IOperand<XivOperand>).Div(l)
 
-    type XivExpression() = 
+    type XivExpression() as x = 
         inherit GenericRPNParser<XivOperand>()
 
-        let itemKeyLimit = 50
+        let tokenRegex = new Regex("([\-+*/()#])", RegexOptions.Compiled)
 
-        let tokenRegex = new Regex("([\-+*/()])", RegexOptions.Compiled)
-
+        do 
+            //Uniary operator
+            let itemOperator = new GenericOperator('#', Int32.MaxValue, IsBinary = false)
+            x.AddOperator(itemOperator)
         override x.Tokenize(str) = 
             [|
                 let strs = tokenRegex.Split(str) |> Array.filter (fun x -> x <> "")
@@ -230,13 +268,7 @@ module XivExpression =
                     match str with
                     | _ when String.forall Char.IsDigit str ->
                         let num = str |> int
-                        if num >= itemKeyLimit then
-                            let item = Item.ItemCollection.Instance.LookupById(num)
-                            if item.IsNone then
-                                failwithf ""
-                            yield Operand (Accumulator (Accumulator.Singleton(item.Value)))
-                        else
-                            yield Operand (Number (num |> float))
+                        yield Operand (Number (num |> float))
                     | _ when x.Operatos.ContainsKey(str) -> 
                         yield Operator (x.Operatos.[str])
                     | _ -> 
@@ -255,6 +287,14 @@ module XivExpression =
                 | '-' -> l.Sub(r)
                 | '*' -> l.Mul(r)
                 | '/' -> l.Div(r)
+                | '#' ->
+                    // l = r when uniary
+                    match r with
+                    | Number f -> 
+                        let item = Item.ItemCollection.Instance.LookupById(int f).Value
+                        let acu  = Accumulator.Singleton item
+                        Accumulator acu
+                    | Accumulator a -> failwithf "#符号仅对数字使用"
                 | _ ->  failwithf ""
             )
             x.EvalWith(str, func)

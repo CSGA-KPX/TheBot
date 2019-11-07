@@ -230,68 +230,108 @@ type XivModule() =
         msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
 
     [<CommandHandlerMethodAttribute("rc", "计算物品基础材料成本（不支持表达式）", "物品Id或全名...")>]
-    member x.HandleItemFinalRecipe(msgArg : CommandArgs) = 
+    member x.HandleItemFinalRecipeExpr(msgArg : CommandArgs) = 
         let sw = new IO.StringWriter()
         let (succ, world, args) = CommandUtils.GetWorldWithDefault(msgArg.Arguments)
         if succ then
             sw.WriteLine("服务器：{0}", world.WorldName)
         else
             sw.WriteLine("默认服务器：{0}", world.WorldName)
-        let tt = TextTable.FromHeader([|"查询"; "物品"; "价格(前25%订单)"; "需求"; "总价"; "更新时间"|])
-        for i in args do 
-            match strToItem(i) with
-            | None -> sw.WriteLine("找不到物品{0}，请尝试#is {0}", i)
-            | Some(i) ->
-                let recipe = rm.GetMaterialsOne(i)
-                let mutable sum = MarketUtils.StdEv.Zero
-                for (item, count) in recipe |> Array.sortBy (fun x -> (fst x).Id) do 
-                    let ret = 
-                        let itemId = item.Id |> uint32
-                        async {
-                            let worldId = world.WorldId
-                            return! MarketOrder.MarketOrderProxy.call <@ fun server -> server.GetByIdWorld worldId itemId @>
-                        } |> Async.RunSynchronously
-                    if ret.Orders.Length <> 0 then
-                        let price = MarketUtils.GetStdEvMarket(ret.Orders, cutoff)
-                        let total = price * count
-                        sum <- sum + total
-                        tt.AddRow(i.Name, item.Name, price, count, total, ret.GetHumanReadableTimeSpan())
+        let acc = new XivExpression.Accumulator()
+        let parser = new XivExpression.XivExpression()
+
+        for str in args do 
+            match parser.TryEval(str) with
+            | Error err ->
+                sw.WriteLine("对{0}求值时发生错误\r\n{1}", str, err.Message)
+            | Ok (XivExpression.XivOperand.Number i) ->
+                sw.WriteLine("{0} 的返回值为数字 : {1}", str, i)
+            | Ok (XivExpression.XivOperand.Accumulator a) ->
+                for kv in a do
+                    let (item, runs) = kv.Key, kv.Value
+                    let recipe = rm.GetMaterialsOne(item)
+                    if recipe.Length = 0 then
+                        sw.WriteLine("{0} 没有生产配方", item.Name)
                     else
-                        tt.AddRow(i.Name, item.Name, "无记录", "--", "--", "--")
-                tt.AddRow(i.Name, "总计", sum, "--", "--", "--")
+                        for (i, r) in recipe do 
+                            acc.AddOrUpdate(i, r * runs)
+
+        let final =
+            acc
+            |> Seq.toArray
+            |> Array.map (fun x -> (x.Key, x.Value))
+            |> Array.sortBy (fun (i, _) -> i.Id)
+
+        let mutable sum = MarketUtils.StdEv.Zero
+        let tt = TextTable.FromHeader([|"物品"; "价格(前25%订单)"; "需求"; "总价"; "更新时间"|])
+        for (item, count) in final do 
+            let ret = 
+                let itemId = item.Id |> uint32
+                async {
+                    let worldId = world.WorldId
+                    return! MarketOrder.MarketOrderProxy.call <@ fun server -> server.GetByIdWorld worldId itemId @>
+                } |> Async.RunSynchronously
+            if ret.Orders.Length <> 0 then
+                let price = MarketUtils.GetStdEvMarket(ret.Orders, cutoff)
+                let total = price * count
+                sum <- sum + total
+                tt.AddRow(item.Name, price, count, total, ret.GetHumanReadableTimeSpan())
+            else
+                tt.AddRow(item.Name, "无记录", "--", "--", "--")
+        tt.AddRow("总计", sum, "--", "--", "--")
         sw.Write(tt.ToString())
         msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
 
     [<CommandHandlerMethodAttribute("rrc", "计算物品基础材料成本（不支持表达式）", "物品Id或全名...")>]
-    member x.HandleItemFinalRecipeRec(msgArg : CommandArgs) = 
+    member x.HandleItemFinalRecipeRecExpr(msgArg : CommandArgs) = 
         let sw = new IO.StringWriter()
         let (succ, world, args) = CommandUtils.GetWorldWithDefault(msgArg.Arguments)
         if succ then
             sw.WriteLine("服务器：{0}", world.WorldName)
         else
             sw.WriteLine("默认服务器：{0}", world.WorldName)
-        let tt = TextTable.FromHeader([|"查询"; "物品"; "价格(前25%订单)"; "需求"; "总价"; "更新时间"|])
-        for i in args do 
-            match strToItem(i) with
-            | None -> sw.WriteLine("找不到物品{0}，请尝试#is {0}", i)
-            | Some(i) ->
-                let recipe = rm.GetMaterialsRec(i)
-                let mutable sum = MarketUtils.StdEv.Zero
-                for (item, count) in recipe |> Array.sortBy (fun x -> (fst x).Id) do 
-                    let ret = 
-                        let itemId = item.Id |> uint32
-                        async {
-                            let worldId = world.WorldId
-                            return! MarketOrder.MarketOrderProxy.call <@ fun server -> server.GetByIdWorld worldId itemId @>
-                        } |> Async.RunSynchronously
-                    if ret.Orders.Length <> 0 then
-                        let price = MarketUtils.GetStdEvMarket(ret.Orders, cutoff)
-                        let total = price * count
-                        sum <- sum + total
-                        tt.AddRow(i.Name, item.Name, price, count, total, ret.GetHumanReadableTimeSpan())
+        let acc = new XivExpression.Accumulator()
+        let parser = new XivExpression.XivExpression()
+
+        for str in args do 
+            match parser.TryEval(str) with
+            | Error err ->
+                sw.WriteLine("对{0}求值时发生错误\r\n{1}", str, err.Message)
+            | Ok (XivExpression.XivOperand.Number i) ->
+                sw.WriteLine("{0} 的返回值为数字 : {1}", str, i)
+            | Ok (XivExpression.XivOperand.Accumulator a) ->
+                for kv in a do
+                    let (item, runs) = kv.Key, kv.Value
+                    let recipe = rm.GetMaterialsRec(item)
+                    if recipe.Length = 0 then
+                        sw.WriteLine("{0} 没有生产配方", item.Name)
                     else
-                        tt.AddRow(i.Name, item.Name, "无记录", "--", "--", "--")
-                tt.AddRow(i.Name, "总计", sum, "--", "--", "--")
+                        for (i, r) in recipe do 
+                            acc.AddOrUpdate(i, r * runs)
+
+        let final =
+            acc
+            |> Seq.toArray
+            |> Array.map (fun x -> (x.Key, x.Value))
+            |> Array.sortBy (fun (i, _) -> i.Id)
+
+        let mutable sum = MarketUtils.StdEv.Zero
+        let tt = TextTable.FromHeader([|"物品"; "价格(前25%订单)"; "需求"; "总价"; "更新时间"|])
+        for (item, count) in final do 
+            let ret = 
+                let itemId = item.Id |> uint32
+                async {
+                    let worldId = world.WorldId
+                    return! MarketOrder.MarketOrderProxy.call <@ fun server -> server.GetByIdWorld worldId itemId @>
+                } |> Async.RunSynchronously
+            if ret.Orders.Length <> 0 then
+                let price = MarketUtils.GetStdEvMarket(ret.Orders, cutoff)
+                let total = price * count
+                sum <- sum + total
+                tt.AddRow(item.Name, price, count, total, ret.GetHumanReadableTimeSpan())
+            else
+                tt.AddRow(item.Name, "无记录", "--", "--", "--")
+        tt.AddRow("总计", sum, "--", "--", "--")
         sw.Write(tt.ToString())
         msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
 

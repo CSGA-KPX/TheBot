@@ -83,9 +83,7 @@ type GenericRPNParser<'Operand when 'Operand :> IOperand<'Operand>>() =
 
     member x.EvalWith(str, func : EvalDelegate<'Operand>) = 
         let tokens = x.Tokenize(str)
-        printfn ">>>>>>>>>>>>>>> %A" tokens
         let rpn    = x.InfixToPostfix(tokens)
-        printfn ">>>>>>>>>>>>>>> %A" rpn
         let stack = new Stack<'Operand>()
         for token in rpn do
             match token with
