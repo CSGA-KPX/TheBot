@@ -43,20 +43,19 @@ type SpecialShopCollection private () =
             seq {
                 for row in sht do 
                     let index prefix c p = sprintf "%s[%i][%i]" prefix c p
-                    let row = row.Value
                     for page = 0 to 1 do //不知道2是干嘛的，信息不全
                         for col = 0 to 59 do 
                             let rItem = row.AsRow(index "Item{Receive}" col page)
                             let r = 
                                 {
                                     Id           = 0
-                                    ReceiveItem  = rItem.Key
+                                    ReceiveItem  = rItem.Key.Key
                                     ReceiveCount = row.As<uint32>(index "Count{Receive}" col page)
                                     ReceiveHQ    = row.As<bool>(index "HQ{Receive}" col page)
                                     CostItem     = row.AsRaw(index "Item{Cost}" col page) |> int32
                                     CostCount    = row.As<uint32>(index "Count{Cost}" col page)
                                 }
-                            if rItem.Key > 0
+                            if rItem.Key.Key > 0
                             && r.ReceiveCount > 0u
                             && r.ReceiveHQ = false 
                             && rItem.As<bool>("IsUntradable") = false 

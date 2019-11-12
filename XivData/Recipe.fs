@@ -48,8 +48,7 @@ type CraftRecipeProvider private () =
             let col = new LibFFXIV.GameData.Raw.XivCollection(XivLanguage.ChineseSimplified) :> IXivCollection
             let lookup id = Item.ItemCollection.Instance.LookupById(id).Value
             seq {
-                for kv in col.GetSheet("Recipe") do
-                    let row = kv.Value
+                for row in col.GetSheet("Recipe") do
                     let itemsKeys = 
                         row.AsArray<XivSheetReference>("Item{Ingredient}", 10)
                         |> Array.map (fun x -> x.Key)
@@ -61,7 +60,7 @@ type CraftRecipeProvider private () =
                         |> Array.filter (fun (id,_) -> id > 0)
                         |> Array.map (fun (id, runs) -> (lookup id, runs))
                     yield {
-                            Id = row.Key
+                            Id = row.Key.Key
                             ResultItem = row.As<XivSheetReference>("Item{Result}").Key |> lookup
                             ProductCount = row.As<byte>("Amount{Result}") |> float
                             Materials = materials
@@ -97,8 +96,7 @@ type CompanyCraftRecipeProvider private () =
             let col = new LibFFXIV.GameData.Raw.XivCollection(XivLanguage.ChineseSimplified) :> IXivCollection
             let lookup id = Item.ItemCollection.Instance.LookupById(id).Value
             seq {
-                for kv in col.GetSheet("CompanyCraftSequence") do 
-                    let ccs = kv.Value
+                for ccs in col.GetSheet("CompanyCraftSequence") do 
                     let materials = 
                         [|
                             for part in ccs.AsRowArray("CompanyCraftPart", 8) do 
@@ -118,7 +116,7 @@ type CompanyCraftRecipeProvider private () =
                                     yield! materials
                         |]
                     yield {
-                            Id = ccs.Key
+                            Id = ccs.Key.Key
                             ResultItem = ccs.As<XivSheetReference>("ResultItem").Key |> lookup
                             ProductCount = 1.0
                             Materials = materials

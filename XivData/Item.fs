@@ -47,11 +47,10 @@ type ItemCollection private () =
             db.EnsureIndex("_id", true) |> ignore
             db.EnsureIndex("Name") |> ignore
             let col = new LibFFXIV.GameData.Raw.XivCollection(XivLanguage.ChineseSimplified) :> IXivCollection
-            let sht = col.GetSelectedSheet("Item", [|"Name"|])
+            let sht = col.GetSheet("Item", [|"Name"|])
             seq {
                 for row in sht do
-                    let row = row.Value
-                    yield {Id = row.Key; Name = row.As<string>("Name")}
+                    yield {Id = row.Key.Key; Name = row.As<string>("Name")}
             } |> db.InsertBulk |> ignore
             GC.Collect()
 

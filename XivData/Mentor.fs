@@ -27,10 +27,9 @@ type ShouldOrAvoidCollection private () =
             let db = Utils.Db.GetCollection<StringRecord>(colName)
             printfn "Building ShouldOrAvoidCollection"
             let col = new XivCollection(XivLanguage.ChineseSimplified) :> IXivCollection
-            let sht = col.GetSelectedSheet("ContentFinderCondition", [|"Name"; "MentorRoulette"|])
+            let sht = col.GetSheet("ContentFinderCondition", [|"Name"; "MentorRoulette"|])
             seq {
                 for row in sht do
-                    let row = row.Value
                     if row.As<bool>("MentorRoulette") then
                         yield {Id = 0; Value = row.As<string>("Name")}
                 yield!
@@ -63,10 +62,9 @@ type LocationCollection private () =
             let db = Utils.Db.GetCollection<StringRecord>(colName)
             printfn "Building LocationCollection"
             let col = new XivCollection(XivLanguage.ChineseSimplified) :> IXivCollection
-            let sht = col.GetSelectedSheet("TerritoryType", [|"PlaceName"; "TerritoryIntendedUse"|])
+            let sht = col.GetSheet("TerritoryType", [|"PlaceName"; "TerritoryIntendedUse"|])
             seq {
                 for row in sht do
-                    let row = row.Value
                     let isAllowed = allowedLocation.Contains(row.As<byte>("TerritoryIntendedUse"))
                     let name  = row.AsRow("PlaceName").As<string>("Name")
                     if isAllowed && (not <| String.IsNullOrWhiteSpace(name)) then
