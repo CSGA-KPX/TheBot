@@ -17,11 +17,17 @@ type XivModule() =
             String.forall (Char.IsDigit) str
         else
             false
-    let strToItem(str : string)= 
-        if isNumber(str) then
-            itemCol.LookupById(Convert.ToInt32(str))
+
+    let strToItemResult(str : string)= 
+        let ret = 
+            if isNumber(str) then
+                itemCol.LookupById(Convert.ToInt32(str))
+            else
+                itemCol.LookupByName(str)
+        if ret.IsSome then
+            Ok ret.Value
         else
-            itemCol.LookupByName(str)
+            Error str
 
     [<CommandHandlerMethodAttribute("tradelog", "查询交易记录", "物品Id或全名...")>]
     member x.HandleTradelog(msgArg : CommandArgs) = 
@@ -32,29 +38,21 @@ type XivModule() =
         else
             sw.WriteLine("默认服务器：{0}", world.WorldName)
         let tt = TextTable.FromHeader([|"名称"; "平均"; "低"; "高"; "更新时间"|])
-        for i in args do 
-            match strToItem(i) with
-            | None -> sw.WriteLine("找不到物品{0}，请尝试#is {0}", i)
-            | Some(i) ->
-                let ret = 
-                    let itemId = i.Id |> uint32
-                    async {
-                        let worldId = world.WorldId // 必须在代码引用之外处理为简单类型
-                        return! TradeLog.TradelogProxy.callSafely <@ fun server -> server.GetByIdWorld worldId itemId 20 @>
-                    } |> Async.RunSynchronously
-                match ret with
-                | Ok logs when logs.Length = 0 ->
-                    sw.WriteLine("{0} 无记录", i.Name)
-                | Ok o ->
-                    let stdev= MarketUtils.GetStdEvTrade(o)
-                    let low  = o |> Array.map (fun item -> item.Price) |> Array.min
-                    let high = o |> Array.map (fun item -> item.Price) |> Array.max
-                    let upd  = 
-                        let max = o |> Array.maxBy (fun item -> item.TimeStamp)
-                        max.GetHumanReadableTimeSpan()
-                    tt.AddRow(i.Name, stdev, low, high, upd)
-                | Error err ->
-                    sw.WriteLine("{0} 服务器处理失败，请稍后重试", i.Name)
+        let rets = 
+            args
+            |> Array.map (strToItemResult)
+            |> Array.map (Result.map (fun i -> MarketUtils.MarketAnalyzer.FetchTradesWorld(i, world)))
+        for ret in rets do
+            match ret with
+            | Error str ->
+                sw.WriteLine("找不到物品{0}，请尝试#is {0}", str)
+            | Ok ma ->
+                match ma with
+                | Error exn -> sw.WriteLine("服务器处理失败，请稍后重试，错误信息： {0}", exn.Message)
+                | Ok ma when ma.IsEmpty ->
+                    tt.AddRow(ma.ItemRecord.Name, "无记录", "--", "--", "--")
+                | Ok ma ->
+                    tt.AddRow(ma.ItemRecord.Name, ma.StdEvPrice(), ma.MinPrice(), ma.MaxPrice(), ma.LastUpdateTime())
         sw.Write(tt.ToString())
         msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
 
@@ -66,28 +64,25 @@ type XivModule() =
             sw.WriteLine("服务器：{0}", world.WorldName)
         else
             sw.WriteLine("默认服务器：{0}", world.WorldName)
-        let tt = TextTable.FromHeader([|"名称"; "价格(前25%订单)"; "低"; "更新时间"|])
-        for i in args do 
-            match strToItem(i) with
-            | None -> sw.WriteLine("找不到物品{0}，请尝试#is {0}", i)
-            | Some(i) ->
-                let ret =
-                    let itemId = i.Id |> uint32
-                    async {
-                        let worldId = world.WorldId // 必须在代码引用之外处理为简单类型
-                        return! MarketOrder.MarketOrderProxy.callSafely <@ fun server -> server.GetByIdWorld worldId itemId @>
-                    } |> Async.RunSynchronously
-                match ret with
-                | Ok x when x.Orders.Length = 0 ->
-                    sw.WriteLine("{0} 无记录", i.Name)
-                | Ok ret ->
-                    let o = ret.Orders
-                    let stdev= MarketUtils.GetStdEvMarket(o, 25)
-                    let low  = o |> Array.map (fun item -> item.Price) |> Array.min
-                    let upd  = ret.GetHumanReadableTimeSpan()
-                    tt.AddRow(i.Name, stdev, low, upd)
-                | Error err ->
-                    sw.WriteLine("{0} 服务器处理失败，请稍后重试", i.Name)
+        let tt = TextTable.FromHeader([|"名称"; "总体价格"; "NQ价格"; "HQ价格";"更新时间"|])
+        let rets = 
+            args
+            |> Array.map (strToItemResult)
+            |> Array.map (Result.map (fun i -> MarketUtils.MarketAnalyzer.FetchOrdersWorld(i, world)))
+        for ret in rets do
+            match ret with
+            | Error str ->
+                sw.WriteLine("找不到物品{0}，请尝试#is {0}", str)
+            | Ok ma ->
+                match ma with
+                | Error exn -> sw.WriteLine("服务器处理失败，请稍后重试，错误信息： {0}", exn.Message)
+                | Ok ma when ma.IsEmpty ->
+                    tt.AddRow(ma.ItemRecord.Name, "无记录", "--", "--")
+                | Ok ma ->
+                    let all = ma.TakeVolume(25).StdEvPrice()
+                    let nq  = ma.TakeNQ().TakeVolume(25).StdEvPrice()
+                    let hq  = ma.TakeHQ().TakeVolume(25).StdEvPrice()
+                    tt.AddRow(ma.ItemRecord.Name, all, nq, hq, ma.LastUpdateTime())
         sw.Write(tt.ToString())
         msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
     
@@ -95,60 +90,48 @@ type XivModule() =
     member x.HandleTradelogCrossWorld(msgArg : CommandArgs) = 
         let sw = new IO.StringWriter()
         let tt = TextTable.FromHeader([|"名称"; "土豆"; "平均"; "低"; "高"; "最后成交"|])
-        for i in msgArg.Arguments do 
-            match strToItem(i) with
-            | None -> sw.WriteLine("找不到物品{0}，请尝试#is {0}", i)
-            | Some(i) ->
-                let ret = 
-                    let itemId = i.Id |> uint32
-                    async {
-                        return! TradeLog.TradelogProxy.callSafely <@ fun server -> server.GetByIdAllWorld itemId 20 @>
-                    } |> Async.RunSynchronously
-                match ret with
-                | Ok logs when logs.Length = 0 ->
-                    sw.WriteLine("{0} 无记录", i.Name)
-                | Ok all ->
-                    let grouped = all |> Array.groupBy (fun x -> x.WorldId)
-                    for worldId, o in grouped do 
-                        let stdev= MarketUtils.GetStdEvTrade(o)
-                        let world = World.WorldFromId.[worldId]
-                        let low  = o |> Array.map (fun item -> item.Price) |> Array.min
-                        let high = o |> Array.map (fun item -> item.Price) |> Array.max
-                        let upd  = 
-                            let max = o |> Array.maxBy (fun item -> item.TimeStamp)
-                            max.GetHumanReadableTimeSpan()
-                        tt.AddRow(i.Name, world.WorldName,  stdev, low, high, upd)
-                | Error err ->
-                    sw.WriteLine("{0} 服务器处理失败，请稍后重试", i.Name)
+        let rets = 
+            msgArg.Arguments
+            |> Array.map (strToItemResult)
+            |> Array.map (Result.map (fun i -> MarketUtils.MarketAnalyzer.FetchTradesAllWorld(i)))
+        for ret in rets do
+            match ret with
+            | Error str ->
+                sw.WriteLine("找不到物品{0}，请尝试#is {0}", str)
+            | Ok ma ->
+                match ma with
+                | Error exn -> sw.WriteLine("服务器处理失败，请稍后重试，错误信息： {0}", exn.Message)
+                | Ok wma ->
+                    for (world, ma) in wma do 
+                        if ma.IsEmpty then
+                            tt.AddRow(ma.ItemRecord.Name, world.WorldName, "无记录", "--", "--", "--")
+                        else
+                            tt.AddRow(ma.ItemRecord.Name, world.WorldName, ma.StdEvPrice(), ma.MinPrice(), ma.MaxPrice(), ma.LastUpdateTime())
         sw.Write(tt.ToString())
         msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
 
     [<CommandHandlerMethodAttribute("allmarket", "查询全服市场订单", "物品Id或全名...")>]
     member x.HandleMarketCrossWorld(msgArg : CommandArgs) =  
         let sw = new IO.StringWriter()
-        let tt = TextTable.FromHeader([|"名称"; "土豆"; "价格(前25%订单)"; "低"; "更新时间"|])
-        for i in msgArg.Arguments do 
-            match strToItem(i) with
-            | None -> sw.WriteLine("找不到物品{0}，请尝试#is {0}", i)
-            | Some(i) ->
-                let ret =
-                    let itemId = i.Id |> uint32
-                    async {
-                        return! MarketOrder.MarketOrderProxy.callSafely <@ fun server -> server.GetByIdAllWorld itemId @>
-                    } |> Async.RunSynchronously
-                match ret with
-                | Ok ret when ret.Length = 0 ->
-                     sw.WriteLine("{0} 无记录", i.Name)
-                | Ok ret ->
-                    for r in ret do 
-                        let server  = World.WorldFromId.[r.WorldId]
-                        let o = r.Orders
-                        let stdev= MarketUtils.GetStdEvMarket(o, 25)
-                        let low  = o |> Array.map (fun item -> item.Price) |> Array.min
-                        let upd  = r.GetHumanReadableTimeSpan()
-                        tt.AddRow(i.Name, server.WorldName,  stdev, low, upd)
-                | Error err ->
-                    sw.WriteLine("{0} 服务器处理失败，请稍后重试", i.Name)
+        let tt = TextTable.FromHeader([|"名称"; "土豆"; "价格"; "低"; "更新时间"|])
+        let rets = 
+            msgArg.Arguments
+            |> Array.map (strToItemResult)
+            |> Array.map (Result.map (fun i -> MarketUtils.MarketAnalyzer.FetchOrdersAllWorld(i)))
+        for ret in rets do
+            match ret with
+            | Error str ->
+                sw.WriteLine("找不到物品{0}，请尝试#is {0}", str)
+            | Ok ma ->
+                match ma with
+                | Error exn -> sw.WriteLine("服务器处理失败，请稍后重试，错误信息： {0}", exn.Message)
+                | Ok wma ->
+                    for (world, ma) in wma do 
+                        if ma.IsEmpty then
+                            tt.AddRow(ma.ItemRecord.Name, world.WorldName, "无记录", "--", "--")
+                        else
+                            let ma = ma.TakeVolume(cutoff)
+                            tt.AddRow(ma.ItemRecord.Name, world.WorldName, ma.StdEvPrice(), ma.MinPrice(),ma.LastUpdateTime())
         sw.Write(tt.ToString())
         msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
 
@@ -259,25 +242,22 @@ type XivModule() =
         let final =
             acc
             |> Seq.toArray
-            |> Array.map (fun x -> (x.Key, x.Value))
-            |> Array.sortBy (fun (i, _) -> i.Id)
+            |> Array.map (fun x -> (x.Key, MarketUtils.MarketAnalyzer.FetchTradesWorld(x.Key, world), x.Value))
+            |> Array.sortBy (fun (i, _, _) -> i.Id)
 
         let mutable sum = MarketUtils.StdEv.Zero
-        let tt = TextTable.FromHeader([|"物品"; "价格(前25%订单)"; "需求"; "总价"; "更新时间"|])
-        for (item, count) in final do 
-            let ret = 
-                let itemId = item.Id |> uint32
-                async {
-                    let worldId = world.WorldId
-                    return! MarketOrder.MarketOrderProxy.call <@ fun server -> server.GetByIdWorld worldId itemId @>
-                } |> Async.RunSynchronously
-            if ret.Orders.Length <> 0 then
-                let price = MarketUtils.GetStdEvMarket(ret.Orders, cutoff)
-                let total = price * count
-                sum <- sum + total
-                tt.AddRow(item.Name, price, count, total, ret.GetHumanReadableTimeSpan())
-            else
+        let tt = TextTable.FromHeader([|"物品"; "价格"; "需求"; "总价"; "更新时间"|])
+        for (item, ma, count) in final do 
+            match ma with
+            | Error err ->
+                sw.WriteLine("查询{0}时发生错误：{1}", item.Name, err.Message)
+            | Ok ma when ma.IsEmpty ->
                 tt.AddRow(item.Name, "无记录", "--", "--", "--")
+            | Ok ma ->
+                let std   = ma.StdEvPrice()
+                let total = std * count
+                sum <- sum + total
+                tt.AddRow(item.Name, ma.StdEvPrice(), count, total, ma.LastUpdateTime())
         tt.AddRow("总计", sum, "--", "--", "--")
         sw.Write(tt.ToString())
         msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
@@ -312,25 +292,22 @@ type XivModule() =
         let final =
             acc
             |> Seq.toArray
-            |> Array.map (fun x -> (x.Key, x.Value))
-            |> Array.sortBy (fun (i, _) -> i.Id)
+            |> Array.map (fun x -> (x.Key, MarketUtils.MarketAnalyzer.FetchTradesWorld(x.Key, world), x.Value))
+            |> Array.sortBy (fun (i, _, _) -> i.Id)
 
         let mutable sum = MarketUtils.StdEv.Zero
         let tt = TextTable.FromHeader([|"物品"; "价格(前25%订单)"; "需求"; "总价"; "更新时间"|])
-        for (item, count) in final do 
-            let ret = 
-                let itemId = item.Id |> uint32
-                async {
-                    let worldId = world.WorldId
-                    return! MarketOrder.MarketOrderProxy.call <@ fun server -> server.GetByIdWorld worldId itemId @>
-                } |> Async.RunSynchronously
-            if ret.Orders.Length <> 0 then
-                let price = MarketUtils.GetStdEvMarket(ret.Orders, cutoff)
-                let total = price * count
-                sum <- sum + total
-                tt.AddRow(item.Name, price, count, total, ret.GetHumanReadableTimeSpan())
-            else
+        for (item, ma, count) in final do 
+            match ma with
+            | Error err ->
+                sw.WriteLine("查询{0}时发生错误：{1}", item.Name, err.Message)
+            | Ok ma when ma.IsEmpty ->
                 tt.AddRow(item.Name, "无记录", "--", "--", "--")
+            | Ok ma ->
+                let std   = ma.StdEvPrice()
+                let total = std * count
+                sum <- sum + total
+                tt.AddRow(item.Name, ma.StdEvPrice(), count, total, ma.LastUpdateTime())
         tt.AddRow("总计", sum, "--", "--", "--")
         sw.Write(tt.ToString())
         msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
@@ -350,20 +327,14 @@ type XivModule() =
             let tt = TextTable.FromHeader([|"道具"; "名称"; "价格(前25%订单)"; "低"; "单道具价值"; "更新时间"|])
             for info in ret.Value do 
                 let i = itemCol.LookupById(info.ReceiveItem).Value
-                let ret =
-                    let itemId = info.ReceiveItem |> uint32
-                    async {
-                        let worldId = world.WorldId // 必须在代码引用之外处理为简单类型
-                        return! MarketOrder.MarketOrderProxy.callSafely <@ fun server -> server.GetByIdWorld worldId itemId @>
-                    } |> Async.RunSynchronously
+                let ret = MarketUtils.MarketAnalyzer.FetchTradesWorld(i, world)
                 match ret with
-                | Ok x when x.Orders.Length = 0 ->
+                | Ok x when x.IsEmpty ->
                     tt.AddRow(item, i.Name, "无记录", "--", "--", "--")
                 | Ok ret ->
-                    let o = ret.Orders
-                    let stdev= MarketUtils.GetStdEvMarket(o, 25)
-                    let low  = o |> Array.map (fun item -> item.Price) |> Array.min
-                    let upd  = ret.GetHumanReadableTimeSpan()
+                    let stdev= ret.StdEvPrice()
+                    let low  = ret.MinPrice()
+                    let upd  = ret.LastUpdateTime()
 
                     let v = stdev * (info.ReceiveCount |> float) / (info.CostCount |> float)
                     tt.AddRow(item, i.Name, stdev, low, v, upd)

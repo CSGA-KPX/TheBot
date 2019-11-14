@@ -4,24 +4,7 @@ open LibDmfXiv
 open XivData
 
 module MarketUtils =
-    let internal TakeMarketSample (samples : Shared.MarketOrder.FableMarketOrder [] , cutPct : int) = 
-        [|
-            //(price, count)
-            let samples = samples |> Array.sortBy (fun x -> x.Price)
-            let itemCount = samples |> Array.sumBy (fun x -> x.Count |> int)
-            let cutLen = itemCount * cutPct / 100
-            let mutable rest = cutLen
-            match itemCount = 0 , cutLen = 0 with
-            | true, _ -> ()
-            | false, true ->
-                yield ((int) samples.[0].Price, 1)
-            | false, false ->
-                for record in samples do
-                    let takeCount = min rest (record.Count |> int)
-                    if takeCount <> 0 then
-                        rest <- rest - takeCount
-                        yield ((int) record.Price, takeCount)
-        |]
+    open LibDmfXiv.Client
 
     type StdEv = 
         {
@@ -56,71 +39,119 @@ module MarketUtils =
             }
 
         static member FromData(data : float []) = 
-            let avg = Array.average data
-            let sum = data |> Array.sumBy (fun x -> (x - avg) ** 2.0)
-            let ev  = sum / (float data.Length)
-            { Average = avg; Deviation = sqrt ev }
+            if data.Length = 0 then
+                { Average = nan; Deviation = nan }
+            else
+                let avg = Array.average data
+                let sum = data |> Array.sumBy (fun x -> (x - avg) ** 2.0)
+                let ev  = sum / (float data.Length)
+                { Average = avg; Deviation = sqrt ev }
 
-    let GetStdEvMarket(market : Shared.MarketOrder.FableMarketOrder [] , cutPct : int) = 
-        let samples = TakeMarketSample(market, cutPct)
-        let itemCount = samples |> Array.sumBy (fun (a, b) -> (float) b)
-        let average = 
-            let priceSum = samples |> Array.sumBy (fun (a, b) -> (float) (a * b))
-            priceSum / itemCount
-        let sum = 
-            samples
-            |> Array.sumBy (fun (a, b) -> (float b) * (( (float a) - average) ** 2.0) )
-        let ev  = sum / itemCount
-        { Average = average; Deviation = sqrt ev }
+    type MarketData = 
+        | Order of Shared.MarketOrder.FableMarketOrder
+        | Trade of Shared.TradeLog.FableTradeLog
 
-    let GetStdEvTrade(tradelog : Shared.TradeLog.FableTradeLog []) = 
-        let samples = tradelog |> Array.map (fun x -> (x.Price, x.Count))
-        let itemCount = samples |> Array.sumBy (fun (a, b) -> (float) b)
-        let average = 
-            let priceSum = samples |> Array.sumBy (fun (a, b) -> (float) (a * b))
-            priceSum / itemCount
-        let sum = 
-            samples
-            |> Array.sumBy (fun (a, b) -> (float b) * (( (float a) - average) ** 2.0) )
-        let ev  = sum / itemCount
-        { Average = average; Deviation = sqrt ev }
+        member x.ItemRecord = 
+            match x with
+            | Order x -> Item.ItemCollection.Instance.LookupById(x.ItemId |> int).Value
+            | Trade x -> Item.ItemCollection.Instance.LookupById(x.ItemId |> int).Value
 
-    type Analyzer<'T>(data : 'T []) = 
+        member x.IsHq = 
+            match x with
+            | Order x -> x.IsHQ
+            | Trade x -> x.IsHQ
+
+        member x.Count =
+            match x with
+            | Order x -> x.Count
+            | Trade x -> x.Count
+
+        member x.Price =
+            match x with
+            | Order x -> x.Price
+            | Trade x -> x.Price
         
+        /// 返回GMT+8的时间
+        member x.UpdateTime = 
+            let ts = 
+                match x with
+                | Order x -> x.TimeStamp
+                | Trade x -> x.TimeStamp
+            DateTimeOffset.FromUnixTimeSeconds(ts |> int64).ToOffset(TimeSpan.FromHours(8.0))
+
+    type MarketAnalyzer(data : MarketData[]) = 
+        member x.ItemRecord = data.[0].ItemRecord
         member x.IsEmpty = data.Length = 0
+        
+        member x.LastUpdateTime() = 
+            let dt = (data |> Array.maxBy (fun x -> x.UpdateTime)).UpdateTime
+            (DateTimeOffset.Now - dt) |> Shared.Utils.formatTimeSpan
 
-        member x.MinRow(func) = data |> Array.minBy func
-        member x.Min(func)    = x.MinRow(func) |> func
+        member x.MinPrice() = (data |> Array.minBy (fun x -> x.Price)).Price
+        member x.MaxPrice() = (data |> Array.maxBy (fun x -> x.Price)).Price
+        member x.StdEvPrice() = data |> Array.map (fun x -> x.Price |> float) |> StdEv.FromData
 
-        member x.MaxRow(func) = data |> Array.maxBy func
-        member x.Max(func)    = x.MaxRow(func) |> func
+        member x.MinCount() = (data |> Array.minBy (fun x -> x.Count)).Count
+        member x.MaxCount() = (data |> Array.maxBy (fun x -> x.Count)).Count
+        member x.StdEvCount() = data |> Array.map (fun x -> x.Count |> float) |> StdEv.FromData
 
-        member x.Avg(func : 'T -> float)    = data |> Array.averageBy func
+        member x.TakeNQ() = new MarketAnalyzer(data |> Array.filter (fun x -> not x.IsHq))
+        member x.TakeHQ() = new MarketAnalyzer(data |> Array.filter (fun x -> x.IsHq))
 
-        member x.Sum(func : 'T -> float)    = data |> Array.sumBy func
+        member x.TakeVolume(cutPct : int) = 
+            new MarketAnalyzer([|
+                let samples = data |> Array.sortBy (fun x -> x.Price)
+                let itemCount = data |> Array.sumBy (fun x -> x.Count |> int)
+                let cutLen = itemCount * cutPct / 100
+                let mutable rest = cutLen
+                match itemCount = 0 , cutLen = 0 with
+                | true, _ -> ()
+                | false, true ->
+                    //返回第一个
+                    yield data.[0]
+                | false, false ->
+                    for record in samples do
+                        let takeCount = min rest (record.Count |> int)
+                        if takeCount <> 0 then
+                            rest <- rest - takeCount
+                            yield record
+            |])
 
-        member x.StdEv(func : 'T -> float)  = data |> Array.map (func) |> StdEv.FromData
+        static member FetchOrdersWorld(item : Item.ItemRecord, world : World.World) = 
+            let itemId = item.Id |> uint32
+            let worldId = world.WorldId
+            MarketOrder.MarketOrderProxy.callSafely <@ fun server -> server.GetByIdWorld worldId itemId @>
+            |> Async.RunSynchronously
+            |> Result.map (fun o -> o.Orders |> Array.map (Order))
+            |> Result.map (fun o -> new MarketAnalyzer(o))
 
-        member x.TakeSample(sortFunc, countFunc : 'T -> int, cutPct : int) = 
-            let data = 
-                [|
-                    let sorted = data |> Array.sortBy sortFunc
-                    let count  = data |> Array.sumBy countFunc
-                    let cutoff = count * cutPct / 100
-                    let mutable rest = cutoff
-            
-                    match count = 0, cutoff = 0 with
-                    | true, _ -> ()
-                    | false, true ->
-                        yield (sorted.[0])
-                    | false, false ->
-                        for item in sorted do
-                            let takeCount = min rest (item |> countFunc)
-                            if takeCount <> 0 then
-                                rest <- rest - takeCount
-                                yield (item)
-                |]
-            new Analyzer<'T>(data)
+        static member FetchOrdersAllWorld(item : Item.ItemRecord) = 
+            let itemId = item.Id |> uint32
+            MarketOrder.MarketOrderProxy.callSafely <@ fun server -> server.GetByIdAllWorld itemId @>
+            |> Async.RunSynchronously
+            |> Result.map (fun oa -> 
+                [|  for o in oa do 
+                        let world = World.WorldFromId.[o.WorldId]
+                        let ma    = new MarketAnalyzer(o.Orders |> Array.map (Order))
+                        yield world, ma|])
+
+        static member FetchTradesWorld(item : Item.ItemRecord, world : World.World) = 
+            let itemId = item.Id |> uint32
+            let worldId = world.WorldId
+            TradeLog.TradelogProxy.callSafely <@ fun server -> server.GetByIdWorld worldId itemId 20 @>
+            |> Async.RunSynchronously
+            |> Result.map (Array.map (Trade))
+            |> Result.map (fun o -> new MarketAnalyzer(o))
+
+        static member FetchTradesAllWorld(item : Item.ItemRecord) =
+            let itemId = item.Id |> uint32
+            TradeLog.TradelogProxy.callSafely <@ fun server -> server.GetByIdAllWorld itemId 20 @>
+            |> Async.RunSynchronously
+            |> Result.map (fun t -> 
+                t
+                |> Array.groupBy (fun t -> World.WorldFromId.[t.WorldId])
+                |> Array.map (fun (x,y) -> (x, new MarketAnalyzer(y |> Array.map (Trade)))))
+
 module MentorUtils = 
     open XivData.Mentor
     let fortune = 
