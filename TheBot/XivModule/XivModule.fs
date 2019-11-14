@@ -147,14 +147,19 @@ type XivModule() =
     member x.HandleItemSearch(msgArg : CommandArgs) = 
         let tt = TextTable.FromHeader([|"查询"; "物品"; "Id"|])
         for i in msgArg.Arguments do 
-            let ret =
-                itemCol.SearchByName(i)
-                |> Array.sortBy (fun x -> x.Id)
-            if ret.Length = 0 then
-                tt.AddRow(i, "无", "无")
+            if isNumber(i) then
+                let ret = itemCol.LookupById(i |> int32)
+                if ret.IsSome then
+                    tt.AddRow(i, ret.Value.Name, ret.Value.Id.ToString())
             else
-                for item in ret do 
-                    tt.AddRow(i, item.Name, item.Id)
+                let ret =
+                    itemCol.SearchByName(i)
+                    |> Array.sortBy (fun x -> x.Id)
+                if ret.Length = 0 then
+                    tt.AddRow(i, "无", "无")
+                else
+                    for item in ret do 
+                        tt.AddRow(i, item.Name, item.Id.ToString())
 
         msgArg.CqEventArgs.QuickMessageReply(tt.ToString())
 
