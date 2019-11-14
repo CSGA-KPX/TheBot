@@ -50,7 +50,7 @@ type ItemCollection private () =
             let sht = col.GetSheet("Item", [|"Name"|])
             seq {
                 for row in sht do
-                    yield {Id = row.Key.Key; Name = row.As<string>("Name")}
+                    yield {Id = row.Key.Main; Name = row.As<string>("Name")}
             } |> db.InsertBulk |> ignore
             GC.Collect()
 

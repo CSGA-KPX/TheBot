@@ -79,8 +79,8 @@ module MarketUtils =
                 | Trade x -> x.TimeStamp
             DateTimeOffset.FromUnixTimeSeconds(ts |> int64).ToOffset(TimeSpan.FromHours(8.0))
 
-    type MarketAnalyzer(data : MarketData[]) = 
-        member x.ItemRecord = data.[0].ItemRecord
+    type MarketAnalyzer(item : Item.ItemRecord, data : MarketData[]) = 
+        member x.ItemRecord = item
         member x.IsEmpty = data.Length = 0
         
         member x.LastUpdateTime() = 
@@ -95,11 +95,11 @@ module MarketUtils =
         member x.MaxCount() = (data |> Array.maxBy (fun x -> x.Count)).Count
         member x.StdEvCount() = data |> Array.map (fun x -> x.Count |> float) |> StdEv.FromData
 
-        member x.TakeNQ() = new MarketAnalyzer(data |> Array.filter (fun x -> not x.IsHq))
-        member x.TakeHQ() = new MarketAnalyzer(data |> Array.filter (fun x -> x.IsHq))
+        member x.TakeNQ() = new MarketAnalyzer(item, data |> Array.filter (fun x -> not x.IsHq))
+        member x.TakeHQ() = new MarketAnalyzer(item, data |> Array.filter (fun x -> x.IsHq))
 
         member x.TakeVolume(cutPct : int) = 
-            new MarketAnalyzer([|
+            new MarketAnalyzer(item, [|
                 let samples = data |> Array.sortBy (fun x -> x.Price)
                 let itemCount = data |> Array.sumBy (fun x -> x.Count |> int)
                 let cutLen = itemCount * cutPct / 100
@@ -123,7 +123,7 @@ module MarketUtils =
             MarketOrder.MarketOrderProxy.callSafely <@ fun server -> server.GetByIdWorld worldId itemId @>
             |> Async.RunSynchronously
             |> Result.map (fun o -> o.Orders |> Array.map (Order))
-            |> Result.map (fun o -> new MarketAnalyzer(o))
+            |> Result.map (fun o -> new MarketAnalyzer(item, o))
 
         static member FetchOrdersAllWorld(item : Item.ItemRecord) = 
             let itemId = item.Id |> uint32
@@ -132,7 +132,7 @@ module MarketUtils =
             |> Result.map (fun oa -> 
                 [|  for o in oa do 
                         let world = World.WorldFromId.[o.WorldId]
-                        let ma    = new MarketAnalyzer(o.Orders |> Array.map (Order))
+                        let ma    = new MarketAnalyzer(item, o.Orders |> Array.map (Order))
                         yield world, ma|])
 
         static member FetchTradesWorld(item : Item.ItemRecord, world : World.World) = 
@@ -141,7 +141,7 @@ module MarketUtils =
             TradeLog.TradelogProxy.callSafely <@ fun server -> server.GetByIdWorld worldId itemId 20 @>
             |> Async.RunSynchronously
             |> Result.map (Array.map (Trade))
-            |> Result.map (fun o -> new MarketAnalyzer(o))
+            |> Result.map (fun o -> new MarketAnalyzer(item, o))
 
         static member FetchTradesAllWorld(item : Item.ItemRecord) =
             let itemId = item.Id |> uint32
@@ -150,7 +150,7 @@ module MarketUtils =
             |> Result.map (fun t -> 
                 t
                 |> Array.groupBy (fun t -> World.WorldFromId.[t.WorldId])
-                |> Array.map (fun (x,y) -> (x, new MarketAnalyzer(y |> Array.map (Trade)))))
+                |> Array.map (fun (x,y) -> (x, new MarketAnalyzer(item, y |> Array.map (Trade)))))
 
 module MentorUtils = 
     open XivData.Mentor

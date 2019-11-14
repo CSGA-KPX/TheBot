@@ -12,6 +12,7 @@
     <Compile Include="World.fs" />
     <Compile Include="Mentor.fs" />
     <Compile Include="SpecialShop.fs" />
+    <Compile Include="GilShop.fs" />
     <Compile Include="Test.fs" />
   </ItemGroup>
 

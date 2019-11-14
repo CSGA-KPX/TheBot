@@ -49,13 +49,13 @@ type SpecialShopCollection private () =
                             let r = 
                                 {
                                     Id           = 0
-                                    ReceiveItem  = rItem.Key.Key
+                                    ReceiveItem  = rItem.Key.Main
                                     ReceiveCount = row.As<uint32>(index "Count{Receive}" col page)
                                     ReceiveHQ    = row.As<bool>(index "HQ{Receive}" col page)
                                     CostItem     = row.AsRaw(index "Item{Cost}" col page) |> int32
                                     CostCount    = row.As<uint32>(index "Count{Cost}" col page)
                                 }
-                            if rItem.Key.Key > 0
+                            if rItem.Key.Main > 0
                             && r.ReceiveCount > 0u
                             && r.ReceiveHQ = false 
                             && rItem.As<bool>("IsUntradable") = false 

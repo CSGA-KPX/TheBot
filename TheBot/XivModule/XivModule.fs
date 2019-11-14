@@ -11,6 +11,7 @@ type XivModule() =
     let rm       = Recipe.RecipeManager.GetInstance()
     let cutoff   = 25
     let itemCol  = Item.ItemCollection.Instance
+    let gilShop  = GilShop.GilShopCollection.Instance
 
     let isNumber(str : string) = 
         if str.Length <> 0 then
@@ -28,6 +29,14 @@ type XivModule() =
             Ok ret.Value
         else
             Error str
+
+    /// 给物品名备注上NPC价格
+    let tryLookupNpcPrice(item : Item.ItemRecord) = 
+        let ret= gilShop.LookupByItem(item)
+        if ret.IsSome then
+            sprintf "%s(%i)" item.Name ret.Value.Ask
+        else
+            item.Name
 
     [<CommandHandlerMethodAttribute("tradelog", "查询交易记录", "物品Id或全名...")>]
     member x.HandleTradelog(msgArg : CommandArgs) = 
@@ -64,7 +73,7 @@ type XivModule() =
             sw.WriteLine("服务器：{0}", world.WorldName)
         else
             sw.WriteLine("默认服务器：{0}", world.WorldName)
-        let tt = TextTable.FromHeader([|"名称"; "总体价格"; "NQ价格"; "HQ价格";"更新时间"|])
+        let tt = TextTable.FromHeader([|"名称"; "总体价格"; "HQ价格";"更新时间"|])
         let rets = 
             args
             |> Array.map (strToItemResult)
@@ -80,9 +89,8 @@ type XivModule() =
                     tt.AddRow(ma.ItemRecord.Name, "无记录", "--", "--")
                 | Ok ma ->
                     let all = ma.TakeVolume(25).StdEvPrice()
-                    let nq  = ma.TakeNQ().TakeVolume(25).StdEvPrice()
                     let hq  = ma.TakeHQ().TakeVolume(25).StdEvPrice()
-                    tt.AddRow(ma.ItemRecord.Name, all, nq, hq, ma.LastUpdateTime())
+                    tt.AddRow(tryLookupNpcPrice(ma.ItemRecord), all, hq, ma.LastUpdateTime())
         sw.Write(tt.ToString())
         msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
     
@@ -128,10 +136,10 @@ type XivModule() =
                 | Ok wma ->
                     for (world, ma) in wma do 
                         if ma.IsEmpty then
-                            tt.AddRow(ma.ItemRecord.Name, world.WorldName, "无记录", "--", "--")
+                            tt.AddRow(tryLookupNpcPrice(ma.ItemRecord), world.WorldName, "无记录", "--", "--")
                         else
                             let ma = ma.TakeVolume(cutoff)
-                            tt.AddRow(ma.ItemRecord.Name, world.WorldName, ma.StdEvPrice(), ma.MinPrice(),ma.LastUpdateTime())
+                            tt.AddRow(tryLookupNpcPrice(ma.ItemRecord), world.WorldName, ma.StdEvPrice(), ma.MinPrice(),ma.LastUpdateTime())
         sw.Write(tt.ToString())
         msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
 
@@ -252,12 +260,12 @@ type XivModule() =
             | Error err ->
                 sw.WriteLine("查询{0}时发生错误：{1}", item.Name, err.Message)
             | Ok ma when ma.IsEmpty ->
-                tt.AddRow(item.Name, "无记录", "--", "--", "--")
+                tt.AddRow(tryLookupNpcPrice(ma.ItemRecord), "无记录", "--", "--", "--")
             | Ok ma ->
                 let std   = ma.StdEvPrice()
                 let total = std * count
                 sum <- sum + total
-                tt.AddRow(item.Name, ma.StdEvPrice(), count, total, ma.LastUpdateTime())
+                tt.AddRow(tryLookupNpcPrice(ma.ItemRecord), ma.StdEvPrice(), count, total, ma.LastUpdateTime())
         tt.AddRow("总计", sum, "--", "--", "--")
         sw.Write(tt.ToString())
         msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
@@ -302,12 +310,12 @@ type XivModule() =
             | Error err ->
                 sw.WriteLine("查询{0}时发生错误：{1}", item.Name, err.Message)
             | Ok ma when ma.IsEmpty ->
-                tt.AddRow(item.Name, "无记录", "--", "--", "--")
+                tt.AddRow(tryLookupNpcPrice(ma.ItemRecord), "无记录", "--", "--", "--")
             | Ok ma ->
                 let std   = ma.StdEvPrice()
                 let total = std * count
                 sum <- sum + total
-                tt.AddRow(item.Name, ma.StdEvPrice(), count, total, ma.LastUpdateTime())
+                tt.AddRow(tryLookupNpcPrice(ma.ItemRecord), ma.StdEvPrice(), count, total, ma.LastUpdateTime())
         tt.AddRow("总计", sum, "--", "--", "--")
         sw.Write(tt.ToString())
         msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
@@ -337,7 +345,7 @@ type XivModule() =
                     let upd  = ret.LastUpdateTime()
 
                     let v = stdev * (info.ReceiveCount |> float) / (info.CostCount |> float)
-                    tt.AddRow(item, i.Name, stdev, low, v, upd)
+                    tt.AddRow(tryLookupNpcPrice(ret.ItemRecord), i.Name, stdev, low, v, upd)
                 | Error err ->
                     sw.WriteLine("{0} 服务器处理失败，请稍后重试", i.Name)
             sw.Write(tt.ToString())

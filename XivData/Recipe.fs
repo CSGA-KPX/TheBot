@@ -60,7 +60,7 @@ type CraftRecipeProvider private () =
                         |> Array.filter (fun (id,_) -> id > 0)
                         |> Array.map (fun (id, runs) -> (lookup id, runs))
                     yield {
-                            Id = row.Key.Key
+                            Id = row.Key.Main
                             ResultItem = row.As<XivSheetReference>("Item{Result}").Key |> lookup
                             ProductCount = row.As<byte>("Amount{Result}") |> float
                             Materials = materials
@@ -116,7 +116,7 @@ type CompanyCraftRecipeProvider private () =
                                     yield! materials
                         |]
                     yield {
-                            Id = ccs.Key.Key
+                            Id = ccs.Key.Main
                             ResultItem = ccs.As<XivSheetReference>("ResultItem").Key |> lookup
                             ProductCount = 1.0
                             Materials = materials
