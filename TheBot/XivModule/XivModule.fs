@@ -340,17 +340,18 @@ type XivModule() =
             let tt = TextTable.FromHeader([|"道具"; "名称"; "价格(前25%订单)"; "低"; "单道具价值"; "更新时间"|])
             for info in ret.Value do 
                 let i = itemCol.LookupById(info.ReceiveItem).Value
-                let ret = MarketUtils.MarketAnalyzer.FetchTradesWorld(i, world)
+                let ret = MarketUtils.MarketAnalyzer.FetchOrdersWorld(i, world)
                 match ret with
                 | Ok x when x.IsEmpty ->
                     tt.AddRow(item, i.Name, "无记录", "--", "--", "--")
                 | Ok ret ->
+                    let ret = ret.TakeVolume(25)
                     let stdev= ret.StdEvPrice()
                     let low  = ret.MinPrice()
                     let upd  = ret.LastUpdateTime()
 
                     let v = stdev * (info.ReceiveCount |> float) / (info.CostCount |> float)
-                    tt.AddRow(tryLookupNpcPrice(ret.ItemRecord), i.Name, stdev, low, v, upd)
+                    tt.AddRow(item, tryLookupNpcPrice(i), stdev, low, v, upd)
                 | Error err ->
                     sw.WriteLine("{0} 服务器处理失败，请稍后重试", i.Name)
             sw.Write(tt.ToString())

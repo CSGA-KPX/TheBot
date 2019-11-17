@@ -4,11 +4,11 @@ open KPX.FsCqHttp.DataType.Event
 open KPX.FsCqHttp.Handler.Base
 
 [<AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = true)>]
-type CommandHandlerMethodAttribute(command : string, desc, args) = 
+type CommandHandlerMethodAttribute(command : string, desc, lh) = 
     inherit Attribute()
     member val Command  : string = CommandHandlerMethodAttribute.CommandStart + command.ToLowerInvariant()
     member val HelpDesc : string = desc
-    member val HelpArgs : string = args
+    member val LongHelp : string = lh
 
     static member CommandStart = "#"
 
