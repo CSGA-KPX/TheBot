@@ -35,45 +35,34 @@ let internal itemOverriding =
     |] |> dict
 
 type ItemCollection private () =
-    inherit Utils.XivDataSource()
-    let colName = "ItemRecord"
-    let exists = Utils.Db.CollectionExists(colName)
-    let db = Utils.Db.GetCollection<ItemRecord>(colName)
-    do
-        if not exists then
-            //build from scratch
-            let db = Utils.Db.GetCollection<ItemRecord>(colName)
-            printfn "Building ItemCollection"
-            db.EnsureIndex("_id", true) |> ignore
-            db.EnsureIndex("Name") |> ignore
-            let col = new LibFFXIV.GameData.Raw.XivCollection(XivLanguage.ChineseSimplified) :> IXivCollection
-            let sht = col.GetSheet("Item", [|"Name"|])
-            seq {
-                for row in sht do
-                    yield {Id = row.Key.Main; Name = row.As<string>("Name")}
-            } |> db.InsertBulk |> ignore
-            GC.Collect()
+    inherit Utils.XivDataSource<int, ItemRecord>()
 
     static let instance = new ItemCollection()
     static member Instance = instance
 
-    member x.LookupByName(name : string) =
-        let ret = db.FindOne(LiteDB.Query.EQ("Name", new LiteDB.BsonValue(name)))
-        if isNull (box ret) then
-            None
-        else
-            Some ret
+    override x.BuildCollection() = 
+        let db = x.Collection
+        printfn "Building ItemCollection"
+        db.EnsureIndex("_id", true) |> ignore
+        db.EnsureIndex("Name") |> ignore
+        let col = new LibFFXIV.GameData.Raw.XivCollection(XivLanguage.ChineseSimplified) :> IXivCollection
+        let sht = col.GetSheet("Item", [|"Name"|])
+        seq {
+            for row in sht do
+                yield {Id = row.Key.Main; Name = row.As<string>("Name")}
+        } |> db.InsertBulk |> ignore
+        GC.Collect()
 
-    member x.LookupById(id : int) =
-        let ret = db.FindById(new LiteDB.BsonValue(id))
+    member x.TryLookupByName(name : string) =
+        let ret = x.Collection.FindOne(LiteDB.Query.EQ("Name", new LiteDB.BsonValue(name)))
         if isNull (box ret) then
             None
         else
             Some ret
 
     member x.SearchByName(str) = 
-        db.Find(LiteDB.Query.Contains("Name", str))
+        x.Collection.Find(LiteDB.Query.Contains("Name", str))
         |> Seq.toArray
 
     member x.AllItems() = 
-        db.FindAll() |> Seq.toArray
+        x.Collection.FindAll() |> Seq.toArray

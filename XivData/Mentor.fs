@@ -16,66 +16,44 @@ type StringRecord =
         }
 
 type ShouldOrAvoidCollection private () =
-    inherit Utils.XivDataSource()
-
-    let colName = "ShouldOrAvoid"
-    let exists = Utils.Db.CollectionExists(colName)
-    let db = Utils.Db.GetCollection<StringRecord>(colName)
-
-    do
-        if not exists then
-            let db = Utils.Db.GetCollection<StringRecord>(colName)
-            printfn "Building ShouldOrAvoidCollection"
-            let col = new XivCollection(XivLanguage.ChineseSimplified) :> IXivCollection
-            let sht = col.GetSheet("ContentFinderCondition", [|"Name"; "MentorRoulette"|])
-            seq {
-                for row in sht do
-                    if row.As<bool>("MentorRoulette") then
-                        yield {Id = 0; Value = row.As<string>("Name")}
-                yield!
-                    "中途参战，红色划水，蓝色carry，绿色擦屁股，辱骂毒豆芽，辱骂假火，副职导随".Split('，')
-                    |> Array.map (StringRecord.FromString)
-                printfn "end"
-            } |> db.InsertBulk |> ignore
-            GC.Collect()
+    inherit Utils.XivDataSource<int, StringRecord>()
 
     static let instance = new ShouldOrAvoidCollection()
     static member Instance = instance
 
-    member x.Count = db.Count()
-
-    member x.Item (id : int) = 
-        db.FindById(new LiteDB.BsonValue(id))
-
+    override x.BuildCollection() = 
+        let db = x.Collection
+        printfn "Building ShouldOrAvoidCollection"
+        let col = new XivCollection(XivLanguage.ChineseSimplified) :> IXivCollection
+        let sht = col.GetSheet("ContentFinderCondition", [|"Name"; "MentorRoulette"|])
+        seq {
+            for row in sht do
+                if row.As<bool>("MentorRoulette") then
+                    yield {Id = 0; Value = row.As<string>("Name")}
+            yield!
+                "中途参战，红色划水，蓝色carry，绿色擦屁股，辱骂毒豆芽，辱骂假火，副职导随".Split('，')
+                |> Array.map (StringRecord.FromString)
+            printfn "end"
+        } |> db.InsertBulk |> ignore
+        GC.Collect()
 
 type LocationCollection private () =
-    inherit Utils.XivDataSource()
+    inherit Utils.XivDataSource<int, StringRecord>()
 
-    let colName = "LocationCollection"
-    let exists = Utils.Db.CollectionExists(colName)
-    let db = Utils.Db.GetCollection<StringRecord>(colName)
-    let allowedLocation = Collections.Generic.HashSet<byte>([|0uy; 1uy; 2uy; 6uy; 13uy; 14uy; 15uy;|])
-
-    do
-        if not exists then
-            //build from scratch
-            let db = Utils.Db.GetCollection<StringRecord>(colName)
-            printfn "Building LocationCollection"
-            let col = new XivCollection(XivLanguage.ChineseSimplified) :> IXivCollection
-            let sht = col.GetSheet("TerritoryType", [|"PlaceName"; "TerritoryIntendedUse"|])
-            seq {
-                for row in sht do
-                    let isAllowed = allowedLocation.Contains(row.As<byte>("TerritoryIntendedUse"))
-                    let name  = row.AsRow("PlaceName").As<string>("Name")
-                    if isAllowed && (not <| String.IsNullOrWhiteSpace(name)) then
-                        yield {Id = 0; Value = row.AsRow("PlaceName").As<string>("Name")}
-            } |> db.InsertBulk |> ignore
-            GC.Collect()
-
+    static let allowedLocation = Collections.Generic.HashSet<byte>([|0uy; 1uy; 2uy; 6uy; 13uy; 14uy; 15uy;|])
     static let instance = new LocationCollection()
     static member Instance = instance
 
-    member x.Count = db.Count()
-
-    member x.Item (id : int) = 
-        db.FindById(new LiteDB.BsonValue(id))
+    override x.BuildCollection() = 
+        let db = x.Collection
+        printfn "Building LocationCollection"
+        let col = new XivCollection(XivLanguage.ChineseSimplified) :> IXivCollection
+        let sht = col.GetSheet("TerritoryType", [|"PlaceName"; "TerritoryIntendedUse"|])
+        seq {
+            for row in sht do
+                let isAllowed = allowedLocation.Contains(row.As<byte>("TerritoryIntendedUse"))
+                let name  = row.AsRow("PlaceName").As<string>("Name")
+                if isAllowed && (not <| String.IsNullOrWhiteSpace(name)) then
+                    yield {Id = 0; Value = row.AsRow("PlaceName").As<string>("Name")}
+        } |> db.InsertBulk |> ignore
+        GC.Collect()

@@ -22,9 +22,9 @@ type XivModule() =
     let strToItemResult(str : string)= 
         let ret = 
             if isNumber(str) then
-                itemCol.LookupById(Convert.ToInt32(str))
+                itemCol.TryLookupById(Convert.ToInt32(str))
             else
-                itemCol.LookupByName(str)
+                itemCol.TryLookupByName(str)
         if ret.IsSome then
             Ok ret.Value
         else
@@ -32,7 +32,7 @@ type XivModule() =
 
     /// 给物品名备注上NPC价格
     let tryLookupNpcPrice(item : Item.ItemRecord) = 
-        let ret= gilShop.LookupByItem(item)
+        let ret= gilShop.TryLookupByItem(item)
         if ret.IsSome then
             sprintf "%s(%i)" item.Name ret.Value.Ask
         else
@@ -148,7 +148,7 @@ type XivModule() =
         let tt = TextTable.FromHeader([|"查询"; "物品"; "Id"|])
         for i in msgArg.Arguments do 
             if isNumber(i) then
-                let ret = itemCol.LookupById(i |> int32)
+                let ret = itemCol.TryLookupById(i |> int32)
                 if ret.IsSome then
                     tt.AddRow(i, ret.Value.Name, ret.Value.Id.ToString())
             else
@@ -335,11 +335,11 @@ type XivModule() =
             sw.WriteLine("默认服务器：{0}", world.WorldName)
         if args.Length = 0 then failwithf "参数不足"
         let item = args.[0]
-        let ret = SpecialShop.SpecialShopCollection.Instance.LookupByName(item)
+        let ret = SpecialShop.SpecialShopCollection.Instance.TrySearchByName(item)
         if ret.IsSome then
             let tt = TextTable.FromHeader([|"道具"; "名称"; "价格(前25%订单)"; "低"; "单道具价值"; "更新时间"|])
             for info in ret.Value do 
-                let i = itemCol.LookupById(info.ReceiveItem).Value
+                let i = itemCol.LookupById(info.ReceiveItem)
                 let ret = MarketUtils.MarketAnalyzer.FetchOrdersWorld(i, world)
                 match ret with
                 | Ok x when x.IsEmpty ->
@@ -376,9 +376,9 @@ type XivModule() =
         sw.WriteLine("{0} : {1}", fortune, event)
 
         let s,a   = 
-            let count = MentorUtils.shouldOrAvoid.Count |> uint32
+            let count = MentorUtils.shouldOrAvoid.Count() |> uint32
             let idx   = dicer.GetRandomArray(count + 1u, 3*2)
-            let a = idx |> Array.map (fun id -> MentorUtils.shouldOrAvoid.[id].Value)
+            let a = idx |> Array.map (fun id -> MentorUtils.shouldOrAvoid.[id].Value.Value)
             a.[0..2], a.[3..]
         sw.WriteLine("宜：{0}", String.concat "/" s)
         sw.WriteLine("忌：{0}", String.concat "/" a)
@@ -386,7 +386,7 @@ type XivModule() =
         let job = dicer.GetRandomItem(jobs)
         sw.WriteLine("推荐职业: {0} {1}", c, job)
         let location = 
-            let count = MentorUtils.location.Count |> uint32
+            let count = MentorUtils.location.Count() |> uint32
             let idx = dicer.GetRandom(count + 1u)
             MentorUtils.location.[idx].Value
         sw.WriteLine("推荐排本场所: {0}", location)

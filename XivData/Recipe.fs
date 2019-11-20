@@ -34,107 +34,88 @@ type IRecipeProvider =
 
 
 type CraftRecipeProvider private () =
-    inherit Utils.XivDataSource()
-    let colName = "CraftRecipeProvider"
-    let exists = Utils.Db.CollectionExists(colName)
-    let db = Utils.Db.GetCollection<RecipeRecord>(colName)
-    do
-        db.EnsureIndex("_id", true) |> ignore
-        db.EnsureIndex("ResultItem.Id") |> ignore
-        if not exists then
-            //build from scratch
-            let db = Utils.Db.GetCollection<RecipeRecord>(colName)
-            printfn "Building CraftRecipeProvider"
-            let col = new LibFFXIV.GameData.Raw.XivCollection(XivLanguage.ChineseSimplified) :> IXivCollection
-            let lookup id = Item.ItemCollection.Instance.LookupById(id).Value
-            seq {
-                for row in col.GetSheet("Recipe") do
-                    let itemsKeys = 
-                        row.AsArray<XivSheetReference>("Item{Ingredient}", 10)
-                        |> Array.map (fun x -> x.Key)
-                    let amounts = 
-                        row.AsArray<byte>("Amount{Ingredient}", 10)
-                        |> Array.map (fun x -> float x)
-                    let materials = 
-                        Array.zip itemsKeys amounts
-                        |> Array.filter (fun (id,_) -> id > 0)
-                        |> Array.map (fun (id, runs) -> (lookup id, runs))
-                    yield {
-                            Id = row.Key.Main
-                            ResultItem = row.As<XivSheetReference>("Item{Result}").Key |> lookup
-                            ProductCount = row.As<byte>("Amount{Result}") |> float
-                            Materials = materials
-                        }
-            }  |> db.InsertBulk |> ignore
-            GC.Collect()
-            
+    inherit Utils.XivDataSource<int, RecipeRecord>()
 
     static let instance = new CraftRecipeProvider()
     static member Instance = instance
 
-    interface IRecipeProvider with
-        override x.TryGetRecipe(item) = 
-            let id = new LiteDB.BsonValue(item.Id)
-            let ret = db.FindOne(LiteDB.Query.EQ("ResultItem.Id", id))
-            if isNull (box ret) then
-                None
-            else
-                Some ret
-
-type CompanyCraftRecipeProvider private () =
-    inherit Utils.XivDataSource()
-    let colName = "CompanyCraftRecipeProvider"
-    let exists = Utils.Db.CollectionExists(colName)
-    let db = Utils.Db.GetCollection<RecipeRecord>(colName)
-    do
+    override x.BuildCollection() = 
+        let db = x.Collection
         db.EnsureIndex("_id", true) |> ignore
         db.EnsureIndex("ResultItem.Id") |> ignore
-        if not exists then
-            //build from scratch
-            let db = Utils.Db.GetCollection<RecipeRecord>(colName)
-            printfn "Building CompanyCraftRecipeProvider"
-            let col = new LibFFXIV.GameData.Raw.XivCollection(XivLanguage.ChineseSimplified) :> IXivCollection
-            let lookup id = Item.ItemCollection.Instance.LookupById(id).Value
-            seq {
-                for ccs in col.GetSheet("CompanyCraftSequence") do 
-                    let materials = 
-                        [|
-                            for part in ccs.AsRowArray("CompanyCraftPart", 8) do 
-                                for proc in part.AsRowArray("CompanyCraftProcess", 3) do 
-                                    let itemsKeys = 
-                                        proc.AsRowArray("SupplyItem", 12, false)
-                                        |> Array.map (fun r -> r.As<XivSheetReference>("Item").Key)
-                                    let amounts = 
-                                        let setAmount = proc.AsArray<uint16>("SetQuantity", 12)
-                                        let setCount  = proc.AsArray<uint16>("SetsRequired", 12)
-                                        setAmount
-                                        |> Array.map2 (fun a b -> a * b |> float ) setCount
-                                    let materials = 
-                                        Array.zip itemsKeys amounts
-                                        |> Array.filter (fun (id,_) -> id > 0)
-                                        |> Array.map (fun (id, runs) -> (lookup id, runs))
-                                    yield! materials
-                        |]
-                    yield {
-                            Id = ccs.Key.Main
-                            ResultItem = ccs.As<XivSheetReference>("ResultItem").Key |> lookup
-                            ProductCount = 1.0
-                            Materials = materials
-                        }
-            }  |> db.InsertBulk |> ignore
-            GC.Collect()
+        printfn "Building CraftRecipeProvider"
+        let col = new LibFFXIV.GameData.Raw.XivCollection(XivLanguage.ChineseSimplified) :> IXivCollection
+        let lookup id = Item.ItemCollection.Instance.LookupById(id)
+        seq {
+            for row in col.GetSheet("Recipe") do
+                let itemsKeys = 
+                    row.AsArray<XivSheetReference>("Item{Ingredient}", 10)
+                    |> Array.map (fun x -> x.Key)
+                let amounts = 
+                    row.AsArray<byte>("Amount{Ingredient}", 10)
+                    |> Array.map (fun x -> float x)
+                let materials = 
+                    Array.zip itemsKeys amounts
+                    |> Array.filter (fun (id,_) -> id > 0)
+                    |> Array.map (fun (id, runs) -> (lookup id, runs))
+                yield {
+                        Id = row.Key.Main
+                        ResultItem = row.As<XivSheetReference>("Item{Result}").Key |> lookup
+                        ProductCount = row.As<byte>("Amount{Result}") |> float
+                        Materials = materials
+                    }
+        }  |> db.InsertBulk |> ignore
+        GC.Collect()
+
+    interface IRecipeProvider with
+        override x.TryGetRecipe(item) = 
+            x.TryLookupById(item.Id)
+
+type CompanyCraftRecipeProvider private () =
+    inherit Utils.XivDataSource<int, RecipeRecord>()
 
     static let instance = new CompanyCraftRecipeProvider()
     static member Instance = instance
 
+    override x.BuildCollection() = 
+        let db = x.Collection
+        db.EnsureIndex("_id", true) |> ignore
+        db.EnsureIndex("ResultItem.Id") |> ignore
+        printfn "Building CompanyCraftRecipeProvider"
+        let col = new LibFFXIV.GameData.Raw.XivCollection(XivLanguage.ChineseSimplified) :> IXivCollection
+        let lookup id = Item.ItemCollection.Instance.LookupById(id)
+        seq {
+            for ccs in col.GetSheet("CompanyCraftSequence") do 
+                let materials = 
+                    [|
+                        for part in ccs.AsRowArray("CompanyCraftPart", 8) do 
+                            for proc in part.AsRowArray("CompanyCraftProcess", 3) do 
+                                let itemsKeys = 
+                                    proc.AsRowArray("SupplyItem", 12, false)
+                                    |> Array.map (fun r -> r.As<XivSheetReference>("Item").Key)
+                                let amounts = 
+                                    let setAmount = proc.AsArray<uint16>("SetQuantity", 12)
+                                    let setCount  = proc.AsArray<uint16>("SetsRequired", 12)
+                                    setAmount
+                                    |> Array.map2 (fun a b -> a * b |> float ) setCount
+                                let materials = 
+                                    Array.zip itemsKeys amounts
+                                    |> Array.filter (fun (id,_) -> id > 0)
+                                    |> Array.map (fun (id, runs) -> (lookup id, runs))
+                                yield! materials
+                    |]
+                yield {
+                        Id = ccs.Key.Main
+                        ResultItem = ccs.As<XivSheetReference>("ResultItem").Key |> lookup
+                        ProductCount = 1.0
+                        Materials = materials
+                    }
+        }  |> db.InsertBulk |> ignore
+        GC.Collect()
+
     interface IRecipeProvider with
         override x.TryGetRecipe(item) = 
-            let id = new LiteDB.BsonValue(item.Id)
-            let ret = db.FindOne(LiteDB.Query.EQ("ResultItem.Id", id))
-            if isNull (box ret) then
-                None
-            else
-                Some ret
+            x.TryLookupById(item.Id)
 
 type RecipeManager private () = 
     let providers = HashSet<IRecipeProvider>()

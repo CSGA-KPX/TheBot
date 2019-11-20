@@ -44,6 +44,14 @@ type SudoModule() =
         else
             msgArg.CqEventArgs.QuickMessageReply("朋友你不是狗管理")
 
+    [<CommandHandlerMethodAttribute("#rebuildxivdb", "(管理员) 重建FF14数据库", "")>]
+    member x.HandleRebuildXivDb(msgArg : CommandArgs) = 
+        if admins.Contains(msgArg.MessageEvent.UserId) then
+            XivData.Utils.ClearDb()
+            XivData.Utils.InitAllDb()
+            msgArg.CqEventArgs.QuickMessageReply("已完成重建")
+        else
+            msgArg.CqEventArgs.QuickMessageReply("朋友你不是狗管理")
 
     override x.HandleRequest(args, e)=
         match e with
