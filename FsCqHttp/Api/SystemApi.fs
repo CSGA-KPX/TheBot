@@ -1,4 +1,5 @@
-﻿namespace KPX.FsCqHttp.Api.SystemApi
+namespace KPX.FsCqHttp.Api.SystemApi
+
 open KPX.FsCqHttp.DataType.Response
 open KPX.FsCqHttp.Api
 
@@ -17,7 +18,7 @@ type QuickOperation(context : string) =
         w.WriteEndObject()
 
 /// 获取登录号信息
-type GetLoginInfo() = 
+type GetLoginInfo() =
     inherit ApiRequestBase("get_login_info")
 
     let mutable data = [||] |> readOnlyDict
@@ -26,46 +27,43 @@ type GetLoginInfo() =
 
     member x.Nickname = data.["nickname"]
 
-    override x.HandleResponse(r) = 
-        data <- r.Data
+    override x.HandleResponse(r) = data <- r.Data
 
-/// 获取插件运行状态 
-type GetStatus() = 
+/// 获取插件运行状态
+type GetStatus() =
     inherit ApiRequestBase("get_status")
 
     let mutable data = [||] |> readOnlyDict
 
     member x.Online = data.["online"]
-    member x.Good   = data.["good"]
+    member x.Good = data.["good"]
 
-    override x.HandleResponse(r) = 
-        data <- r.Data
+    override x.HandleResponse(r) = data <- r.Data
 
-/// 获取 酷Q 及 HTTP API 插件的版本信息 
-type GetVersionInfo() = 
+/// 获取 酷Q 及 HTTP API 插件的版本信息
+type GetVersionInfo() =
     inherit ApiRequestBase("get_version_info")
 
     let mutable data = [||] |> readOnlyDict
 
-    member x.CoolqDirectory             = data.["coolq_directory"]
-    member x.CoolqEdition               = data.["coolq_edition"]
-    member x.PluginVersion              = data.["plugin_version"]
-    member x.PluginBuildNumber          = data.["plugin_build_number"]
-    member x.PluginBuildConfiguration   = data.["plugin_build_configuration"]
+    member x.CoolqDirectory = data.["coolq_directory"]
+    member x.CoolqEdition = data.["coolq_edition"]
+    member x.PluginVersion = data.["plugin_version"]
+    member x.PluginBuildNumber = data.["plugin_build_number"]
+    member x.PluginBuildConfiguration = data.["plugin_build_configuration"]
 
-    override x.HandleResponse(r) = 
-        data <- r.Data
+    override x.HandleResponse(r) = data <- r.Data
 
 /// 获取陌生人信息
-type GetStrangerInfo(userid : uint64, ?noCache : bool) = 
+type GetStrangerInfo(userid : uint64, ?noCache : bool) =
     inherit ApiRequestBase("get_stranger_info")
 
     let noCache = defaultArg noCache false
 
-    member val UserId   = 0UL with get, set
+    member val UserId = 0UL with get, set
     member val NickName = "" with get, set
-    member val Sex      = "" with get, set
-    member val Age      = 0  with get, set
+    member val Sex = "" with get, set
+    member val Age = 0 with get, set
 
     override x.WriteParams(w, js) =
         w.WritePropertyName("user_id")
@@ -73,42 +71,37 @@ type GetStrangerInfo(userid : uint64, ?noCache : bool) =
         w.WritePropertyName("no_cache")
         w.WriteValue(noCache)
 
-    override x.HandleResponse(r) = 
-        x.UserId    <- r.Data.["user_id"] |> uint64
-        x.NickName  <- r.Data.["nickname"]
-        x.Sex       <- r.Data.["sex"]
-        x.Age       <- r.Data.["age"] |> int32
+    override x.HandleResponse(r) =
+        x.UserId <- r.Data.["user_id"] |> uint64
+        x.NickName <- r.Data.["nickname"]
+        x.Sex <- r.Data.["sex"]
+        x.Age <- r.Data.["age"] |> int32
 
-type GroupInfo = 
-    {
-        [<Newtonsoft.Json.JsonProperty("group_id")>]
-        GroupId   : uint64
-        [<Newtonsoft.Json.JsonProperty("group_name")>]
-        GroupName : string
-    }
+type GroupInfo =
+    { [<Newtonsoft.Json.JsonProperty("group_id")>]
+      GroupId : uint64
+      [<Newtonsoft.Json.JsonProperty("group_name")>]
+      GroupName : string }
 
-/// 获取群列表 
-type GetGroupList() = 
+/// 获取群列表
+type GetGroupList() =
     inherit ApiRequestBase("get_group_list")
 
-    member val Groups : GroupInfo[] = [||] with get, set
+    member val Groups : GroupInfo [] = [||] with get, set
 
-    override x.HandleResponse(r) = 
-        x.Groups <- r.TryParseArrayData<GroupInfo>()
+    override x.HandleResponse(r) = x.Groups <- r.TryParseArrayData<GroupInfo>()
 
 /// 检查是否可以发送图片
-type CanSendImage() = 
+type CanSendImage() =
     inherit ApiRequestBase("can_send_image")
 
     member val Can = false with get, set
 
-    override x.HandleResponse(r) = 
-        x.Can <- r.Data.["yes"] = "true"
+    override x.HandleResponse(r) = x.Can <- r.Data.["yes"] = "true"
 /// 检查是否可以发送语音
-type CanSendRecord() = 
+type CanSendRecord() =
     inherit ApiRequestBase("can_send_record")
 
     member val Can = false with get, set
 
-    override x.HandleResponse(r) = 
-        x.Can <- r.Data.["yes"] = "true"
+    override x.HandleResponse(r) = x.Can <- r.Data.["yes"] = "true"

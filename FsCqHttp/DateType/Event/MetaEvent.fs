@@ -1,1 +1,2 @@
-﻿namespace KPX.FsCqHttp.DataType.Event.Meta
+namespace KPX.FsCqHttp.DataType.Event.Meta
+

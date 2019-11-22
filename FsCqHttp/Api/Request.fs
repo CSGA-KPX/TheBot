@@ -1,16 +1,15 @@
-﻿namespace KPX.FsCqHttp.Api.Request
+namespace KPX.FsCqHttp.Api.Request
+
 open KPX.FsCqHttp.DataType.Message
 open KPX.FsCqHttp.DataType.Response
 open KPX.FsCqHttp.Api
 
-type SetFriendAddRequest() = 
+type SetFriendAddRequest() =
     inherit ApiRequestBase("set_friend_add_request")
-    
-    do
-        raise <| System.NotImplementedException()
 
-type SetGroupAddRequest() = 
+    do raise <| System.NotImplementedException()
+
+type SetGroupAddRequest() =
     inherit ApiRequestBase("set_group_add_request")
-    
-    do
-        raise <| System.NotImplementedException()
+
+    do raise <| System.NotImplementedException()

@@ -1,9 +1,9 @@
-﻿module TheBot.Module.TestModule
+module TheBot.Module.TestModule
+
 open KPX.FsCqHttp.Handler.CommandHandlerBase
 
-type TestModule() = 
+type TestModule() =
     inherit CommandHandlerBase()
-
     (*
     [<CommandHandlerMethodAttribute("#test", "显示一条测试信息", "")>]
     member x.HandleTest(msgArg : CommandArgs) =
@@ -35,3 +35,4 @@ type TestModule() =
             sw.WriteLine("{0} : {1}", name, value.Value)
         sw.WriteLine("总计{0}点", conf |> Array.sumBy (fun (_,v) -> v.Value))
         msgArg.CqEventArgs.QuickMessageReply(sw.ToString())*)
+

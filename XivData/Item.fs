@@ -1,38 +1,59 @@
 module XivData.Item
+
 open System
 open LibFFXIV.GameData.Raw
 
 [<CLIMutable>]
-type ItemRecord = 
-    {
-        [<LiteDB.BsonIdAttribute(false)>]
-        Id   : int
-        Name : string
-    }
+type ItemRecord =
+    { [<LiteDB.BsonIdAttribute(false)>]
+      Id : int
+      Name : string }
 
-    override x.ToString() = 
-        sprintf "%s(%i)" x.Name x.Id
+    override x.ToString() = sprintf "%s(%i)" x.Name x.Id
 
-    static member GetUnknown(lodeId) = 
-        {
-            Id      = -1
-            Name = "Î´Öª"
-        }
+    static member GetUnknown(lodeId) =
+        { Id = -1
+          Name = "Î´Öª" }
 
-///²¿·ÖÖØÃûµÀ¾ßÁÐ±í
-let internal itemOverriding = 
-    [|
-        {Id = 14928; Name = "³¤¾±ÍÕ¸ïÊÖÌ×";}    , {Id = 14928; Name = "³¤¾±ÍÕ¸ïÊÖÌ×Ê±×°";}
-        {Id = 16604; Name = "Ó¥ÒíÊÖîø";}        , {Id = 16604; Name = "Ó¥ÒíÊÖîøÊ±×°";}
-        {Id = 13741; Name = "¹Ü¼ÒÖ®ÍõÖ¤Êé";}    , {Id = 13741; Name = "¹ýÆÚµÄ¹Ü¼ÒÖ®ÍõÖ¤Êé";}
-        {Id = 18491; Name = "ÓÎÄÁÓùµÐÍ·¿ø";}    , {Id = 18491; Name = "ÓÎÄÁÓùµÐÍ·¿øÊ±×°";}
-        {Id = 17915; Name = "åÈåÈÄÉ¹ÖÄñµÄ´ÖÆ¤";}, {Id = 17915; Name = "´óåÈåÈÄÉ¹ÖÄñµÄ´ÖÆ¤";}
-        {Id = 20561; Name = "¶«·½×°¼×";}        , {Id = 20561; Name = "¶«¹ú×°¼×";}
-        {Id = 24187; Name = "2018Äê¶ÈÈºÀÇÊ¢ÑçÇøÓò½õ±êÈü¹Ú¾üÖ®Ö¤";}        , {Id = 24187; Name = "2018Äê¶ÈÈºÀÇÊ¢ÑçÇøÓò½õ±êÈü¹Ú¾üÖ®Ö¤24187";}
-        {Id = 24188; Name = "2018Äê¶ÈÈºÀÇÊ¢ÑçÇøÓò½õ±êÈü¹Ú¾üÖ®Ö¤";}        , {Id = 24188; Name = "2018Äê¶ÈÈºÀÇÊ¢ÑçÇøÓò½õ±êÈü¹Ú¾üÖ®Ö¤24188";}
-        {Id = 24189; Name = "2018Äê¶ÈÈºÀÇÊ¢ÑçÇøÓò½õ±êÈü¹Ú¾üÖ®Ö¤";}        , {Id = 24189; Name = "2018Äê¶ÈÈºÀÇÊ¢ÑçÇøÓò½õ±êÈü¹Ú¾üÖ®Ö¤24189";}
-
-    |] |> dict
+///ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
+let internal itemOverriding =
+    [| { Id = 14928
+         Name = "ï¿½ï¿½ï¿½ï¿½ï¿½Õ¸ï¿½ï¿½ï¿½ï¿½ï¿½" },
+       { Id = 14928
+         Name = "ï¿½ï¿½ï¿½ï¿½ï¿½Õ¸ï¿½ï¿½ï¿½ï¿½ï¿½Ê±×°" }
+       { Id = 16604
+         Name = "Ó¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½" },
+       { Id = 16604
+         Name = "Ó¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±×°" }
+       { Id = 13741
+         Name = "ï¿½Ü¼ï¿½Ö®ï¿½ï¿½Ö¤ï¿½ï¿½" },
+       { Id = 13741
+         Name = "ï¿½ï¿½ï¿½ÚµÄ¹Ü¼ï¿½Ö®ï¿½ï¿½Ö¤ï¿½ï¿½" }
+       { Id = 18491
+         Name = "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í·ï¿½ï¿½" },
+       { Id = 18491
+         Name = "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í·ï¿½ï¿½Ê±×°" }
+       { Id = 17915
+         Name = "ï¿½ï¿½ï¿½ï¿½ï¿½É¹ï¿½ï¿½ï¿½Ä´ï¿½Æ¤" },
+       { Id = 17915
+         Name = "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É¹ï¿½ï¿½ï¿½Ä´ï¿½Æ¤" }
+       { Id = 20561
+         Name = "ï¿½ï¿½ï¿½ï¿½×°ï¿½ï¿½" },
+       { Id = 20561
+         Name = "ï¿½ï¿½ï¿½ï¿½×°ï¿½ï¿½" }
+       { Id = 24187
+         Name = "2018ï¿½ï¿½ï¿½Èºï¿½ï¿½Ê¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ú¾ï¿½Ö®Ö¤" },
+       { Id = 24187
+         Name = "2018ï¿½ï¿½ï¿½Èºï¿½ï¿½Ê¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ú¾ï¿½Ö®Ö¤24187" }
+       { Id = 24188
+         Name = "2018ï¿½ï¿½ï¿½Èºï¿½ï¿½Ê¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ú¾ï¿½Ö®Ö¤" },
+       { Id = 24188
+         Name = "2018ï¿½ï¿½ï¿½Èºï¿½ï¿½Ê¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ú¾ï¿½Ö®Ö¤24188" }
+       { Id = 24189
+         Name = "2018ï¿½ï¿½ï¿½Èºï¿½ï¿½Ê¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ú¾ï¿½Ö®Ö¤" },
+       { Id = 24189
+         Name = "2018ï¿½ï¿½ï¿½Èºï¿½ï¿½Ê¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ú¾ï¿½Ö®Ö¤24189" } |]
+    |> dict
 
 type ItemCollection private () =
     inherit Utils.XivDataSource<int, ItemRecord>()
@@ -40,29 +61,28 @@ type ItemCollection private () =
     static let instance = new ItemCollection()
     static member Instance = instance
 
-    override x.BuildCollection() = 
+    override x.BuildCollection() =
         let db = x.Collection
         printfn "Building ItemCollection"
         db.EnsureIndex("_id", true) |> ignore
         db.EnsureIndex("Name") |> ignore
         let col = new LibFFXIV.GameData.Raw.XivCollection(XivLanguage.ChineseSimplified) :> IXivCollection
-        let sht = col.GetSheet("Item", [|"Name"|])
+        let sht = col.GetSheet("Item", [| "Name" |])
         seq {
             for row in sht do
-                yield {Id = row.Key.Main; Name = row.As<string>("Name")}
-        } |> db.InsertBulk |> ignore
+                yield { Id = row.Key.Main
+                        Name = row.As<string>("Name") }
+        }
+        |> db.InsertBulk
+        |> ignore
         GC.Collect()
+
 
     member x.TryLookupByName(name : string) =
         let ret = x.Collection.FindOne(LiteDB.Query.EQ("Name", new LiteDB.BsonValue(name)))
-        if isNull (box ret) then
-            None
-        else
-            Some ret
+        if isNull (box ret) then None
+        else Some ret
 
-    member x.SearchByName(str) = 
-        x.Collection.Find(LiteDB.Query.Contains("Name", str))
-        |> Seq.toArray
+    member x.SearchByName(str) = x.Collection.Find(LiteDB.Query.Contains("Name", str)) |> Seq.toArray
 
-    member x.AllItems() = 
-        x.Collection.FindAll() |> Seq.toArray
+    member x.AllItems() = x.Collection.FindAll() |> Seq.toArray
