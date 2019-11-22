@@ -12,18 +12,18 @@ open Newtonsoft.Json.Linq
 type CqWebSocketClient(url, token) =
     let ws = new ClientWebSocket()
     let cts = new CancellationTokenSource()
-    let man = new ApiCallManager(ws, cts.Token)
+    let man = ApiCallManager(ws, cts.Token)
     let utf8 = Text.Encoding.UTF8
     let logger = NLog.LogManager.GetCurrentClassLogger()
 
-    let cqHttpEvent = new Event<_>()
+    let cqHttpEvent = Event<_>()
 
     do ws.Options.SetRequestHeader("Authorization", sprintf "Bearer %s" token)
 
     [<CLIEvent>]
     member x.OnCqHttpEvent = cqHttpEvent.Publish
 
-    member x.RegisterModule(m : #HandlerModuleBase) = x.OnCqHttpEvent.AddHandler(new Handler<_>(m.HandleCqHttpEvent))
+    member x.RegisterModule(m : #HandlerModuleBase) = x.OnCqHttpEvent.AddHandler(Handler<_>(m.HandleCqHttpEvent))
 
     member x.IsAvailable = ws.State = WebSocketState.Open
 
@@ -44,7 +44,7 @@ type CqWebSocketClient(url, token) =
             logger.Trace("收到上报：{0}", json)
             let event = EventUnion.From(obj)
             logger.Trace("收到事件：{0}", event)
-            let args = new ClientEventArgs(man, json, event)
+            let args = ClientEventArgs(man, json, event)
             cqHttpEvent.Trigger(args)
         elif obj.ContainsKey("retcode") then
             //API调用结果
@@ -56,7 +56,7 @@ type CqWebSocketClient(url, token) =
     member x.StartListen() =
         async {
             let buffer = Array.zeroCreate<byte> 4096
-            let seg = new ArraySegment<byte>(buffer)
+            let seg = ArraySegment<byte>(buffer)
 
             let rec readMessage (ms : IO.MemoryStream) =
                 let s =

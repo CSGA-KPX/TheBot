@@ -7,7 +7,7 @@ let TryGetToOption(x : bool, y : 'Value) =
     if x then Some(y)
     else None
 
-let FsMapper = new LiteDB.FSharp.FSharpBsonMapper()
+let FsMapper = LiteDB.FSharp.FSharpBsonMapper()
 
 let Db =
     let dbFile = @"Filename=xivdata.db; Journal=true; Flush=true; Cache Size=500"
@@ -39,12 +39,12 @@ type XivDataSource<'Id, 'Value>() as x =
 
     /// 部分类型Id无效，请用别的方法
     /// 有可能返回null
-    member _.LookupById(id : 'Id) = col.FindById(new LiteDB.BsonValue(id))
+    member _.LookupById(id : 'Id) = col.FindById(LiteDB.BsonValue(id))
 
 
     /// 部分类型Id无效，请用别的方法
     member _.TryLookupById(id : 'Id) =
-        let ret = col.FindById(new LiteDB.BsonValue(id))
+        let ret = col.FindById(LiteDB.BsonValue(id))
         if isNull (box ret) then None
         else Some ret
 

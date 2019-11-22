@@ -34,16 +34,16 @@ type EvalDelegate<'T when 'T :> IOperand<'T>> = delegate of (char * 'T * 'T) -> 
 type GenericRPNParser<'Operand when 'Operand :> IOperand<'Operand>>() =
 
     static let defaultOps =
-        [| new GenericOperator('(', -1)
-           new GenericOperator(')', -1)
-           new GenericOperator('+', 2)
-           new GenericOperator('-', 2)
-           new GenericOperator('*', 3)
-           new GenericOperator('/', 3) |]
+        [| GenericOperator('(', -1)
+           GenericOperator(')', -1)
+           GenericOperator('+', 2)
+           GenericOperator('-', 2)
+           GenericOperator('*', 3)
+           GenericOperator('/', 3) |]
 
 
     let opsDict =
-        let dict = new Dictionary<string, GenericOperator>()
+        let dict = Dictionary<string, GenericOperator>()
         for op in defaultOps do
             dict.Add(op.Char.ToString(), op)
         dict
@@ -55,8 +55,8 @@ type GenericRPNParser<'Operand when 'Operand :> IOperand<'Operand>>() =
     member x.AddOperator(o : GenericOperator) = opsDict.Add(o.Char.ToString(), o)
 
     member private x.InfixToPostfix(tokens : RPNToken<'Operand> []) =
-        let stack = new Stack<GenericOperator>()
-        let output = new Queue<RPNToken<'Operand>>()
+        let stack = Stack<GenericOperator>()
+        let output = Queue<RPNToken<'Operand>>()
         for token in tokens do
             match token with
             | Operand _ -> output.Enqueue(token)
@@ -77,11 +77,11 @@ type GenericRPNParser<'Operand when 'Operand :> IOperand<'Operand>>() =
     member x.EvalWith(str, func : EvalDelegate<'Operand>) =
         let tokens = x.Tokenize(str)
         let rpn = x.InfixToPostfix(tokens)
-        let stack = new Stack<'Operand>()
+        let stack = Stack<'Operand>()
         for token in rpn do
             match token with
             | Operand i -> stack.Push(i)
-            | Operator o when o.IsBinary = false ->
+            | Operator o when not o.IsBinary  ->
                 let l = stack.Pop()
                 let ret = func.Invoke(o.Char, l, l)
                 stack.Push(ret)

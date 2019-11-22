@@ -24,7 +24,7 @@ type ClientEventArgs(api : ApiCallManager, context : string, data : Event.EventU
 
     member x.SendResponse(r : Response.EventResponse) =
         if r <> Response.EmptyResponse then
-            let rep = new SystemApi.QuickOperation(context)
+            let rep = SystemApi.QuickOperation(context)
             rep.Reply <- r
             x.CallApi<SystemApi.QuickOperation>(rep) |> ignore
 

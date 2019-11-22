@@ -21,12 +21,12 @@ type SpecialShopCollection private () =
     inherit Utils.XivDataSource<int, SpecialShopInfo>()
 
     static let allowItemUICategory =
-        new HashSet<int>([| yield 45
-                            yield! [ 47 .. 54 ]
-                            yield 58
-                            yield 59 |])
+        HashSet<int>([| yield 45
+                        yield! [ 47 .. 54 ]
+                        yield 58
+                        yield 59 |])
 
-    static let instance = new SpecialShopCollection()
+    static let instance = SpecialShopCollection()
     static member Instance = instance
 
     override x.BuildCollection() =
@@ -60,7 +60,7 @@ type SpecialShopCollection private () =
         GC.Collect()
 
     member x.SearchByCostItemId(id : int) =
-        let ret = x.Collection.Find(Query.EQ("CostItem", new BsonValue(id)))
+        let ret = x.Collection.Find(Query.EQ("CostItem", BsonValue(id)))
         ret |> Seq.toArray
 
     member x.TrySearchByName(name : string) =

@@ -5,13 +5,13 @@ open System.Text.RegularExpressions
 open System.Collections.Generic
 open KPX.FsCqHttp.DataType
 
-let FsMapper = new LiteDB.FSharp.FSharpBsonMapper()
+let FsMapper = LiteDB.FSharp.FSharpBsonMapper()
 
 let Db =
     let dbFile = @"dmfrss.db"
     new LiteDB.LiteDatabase(dbFile, FsMapper)
 
-let private CSTOffset = TimeSpan.FromHours(8.0)
+let private cstOffset = TimeSpan.FromHours(8.0)
 
 type SeedOption =
     | SeedDate
@@ -20,7 +20,7 @@ type SeedOption =
 
     member x.GetSeedString() =
         match x with
-        | SeedDate -> DateTimeOffset.UtcNow.ToOffset(CSTOffset).ToString("yyyyMMdd")
+        | SeedDate -> DateTimeOffset.UtcNow.ToOffset(cstOffset).ToString("yyyyMMdd")
         | SeedRandom -> Guid.NewGuid().ToString()
         | SeedCustom s -> s
 
@@ -58,11 +58,11 @@ type Dicer(initSeed : byte []) as x =
             |> SeedOption.GetSeedString
             |> utf8.GetBytes
             |> md5.ComputeHash
-        new Dicer(initSeed)
+        Dicer(initSeed)
 
 
     /// Init using SeedOption.SeedRandom
-    new() = new Dicer(Array.singleton SeedOption.SeedRandom)
+    new() = Dicer(Array.singleton SeedOption.SeedRandom)
 
 
     member private x.GetHash() =
@@ -87,7 +87,7 @@ type Dicer(initSeed : byte []) as x =
 
     /// 获得一组随机数，不重复
     member x.GetRandomArray(faceNum, count) =
-        let tmp = new Collections.Generic.HashSet<int>()
+        let tmp = Collections.Generic.HashSet<int>()
         while tmp.Count <> count do
             tmp.Add(x.GetRandom(faceNum)) |> ignore
         let ret = Array.zeroCreate<int> tmp.Count
@@ -107,7 +107,7 @@ type Dicer(initSeed : byte []) as x =
 
 
 type TextTable(cols : int) =
-    let col = Array.init cols (fun _ -> new List<string>())
+    let col = Array.init cols (fun _ -> List<string>())
     static let fullWidthSpace = '　'
 
     static let charLen (c) =
@@ -117,11 +117,10 @@ type TextTable(cols : int) =
 
     static let strDispLen (str : string) =
         str.ToCharArray()
-        |> Array.map (charLen)
-        |> Array.sum
+        |> Array.sumBy charLen
 
     static member FromHeader(header : Object []) =
-        let x = new TextTable(header.Length)
+        let x = TextTable(header.Length)
         x.AddRow(header)
         x
 
@@ -145,7 +144,7 @@ type TextTable(cols : int) =
 
     override x.ToString() =
         let spacing = 1
-        let sb = new Text.StringBuilder("")
+        let sb = Text.StringBuilder("")
         if col.[0].Count <> 0 then
             let maxLens =
                 col

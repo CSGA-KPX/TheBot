@@ -2,7 +2,6 @@ namespace TheBot.Module.XivModule
 
 open System
 open KPX.FsCqHttp.Handler.CommandHandlerBase
-open LibDmfXiv.Client
 open XivData
 open TheBot.Module.XivModule.Utils
 open TheBot.Utils
@@ -41,8 +40,8 @@ type XivModule() =
 
         let rets =
             args
-            |> Array.map (strToItemResult)
-            |> Array.map (Result.map (fun i -> MarketUtils.MarketAnalyzer.FetchTradesWorld(i, world)))
+            |> Array.map (strToItemResult >> Result.map (fun i -> MarketUtils.MarketAnalyzer.FetchTradesWorld(i, world)))
+
         for ret in rets do
             match ret with
             | Error str -> sw.WriteLine("找不到物品{0}，请尝试#is {0}", str)
@@ -65,8 +64,8 @@ type XivModule() =
 
         let rets =
             args
-            |> Array.map (strToItemResult)
-            |> Array.map (Result.map (fun i -> MarketUtils.MarketAnalyzer.FetchOrdersWorld(i, world)))
+            |> Array.map (strToItemResult >> Result.map (fun i -> MarketUtils.MarketAnalyzer.FetchOrdersWorld(i, world)))
+
         for ret in rets do
             match ret with
             | Error str -> sw.WriteLine("找不到物品{0}，请尝试#is {0}", str)
@@ -88,8 +87,8 @@ type XivModule() =
 
         let rets =
             msgArg.Arguments
-            |> Array.map (strToItemResult)
-            |> Array.map (Result.map (fun i -> MarketUtils.MarketAnalyzer.FetchTradesAllWorld(i)))
+            |> Array.map (strToItemResult >> Result.map (fun i -> MarketUtils.MarketAnalyzer.FetchTradesAllWorld(i)))
+
         for ret in rets do
             match ret with
             | Error str -> sw.WriteLine("找不到物品{0}，请尝试#is {0}", str)
@@ -113,8 +112,8 @@ type XivModule() =
 
         let rets =
             msgArg.Arguments
-            |> Array.map (strToItemResult)
-            |> Array.map (Result.map (fun i -> MarketUtils.MarketAnalyzer.FetchOrdersAllWorld(i)))
+            |> Array.map (strToItemResult >> Result.map (fun i -> MarketUtils.MarketAnalyzer.FetchOrdersAllWorld(i)))
+
         for ret in rets do
             match ret with
             | Error str -> sw.WriteLine("找不到物品{0}，请尝试#is {0}", str)
@@ -153,8 +152,8 @@ type XivModule() =
     [<CommandHandlerMethodAttribute("r", "根据表达式汇总多个物品的材料，不查询价格\r\n大于50数字视为物品ID", "")>]
     member x.HandleRecipeSumExpr(msgArg : CommandArgs) =
         let sw = new IO.StringWriter()
-        let acc = new XivExpression.Accumulator()
-        let parser = new XivExpression.XivExpression()
+        let acc = XivExpression.ItemAccumulator()
+        let parser = XivExpression.XivExpression()
         for str in msgArg.Arguments do
             match parser.TryEval(str) with
             | Error err -> sw.WriteLine("对{0}求值时发生错误\r\n{1}", str, err.Message)
@@ -183,8 +182,8 @@ type XivModule() =
     [<CommandHandlerMethodAttribute("rr", "根据表达式汇总多个物品的基础材料，不查询价格\r\n大于50数字视为物品ID", "")>]
     member x.HandleRecipeSumExprRec(msgArg : CommandArgs) =
         let sw = new IO.StringWriter()
-        let acc = new XivExpression.Accumulator()
-        let parser = new XivExpression.XivExpression()
+        let acc = XivExpression.ItemAccumulator()
+        let parser = XivExpression.XivExpression()
         for str in msgArg.Arguments do
             match parser.TryEval(str) with
             | Error err -> sw.WriteLine("对{0}求值时发生错误\r\n{1}", str, err.Message)
@@ -216,8 +215,8 @@ type XivModule() =
         let (succ, world, args) = CommandUtils.GetWorldWithDefault(msgArg.Arguments)
         if succ then sw.WriteLine("服务器：{0}", world.WorldName)
         else sw.WriteLine("默认服务器：{0}", world.WorldName)
-        let acc = new XivExpression.Accumulator()
-        let parser = new XivExpression.XivExpression()
+        let acc = XivExpression.ItemAccumulator()
+        let parser = XivExpression.XivExpression()
 
         for str in args do
             match parser.TryEval(str) with
@@ -260,8 +259,8 @@ type XivModule() =
         let (succ, world, args) = CommandUtils.GetWorldWithDefault(msgArg.Arguments)
         if succ then sw.WriteLine("服务器：{0}", world.WorldName)
         else sw.WriteLine("默认服务器：{0}", world.WorldName)
-        let acc = new XivExpression.Accumulator()
-        let parser = new XivExpression.XivExpression()
+        let acc = XivExpression.ItemAccumulator()
+        let parser = XivExpression.XivExpression()
 
         for str in args do
             match parser.TryEval(str) with
@@ -331,7 +330,7 @@ type XivModule() =
     [<CommandHandlerMethodAttribute("mentor", "今日导随运势", "")>]
     member x.HandleMentor(msgArg : CommandArgs) =
         let sw = new IO.StringWriter()
-        let dicer = new Dicer(SeedOption.SeedByUserDay(msgArg.MessageEvent))
+        let dicer = Dicer(SeedOption.SeedByUserDay(msgArg.MessageEvent))
 
         let fortune, events =
             match dicer.GetRandom(100u) with

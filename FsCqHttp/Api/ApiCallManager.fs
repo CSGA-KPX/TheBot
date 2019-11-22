@@ -12,7 +12,7 @@ type ApiCallManager(ws : ClientWebSocket, token : CancellationToken) =
     let logger = NLog.LogManager.GetCurrentClassLogger()
     let utf8 = Text.Encoding.UTF8
     let getEcho() = (Guid.NewGuid().ToString())
-    let pendingApi = new Dictionary<string, ManualResetEvent * ApiRequestBase>()
+    let pendingApi = Dictionary<string, ManualResetEvent * ApiRequestBase>()
     let lock = new ReaderWriterLockSlim()
 
     /// 调用API并等待结果
@@ -28,7 +28,7 @@ type ApiCallManager(ws : ClientWebSocket, token : CancellationToken) =
 
             logger.Trace("请求API：{0}", json)
             let data = json |> utf8.GetBytes
-            do! ws.SendAsync(new ArraySegment<byte>(data), WebSocketMessageType.Text, true, token) |> Async.AwaitTask
+            do! ws.SendAsync(ArraySegment<byte>(data), WebSocketMessageType.Text, true, token) |> Async.AwaitTask
             let! ret = Async.AwaitWaitHandle(mre :> WaitHandle)
 
             lock.EnterWriteLock()

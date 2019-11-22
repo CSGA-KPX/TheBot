@@ -39,10 +39,10 @@ type CommandHandlerBase() as x =
                                      yield attrib, method |]
 
     override x.HandleMessage(args, msgEvent) =
-        let msgArg = new CommandArgs(msgEvent, args)
+        let msgArg = CommandArgs(msgEvent, args)
         if msgArg.Command.IsSome then
             let matched = x.Commands |> Array.filter (fun (a, _) -> msgArg.Command.Value = a.Command)
             for (_, method) in matched do
-                let msgArg = new CommandArgs(msgEvent, args)
+                let msgArg = CommandArgs(msgEvent, args)
                 x.Logger.Info("Calling handler {0}", method.Name)
                 method.Invoke(x, [| msgArg |]) |> ignore

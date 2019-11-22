@@ -10,7 +10,7 @@ let token = "0194caec-12a2-473d-bc08-962049999446"
 
 
 let StartBot() =
-    let client = new CqWebSocketClient(new Uri(accessUrl), token)
+    let client = CqWebSocketClient(Uri(accessUrl), token)
     let ms = KPX.FsCqHttp.Handler.ModuleManager.AllDefinedModules
     for m in ms do
         logger.Info("正在注册模块{0}", m.GetType().FullName)
@@ -19,7 +19,7 @@ let StartBot() =
     client.Connect()
     client.StartListen()
 
-    if Type.GetType("Mono.Runtime") <> null then
+    if isNull (Type.GetType("Mono.Runtime")) then
         UnixSignal.WaitAny
             ([| new UnixSignal(Signum.SIGINT)
                 new UnixSignal(Signum.SIGTERM)

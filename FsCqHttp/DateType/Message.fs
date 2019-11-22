@@ -44,9 +44,9 @@ type Message(sec : MessageSection []) as x =
 
     do x.AddRange(sec)
 
-    new() = new Message([||])
+    new() = Message([||])
 
-    static member Empty = new Message()
+    static member Empty = Message()
 
     /// 获取At
     /// 默认不处理at全体成员
@@ -71,11 +71,11 @@ type Message(sec : MessageSection []) as x =
             |> Seq.fold (fun (sb : Text.StringBuilder) item ->
                 match item with
                 | Text str -> sb.Append(str)
-                | _ -> sb) (new Text.StringBuilder())
+                | _ -> sb) (Text.StringBuilder())
         sb.ToString()
 
     static member TextMessage(str) =
-        let msg = new Message()
+        let msg = Message()
         msg.Add(Text str)
         msg
 
@@ -100,7 +100,7 @@ and MessageConverter() =
 
     override x.ReadJson(r : JsonReader, objType : Type, existingValue : Message, hasExistingValue : bool,
                         s : JsonSerializer) =
-        let msg = new Message()
+        let msg = Message()
 
         let arr = JArray.Load(r)
         for sec in arr.Children<JObject>() do

@@ -1,7 +1,5 @@
 module XivData.World
 
-open System
-
 type World =
     { WorldId : uint16
       WorldName : string }

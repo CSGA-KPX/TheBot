@@ -7,7 +7,7 @@ open TheBot.Utils
 module ChoiceHelper =
     open System.Text.RegularExpressions
 
-    let YesOrNoRegex = new Regex("(.+)([没不]\1)(.*)", RegexOptions.Compiled)
+    let YesOrNoRegex = Regex("(.+)([没不]\1)(.*)", RegexOptions.Compiled)
 
     let doDice ((dicer : Dicer), (opts : string [])) =
         opts
@@ -22,33 +22,33 @@ module DiceExpression =
         member x.Value = i
 
         interface IOperand<DicerOperand> with
-            override l.Add(r) = new DicerOperand(l.Value + r.Value)
-            override l.Sub(r) = new DicerOperand(l.Value - r.Value)
-            override l.Div(r) = new DicerOperand(l.Value / r.Value)
-            override l.Mul(r) = new DicerOperand(l.Value * r.Value)
+            override l.Add(r) = DicerOperand(l.Value + r.Value)
+            override l.Sub(r) = DicerOperand(l.Value - r.Value)
+            override l.Div(r) = DicerOperand(l.Value / r.Value)
+            override l.Mul(r) = DicerOperand(l.Value * r.Value)
 
         override x.ToString() = i.ToString()
 
     type DiceExpression() as x =
         inherit GenericRPNParser<DicerOperand>()
 
-        let tokenRegex = new Regex("([^0-9])", RegexOptions.Compiled)
+        let tokenRegex = Regex("([^0-9])", RegexOptions.Compiled)
 
         do
-            x.AddOperator(new GenericOperator('D', 5))
-            x.AddOperator(new GenericOperator('d', 5))
+            x.AddOperator(GenericOperator('D', 5))
+            x.AddOperator(GenericOperator('d', 5))
 
         override x.Tokenize(str) =
             [| let strs = tokenRegex.Split(str) |> Array.filter (fun x -> x <> "")
                for str in strs do
                    match str with
-                   | _ when Char.IsDigit(str.[0]) -> yield Operand(new DicerOperand(str |> int))
+                   | _ when Char.IsDigit(str.[0]) -> yield Operand(DicerOperand(str |> int))
                    | _ when x.Operatos.ContainsKey(str) -> yield Operator(x.Operatos.[str])
                    | _ -> failwithf "Unknown token %s" str |]
 
         member x.Eval(str : string, dicer : Dicer) =
             let func =
-                new EvalDelegate<DicerOperand>(fun (c, l, r) ->
+                EvalDelegate<DicerOperand>(fun (c, l, r) ->
                 let d = l.Value
                 let l = l :> IOperand<DicerOperand>
                 match c with
@@ -59,7 +59,7 @@ module DiceExpression =
                 | 'D'
                 | 'd' ->
                     let ret = Array.init<int> d (fun _ -> dicer.GetRandom(r.Value |> uint32)) |> Array.sum
-                    new DicerOperand(ret)
+                    DicerOperand(ret)
                 | _ -> failwithf "")
             x.EvalWith(str, func)
 
@@ -118,7 +118,7 @@ type DiceModule() =
             if atUser.IsSome then SeedOption.SeedByAtUserDay(msgArg.MessageEvent)
             else SeedOption.SeedByUserDay(msgArg.MessageEvent)
 
-        let dicer = new Dicer(seed, AutoRefreshSeed = false)
+        let dicer = Dicer(seed, AutoRefreshSeed = false)
 
         let sw = new IO.StringWriter()
         if atUser.IsSome then
@@ -150,15 +150,15 @@ type DiceModule() =
 
     [<CommandHandlerMethodAttribute("jrrp", "今日人品值", "")>]
     member x.HandleJrrp(msgArg : CommandArgs) =
-        let dicer = new Dicer(SeedOption.SeedByUserDay(msgArg.MessageEvent))
+        let dicer = Dicer(SeedOption.SeedByUserDay(msgArg.MessageEvent))
         let jrrp = dicer.GetRandom(100u)
         msgArg.CqEventArgs.QuickMessageReply(sprintf "%s今日人品值是%i" msgArg.MessageEvent.GetNicknameOrCard jrrp)
 
     [<CommandHandlerMethodAttribute("cal", "计算器", "")>]
     member x.HandleCalculator(msgArg : CommandArgs) =
         let sw = new System.IO.StringWriter()
-        let dicer = new Dicer()
-        let parser = new DiceExpression.DiceExpression()
+        let dicer = Dicer()
+        let parser = DiceExpression.DiceExpression()
         for arg in msgArg.Arguments do
             let ret = parser.TryEval(arg, dicer)
             match ret with
@@ -174,7 +174,7 @@ type DiceModule() =
             [| yield! SeedOption.SeedByUserDay(msgArg.MessageEvent)
                yield SeedOption.SeedCustom(seed) |]
 
-        let dicer = new Dicer(seed, AutoRefreshSeed = false)
+        let dicer = Dicer(seed, AutoRefreshSeed = false)
 
         let mapped =
             data

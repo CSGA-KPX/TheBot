@@ -15,9 +15,9 @@ type ApiRequestBase(action : string) as x =
     /// 生成请求Json
     member x.GetRequestJson(?echo : string) =
         let echo = defaultArg echo ""
-        let sb = new StringBuilder()
+        let sb = StringBuilder()
         let sw = new StringWriter(sb)
-        let js = new JsonSerializer()
+        let js = JsonSerializer()
         use w = new JsonTextWriter(sw, Formatting = Formatting.Indented)
         w.WriteStartObject()
         if not <| String.IsNullOrEmpty(echo) then
@@ -42,7 +42,7 @@ type ApiRequestBase(action : string) as x =
     default x.WriteParams(_, _) = ()
 
     override x.ToString() =
-        let sb = new StringBuilder()
+        let sb = StringBuilder()
         let props =
             x.GetType()
              .GetProperties(Reflection.BindingFlags.Instance ||| Reflection.BindingFlags.Public

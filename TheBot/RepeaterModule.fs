@@ -12,7 +12,7 @@ type RepeatMessage =
 type XivModule() =
     inherit HandlerModuleBase()
     static let repeatLimit = 5
-    static let col = new Concurrent.ConcurrentDictionary<uint64, RepeatMessage>()
+    static let col = Concurrent.ConcurrentDictionary<uint64, RepeatMessage>()
 
     override x.HandleMessage(arg, e) =
         if e.IsGroup then

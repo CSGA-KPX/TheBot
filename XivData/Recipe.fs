@@ -14,7 +14,7 @@ type RecipeRecord =
       Materials : (ItemRecord * float) [] }
 
 type FinalMaterials() =
-    let m = new Dictionary<ItemRecord, float>()
+    let m = Dictionary<ItemRecord, float>()
 
     member x.AddOrUpdate(item, runs) =
         if m.ContainsKey(item) then m.[item] <- m.[item] + runs
@@ -31,7 +31,7 @@ type IRecipeProvider =
 type CraftRecipeProvider private () =
     inherit Utils.XivDataSource<int, RecipeRecord>()
 
-    static let instance = new CraftRecipeProvider()
+    static let instance = CraftRecipeProvider()
     static member Instance = instance
 
     override x.BuildCollection() =
@@ -39,7 +39,7 @@ type CraftRecipeProvider private () =
         db.EnsureIndex("_id", true) |> ignore
         db.EnsureIndex("ResultItem.Id") |> ignore
         printfn "Building CraftRecipeProvider"
-        let col = new LibFFXIV.GameData.Raw.XivCollection(XivLanguage.ChineseSimplified) :> IXivCollection
+        let col = new XivCollection(XivLanguage.ChineseSimplified) :> IXivCollection
         let lookup id = Item.ItemCollection.Instance.LookupById(id)
         seq {
             for row in col.GetSheet("Recipe") do
@@ -65,7 +65,7 @@ type CraftRecipeProvider private () =
 type CompanyCraftRecipeProvider private () =
     inherit Utils.XivDataSource<int, RecipeRecord>()
 
-    static let instance = new CompanyCraftRecipeProvider()
+    static let instance = CompanyCraftRecipeProvider()
     static member Instance = instance
 
     override x.BuildCollection() =
@@ -73,7 +73,7 @@ type CompanyCraftRecipeProvider private () =
         db.EnsureIndex("_id", true) |> ignore
         db.EnsureIndex("ResultItem.Id") |> ignore
         printfn "Building CompanyCraftRecipeProvider"
-        let col = new LibFFXIV.GameData.Raw.XivCollection(XivLanguage.ChineseSimplified) :> IXivCollection
+        let col = new XivCollection(XivLanguage.ChineseSimplified) :> IXivCollection
         let lookup id = Item.ItemCollection.Instance.LookupById(id)
         seq {
             for ccs in col.GetSheet("CompanyCraftSequence") do
@@ -121,7 +121,7 @@ type RecipeManager private () =
 
 
     static let instance =
-        let rm = new RecipeManager()
+        let rm = RecipeManager()
         rm.AddProvider(CraftRecipeProvider.Instance)
         rm.AddProvider(CompanyCraftRecipeProvider.Instance)
         rm
@@ -158,7 +158,7 @@ type RecipeManager private () =
                 let materials = recipe.Value.Materials |> Array.map (fun (item, count) -> (item, count * realRuns))
                 for (item, count) in materials do
                     getMaterialsRec (acc, item, count)
-        [| let dict = new Dictionary<ItemRecord, ItemRecord * float>()
+        [| let dict = Dictionary<ItemRecord, ItemRecord * float>()
            getMaterialsRec (dict, item, 1.0)
            let ma = dict.Values |> Seq.toArray
            yield! ma |]
@@ -180,7 +180,7 @@ type RecipeManager private () =
                 acc.Enqueue(level + countStr + "/", materials)
                 for (item, count) in materials do
                     getMaterialsRec (acc, level + "/" + item.Name, item, 1.0)
-        [| let acc = new Queue<string * (ItemRecord * float) []>()
+        [| let acc = Queue<string * (ItemRecord * float) []>()
            getMaterialsRec (acc, item.Name, item, 1.0)
            let test = acc.ToArray()
            yield! acc.ToArray() |> Array.filter (fun (level, arr) -> arr.Length <> 0) |]

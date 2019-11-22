@@ -15,7 +15,7 @@ type StringRecord =
 type ShouldOrAvoidCollection private () =
     inherit Utils.XivDataSource<int, StringRecord>()
 
-    static let instance = new ShouldOrAvoidCollection()
+    static let instance = ShouldOrAvoidCollection()
     static member Instance = instance
 
     override x.BuildCollection() =
@@ -39,7 +39,7 @@ type LocationCollection private () =
     inherit Utils.XivDataSource<int, StringRecord>()
 
     static let allowedLocation = Collections.Generic.HashSet<byte>([| 0uy; 1uy; 2uy; 6uy; 13uy; 14uy; 15uy |])
-    static let instance = new LocationCollection()
+    static let instance = LocationCollection()
     static member Instance = instance
 
     override x.BuildCollection() =

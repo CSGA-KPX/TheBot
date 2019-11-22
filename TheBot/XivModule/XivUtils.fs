@@ -95,11 +95,11 @@ module MarketUtils =
             |> Array.map (fun x -> x.Count |> float)
             |> StdEv.FromData
 
-        member x.TakeNQ() = new MarketAnalyzer(item, data |> Array.filter (fun x -> not x.IsHq))
-        member x.TakeHQ() = new MarketAnalyzer(item, data |> Array.filter (fun x -> x.IsHq))
+        member x.TakeNQ() = MarketAnalyzer(item, data |> Array.filter (fun x -> not x.IsHq))
+        member x.TakeHQ() = MarketAnalyzer(item, data |> Array.filter (fun x -> x.IsHq))
 
         member x.TakeVolume(cutPct : int) =
-            new MarketAnalyzer(item,
+            MarketAnalyzer(item,
                                [| let samples = data |> Array.sortBy (fun x -> x.Price)
                                   let itemCount = data |> Array.sumBy (fun x -> x.Count |> int)
                                   let cutLen = itemCount * cutPct / 100
@@ -122,7 +122,7 @@ module MarketUtils =
             MarketOrder.MarketOrderProxy.callSafely <@ fun server -> server.GetByIdWorld worldId itemId @>
             |> Async.RunSynchronously
             |> Result.map (fun o -> o.Orders |> Array.map (Order))
-            |> Result.map (fun o -> new MarketAnalyzer(item, o))
+            |> Result.map (fun o -> MarketAnalyzer(item, o))
 
         static member FetchOrdersAllWorld(item : Item.ItemRecord) =
             let itemId = item.Id |> uint32
@@ -131,7 +131,7 @@ module MarketUtils =
             |> Result.map (fun oa ->
                 [| for o in oa do
                     let world = World.WorldFromId.[o.WorldId]
-                    let ma = new MarketAnalyzer(item, o.Orders |> Array.map (Order))
+                    let ma = MarketAnalyzer(item, o.Orders |> Array.map (Order))
                     yield world, ma |])
 
         static member FetchTradesWorld(item : Item.ItemRecord, world : World.World) =
@@ -140,7 +140,7 @@ module MarketUtils =
             TradeLog.TradelogProxy.callSafely <@ fun server -> server.GetByIdWorld worldId itemId 20 @>
             |> Async.RunSynchronously
             |> Result.map (Array.map (Trade))
-            |> Result.map (fun o -> new MarketAnalyzer(item, o))
+            |> Result.map (fun o -> MarketAnalyzer(item, o))
 
         static member FetchTradesAllWorld(item : Item.ItemRecord) =
             let itemId = item.Id |> uint32
@@ -149,7 +149,7 @@ module MarketUtils =
             |> Result.map (fun t ->
                 t
                 |> Array.groupBy (fun t -> World.WorldFromId.[t.WorldId])
-                |> Array.map (fun (x, y) -> (x, new MarketAnalyzer(item, y |> Array.map (Trade)))))
+                |> Array.map (fun (x, y) -> (x, MarketAnalyzer(item, y |> Array.map (Trade)))))
 
 module MentorUtils =
     open XivData.Mentor
@@ -198,16 +198,16 @@ module XivExpression =
     open System.Text.RegularExpressions
     open TheBot.GenericRPN
 
-    let t = new Collections.Generic.HashSet<string>()
+    let t = Collections.Generic.HashSet<string>()
 
-    type Accumulator() =
+    type ItemAccumulator() =
         inherit Collections.Generic.Dictionary<Item.ItemRecord, float>()
 
         member x.AddOrUpdate(item, runs) =
             if x.ContainsKey(item) then x.[item] <- x.[item] + runs
             else x.Add(item, runs)
 
-        member x.MergeWith(a : Accumulator, ?isAdd : bool) =
+        member x.MergeWith(a : ItemAccumulator, ?isAdd : bool) =
             let add = defaultArg isAdd true
             for kv in a do
                 if add then x.AddOrUpdate(kv.Key, kv.Value)
@@ -215,13 +215,13 @@ module XivExpression =
             x
 
         static member Singleton(item : Item.ItemRecord) =
-            let a = new Accumulator()
+            let a = ItemAccumulator()
             a.Add(item, 1.0)
             a
 
     type XivOperand =
         | Number of float
-        | Accumulator of Accumulator
+        | Accumulator of ItemAccumulator
 
         interface IOperand<XivOperand> with
 
@@ -264,11 +264,11 @@ module XivExpression =
     type XivExpression() as x =
         inherit GenericRPNParser<XivOperand>()
 
-        let tokenRegex = new Regex("([\-+*/()#])", RegexOptions.Compiled)
+        let tokenRegex = Regex("([\-+*/()#])", RegexOptions.Compiled)
 
         do
             //Uniary operator
-            let itemOperator = new GenericOperator('#', Int32.MaxValue, IsBinary = false)
+            let itemOperator = GenericOperator('#', Int32.MaxValue, IsBinary = false)
             x.AddOperator(itemOperator)
 
         override x.Tokenize(str) =
@@ -281,12 +281,12 @@ module XivExpression =
                    | _ when x.Operatos.ContainsKey(str) -> yield Operator(x.Operatos.[str])
                    | _ ->
                        let item = Item.ItemCollection.Instance.TryLookupByName(str)
-                       if item.IsSome then yield Operand(Accumulator(Accumulator.Singleton(item.Value)))
+                       if item.IsSome then yield Operand(Accumulator(ItemAccumulator.Singleton(item.Value)))
                        else failwithf "Unknown token %s" str |]
 
         member x.Eval(str : string) =
             let func =
-                new EvalDelegate<XivOperand>(fun (c, l, r) ->
+                EvalDelegate<XivOperand>(fun (c, l, r) ->
                 let l = l :> IOperand<XivOperand>
                 match c with
                 | '+' -> l.Add(r)
@@ -298,7 +298,7 @@ module XivExpression =
                     match r with
                     | Number f ->
                         let item = Item.ItemCollection.Instance.LookupById(int f)
-                        let acu = Accumulator.Singleton item
+                        let acu = ItemAccumulator.Singleton item
                         Accumulator acu
                     | Accumulator a -> failwithf "#符号仅对数字使用"
                 | _ -> failwithf "")
