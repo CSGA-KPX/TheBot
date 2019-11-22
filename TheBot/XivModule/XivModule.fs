@@ -145,7 +145,7 @@ type XivModule() =
 
     [<CommandHandlerMethodAttribute("is", "查找名字包含字符的物品", "关键词...")>]
     member x.HandleItemSearch(msgArg : CommandArgs) = 
-        let tt = TextTable.FromHeader([|"查询"; "物品"; "Id"|])
+        let tt = TextTable.FromHeader([|"查询"; "Id"; "物品"|])
         for i in msgArg.Arguments do 
             if isNumber(i) then
                 let ret = itemCol.TryLookupById(i |> int32)
@@ -159,7 +159,7 @@ type XivModule() =
                     tt.AddRow(i, "无", "无")
                 else
                     for item in ret do 
-                        tt.AddRow(i, item.Name, item.Id.ToString())
+                        tt.AddRow(i, item.Id.ToString(), item.Name)
 
         msgArg.CqEventArgs.QuickMessageReply(tt.ToString())
 
