@@ -1,6 +1,7 @@
 ﻿module UserConfig
 open System
 open LiteDB
+open LiteDB.FSharp.Extensions
 
 let private FsMapper = LiteDB.FSharp.FSharpBsonMapper()
 
@@ -26,7 +27,8 @@ type Config =
           Config = new Collections.Generic.Dictionary<string, string>()}
 
 and ConfigManager private () = 
-    let col = Db.GetCollection<Config>()
+    let colName = "UserConfig"
+    let col = Db.GetCollection<Config>(colName)
 
     do
         col.EnsureIndex("Owner", true) |> ignore
@@ -34,22 +36,32 @@ and ConfigManager private () =
     static let instance = new ConfigManager()
     static member Instance = instance
 
-    member _.ConfigExists(owner : ConfigOwner) = 
+    /// 根据消息信息返回配置
+    /// 用户配置->群配置->默认用户配置
+    member x.GetConfig(msg : KPX.FsCqHttp.DataType.Event.Message.MessageEvent) = 
+        [|
+            if msg.IsDiscuss then yield ConfigOwner.Discuss msg.DiscussId
+            if msg.IsGroup then yield ConfigOwner.Group msg.GroupId
+            yield ConfigOwner.User (msg.UserId |> uint64)
+        |]
+        |> Array.tryPick (fun o -> col.tryFindOne(<@ fun x -> x.Owner = o @>))
+        |> Option.defaultWith (fun () -> Config.DefaultOf(ConfigOwner.User (msg.UserId |> uint64)))
         
-        col.Exists(Query.EQ("owner", Db.Mapper.ToDocument(owner)))
-
     /// 如果不存在的话会返回个默认的
     member _.GetConfig(owner : ConfigOwner) = 
-        let ret = col.FindOne(Query.EQ("Owner", Db.Mapper.ToDocument(owner)))
-        if isNull (box ret) then
+        let ret = col.tryFindOne <@ fun x -> x.Owner = owner @>
+        if ret.IsNone then
             Config.DefaultOf(owner)
         else
-            ret
+            ret.Value
 
     member x.ClearConfig(owner : ConfigOwner) = 
         let cfg = x.GetConfig(owner)
         cfg.Config.Clear()
         x.SaveConfig(cfg)
+
+    member x.ClearAllConfig() = 
+        Db.DropCollection(colName)
 
     member x.SaveConfig(cfg : Config) = 
         col.Upsert(cfg)
