@@ -35,7 +35,8 @@ let StartBot() =
 [<EntryPoint>]
 let main argv =
     if argv.Length <> 0 && argv.[0].ToLowerInvariant() = "rebuilddb" then
-        XivData.Test.RebuildDb()
+        XivData.Utils.ClearDb()
+        XivData.Utils.InitAllDb()
         printfn "Rebuilt Completed"
     else
         StartBot()

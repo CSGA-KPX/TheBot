@@ -46,3 +46,6 @@ type ItemCollection private () =
     member x.SearchByName(str) = x.Collection.Find(LiteDB.Query.Contains("Name", str)) |> Seq.toArray
 
     member x.AllItems() = x.Collection.FindAll() |> Seq.toArray
+
+    interface Utils.IXivDataSource with
+        override x.BuildOrder = Int32.MinValue

@@ -20,8 +20,7 @@ let ClearDb() =
     Db.Shrink() |> ignore
 
 type IXivDataSource =
-    interface
-    end
+    abstract BuildOrder : int
 
 [<AbstractClass>]
 type XivDataSource<'Id, 'Value>() as x =
@@ -57,13 +56,20 @@ type XivDataSource<'Id, 'Value>() as x =
     interface Collections.Generic.IEnumerable<'Value> with
         member x.GetEnumerator() = col.FindAll().GetEnumerator()
 
-    interface IXivDataSource
+    interface IXivDataSource with
+        override x.BuildOrder = 0
 
 let InitAllDb() =
     Assembly.GetExecutingAssembly().GetTypes()
     |> Array.filter (fun t -> (typeof<IXivDataSource>.IsAssignableFrom(t) && (not (t.IsAbstract))))
+    |> Array.sortBy (fun t -> 
+        let p = t.GetProperty("Instance", BindingFlags.Public ||| BindingFlags.Static)
+        let o = p.GetValue(null) :?> IXivDataSource
+        printfn ">>> Found %s : %i" t.Name o.BuildOrder
+        o.BuildOrder
+    )
     |> Array.iter (fun t ->
-        printfn "%A" t
+        printfn ">>> Building %s" t.Name
         let p = t.GetProperty("Instance", BindingFlags.Public ||| BindingFlags.Static)
         let o = p.GetValue(null)
         t.GetMethod("BuildCollection").Invoke(o, null) |> ignore)

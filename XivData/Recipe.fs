@@ -60,7 +60,13 @@ type CraftRecipeProvider private () =
         GC.Collect()
 
     interface IRecipeProvider with
-        override x.TryGetRecipe(item) = x.TryLookupById(item.Id)
+        override x.TryGetRecipe(item) =
+            let id = new LiteDB.BsonValue(item.Id)
+            let ret = x.Collection.FindOne(LiteDB.Query.EQ("ResultItem.Id", id))
+            if isNull (box ret) then
+                None
+            else
+                Some ret
 
 type CompanyCraftRecipeProvider private () =
     inherit Utils.XivDataSource<int, RecipeRecord>()
@@ -96,7 +102,7 @@ type CompanyCraftRecipeProvider private () =
 
                             yield! materials |]
                 yield { Id = ccs.Key.Main
-                        ResultItem = ccs.As<XivSheetReference>("ResultItem").Key |> lookup
+                        ResultItem = ccs.As<XivSheetReference>("ResultItem").Key  |> lookup
                         ProductCount = 1.0
                         Materials = materials }
         }
@@ -105,7 +111,13 @@ type CompanyCraftRecipeProvider private () =
         GC.Collect()
 
     interface IRecipeProvider with
-        override x.TryGetRecipe(item) = x.TryLookupById(item.Id)
+        override x.TryGetRecipe(item) =
+            let id = new LiteDB.BsonValue(item.Id)
+            let ret = x.Collection.FindOne(LiteDB.Query.EQ("ResultItem.Id", id))
+            if isNull (box ret) then
+                None
+            else
+                Some ret
 
 type RecipeManager private () =
     let providers = HashSet<IRecipeProvider>()

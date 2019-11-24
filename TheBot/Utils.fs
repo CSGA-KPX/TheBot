@@ -5,11 +5,6 @@ open System.Text.RegularExpressions
 open System.Collections.Generic
 open KPX.FsCqHttp.DataType
 
-let FsMapper = LiteDB.FSharp.FSharpBsonMapper()
-
-let Db =
-    let dbFile = @"dmfrss.db"
-    new LiteDB.LiteDatabase(dbFile, FsMapper)
 
 let private cstOffset = TimeSpan.FromHours(8.0)
 
