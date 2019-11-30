@@ -358,5 +358,5 @@ type XivModule() =
             let count = MentorUtils.location.Count() |> uint32
             let idx = dicer.GetRandom(count + 1u)
             MentorUtils.location.[idx].Value
-        sw.WriteLine("推荐排本场所: {0}", location)
+        sw.WriteLine("推荐排本场所: {0}", location.Value)
         msgArg.CqEventArgs.QuickMessageReply(sw.ToString())

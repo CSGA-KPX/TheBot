@@ -7,7 +7,7 @@ open TheBot.Utils
 module ChoiceHelper =
     open System.Text.RegularExpressions
 
-    let YesOrNoRegex = Regex("(.+)([没不]\1)(.*)", RegexOptions.Compiled)
+    let YesOrNoRegex = Regex("(.*)(.+)([没不]\2)(.*)", RegexOptions.Compiled)
 
     let doDice ((dicer : Dicer), (opts : string [])) =
         opts
@@ -71,6 +71,25 @@ module DiceExpression =
 
 module EatHelper =
     let emptyChars = [| ' '; '\t'; '\r'; '\n' |]
+
+    type EatConfig(owner) = 
+        inherit UserConfig.ConfigItem<string[] * string []>(owner)
+
+        override x.SerializeData(arr) =
+            let (b,d) = arr
+            String.Join("|", String.Join(" ", b), String.Join(" ", d))
+
+        override x.DeserializeData(str) =
+            let split = str.Split(Array.singleton '|', StringSplitOptions.None)
+            if split.Length <> 2 then
+                (Array.empty, Array.empty)
+            else
+                split.[0].Split(emptyChars, StringSplitOptions.RemoveEmptyEntries)
+                , split.[1].Split(emptyChars, StringSplitOptions.RemoveEmptyEntries)
+
+        override x.Default = ""
+
+    
     let breakfast = """
     西北风 豆腐脑 小米粥 煎饼果子 黑米糕 水果沙拉 鸡蛋羹 南瓜馅饼 三明治 驴肉火烧
     麦当劳贫民早餐 饺子 馅饼 茶叶蛋 昨晚剩饭 鸡蛋灌饼 奶香小馒头 汉堡包 粢饭糕
@@ -81,7 +100,7 @@ module EatHelper =
     烧饼 饽饽 肉夹馍 馄饨 火腿 烧卖 蛋挞 南瓜粥 玉米糊 燕麦片
     辣糊汤 糁汤 牛奶麦片 梅干菜包 香菇青菜包 煎蛋 生煎 皮蛋瘦肉粥 煎饼 水煮蛋
     鸡蛋饼 手抓饼 烧麦 热干面 酸奶 玉米粥 肉包 素包 苹果 梨 香蕉 馒头 豆浆 牛奶 花卷
-    流心奶黄包 小笼包 上汤猫耳朵 葱油拌面 豆浆烧饼油条 臭豆腐""".Split(emptyChars, StringSplitOptions.RemoveEmptyEntries)
+    流心奶黄包 小笼包 上汤猫耳朵 葱油拌面 豆浆烧饼油条 臭豆腐 随便 都行 别人吃什么就什么""".Split(emptyChars, StringSplitOptions.RemoveEmptyEntries)
 
     let dinner = """
     麦当劳贫民餐 真功夫 萨莉亚 猪排饭 寿司 砂锅粥 咖喱饭 卤肉饭 冒菜 麻辣拌 鸡架 寿喜锅 肥羊
@@ -97,15 +116,45 @@ module EatHelper =
     排骨汤 羊蝎子 不吃 圣安娜 贫穷的眼泪 食堂 食其家 汉堡王
     麻辣烫 便当 全家 烤鸭 小杨生煎 三黄鸡 臭豆腐 烤冷面 热干面 螺蛳粉 速食汤 速食包
     火鸡面 烫饭 卤鸭爪 炸鸡爪 牛肉汤 麻辣香锅 浓香芝士年糕 韩式炸鸡 鱼蛋车仔面 奶油猪仔包 肥宅快乐鸡
-    家常小炒 串串 火锅 烤肉 披萨 方便面 黄焖鸡 兰州拉面""".Split(emptyChars, StringSplitOptions.RemoveEmptyEntries)
+    家常小炒 串串 火锅 烤肉 披萨 方便面 黄焖鸡 兰州拉面 随便 都行 别人吃什么就什么""".Split(emptyChars, StringSplitOptions.RemoveEmptyEntries)
 
-    let strToEatData (str : string) =
-        match str with
-        | _ when str.Contains("早") -> "早", breakfast
-        | _ when str.Contains("中") || str.Contains("午") -> "午", dinner
-        | _ when str.Contains("晚") -> "晚", dinner
-        | _ when str.Contains("加") -> "加", breakfast
-        | _ -> failwithf "可选关键词 早 中 午 晚 加"
+    let GetEatString(msgArg : CommandArgs) =
+        let (seed, data) = 
+            let str = msgArg.RawMessage
+            let (b, d) = 
+                EatConfig(UserConfig.ConfigOwner.User (msgArg.MessageEvent.UserId |> uint64))
+                    .Load()
+            match str with
+            | _ when str.Contains("早") -> "早餐", Array.append breakfast b
+            | _ when str.Contains("午") -> "午餐", Array.append dinner d
+            | _ when str.Contains("晚") -> "晚餐", Array.append dinner d
+            | _ when str.Contains("加") -> "加餐", Array.append breakfast b
+            | _ -> failwithf "可选关键词 早 中 午 晚 加"
+
+        let data = data |> Array.distinct
+
+        let dicer = Dicer(SeedOption.SeedByUserDay(msgArg.MessageEvent), AutoRefreshSeed = false)
+
+        let luck = dicer.GetRandomFromString(seed, 100u)
+
+        if luck <= 95 then
+            let eat = 
+                data
+                |> Array.map (fun x -> x, dicer.GetRandomFromString(seed + "吃" + x, 100u))
+                |> Array.filter (fun (_, c) -> c <= 5 )
+                |> Array.sortBy (snd)
+                |> Array.map (fun (i,c) -> sprintf "%s(%i)" i c )
+
+            let notEat = 
+                data
+                |> Array.map (fun x -> x, dicer.GetRandomFromString(seed + "不吃" + x, 100u))
+                |> Array.filter (fun (_, c) -> c <= 5 )
+                |> Array.sortBy (snd)
+                |> Array.map (fun (i,c) -> sprintf "%s(%i)" i c )
+
+            sprintf "宜：%s\r\n忌：%s" (String.Join(" ", eat)) (String.Join(" ", notEat))
+        else
+            "随便"
 
 type DiceModule() =
     inherit CommandHandlerBase()
@@ -137,8 +186,8 @@ type DiceModule() =
                 [| let msg = msgArg.Arguments.[0]
                    let m = ChoiceHelper.YesOrNoRegex.Match(msg)
                    if m.Success then
-                       yield m.Groups.[1].Value + m.Groups.[3].Value
-                       yield m.Groups.[2].Value + m.Groups.[3].Value
+                       yield m.Groups.[1].Value + m.Groups.[2].Value + m.Groups.[4].Value
+                       yield m.Groups.[1].Value + m.Groups.[3].Value + m.Groups.[4].Value
                    else
                        yield! msgArg.Arguments |]
             else
@@ -168,30 +217,26 @@ type DiceModule() =
 
     [<CommandHandlerMethodAttribute("eat", "吃什么？", "#eat 晚餐")>]
     member x.HandleEat(msgArg : CommandArgs) =
-        let (seed, data) = EatHelper.strToEatData (msgArg.RawMessage)
+        msgArg.CqEventArgs.QuickMessageReply(EatHelper.GetEatString(msgArg))
 
-        let seed =
-            [| yield! SeedOption.SeedByUserDay(msgArg.MessageEvent)
-               yield SeedOption.SeedCustom(seed) |]
+    [<CommandHandlerMethodAttribute("eab", "添加早餐/加餐", "#eab 西北风 东南风")>]
+    member x.HandleAddBreakfast(msgArg : CommandArgs) =
+        let cfg = EatHelper.EatConfig(UserConfig.ConfigOwner.User (msgArg.MessageEvent.UserId |> uint64))
+        let (b, d) = cfg.Load()
+        
+        let b = Array.append (b) (msgArg.Arguments) |> Array.distinct
+        cfg.Save(b,d)
 
-        let dicer = Dicer(seed, AutoRefreshSeed = false)
+        sprintf "已将%A保存到配置" (msgArg.Arguments)
+        |> msgArg.CqEventArgs.QuickMessageReply
 
-        let mapped =
-            data
-            |> Array.map (fun x -> x, dicer.GetRandomFromString(x, 100u))
-            |> Array.sortBy (snd)
+    [<CommandHandlerMethodAttribute("ead", "添加午餐/晚餐", "#ead 西北风 东南风")>]
+    member x.HandleAddDinner(msgArg : CommandArgs) =
+        let cfg = EatHelper.EatConfig(UserConfig.ConfigOwner.User (msgArg.MessageEvent.UserId |> uint64))
+        let (b, d) = cfg.Load()
+        
+        let d = Array.append (d) (msgArg.Arguments) |> Array.distinct
+        cfg.Save(b,d)
 
-        let g =
-            mapped
-            |> Array.filter (fun (_, c) -> c <= 5)
-            |> Array.map (fst)
-
-        let ng =
-            mapped
-            |> Array.filter (fun (_, c) -> c >= 96)
-            |> Array.map (fst)
-
-        let ret =
-            sprintf "宜：%s\r\n忌：%s" (String.Join(" ", g)) (String.Join(" ", ng))
-
-        msgArg.CqEventArgs.QuickMessageReply(ret)
+        sprintf "已将%A保存到配置" (msgArg.Arguments)
+        |> msgArg.CqEventArgs.QuickMessageReply

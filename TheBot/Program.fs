@@ -19,7 +19,7 @@ let StartBot() =
     client.Connect()
     client.StartListen()
 
-    if isNull (Type.GetType("Mono.Runtime")) then
+    if not <| isNull (Type.GetType("Mono.Runtime")) then
         UnixSignal.WaitAny
             ([| new UnixSignal(Signum.SIGINT)
                 new UnixSignal(Signum.SIGTERM)

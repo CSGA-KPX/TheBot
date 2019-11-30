@@ -14,6 +14,7 @@ type ConfigOwner =
     | Group of uint64
     | User of uint64
     | Discuss of uint64
+    | System
 
 [<CLIMutable>]
 type Config = 
@@ -61,7 +62,34 @@ and ConfigManager private () =
         x.SaveConfig(cfg)
 
     member x.ClearAllConfig() = 
-        Db.DropCollection(colName)
+        Db.DropCollection(colName) |> ignore
 
     member x.SaveConfig(cfg : Config) = 
-        col.Upsert(cfg)
+        col.Upsert(cfg) |> ignore
+
+
+[<AbstractClass>]
+type ConfigItem<'T>(owner : ConfigOwner) = 
+    
+    member x.Owner = owner
+
+    abstract ConfigKey : string
+
+    default x.ConfigKey = x.GetType().Name
+
+    abstract Default : string
+
+    abstract DeserializeData : string -> 'T
+
+    abstract SerializeData : 'T -> string
+
+    member x.Load() = 
+        let cfg = ConfigManager.Instance.GetConfig(owner)
+        if not <| cfg.Config.ContainsKey(x.ConfigKey) then
+            cfg.Config.Add(x.ConfigKey, x.Default)
+        cfg.Config.[x.ConfigKey] |> x.DeserializeData
+
+    member x.Save(value : 'T) = 
+        let cfg = ConfigManager.Instance.GetConfig(owner)
+        cfg.Config.[x.ConfigKey] <- x.SerializeData(value)
+        ConfigManager.Instance.SaveConfig(cfg)
