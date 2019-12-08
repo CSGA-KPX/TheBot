@@ -42,9 +42,7 @@ type CqWebSocketClient(url, token) =
         let obj = JObject.Parse(json)
         if obj.ContainsKey("post_type") then
             logger.Trace("收到上报：{0}", json)
-            let event = EventUnion.From(obj)
-            logger.Trace("收到事件：{0}", event)
-            let args = ClientEventArgs(man, json, event)
+            let args = ClientEventArgs(man, obj)
             cqHttpEvent.Trigger(args)
         elif obj.ContainsKey("retcode") then
             //API调用结果

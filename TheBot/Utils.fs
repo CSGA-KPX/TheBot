@@ -6,7 +6,7 @@ open System.Collections.Generic
 open KPX.FsCqHttp.DataType
 
 
-let private cstOffset = TimeSpan.FromHours(8.0)
+let cstOffset = TimeSpan.FromHours(8.0)
 
 type SeedOption =
     | SeedDate

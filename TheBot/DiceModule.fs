@@ -1,6 +1,7 @@
 module TheBot.Module.DiceModule
 
 open System
+open KPX.FsCqHttp.DataType
 open KPX.FsCqHttp.Handler.CommandHandlerBase
 open TheBot.Utils
 
@@ -8,11 +9,6 @@ module ChoiceHelper =
     open System.Text.RegularExpressions
 
     let YesOrNoRegex = Regex("(.*)(.+)([没不]\2)(.*)", RegexOptions.Compiled)
-
-    let doDice ((dicer : Dicer), (opts : string [])) =
-        opts
-        |> Array.map (fun c -> (c, dicer.GetRandomFromString(c, 100u)))
-        |> Array.sortBy (fun (_, n) -> n)
 
 module DiceExpression =
     open TheBot.GenericRPN
@@ -72,6 +68,12 @@ module DiceExpression =
 module EatHelper =
     let emptyChars = [| ' '; '\t'; '\r'; '\n' |]
 
+    let arrayLastN (arr : 'a [], count : int) = 
+            let n = arr.Length
+            if n < count then
+                invalidOp "Length < count!"
+            arr.[n-count .. n-1]
+
     type EatConfig(owner) = 
         inherit UserConfig.ConfigItem<string[] * string []>(owner)
 
@@ -97,13 +99,13 @@ module EatHelper =
     油条 麻团 萝卜丝油端子 韭菜盒子 面包 列巴 蛋糕 黑芝麻糊 土家酱香饼
     掉渣大饼 鸡蛋火烧 包子 馄钝 小笼汤包 生煎包 饭团 面条 粉丝汤 糖三角 糯米糕
     红薯 玉米 黄瓜 麦谷乐 炒饭 八宝饭 八宝粥 元宵 蒸饭 杂粮煎饼 水饺 荷包蛋
-    烧饼 饽饽 肉夹馍 馄饨 火腿 烧卖 蛋挞 南瓜粥 玉米糊 燕麦片
+    烧饼 饽饽 肉夹馍 馄饨 火腿 蛋挞 南瓜粥 玉米糊 燕麦片
     辣糊汤 糁汤 牛奶麦片 梅干菜包 香菇青菜包 煎蛋 生煎 皮蛋瘦肉粥 煎饼 水煮蛋
     鸡蛋饼 手抓饼 烧麦 热干面 酸奶 玉米粥 肉包 素包 苹果 梨 香蕉 馒头 豆浆 牛奶 花卷
-    流心奶黄包 小笼包 上汤猫耳朵 葱油拌面 豆浆烧饼油条 臭豆腐 随便 都行 别人吃什么就什么""".Split(emptyChars, StringSplitOptions.RemoveEmptyEntries)
+    流心奶黄包 小笼包 上汤猫耳朵 葱油拌面 豆浆烧饼油条 臭豆腐""".Split(emptyChars, StringSplitOptions.RemoveEmptyEntries)
 
     let dinner = """
-    麦当劳贫民餐 真功夫 萨莉亚 猪排饭 寿司 砂锅粥 咖喱饭 卤肉饭 冒菜 麻辣拌 鸡架 寿喜锅 肥羊
+    麦当劳贫民餐 蒸功夫 萨莉亚 猪排饭 寿司 砂锅粥 咖喱饭 卤肉饭 冒菜 麻辣拌 鸡架 寿喜锅 肥羊
     食堂快餐 食堂铁板 食堂面 食堂鲜捞 食堂关东煮 泡面  素椒面 豌杂面 燃面 羊马渣渣面
     老麻抄手 毛血旺 肥肠 血旺 豆花牛肉 水煮牛肉 牛肉咔饼 烧鸡公 芋儿鸡 柴火鸡 青花椒鸡 胡椒猪肚鸡
     花胶鸡 椒麻鸡 海南鸡饭 白切鸡 火锅鱼 烤鱼 纸上烤鱼 石锅三角峰 黄辣丁 甜皮鸭 金陵烤鸭 北京烤鸭
@@ -111,12 +113,14 @@ module EatHelper =
     鸡鸭和乐 川北凉粉 拌拉皮 蒜泥护心肉 麦当劳 华莱士 豚骨拉面 辣白菜炒五花肉 烤青花鱼
     海鲜波奇饭 肥牛饭 咖喱 冬阴功汤 小鸡炖蘑菇 苹果 香蕉 梨 橙子 橘子 西瓜 黄瓜 胡萝卜
     面条 中式快餐 烧烤蛋包饭 刺身 盖浇饭 盖浇面 锅贴 牛肉汤 牛肉粉丝 便利店 香锅
-    水饺 凉面 凉皮 河粉 肠粉 汉堡 炸鸡 下馆子点菜 炒饭 炒面 水果 看看体重 健身餐 打游戏
-    精神食粮 饿就吃苹果 你要三思 草 睡吧 关东煮 肯德基 馒头 
-    排骨汤 羊蝎子 不吃 圣安娜 贫穷的眼泪 食堂 食其家 汉堡王
+    水饺 凉面 凉皮 河粉 肠粉 汉堡 炸鸡 下馆子点菜 炒饭 炒面 水果 健身餐
+    关东煮 肯德基 馒头 排骨汤 羊蝎子 不吃 圣安娜  食堂 食其家 汉堡王
     麻辣烫 便当 全家 烤鸭 小杨生煎 三黄鸡 臭豆腐 烤冷面 热干面 螺蛳粉 速食汤 速食包
     火鸡面 烫饭 卤鸭爪 炸鸡爪 牛肉汤 麻辣香锅 浓香芝士年糕 韩式炸鸡 鱼蛋车仔面 奶油猪仔包 肥宅快乐鸡
-    家常小炒 串串 火锅 烤肉 披萨 方便面 黄焖鸡 兰州拉面 随便 都行 别人吃什么就什么""".Split(emptyChars, StringSplitOptions.RemoveEmptyEntries)
+    家常小炒 串串 火锅 烤肉 披萨 方便面 黄焖鸡 兰州拉面""".Split(emptyChars, StringSplitOptions.RemoveEmptyEntries)
+
+    let ng = """
+    随便 都行 看你 不知道 不行就别吃了 建议玩手机 还是打游戏吧""".Split(emptyChars, StringSplitOptions.RemoveEmptyEntries)
 
     let GetEatString(msgArg : CommandArgs) =
         let (seed, data) = 
@@ -135,26 +139,28 @@ module EatHelper =
 
         let dicer = Dicer(SeedOption.SeedByUserDay(msgArg.MessageEvent), AutoRefreshSeed = false)
 
-        let luck = dicer.GetRandomFromString(seed, 100u)
+        let dice = dicer.GetRandomFromString(seed, 100u)
 
-        if luck <= 95 then
-            let eat = 
+        if dice >= 96 then
+            dicer.GetRandomItem(ng)
+        else
+            let mapped = 
                 data
                 |> Array.map (fun x -> x, dicer.GetRandomFromString(seed + "吃" + x, 100u))
+
+            let eat = 
+                mapped
                 |> Array.filter (fun (_, c) -> c <= 5 )
                 |> Array.sortBy (snd)
                 |> Array.map (fun (i,c) -> sprintf "%s(%i)" i c )
 
             let notEat = 
-                data
-                |> Array.map (fun x -> x, dicer.GetRandomFromString(seed + "不吃" + x, 100u))
-                |> Array.filter (fun (_, c) -> c <= 5 )
-                |> Array.sortBy (snd)
+                mapped
+                |> Array.filter (fun (_, c) -> c >= 96 )
+                |> Array.sortByDescending (snd)
                 |> Array.map (fun (i,c) -> sprintf "%s(%i)" i c )
 
             sprintf "宜：%s\r\n忌：%s" (String.Join(" ", eat)) (String.Join(" ", notEat))
-        else
-            "随便"
 
 type DiceModule() =
     inherit CommandHandlerBase()
@@ -162,38 +168,38 @@ type DiceModule() =
     [<CommandHandlerMethodAttribute("c", "对多个选项1d100", "A B C D")>]
     member x.HandleChoices(msgArg : CommandArgs) =
         let atUser = msgArg.MessageEvent.Message.GetAts() |> Array.tryHead
-
-        let seed =
-            if atUser.IsSome then SeedOption.SeedByAtUserDay(msgArg.MessageEvent)
-            else SeedOption.SeedByUserDay(msgArg.MessageEvent)
-
-        let dicer = Dicer(seed, AutoRefreshSeed = false)
-
         let sw = new IO.StringWriter()
         if atUser.IsSome then
-            let atUserId =
-                match atUser.Value with
-                | KPX.FsCqHttp.DataType.Message.AtUserType.All -> failwithf ""
-                | KPX.FsCqHttp.DataType.Message.AtUserType.User x -> x
+            match atUser.Value with
+            | Message.AtUserType.All ->
+                failwithf "公共事件请用at bot账号"
+            | Message.AtUserType.User x when x = msgArg.CqEventArgs.SelfId ->
+                sw.WriteLine("公投：")
+            | Message.AtUserType.User x ->
+                let atUserName = KPX.FsCqHttp.Api.GroupApi.GetGroupMemberInfo(msgArg.MessageEvent.GroupId, x)
+                let ret = msgArg.CqEventArgs.CallApi(atUserName)
+                sw.WriteLine("{0} 为 {1} 投掷：", msgArg.MessageEvent.GetNicknameOrCard, ret.DisplayName)
 
-            let atUserName = KPX.FsCqHttp.Api.GroupApi.GetGroupMemberInfo(msgArg.MessageEvent.GroupId, atUserId)
-            let ret = msgArg.CqEventArgs.CallApi(atUserName)
-            sw.WriteLine("{0} 为 {1} 投掷：", msgArg.MessageEvent.GetNicknameOrCard, ret.DisplayName)
         let tt = TextTable.FromHeader([| "1D100"; "选项" |])
 
-        let opts =
-            if msgArg.Arguments.Length = 1 then
-                [| let msg = msgArg.Arguments.[0]
-                   let m = ChoiceHelper.YesOrNoRegex.Match(msg)
-                   if m.Success then
-                       yield m.Groups.[1].Value + m.Groups.[2].Value + m.Groups.[4].Value
-                       yield m.Groups.[1].Value + m.Groups.[3].Value + m.Groups.[4].Value
-                   else
-                       yield! msgArg.Arguments |]
-            else
-                msgArg.Arguments
-        for (c, n) in ChoiceHelper.doDice (dicer, opts) do
-            tt.AddRow((sprintf "%03i" n), c)
+        [|
+            for arg in msgArg.Arguments do 
+                let m = ChoiceHelper.YesOrNoRegex.Match(arg)
+                if m.Success then
+                    yield m.Groups.[1].Value + m.Groups.[2].Value + m.Groups.[4].Value
+                    yield m.Groups.[1].Value + m.Groups.[3].Value + m.Groups.[4].Value
+                else
+                    yield arg
+        |]
+        |> Array.map (fun c -> 
+            let seed = 
+                if atUser.IsSome then SeedOption.SeedByAtUserDay(msgArg.MessageEvent)
+                else SeedOption.SeedByUserDay(msgArg.MessageEvent)
+            let dicer = Dicer(seed, AutoRefreshSeed = false)
+            (c, dicer.GetRandomFromString(c, 100u)))
+        |> Array.sortBy snd
+        |> Array.iter (fun (c, n) -> tt.AddRow((sprintf "%03i" n), c))
+
         sw.Write(tt.ToString())
         msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
 
@@ -240,3 +246,21 @@ type DiceModule() =
 
         sprintf "已将%A保存到配置" (msgArg.Arguments)
         |> msgArg.CqEventArgs.QuickMessageReply
+
+    [<CommandHandlerMethodAttribute("gacha", "抽10连 概率3%", "")>]
+    member x.HandleGacha(msgArg : CommandArgs) =
+        let cutoff =
+            msgArg.Arguments
+            |> Seq.tryPick (fun arg ->
+                let (succ, i) = UInt32.TryParse(arg)
+                if succ then Some(int i) else None)
+            |> Option.defaultValue 3
+        
+        let dicer = Dicer(SeedOption.SeedRandom |> Array.singleton )
+
+        let count = 10
+        let ret =
+            Array.init count (fun _ -> dicer.GetRandom(100u))
+            |> Array.map (fun x -> if x <= cutoff then "红" else "黑")
+
+        msgArg.CqEventArgs.QuickMessageReply(String.Join(" ", ret))

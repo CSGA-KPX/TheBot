@@ -3,15 +3,16 @@ namespace KPX.FsCqHttp.Handler.Base
 open System
 open KPX.FsCqHttp.DataType
 open KPX.FsCqHttp.Api
+open Newtonsoft.Json.Linq
 
-type ClientEventArgs(api : ApiCallManager, context : string, data : Event.EventUnion) =
+type ClientEventArgs(api : ApiCallManager, obj : JObject) =
     inherit EventArgs()
 
     let logger = NLog.LogManager.GetCurrentClassLogger()
 
-    member val ApiManager = api
-    member val Data = data
-    member val Context = context
+    member val SelfId = obj.["self_id"].Value<uint64>()
+
+    member val Event = Event.EventUnion.From(obj)
 
     member x.CallApi<'T when 'T :> ApiRequestBase>(req : 'T) =
         logger.Trace("Calling {0}", typeof<'T>.Name)
@@ -24,13 +25,13 @@ type ClientEventArgs(api : ApiCallManager, context : string, data : Event.EventU
 
     member x.SendResponse(r : Response.EventResponse) =
         if r <> Response.EmptyResponse then
-            let rep = SystemApi.QuickOperation(context)
+            let rep = SystemApi.QuickOperation(obj.ToString(Newtonsoft.Json.Formatting.None))
             rep.Reply <- r
             x.CallApi<SystemApi.QuickOperation>(rep) |> ignore
 
     member x.QuickMessageReply(msg : string, ?atUser : bool) =
         let atUser = defaultArg atUser false
-        match data with
+        match x.Event with
         | Event.EventUnion.Message ctx when msg.Length >= 3000 -> x.QuickMessageReply("字数太多了，请优化命令或者向管理员汇报bug", true)
         | Event.EventUnion.Message ctx ->
             let msg = Message.Message.TextMessage(msg.Trim())
@@ -56,7 +57,7 @@ type HandlerModuleBase() as x =
 
     abstract HandleCqHttpEvent : obj -> ClientEventArgs -> unit
     default x.HandleCqHttpEvent _ args =
-        match args.Data with
+        match args.Event with
         | Event.EventUnion.Message y -> x.HandleMessage(args, y)
         | Event.EventUnion.Request y -> x.HandleRequest(args, y)
         | Event.EventUnion.Notice y -> x.HandleNotice(args, y)

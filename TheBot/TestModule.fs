@@ -4,11 +4,14 @@ open KPX.FsCqHttp.Handler.CommandHandlerBase
 
 type TestModule() =
     inherit CommandHandlerBase()
+
     (*
     [<CommandHandlerMethodAttribute("#test", "显示一条测试信息", "")>]
     member x.HandleTest(msgArg : CommandArgs) =
-        msgArg.CqEventArgs.QuickMessageReply("Test success!")
+        let selfId = sprintf "self = %i" msgArg.CqEventArgs.SelfId
+        msgArg.CqEventArgs.QuickMessageReply(selfId)
 
+    
     [<CommandHandlerMethodAttribute("#test.coc7d", "显示一条测试信息", "")>]
     member x.HandleCOC7D(msgArg : CommandArgs) =
         let sw = new System.IO.StringWriter()
