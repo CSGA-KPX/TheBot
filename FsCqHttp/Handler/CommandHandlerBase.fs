@@ -50,4 +50,4 @@ type CommandHandlerBase() as x =
                 with
                 | :? Reflection.TargetInvocationException as e -> 
                     x.Logger.Fatal("Exception caught: {0}", e.ToString())
-                    args.QuickMessageReply(sprintf "·¢Éú´íÎó£º%s" (e.InnerException.Message))
+                    args.QuickMessageReply(sprintf "å‘ç”Ÿé”™è¯¯ï¼š%s" (e.InnerException.Message))

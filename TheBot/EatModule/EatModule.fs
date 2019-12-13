@@ -18,7 +18,7 @@ type EatModule() =
             invalidOp "你管别人怎么吃啊？"
 
         let str = msgArg.RawMessage
-        let (key, func) = eatFuncTable |> Array.find (fun (x,_) -> str.Contains(x))
+        let (_, func) = eatFuncTable |> Array.find (fun (x,_) -> str.Contains(x))
 
         let dicer = new Dicer(SeedOption.SeedByUserDay(msgArg.MessageEvent))
         msgArg.CqEventArgs.QuickMessageReply(func(dicer))
