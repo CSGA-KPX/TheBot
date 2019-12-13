@@ -1,4 +1,4 @@
-module TheBot.GenericRPN
+module TheBot.Utils.GenericRPN
 
 open System.Collections.Generic
 

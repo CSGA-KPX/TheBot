@@ -2,7 +2,6 @@ namespace KPX.FsCqHttp.Api
 
 open System
 open System.IO
-open System.Collections.Generic
 open System.Text
 open Newtonsoft.Json
 
@@ -16,9 +15,9 @@ type ApiRequestBase(action : string) as x =
     member x.GetRequestJson(?echo : string) =
         let echo = defaultArg echo ""
         let sb = StringBuilder()
-        let sw = new StringWriter(sb)
+        use sw = new StringWriter(sb)
         let js = JsonSerializer()
-        use w = new JsonTextWriter(sw, Formatting = Formatting.Indented)
+        use w = new JsonTextWriter(sw, Formatting = Formatting.None)
         w.WriteStartObject()
         if not <| String.IsNullOrEmpty(echo) then
             w.WritePropertyName("echo")

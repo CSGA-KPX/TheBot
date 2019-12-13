@@ -1,4 +1,4 @@
-﻿module UserConfig
+﻿module TheBot.Utils.UserConfig
 open System
 open LiteDB
 open LiteDB.FSharp.Extensions

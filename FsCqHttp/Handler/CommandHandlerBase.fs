@@ -45,4 +45,9 @@ type CommandHandlerBase() as x =
             for (_, method) in matched do
                 let msgArg = CommandArgs(msgEvent, args)
                 x.Logger.Info("Calling handler {0}", method.Name)
-                method.Invoke(x, [| msgArg |]) |> ignore
+                try
+                    method.Invoke(x, [| msgArg |]) |> ignore
+                with
+                | :? Reflection.TargetInvocationException as e -> 
+                    x.Logger.Fatal("Exception caught: {0}", e.ToString())
+                    args.QuickMessageReply(sprintf "·¢Éú´íÎó£º%s" (e.InnerException.Message))

@@ -40,6 +40,8 @@ type CqWebSocketClient(url, token) =
 
     member private x.HandleMessage(json : string) =
         let obj = JObject.Parse(json)
+        // 用单行覆盖掉
+        let json = obj.ToString(Newtonsoft.Json.Formatting.None)
         if obj.ContainsKey("post_type") then
             logger.Trace("收到上报：{0}", json)
             let args = ClientEventArgs(man, obj)

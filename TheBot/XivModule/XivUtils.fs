@@ -196,7 +196,7 @@ module CommandUtils =
 
 module XivExpression =
     open System.Text.RegularExpressions
-    open TheBot.GenericRPN
+    open TheBot.Utils.GenericRPN
 
     let t = Collections.Generic.HashSet<string>()
 
