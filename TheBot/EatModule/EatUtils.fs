@@ -45,12 +45,12 @@ type EatChoices(array : string [], dicer : Dicer) =
             sw.Write(("忌：{0}\r\n", String.Join(" ", n |> Array.map (formatPair))))
         sw.ToString()
 
-let private breakfast = readChoice("早加餐")
-let private dinner = readChoice("中晚餐")
-let private hotpot_soup = readChoice("火锅底料")
-let private hotpot_sauce = readChoice("火锅蘸料")
-let private hotpot_dish = readChoice("火锅配菜")
-let private ng = readChoice("别吃")
+let private breakfast = readChoice("早加餐") |> Array.distinct
+let private dinner = readChoice("中晚餐") |> Array.distinct
+let private hotpot_soup = readChoice("火锅底料") |> Array.distinct
+let private hotpot_sauce = readChoice("火锅蘸料") |> Array.distinct
+let private hotpot_dish = readChoice("火锅配菜") |> Array.distinct
+let ng = readChoice("别吃") |> Array.distinct
 
 let private mealsFunc prefix array (dicer : Dicer) = 
     let luck = dicer.GetRandomFromString("吃"+prefix, 100u)
@@ -107,14 +107,40 @@ let private hotpotFunc (dicer : Dicer) =
         .AppendFormat("　忌：{0}\r\n", String.Join(" ", dish_bad))
         .ToString()
 
-let eatFuncTable : (string * (Dicer -> string)) [] = 
-    // keyword : string * func : dicer -> string
+let private saizeriya = 
     [|
-        "早", mealsFunc "早餐" breakfast
-        "加", mealsFunc "加餐" breakfast
-        "晚", mealsFunc "晚餐" dinner
-        "午", mealsFunc "午餐" dinner
-        "火锅", hotpotFunc
-        "",  (fun _ -> "早中晚加 火锅 萨莉亚")
+        for row in rm.GetString("萨莉亚").Split([|'\r'; '\n'|], StringSplitOptions.RemoveEmptyEntries) do
+            let s = row.Split([|'：'|], StringSplitOptions.RemoveEmptyEntries)
+            printfn "%A" s
+            let name = s.[0]
+            let c = s.[1].Split(emptyChars, StringSplitOptions.RemoveEmptyEntries)
+            yield name, c
+    |]
+
+let private saizeriyaFunc (dicer : Dicer) = 
+    let sw = new IO.StringWriter()
+    for (name, c) in saizeriya do
+        let mapped = 
+            c
+            |> Array.map (fun x -> x, dicer.GetRandomFromString("萨莉亚吃" + x, 100u))
+            |> Array.filter (fun (_, c) -> c <= 50 )
+            |> Array.sortBy (snd)
+            |> Array.truncate 5
+            |> Array.map (fun (i,c) -> sprintf "%s(%i)" i c )
+        if mapped.Length <> 0 then
+            sw.WriteLine(sprintf "%s：%s" name (String.Join(" ", mapped)))
+    sw.ToString()
+
+let eatFuncTable : (string * string * (Dicer -> string)) [] = 
+    [|
+        "早",    "早餐", mealsFunc "早餐" breakfast
+        "加",    "加餐", mealsFunc "加餐" breakfast
+        "晚",    "晚餐", mealsFunc "晚餐" dinner
+        "午",    "午餐", mealsFunc "午餐" dinner
+
+        "火锅",  "火锅", hotpotFunc
+
+        "萨莉亚", "萨莉亚", saizeriyaFunc
+        "萨利亚", "萨莉亚", saizeriyaFunc
     |]
 
