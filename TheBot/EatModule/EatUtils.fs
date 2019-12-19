@@ -111,7 +111,6 @@ let private saizeriya =
     [|
         for row in rm.GetString("萨莉亚").Split([|'\r'; '\n'|], StringSplitOptions.RemoveEmptyEntries) do
             let s = row.Split([|'：'|], StringSplitOptions.RemoveEmptyEntries)
-            printfn "%A" s
             let name = s.[0]
             let c = s.[1].Split(emptyChars, StringSplitOptions.RemoveEmptyEntries)
             yield name, c
@@ -131,16 +130,30 @@ let private saizeriyaFunc (dicer : Dicer) =
             sw.WriteLine(sprintf "%s：%s" name (String.Join(" ", mapped)))
     sw.ToString()
 
-let eatFuncTable : (string * string * (Dicer -> string)) [] = 
+let eatAlias = 
+    let map = 
+        [|
+            "早餐", [| "早"; "早饭" |]
+            "午餐", [| "中"; "中饭" |]
+            "晚餐", [| "晚"; "晚饭" |]
+            "加餐", [| "加"; "夜宵" |]
+            "萨莉亚", [|"萨利亚"|]
+        |]
+    seq {
+        for (key, aliases) in map do
+            for alias in aliases do 
+                yield alias, key
+    }
+    |> readOnlyDict
+
+let eatFuncs : Collections.Generic.IReadOnlyDictionary<string, Dicer -> string> = 
     [|
-        "早",    "早餐", mealsFunc "早餐" breakfast
-        "加",    "加餐", mealsFunc "加餐" breakfast
-        "晚",    "晚餐", mealsFunc "晚餐" dinner
-        "午",    "午餐", mealsFunc "午餐" dinner
-
-        "火锅",  "火锅", hotpotFunc
-
-        "萨莉亚", "萨莉亚", saizeriyaFunc
-        "萨利亚", "萨莉亚", saizeriyaFunc
+        "早餐", mealsFunc "早餐" breakfast
+        "加餐", mealsFunc "加餐" breakfast
+        "晚餐", mealsFunc "晚餐" dinner
+        "午餐", mealsFunc "午餐" dinner
+        "火锅", hotpotFunc
+        "萨莉亚", saizeriyaFunc
     |]
+    |> readOnlyDict
 
