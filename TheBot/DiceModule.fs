@@ -129,18 +129,31 @@ type DiceModule() =
 
     [<CommandHandlerMethodAttribute("gacha", "抽10连 概率3%", "")>]
     member x.HandleGacha(msgArg : CommandArgs) =
-        let cutoff =
-            msgArg.Arguments
-            |> Seq.tryPick (fun arg ->
-                let (succ, i) = UInt32.TryParse(arg)
-                if succ then Some(int i) else None)
-            |> Option.defaultValue 3
+        let mutable cutoff = 3
+        let mutable count  = 10
+
+        for arg in msgArg.Arguments do 
+            let (succ, i) = UInt32.TryParse(arg)
+            if succ then
+                let i = int(i)
+                if i > 300 then
+                    failwithf "一井还不够你用？"
+                elif i >= 10 then
+                    count <- i
+                else
+                    cutoff <- i
         
         let dicer = Dicer(SeedOption.SeedRandom |> Array.singleton )
-
-        let count = 10
         let ret =
             Array.init count (fun _ -> dicer.GetRandom(100u))
-            |> Array.map (fun x -> if x <= cutoff then "红" else "黑")
+            |> Array.countBy (fun x -> if x <= cutoff then "红" else "黑")
+            |> Array.sortBy (fst)
+            |> Array.map (fun (s, c) -> sprintf "%s(%i)" s c)
 
-        msgArg.CqEventArgs.QuickMessageReply(String.Join(" ", ret))
+        let reply = 
+            Text.StringBuilder()
+                .AppendLine(sprintf "概率%i%% 抽数%i" cutoff count)
+                .AppendLine(String.Join(" ", ret))
+                .ToString()
+
+        msgArg.CqEventArgs.QuickMessageReply(reply)
