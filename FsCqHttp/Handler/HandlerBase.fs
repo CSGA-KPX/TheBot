@@ -5,7 +5,7 @@ open KPX.FsCqHttp.DataType
 open KPX.FsCqHttp.Api
 open Newtonsoft.Json.Linq
 
-type ClientEventArgs(api : ApiCallManager, obj : JObject) =
+type ClientEventArgs(api : IApiCallProvider, obj : JObject) =
     inherit EventArgs()
 
     let logger = NLog.LogManager.GetCurrentClassLogger()
@@ -14,25 +14,26 @@ type ClientEventArgs(api : ApiCallManager, obj : JObject) =
 
     member val Event = Event.EventUnion.From(obj)
 
-    member x.CallApi<'T when 'T :> ApiRequestBase>(req : 'T) =
-        logger.Trace("Calling {0}", typeof<'T>.Name)
-        api.Call<'T>(req)
+    member x.CallApi(req) =
+        logger.Trace("Calling {0}", req.GetType().Name)
+        api.CallApi(req)
 
-    /// 璋冪敤涓�涓笉闇�瑕侀澶栬瀹氱殑api
+    /// 调用一个不需要额外设定的api
     member x.CallApi<'T when 'T :> ApiRequestBase and 'T : (new : unit -> 'T)>() =
         let req = Activator.CreateInstance<'T>()
-        x.CallApi<'T>(req)
+        x.CallApi(req)
+        req
 
     member x.SendResponse(r : Response.EventResponse) =
         if r <> Response.EmptyResponse then
             let rep = SystemApi.QuickOperation(obj.ToString(Newtonsoft.Json.Formatting.None))
             rep.Reply <- r
-            x.CallApi<SystemApi.QuickOperation>(rep) |> ignore
+            x.CallApi(rep) |> ignore
 
     member x.QuickMessageReply(msg : string, ?atUser : bool) =
         let atUser = defaultArg atUser false
         match x.Event with
-        | Event.EventUnion.Message ctx when msg.Length >= 3000 -> x.QuickMessageReply("瀛楁暟澶浜嗭紝璇蜂紭鍖栧懡浠ゆ垨鑰呭悜绠＄悊鍛樻眹鎶ug", true)
+        | Event.EventUnion.Message ctx when msg.Length >= 3000 -> x.QuickMessageReply("字数太多了，请优化命令或者向管理员汇报bug", true)
         | Event.EventUnion.Message ctx ->
             let msg = Message.Message.TextMessage(msg.Trim())
             match ctx with

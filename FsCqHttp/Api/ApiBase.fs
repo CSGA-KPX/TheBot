@@ -52,3 +52,7 @@ type ApiRequestBase(action : string) as x =
             sb.AppendFormat("{0} => {1}\r\n", prop.Name, prop.GetValue(x)) |> ignore
         sb.AppendLine("".PadRight(header.Length, '-')) |> ignore
         sb.ToString()
+
+
+type IApiCallProvider = 
+    abstract CallApi : ApiRequestBase -> unit

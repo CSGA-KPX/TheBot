@@ -43,7 +43,7 @@ module DiceExpression =
                    match str with
                    | _ when Char.IsDigit(str.[0]) -> yield Operand(DicerOperand(str |> int))
                    | _ when x.Operatos.ContainsKey(str) -> yield Operator(x.Operatos.[str])
-                   | _ -> failwithf "Unknown token %s" str |]
+                   | _ -> failwithf "无法解析 %s" str |]
 
         member x.Eval(str : string, dicer : Dicer) =
             let func =
@@ -83,8 +83,8 @@ type DiceModule() =
                 sw.WriteLine("公投：")
             | Message.AtUserType.User x ->
                 let atUserName = KPX.FsCqHttp.Api.GroupApi.GetGroupMemberInfo(msgArg.MessageEvent.GroupId, x)
-                let ret = msgArg.CqEventArgs.CallApi(atUserName)
-                sw.WriteLine("{0} 为 {1} 投掷：", msgArg.MessageEvent.GetNicknameOrCard, ret.DisplayName)
+                msgArg.CqEventArgs.CallApi(atUserName)
+                sw.WriteLine("{0} 为 {1} 投掷：", msgArg.MessageEvent.GetNicknameOrCard, atUserName.DisplayName)
 
         let tt = TextTable.FromHeader([| "1D100"; "选项" |])
 

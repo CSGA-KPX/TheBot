@@ -1,24 +1,27 @@
 namespace KPX.FsCqHttp.Instance
 
 open System
+open System.Collections.Generic
 open System.Threading
 open System.Net.WebSockets
 open KPX.FsCqHttp.DataType
 open KPX.FsCqHttp.Api
 open KPX.FsCqHttp.Handler.Base
-open KPX.FsCqHttp.DataType.Event
 open Newtonsoft.Json.Linq
 
 type CqWebSocketClient(url, token) =
     let ws = new ClientWebSocket()
     let cts = new CancellationTokenSource()
-    let man = ApiCallManager(ws, cts.Token)
     let utf8 = Text.Encoding.UTF8
     let logger = NLog.LogManager.GetCurrentClassLogger()
 
+    let apiPending = Dictionary<string, ManualResetEvent * ApiRequestBase>()
+    let apiLock = new ReaderWriterLockSlim()
+
     let cqHttpEvent = Event<_>()
 
-    do ws.Options.SetRequestHeader("Authorization", sprintf "Bearer %s" token)
+    do
+        ws.Options.SetRequestHeader("Authorization", sprintf "Bearer %s" token)
 
     [<CLIEvent>]
     member x.OnCqHttpEvent = cqHttpEvent.Publish
@@ -27,7 +30,28 @@ type CqWebSocketClient(url, token) =
 
     member x.IsAvailable = ws.State = WebSocketState.Open
 
-    member x.CallApi<'T when 'T :> ApiRequestBase>(req) = man.Call<'T>(req)
+
+    interface IApiCallProvider with
+        member x.CallApi(req) =
+            async {
+                let echo = Guid.NewGuid().ToString()
+                let mre = new ManualResetEvent(false)
+                let json = req.GetRequestJson(echo)
+
+                apiLock.EnterWriteLock()
+                apiPending.Add(echo, (mre, req)) |> ignore
+                apiLock.ExitWriteLock()
+
+                logger.Trace("请求API：{0}", json)
+                let data = json |> utf8.GetBytes
+                do! ws.SendAsync(ArraySegment<byte>(data), WebSocketMessageType.Text, true, cts.Token) |> Async.AwaitTask
+                let! ret = Async.AwaitWaitHandle(mre :> WaitHandle)
+
+                apiLock.EnterWriteLock()
+                apiPending.Remove(echo) |> ignore
+                apiLock.ExitWriteLock()
+            }
+            |> Async.RunSynchronously
 
     member x.Connect() =
         if not x.IsAvailable then
@@ -44,13 +68,21 @@ type CqWebSocketClient(url, token) =
         let json = obj.ToString(Newtonsoft.Json.Formatting.None)
         if obj.ContainsKey("post_type") then
             logger.Trace("收到上报：{0}", json)
-            let args = ClientEventArgs(man, obj)
+            let args = ClientEventArgs(x, obj)
             cqHttpEvent.Trigger(args)
         elif obj.ContainsKey("retcode") then
             //API调用结果
             logger.Trace("收到API调用结果：{0}", sprintf "%A" json)
             let ret = obj.ToObject<Response.ApiResponse>()
-            man.HandleResponse(ret)
+            apiLock.EnterReadLock()
+            let notEmpty = not <| String.IsNullOrEmpty(ret.Echo)
+            let hasPending = apiPending.ContainsKey(ret.Echo)
+            if notEmpty && hasPending then
+                logger.Trace("Passing {0}", ret.Echo)
+                let (mre, api) = apiPending.[ret.Echo]
+                api.HandleResponse(ret)
+                mre.Set() |> ignore
+            apiLock.ExitReadLock()
 
 
     member x.StartListen() =

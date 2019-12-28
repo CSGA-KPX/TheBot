@@ -14,7 +14,6 @@
     <Compile Include="DateType\Event\MetaEvent.fs" />
     <Compile Include="DateType\Event\Event.fs" />
     <Compile Include="Api\ApiBase.fs" />
-    <Compile Include="Api\ApiCallManager.fs" />
     <Compile Include="Api\SystemApi.fs" />
     <Compile Include="Api\MsgApi.fs" />
     <Compile Include="Api\GroupApi.fs" />

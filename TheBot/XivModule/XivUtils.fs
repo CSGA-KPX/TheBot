@@ -282,7 +282,7 @@ module XivExpression =
                    | _ ->
                        let item = Item.ItemCollection.Instance.TryLookupByName(str)
                        if item.IsSome then yield Operand(Accumulator(ItemAccumulator.Singleton(item.Value)))
-                       else failwithf "Unknown token %s" str |]
+                       else failwithf "无法解析 %s" str |]
 
         member x.Eval(str : string) =
             let func =

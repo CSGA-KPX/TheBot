@@ -45,10 +45,10 @@ type XivModule() =
 
         for ret in rets do
             match ret with
-            | Error str -> sw.WriteLine("找不到物品{0}，请尝试#is {0}", str)
+            | Error str -> failwithf "找不到物品%s，请尝试#is %s" str str
             | Ok ma ->
                 match ma with
-                | Error exn -> sw.WriteLine("服务器处理失败，请稍后重试，错误信息： {0}", exn.Message)
+                | Error exn -> raise exn
                 | Ok ma when ma.IsEmpty -> tt.AddRow(ma.ItemRecord.Name, "无记录", "--", "--", "--")
                 | Ok ma ->
                     tt.AddRow(ma.ItemRecord.Name, ma.StdEvPrice(), ma.MinPrice(), ma.MaxPrice(), ma.LastUpdateTime())
@@ -69,10 +69,10 @@ type XivModule() =
 
         for ret in rets do
             match ret with
-            | Error str -> sw.WriteLine("找不到物品{0}，请尝试#is {0}", str)
+            | Error str -> failwithf "找不到物品%s，请尝试#is %s" str str
             | Ok ma ->
                 match ma with
-                | Error exn -> sw.WriteLine("服务器处理失败，请稍后重试，错误信息： {0}", exn.Message)
+                | Error exn -> raise exn
                 | Ok ma when ma.IsEmpty -> tt.AddRow(ma.ItemRecord.Name, "无记录", "--", "--")
                 | Ok ma ->
                     let all = ma.TakeVolume(25).StdEvPrice()
@@ -92,10 +92,10 @@ type XivModule() =
 
         for ret in rets do
             match ret with
-            | Error str -> sw.WriteLine("找不到物品{0}，请尝试#is {0}", str)
+            | Error str -> failwithf "找不到物品%s，请尝试#is %s" str str
             | Ok ma ->
                 match ma with
-                | Error exn -> sw.WriteLine("服务器处理失败，请稍后重试，错误信息： {0}", exn.Message)
+                | Error exn -> raise exn
                 | Ok wma ->
                     for (world, ma) in wma do
                         if ma.IsEmpty then tt.AddRow(ma.ItemRecord.Name, world.WorldName, "无记录", "--", "--", "--")
@@ -117,10 +117,10 @@ type XivModule() =
 
         for ret in rets do
             match ret with
-            | Error str -> sw.WriteLine("找不到物品{0}，请尝试#is {0}", str)
+            | Error str -> failwithf "找不到物品%s，请尝试#is %s" str str
             | Ok ma ->
                 match ma with
-                | Error exn -> sw.WriteLine("服务器处理失败，请稍后重试，错误信息： {0}", exn.Message)
+                | Error exn -> raise exn
                 | Ok wma ->
                     for (world, ma) in wma do
                         if ma.IsEmpty then
@@ -157,8 +157,8 @@ type XivModule() =
         let parser = XivExpression.XivExpression()
         for str in msgArg.Arguments do
             match parser.TryEval(str) with
-            | Error err -> sw.WriteLine("对{0}求值时发生错误\r\n{1}", str, err.Message)
-            | Ok(XivExpression.XivOperand.Number i) -> sw.WriteLine("{0} 的返回值为数字 : {1}", str, i)
+            | Error err -> raise err
+            | Ok(XivExpression.XivOperand.Number i) -> failwithf "计算结果为数字%f，物品Id请加#" i
             | Ok(XivExpression.XivOperand.Accumulator a) ->
                 for kv in a do
                     let (item, runs) = kv.Key, kv.Value
@@ -188,7 +188,7 @@ type XivModule() =
         for str in msgArg.Arguments do
             match parser.TryEval(str) with
             | Error err -> sw.WriteLine("对{0}求值时发生错误\r\n{1}", str, err.Message)
-            | Ok(XivExpression.XivOperand.Number i) -> sw.WriteLine("{0} 的返回值为数字 : {1}", str, i)
+            | Ok(XivExpression.XivOperand.Number i) -> failwithf "计算结果为数字%f，物品Id请加#" i
             | Ok(XivExpression.XivOperand.Accumulator a) ->
                 for kv in a do
                     let (item, runs) = kv.Key, kv.Value
@@ -221,8 +221,8 @@ type XivModule() =
 
         for str in args do
             match parser.TryEval(str) with
-            | Error err -> sw.WriteLine("对{0}求值时发生错误\r\n{1}", str, err.Message)
-            | Ok(XivExpression.XivOperand.Number i) -> sw.WriteLine("{0} 的返回值为数字 : {1}", str, i)
+            | Error err -> raise err
+            | Ok(XivExpression.XivOperand.Number i) -> failwithf "计算结果为数字%f，物品Id请加#" i
             | Ok(XivExpression.XivOperand.Accumulator a) ->
                 for kv in a do
                     let (item, runs) = kv.Key, kv.Value
@@ -243,7 +243,7 @@ type XivModule() =
         let tt = TextTable.FromHeader([| "物品"; "价格"; "需求"; "总价"; "更新时间" |])
         for (item, ma, count) in final do
             match ma with
-            | Error err -> sw.WriteLine("查询{0}时发生错误：{1}", item.Name, err.Message)
+            | Error err -> raise err
             | Ok ma when ma.IsEmpty -> tt.AddRow(tryLookupNpcPrice (ma.ItemRecord), "无记录", "--", "--", "--")
             | Ok ma ->
                 let std = ma.StdEvPrice()
@@ -265,8 +265,8 @@ type XivModule() =
 
         for str in args do
             match parser.TryEval(str) with
-            | Error err -> sw.WriteLine("对{0}求值时发生错误\r\n{1}", str, err.Message)
-            | Ok(XivExpression.XivOperand.Number i) -> sw.WriteLine("{0} 的返回值为数字 : {1}", str, i)
+            | Error err -> raise err
+            | Ok(XivExpression.XivOperand.Number i) -> failwithf "计算结果为数字%f，物品Id请加#" i
             | Ok(XivExpression.XivOperand.Accumulator a) ->
                 for kv in a do
                     let (item, runs) = kv.Key, kv.Value
@@ -287,7 +287,7 @@ type XivModule() =
         let tt = TextTable.FromHeader([| "物品"; "价格(前25%订单)"; "需求"; "总价"; "更新时间" |])
         for (item, ma, count) in final do
             match ma with
-            | Error err -> sw.WriteLine("查询{0}时发生错误：{1}", item.Name, err.Message)
+            | Error err -> raise err
             | Ok ma when ma.IsEmpty -> tt.AddRow(tryLookupNpcPrice (ma.ItemRecord), "无记录", "--", "--", "--")
             | Ok ma ->
                 let std = ma.StdEvPrice()
@@ -307,26 +307,24 @@ type XivModule() =
         if args.Length = 0 then failwithf "参数不足"
         let item = args.[0]
         let ret = SpecialShop.SpecialShopCollection.Instance.TrySearchByName(item)
-        if ret.IsSome then
-            let tt = TextTable.FromHeader([| "道具"; "名称"; "价格(前25%订单)"; "低"; "单道具价值"; "更新时间" |])
-            for info in ret.Value do
-                let i = itemCol.LookupById(info.ReceiveItem)
-                let ret = MarketUtils.MarketAnalyzer.FetchOrdersWorld(i, world)
-                match ret with
-                | Ok x when x.IsEmpty -> tt.AddRow(item, i.Name, "无记录", "--", "--", "--")
-                | Ok ret ->
-                    let ret = ret.TakeVolume(25)
-                    let stdev = ret.StdEvPrice()
-                    let low = ret.MinPrice()
-                    let upd = ret.LastUpdateTime()
+        if ret.IsNone then failwithf "%s 不能兑换道具" item
+        let tt = TextTable.FromHeader([| "道具"; "名称"; "价格(前25%订单)"; "低"; "单道具价值"; "更新时间" |])
+        for info in ret.Value do
+            let i = itemCol.LookupById(info.ReceiveItem)
+            let ret = MarketUtils.MarketAnalyzer.FetchOrdersWorld(i, world)
+            match ret with
+            | Ok x when x.IsEmpty -> tt.AddRow(item, i.Name, "无记录", "--", "--", "--")
+            | Ok ret ->
+                let ret = ret.TakeVolume(25)
+                let stdev = ret.StdEvPrice()
+                let low = ret.MinPrice()
+                let upd = ret.LastUpdateTime()
 
-                    let v = stdev * (info.ReceiveCount |> float) / (info.CostCount |> float)
-                    tt.AddRow(item, tryLookupNpcPrice (i), stdev, low, v, upd)
-                | Error err -> sw.WriteLine("{0} 服务器处理失败，请稍后重试", i.Name)
-            sw.Write(tt.ToString())
-            msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
-        else
-            msgArg.CqEventArgs.QuickMessageReply(sprintf "%s 不能兑换道具" item)
+                let v = stdev * (info.ReceiveCount |> float) / (info.CostCount |> float)
+                tt.AddRow(item, tryLookupNpcPrice (i), stdev, low, v, upd)
+            | Error err -> raise err
+        sw.Write(tt.ToString())
+        msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
 
     [<CommandHandlerMethodAttribute("mentor", "今日导随运势", "")>]
     member x.HandleMentor(msgArg : CommandArgs) =
