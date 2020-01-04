@@ -29,8 +29,10 @@ type CommandArgs(msg : Message.MessageEvent, cqArg : ClientEventArgs) =
     member val Arguments = [| if isCmd then yield! cmdLine.[1..] |]
 
 [<AbstractClass>]
-type CommandHandlerBase() as x =
-    inherit HandlerModuleBase()
+type CommandHandlerBase(shared : bool) as x =
+    inherit HandlerModuleBase(shared)
+
+    new () = CommandHandlerBase(true)
 
     member val Commands = [| for method in x.GetType().GetMethods() do
                                  let ret = method.GetCustomAttributes(typeof<CommandHandlerMethodAttribute>, true)

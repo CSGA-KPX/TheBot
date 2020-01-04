@@ -8,7 +8,7 @@
   <ItemGroup>
     <Compile Include="Utils\Dicer.fs" />
     <Compile Include="Utils\TextTable.fs" />
-    <Compile Include="Utils\UserConfig.fs" />
+    <Compile Include="Utils\Config.fs" />
     <Compile Include="Utils\GenericRPN.fs" />
     <Compile Include="Utils\EmbeddedResource.fs" />
     <Compile Include="DiceModule.fs" />
@@ -18,6 +18,8 @@
     <Compile Include="XivModule\XivUtils.fs" />
     <Compile Include="XivModule\XivModule.fs" />
     <Compile Include="RepeaterModule.fs" />
+    <Compile Include="TataruBridgeModule.fs" />
+    <Compile Include="OtterBridge.fs" />
     <Compile Include="TestModule.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>

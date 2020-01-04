@@ -10,6 +10,8 @@ open KPX.FsCqHttp.Handler.Base
 open Newtonsoft.Json.Linq
 
 type CqWebSocketClient(url, token) =
+    static let moduleCache = Dictionary<Type, HandlerModuleBase>()
+
     let ws = new ClientWebSocket()
     let cts = new CancellationTokenSource()
     let utf8 = Text.Encoding.UTF8
@@ -26,7 +28,21 @@ type CqWebSocketClient(url, token) =
     [<CLIEvent>]
     member x.OnCqHttpEvent = cqHttpEvent.Publish
 
-    member x.RegisterModule(m : #HandlerModuleBase) = x.OnCqHttpEvent.AddHandler(Handler<_>(m.HandleCqHttpEvent))
+    member x.RegisterModule(t : Type) = 
+        let m = 
+            if moduleCache.ContainsKey(t) then
+                moduleCache.[t]
+            else
+                let isSubClass = t.IsSubclassOf(typeof<HandlerModuleBase>) && (not <| t.IsAbstract)
+                if not isSubClass then
+                    invalidArg "t" "必须是HandlerModuleBase子类"
+                let m = Activator.CreateInstance(t) :?> HandlerModuleBase
+                if m.IsSharedModule then
+                    moduleCache.Add(t, m)
+                else
+                    m.ApiCaller <- Some(x :> IApiCallProvider)
+                m
+        x.OnCqHttpEvent.AddHandler(Handler<_>(m.HandleCqHttpEvent))
 
     member x.IsAvailable = ws.State = WebSocketState.Open
 
@@ -52,6 +68,11 @@ type CqWebSocketClient(url, token) =
                 apiLock.ExitWriteLock()
             }
             |> Async.RunSynchronously
+
+        member x.CallApi<'T when 'T :> ApiRequestBase and 'T : (new : unit -> 'T)>() =
+            let req = Activator.CreateInstance<'T>()
+            (x :> IApiCallProvider).CallApi(req)
+            req
 
     member x.Connect() =
         if not x.IsAvailable then

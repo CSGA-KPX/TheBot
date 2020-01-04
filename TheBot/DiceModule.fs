@@ -6,13 +6,65 @@ open KPX.FsCqHttp.Handler.CommandHandlerBase
 
 open TheBot.Utils.GenericRPN
 open TheBot.Utils.Dicer
-open TheBot.Utils.UserConfig
 open TheBot.Utils.TextTable
 
 module ChoiceHelper =
     open System.Text.RegularExpressions
+    open System.Collections.Generic
 
     let YesOrNoRegex = Regex("(.*)(.+)([没不]\2)(.*)", RegexOptions.Compiled)
+
+    type MessageParser() = 
+        
+        static let dateTable = 
+            [|
+                "大后天", TimeSpan.FromDays(3.0)
+                "大前天", TimeSpan.FromDays(-2.0)
+                "明天", TimeSpan.FromDays(1.0)
+                "后天", TimeSpan.FromDays(2.0)
+                "昨天", TimeSpan.FromDays(-1.0)
+                "前天", TimeSpan.FromDays(-1.0)
+                "", TimeSpan.Zero
+            |]
+
+        member val AllowAtUser = true with get, set
+
+        member x.Parse(arg : CommandArgs) =
+            let atUser = 
+                arg.MessageEvent.Message.GetAts()
+                |> Array.tryHead
+                |> Option.filter (fun _ -> x.AllowAtUser)
+
+            [
+                for arg in arg.Arguments do 
+                    let seed = List<SeedOption>()
+                    let choices = List<string>()
+
+                    if atUser.IsSome then 
+                        let at = atUser.Value
+                        if at = Message.AtUserType.All then invalidOp "at全体无效"
+                        seed.Add(SeedOption.SeedCustom(atUser.Value.ToString()))
+
+                    //拆分条目
+                    let m = YesOrNoRegex.Match(arg)
+                    if m.Success then
+                        choices.Add(m.Groups.[1].Value + m.Groups.[2].Value + m.Groups.[4].Value)
+                        choices.Add(m.Groups.[1].Value + m.Groups.[3].Value + m.Groups.[4].Value)
+                    else
+                        choices.Add(arg)
+
+
+                    //处理选项
+                    for c in choices do 
+                        let seed = 
+                            [|
+                                yield! seed
+                                let (_, ts) = dateTable |> Array.find (fun x -> c.Contains(fst x))
+                                yield SeedOption.SeedCustom((GetCstTime() + ts).ToString("yyyyMMdd"))
+                            |]
+                        yield seed, c
+            ]
+
 
 module DiceExpression =
     open System.Text.RegularExpressions
@@ -71,6 +123,7 @@ module DiceExpression =
 type DiceModule() =
     inherit CommandHandlerBase()
 
+    [<CommandHandlerMethodAttribute("cc", "同#c，但每次结果随机", "A B C D")>]
     [<CommandHandlerMethodAttribute("c", "对多个选项1d100", "A B C D")>]
     member x.HandleChoices(msgArg : CommandArgs) =
         let atUser = msgArg.MessageEvent.Message.GetAts() |> Array.tryHead
@@ -83,7 +136,7 @@ type DiceModule() =
                 sw.WriteLine("公投：")
             | Message.AtUserType.User x ->
                 let atUserName = KPX.FsCqHttp.Api.GroupApi.GetGroupMemberInfo(msgArg.MessageEvent.GroupId, x)
-                msgArg.CqEventArgs.CallApi(atUserName)
+                msgArg.CqEventArgs.ApiCaller.CallApi(atUserName)
                 sw.WriteLine("{0} 为 {1} 投掷：", msgArg.MessageEvent.GetNicknameOrCard, atUserName.DisplayName)
 
         let tt = TextTable.FromHeader([| "1D100"; "选项" |])
@@ -99,8 +152,10 @@ type DiceModule() =
         |]
         |> Array.map (fun c -> 
             let seed = 
-                if atUser.IsSome then SeedOption.SeedByAtUserDay(msgArg.MessageEvent)
-                else SeedOption.SeedByUserDay(msgArg.MessageEvent)
+                if msgArg.Command.Value = "#cc" then Array.singleton SeedOption.SeedRandom 
+                else
+                    if atUser.IsSome then SeedOption.SeedByAtUserDay(msgArg.MessageEvent)
+                    else SeedOption.SeedByUserDay(msgArg.MessageEvent)
             let dicer = Dicer(seed, AutoRefreshSeed = false)
             (c, dicer.GetRandomFromString(c, 100u)))
         |> Array.sortBy snd

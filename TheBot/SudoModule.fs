@@ -20,10 +20,11 @@ type SudoModule() =
     [<CommandHandlerMethodAttribute("#selftest", "(管理员) 返回系统信息", "")>]
     member x.HandleSelfTest(msgArg : CommandArgs) =
         failOnNonAdmin(msgArg)
+        let caller = msgArg.CqEventArgs.ApiCaller
         let info =
-            "\r\n" + msgArg.CqEventArgs.CallApi<SystemApi.GetLoginInfo>().ToString() + "\r\n"
-            + msgArg.CqEventArgs.CallApi<SystemApi.GetStatus>().ToString() + "\r\n"
-            + msgArg.CqEventArgs.CallApi<SystemApi.GetVersionInfo>().ToString()
+            "\r\n" + caller.CallApi<SystemApi.GetLoginInfo>().ToString() + "\r\n"
+            + caller.CallApi<SystemApi.GetStatus>().ToString() + "\r\n"
+            + caller.CallApi<SystemApi.GetVersionInfo>().ToString()
         msgArg.CqEventArgs.QuickMessageReply(info)
 
     [<CommandHandlerMethodAttribute("#allow", "(管理员) 允许好友、加群请求", "")>]

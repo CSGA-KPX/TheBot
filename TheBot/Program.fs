@@ -13,7 +13,7 @@ let StartBot() =
     let client = CqWebSocketClient(Uri(accessUrl), token)
     let ms = KPX.FsCqHttp.Handler.ModuleManager.AllDefinedModules
     for m in ms do
-        logger.Info("正在注册模块{0}", m.GetType().FullName)
+        logger.Info("正在注册模块{0}", m.FullName)
         client.RegisterModule(m)
 
     client.Connect()
