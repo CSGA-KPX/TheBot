@@ -82,7 +82,20 @@ type OtterBridge() as x =
                                     let js = obj.["params"].ToString().Trim('{', '}')
                                     w.WriteRaw(js) }
                 x.ApiCaller.Value.CallApi(api)
+            x.Logger.Fatal(sprintf "消息循环已停止 %O %O %s" ws.State ws.CloseStatus ws.CloseStatusDescription)
         ) |> ignore
+
+    [<CommandHandlerMethodAttribute("#tatastatus", "查看獭獭桥接状态", "")>]
+    member x.HandleTataStatus(msgArg : CommandArgs) = 
+        use sw = new IO.StringWriter()
+
+        let now = cm.Get<bool>(getKey(msgArg.MessageEvent), false)
+        sw.WriteLine("当前命令可用：{0}", now)
+        sw.WriteLine("CancellationTokenSource已触发：{0}", cts.IsCancellationRequested)
+        sw.WriteLine("Websocket状态：{0}", ws.State)
+        sw.WriteLine("CloseStatus状态：{0} : {1}", ws.CloseStatus, ws.CloseStatusDescription)
+
+        msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
 
     [<CommandHandlerMethodAttribute("#tata", "(群管理) 允许/拒绝桥接獭獭bot", "")>]
     member x.HandleTataCmd(msgArg : CommandArgs) = 
