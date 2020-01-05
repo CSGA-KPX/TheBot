@@ -2,19 +2,13 @@ module KPX.FsCqHttp.Handler.ModuleManager
 
 open System
 open System.Reflection
-open KPX.FsCqHttp.DataType.Event
 open KPX.FsCqHttp.Handler.Base
 open KPX.FsCqHttp.Handler.CommandHandlerBase
-
-let private sharedModules = Collections.Generic.List<HandlerModuleBase>()
-let private privateModules= Collections.Generic.List<Type>()
 
 let AllDefinedModules =
     [| yield! Assembly.GetExecutingAssembly().GetTypes()
        yield! Assembly.GetEntryAssembly().GetTypes() |]
     |> Array.filter (fun t -> t.IsSubclassOf(typeof<HandlerModuleBase>) && (not <| t.IsAbstract))
-
-    //|> Array.map (fun t -> Activator.CreateInstance(t) :?> HandlerModuleBase)
 
 [<Literal>]
 let private helpHelp = "不加选项用来查看所有命令，加命令名查看命令帮助

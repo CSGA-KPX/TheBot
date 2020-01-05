@@ -88,13 +88,18 @@ type OtterBridge() as x =
 
     [<CommandHandlerMethodAttribute("#tata", "(群管理) 允许/拒绝桥接獭獭bot", "")>]
     member x.HandleTataCmd(msgArg : CommandArgs) = 
+        let e = msgArg.MessageEvent
+        if e.IsGroup && e.Sender.Role = "member" then 
+            failwith "你不是管理员"
+        if e.IsDiscuss then failwith "暂不支持讨论组"
+        if e.IsPrivate then failwith "私聊一直都能用哦"
         let key = getKey(msgArg.MessageEvent)
         let now = cm.Get<bool>(key, false) |> not
         cm.Put(key, now)
         if now then
-            msgArg.CqEventArgs.QuickMessageReply("已启用獭獭桥接")
+            msgArg.CqEventArgs.QuickMessageReply("已启用獭獭桥接，要禁用就再来一次")
         else
-            msgArg.CqEventArgs.QuickMessageReply("已禁用獭獭桥接")
+            msgArg.CqEventArgs.QuickMessageReply("已禁用獭獭桥接，要启用就再来一次")
 
     override x.HandleMessage(arg, e) =
         base.HandleMessage(arg, e)
