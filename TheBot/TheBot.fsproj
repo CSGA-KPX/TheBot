@@ -11,6 +11,7 @@
     <Compile Include="Utils\Config.fs" />
     <Compile Include="Utils\GenericRPN.fs" />
     <Compile Include="Utils\EmbeddedResource.fs" />
+    <Compile Include="Utils\HandlerUtils.fs" />
     <Compile Include="DiceModule.fs" />
     <Compile Include="EatModule\EatUtils.fs" />
     <Compile Include="EatModule\EatModule.fs" />

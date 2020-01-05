@@ -6,7 +6,7 @@ open System.Threading
 open System.Net.WebSockets
 open KPX.FsCqHttp.DataType
 open KPX.FsCqHttp.Api
-open KPX.FsCqHttp.Handler.Base
+open KPX.FsCqHttp.Handler
 open Newtonsoft.Json.Linq
 
 type CqWebSocketClient(url, token) =

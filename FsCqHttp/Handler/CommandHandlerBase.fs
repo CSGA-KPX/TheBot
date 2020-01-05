@@ -2,7 +2,7 @@ namespace KPX.FsCqHttp.Handler.CommandHandlerBase
 
 open System
 open KPX.FsCqHttp.DataType.Event
-open KPX.FsCqHttp.Handler.Base
+open KPX.FsCqHttp.Handler
 
 [<AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = true)>]
 type CommandHandlerMethodAttribute(command : string, desc, lh) =

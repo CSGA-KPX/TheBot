@@ -33,6 +33,22 @@ type Sender =
       [<JsonProperty("title")>]
       Title : string }
 
+      /// 发信人是不是群主
+      /// 请先检查是否是群消息
+      member x.IsOwner = x.Role = "owner"
+
+      /// 发信人是不是管理员
+      /// 请先检查是否是群消息
+      member x.IsAdmin = x.Role = "admin"
+
+      /// 发信人是不是群成员
+      /// 请先检查是否是群消息
+      member x.IsMember = x.Role = "member"
+
+      /// 发信人有没有管理权限（群主/管理员）
+      /// 请先检查是否是群消息
+      member x.CanAdmin = x.IsOwner || x.IsAdmin
+    
 [<CLIMutable>]
 type AnonymousUser =
     { /// 匿名用户 ID

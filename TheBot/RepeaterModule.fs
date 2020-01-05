@@ -2,7 +2,7 @@ module TheBot.Module.RepeaterModule
 
 open System
 open System.Collections
-open KPX.FsCqHttp.Handler.Base
+open KPX.FsCqHttp.Handler
 
 type RepeatMessage =
     { RawMessage : string

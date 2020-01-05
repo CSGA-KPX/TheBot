@@ -1,14 +1,8 @@
-module KPX.FsCqHttp.Handler.ModuleManager
+﻿module KPX.FsCqHttp.Handler.HelpModule
 
 open System
-open System.Reflection
-open KPX.FsCqHttp.Handler.Base
+open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Handler.CommandHandlerBase
-
-let AllDefinedModules =
-    [| yield! Assembly.GetExecutingAssembly().GetTypes()
-       yield! Assembly.GetEntryAssembly().GetTypes() |]
-    |> Array.filter (fun t -> t.IsSubclassOf(typeof<HandlerModuleBase>) && (not <| t.IsAbstract))
 
 [<Literal>]
 let private helpHelp = "不加选项用来查看所有命令，加命令名查看命令帮助
@@ -19,7 +13,7 @@ type HelpModule() =
 
     static let attribs =
         [| 
-            for t in AllDefinedModules do
+            for t in Utils.AllDefinedModules do
                 for method in t.GetMethods() do
                     let ret = method.GetCustomAttributes(typeof<CommandHandlerMethodAttribute>, true)
                     for attrib in ret do

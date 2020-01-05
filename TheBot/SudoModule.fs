@@ -4,18 +4,11 @@ open KPX.FsCqHttp.Api
 open KPX.FsCqHttp.DataType.Response
 open KPX.FsCqHttp.DataType.Event
 open KPX.FsCqHttp.Handler.CommandHandlerBase
-
-let admins = [| 313388419L; 343512452L |] |> Set.ofArray
-
-
+open TheBot.Utils.HandlerUtils
 
 type SudoModule() =
     inherit CommandHandlerBase()
     let mutable allow = false
-
-    let failOnNonAdmin (msgArg : CommandArgs) = 
-        if not <| admins.Contains(msgArg.MessageEvent.UserId) then
-            failwith "朋友你不是狗管理"
 
     [<CommandHandlerMethodAttribute("#selftest", "(管理员) 返回系统信息", "")>]
     member x.HandleSelfTest(msgArg : CommandArgs) =

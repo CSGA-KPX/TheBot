@@ -2,14 +2,12 @@
 
 open System
 open System.Reflection
-open System.Collections.Generic
 open System.Threading
 open KPX.FsCqHttp.Api
 open System.Net.WebSockets
 open KPX.FsCqHttp.Handler.CommandHandlerBase
 open Newtonsoft.Json.Linq
 open TheBot.Utils.Config
-open KPX.FsCqHttp.Handler.Base
 
 type MessageEvent = KPX.FsCqHttp.DataType.Event.Message.MessageEvent
 
@@ -107,12 +105,15 @@ type OtterBridge() as x =
         if e.Message.ToString().StartsWith("/") then
             let allow = e.IsPrivate || cm.Get<bool>(getKey(e), false)
             if allow then 
-                let obj = arg.RawEvent.DeepClone() :?> Newtonsoft.Json.Linq.JObject
+                let obj = arg.RawEvent.DeepClone() :?> JObject
                 obj.["message"] <- Newtonsoft.Json.Linq.JToken.FromObject(e.RawMessage)
                 obj.Property("raw_message").Remove()
-                let post = obj.ToString() |> utf8.GetBytes
-                let task = ws.SendAsync(ArraySegment<byte>(post), WebSocketMessageType.Text, true, cts.Token)
-                task.Wait()
+                let json = obj.ToString()
+                x.Logger.Info(sprintf "调用獭獭：%s" json)
+                let task = ws.SendAsync(ArraySegment<byte>(utf8.GetBytes(json)), WebSocketMessageType.Text, true, cts.Token)
+                task.ConfigureAwait(false)
+                      .GetAwaiter()
+                      .GetResult()
                 if task.IsFaulted then
                     x.Logger.Fatal(sprintf "獭獭调用发生异常：%O" task.Exception)
 
