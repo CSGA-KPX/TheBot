@@ -173,7 +173,7 @@ type DiceModule() =
     [<CommandHandlerMethodAttribute("cal", "计算器", "")>]
     member x.HandleCalculator(msgArg : CommandArgs) =
         let sw = new System.IO.StringWriter()
-        let dicer = Dicer()
+        let dicer = Dicer(SeedRandom)
         let parser = DiceExpression.DiceExpression()
         for arg in msgArg.Arguments do
             let ret = parser.TryEval(arg, dicer)

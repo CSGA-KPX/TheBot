@@ -42,6 +42,14 @@ type MessageSection =
 type Message(sec : MessageSection []) as x =
     inherit ResizeArray<MessageSection>()
 
+    static let cqStringReplace = 
+        [|
+            "&", "&amp;"
+            "[", "&#91;"
+            "]", "&#93;"
+            ",", "&#44;"
+        |]
+
     do x.AddRange(sec)
 
     new() = Message([||])
@@ -63,6 +71,31 @@ type Message(sec : MessageSection []) as x =
                    match x with
                    | MessageSection.At t -> t
                    | _ -> failwith "") |]
+
+    //转换为cq上报字符串
+    member x.ToCqString() = 
+        let sb = Text.StringBuilder()
+        for sec in x do 
+            match sec with
+            | Text str ->
+                let mutable str = str
+                for (c, esc) in cqStringReplace.[0..2] do 
+                    str <- str.Replace(c, esc)
+                sb.Append(str) |> ignore
+            | other ->
+                let (cmd, arg) = other.ToRaw()
+                let args = 
+                    arg
+                    |> Seq.map (fun kv ->
+                        let key = kv.Key
+                        let mutable str = kv.Value
+                        for (c, esc) in cqStringReplace do 
+                            str <- str.Replace(c, esc)
+                        sprintf "%s=%s" key str)
+                sb.AppendFormat("[CQ:{0},", cmd)
+                  .Append(String.Join(",", args))
+                  .Append("]") |> ignore
+        sb.ToString()
 
     /// 提取所有文本段为string
     override x.ToString() =

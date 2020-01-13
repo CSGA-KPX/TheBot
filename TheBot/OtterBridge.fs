@@ -31,11 +31,13 @@ let private removeRes() =
 type OtterBridge() as x = 
     inherit CommandHandlerBase(false)
 
-    let ws = new ClientWebSocket()
-    let cts = new CancellationTokenSource()
-    let utf8 = Text.Encoding.UTF8
-
     let url = "wss://xn--v9x.net/ws/event/"
+    let mutable ws = new ClientWebSocket()
+    let mutable cts = new CancellationTokenSource()
+    let wsLock = obj()
+    let mutable wsError : Exception option = None
+
+    let utf8 = Text.Encoding.UTF8
     let cm = ConfigManager(ConfigOwner.System)
 
     let getKey(e : MessageEvent) = 
@@ -45,18 +47,35 @@ type OtterBridge() as x =
         else
             failwithf "未知聊天类型！%O" e
 
+    let waitTask (t : Tasks.Task) = 
+        t.ConfigureAwait(false)
+            .GetAwaiter()
+            .GetResult()
+
     do
         removeRes()
-        ws.Options.SetRequestHeader("User-Agent", "CQHttp/4.13.0")
-        ws.Options.SetRequestHeader("Authorization", "Token Authorization")
-        ws.Options.SetRequestHeader("X-Self-ID", "3084801066")
-        ws.Options.SetRequestHeader("X-Client-Role", "Universal")
-        ws.ConnectAsync(Uri(url), cts.Token)
-        |> Async.AwaitTask
-        |> Async.RunSynchronously
-
-        x.StartMessageLoop()
+        x.StartWebSocket()
           
+    member private x.StartWebSocket() = 
+        // 没出过错才连接
+        if wsError.IsNone then
+            //关闭已有连接
+            if ws.State = WebSocketState.Open then
+                ws.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "", cts.Token) |> waitTask
+            if ws.State <> WebSocketState.None then
+                cts.Cancel()
+                ws <- new ClientWebSocket()
+                cts <- new CancellationTokenSource()
+            ws.Options.SetRequestHeader("User-Agent", "CQHttp/4.13.0")
+            ws.Options.SetRequestHeader("Authorization", "Token Authorization")
+            ws.Options.SetRequestHeader("X-Self-ID", "3084801066")
+            ws.Options.SetRequestHeader("X-Client-Role", "Universal")
+            try
+                ws.ConnectAsync(Uri(url), cts.Token) |> waitTask
+            with
+            | e -> wsError <- Some(e)
+            x.StartMessageLoop()
+
     member private x.StartMessageLoop () = 
         x.Logger.Info("正在启动消息处理")
         Tasks.Task.Run(fun () -> 
@@ -66,8 +85,9 @@ type OtterBridge() as x =
             let rec readMessage (ms : IO.MemoryStream) =
                 let s =
                     ws.ReceiveAsync(seg, cts.Token)
-                    |> Async.AwaitTask
-                    |> Async.RunSynchronously
+                        .ConfigureAwait(false)
+                        .GetAwaiter()
+                        .GetResult()
                 ms.Write(seg.Array, seg.Offset, s.Count)
                 if s.EndOfMessage then utf8.GetString(ms.ToArray())
                 else readMessage (ms)
@@ -77,12 +97,15 @@ type OtterBridge() as x =
                 let obj  = JObject.Parse(json)
                 x.Logger.Info(sprintf "收到下游WS上报:%s" json)
                 let action = obj.["action"].Value<string>()
-                let api = {new ApiRequestBase(action) with 
-                                member x.WriteParams(w, js) =
-                                    let js = obj.["params"].ToString().Trim('{', '}')
-                                    w.WriteRaw(js) }
-                x.ApiCaller.Value.CallApi(api)
-            x.Logger.Fatal(sprintf "消息循环已停止 %O %O %s" ws.State ws.CloseStatus ws.CloseStatusDescription)
+                if action = "get_group_member_list" then
+                    x.Logger.Info("已无视群成员列表请求")
+                else
+                    let api = {new ApiRequestBase(action) with 
+                                    member x.WriteParams(w, js) =
+                                        let js = obj.["params"].ToString().Trim('{', '}')
+                                        w.WriteRaw(js) }
+                    x.ApiCaller.Value.CallApi(api)
+            x.Logger.Fatal(sprintf "消息循环已停止 %O %O %s %O" ws.State ws.CloseStatus ws.CloseStatusDescription wsError)
         ) |> ignore
 
     [<CommandHandlerMethodAttribute("#tatastatus", "查看獭獭桥接状态", "")>]
@@ -94,6 +117,7 @@ type OtterBridge() as x =
         sw.WriteLine("CancellationTokenSource已触发：{0}", cts.IsCancellationRequested)
         sw.WriteLine("Websocket状态：{0}", ws.State)
         sw.WriteLine("CloseStatus状态：{0} : {1}", ws.CloseStatus, ws.CloseStatusDescription)
+        sw.WriteLine("wsError状态：{0}", wsError)
 
         msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
 
@@ -119,16 +143,20 @@ type OtterBridge() as x =
             let allow = e.IsPrivate || cm.Get<bool>(getKey(e), false)
             if allow then 
                 let obj = arg.RawEvent.DeepClone() :?> JObject
-                obj.["message"] <- Newtonsoft.Json.Linq.JToken.FromObject(e.RawMessage)
+                obj.["message"] <- Newtonsoft.Json.Linq.JToken.FromObject(e.Message.ToCqString())
                 obj.Property("raw_message").Remove()
                 let json = obj.ToString()
-                x.Logger.Info(sprintf "调用獭獭：%s" json)
-                let task = ws.SendAsync(ArraySegment<byte>(utf8.GetBytes(json)), WebSocketMessageType.Text, true, cts.Token)
-                task.ConfigureAwait(false)
-                      .GetAwaiter()
-                      .GetResult()
-                if task.IsFaulted then
-                    x.Logger.Fatal(sprintf "獭獭调用发生异常：%O" task.Exception)
+                lock wsLock (fun () ->
+                    if ws.State <> WebSocketState.Open then
+                        x.Logger.Info("正在连接獭獭")
+                        x.StartWebSocket()
+                    x.Logger.Info(sprintf "调用獭獭：%s" json)
+                    let task = ws.SendAsync(ArraySegment<byte>(utf8.GetBytes(json)), WebSocketMessageType.Text, true, cts.Token)
+                    task.ConfigureAwait(false)
+                          .GetAwaiter()
+                          .GetResult()
+                    if task.IsFaulted then
+                        x.Logger.Fatal(sprintf "獭獭调用发生异常：%O" task.Exception))
 
     interface IDisposable with
         member x.Dispose() = 

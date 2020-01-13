@@ -55,7 +55,7 @@ type Dicer(initSeed : byte []) as x =
 
 
     /// Init using SeedOption.SeedRandom
-    new() = Dicer(Array.singleton SeedOption.SeedRandom)
+    new(seed : SeedOption) = Dicer(Array.singleton seed)
 
 
     member private x.GetHash() =

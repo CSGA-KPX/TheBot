@@ -24,8 +24,11 @@ type HandlerModuleBase(shared : bool) as x =
 
     abstract HandleCqHttpEvent : obj -> ClientEventArgs -> unit
     default x.HandleCqHttpEvent _ args =
-        match args.Event with
-        | Event.EventUnion.Message y -> x.HandleMessage(args, y)
-        | Event.EventUnion.Request y -> x.HandleRequest(args, y)
-        | Event.EventUnion.Notice y -> x.HandleNotice(args, y)
-        | _ -> ()
+        try
+            match args.Event with
+            | Event.EventUnion.Message y -> x.HandleMessage(args, y)
+            | Event.EventUnion.Request y -> x.HandleRequest(args, y)
+            | Event.EventUnion.Notice y -> x.HandleNotice(args, y)
+            | _ -> ()
+        with
+        | e -> x.Logger.Fatal(sprintf "HandlerModuleBase捕获异常:%O" e)

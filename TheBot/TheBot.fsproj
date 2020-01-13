@@ -17,6 +17,7 @@
     <Compile Include="EatModule\EatModule.fs" />
     <Compile Include="SudoModule.fs" />
     <Compile Include="XivModule\XivUtils.fs" />
+    <Compile Include="XivModule\XivMarketModule.fs" />
     <Compile Include="XivModule\XivModule.fs" />
     <Compile Include="RepeaterModule.fs" />
     <Compile Include="TataruBridgeModule.fs" />
