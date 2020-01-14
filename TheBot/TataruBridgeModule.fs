@@ -40,9 +40,9 @@ type TataruBridgeModule() =
         let now = cm.Get<bool>(key, false) |> not
         cm.Put(key, now)
         if now then
-            msgArg.CqEventArgs.QuickMessageReply("已启用塔塔露桥接")
+            msgArg.QuickMessageReply("已启用塔塔露桥接")
         else
-            msgArg.CqEventArgs.QuickMessageReply("已禁用塔塔露桥接")
+            msgArg.QuickMessageReply("已禁用塔塔露桥接")
 
     override x.HandleMessage(arg, e) =
         base.HandleMessage(arg, e)

@@ -35,7 +35,7 @@ type XivModule() =
                     for item in ret do
                         tt.AddRow(i, item.Id.ToString(), item.Name)
 
-        msgArg.CqEventArgs.QuickMessageReply(tt.ToString())
+        msgArg.QuickMessageReply(tt.ToString())
 
     [<CommandHandlerMethodAttribute("gate", "挖宝选门", "")>]
     member x.HandleGate(msgArg : CommandArgs) =
@@ -47,7 +47,7 @@ type XivModule() =
         |> Array.sortBy (snd)
         |> Array.iter (fun (door, score) -> tt.AddRow((sprintf "%03i" score), door))
 
-        msgArg.CqEventArgs.QuickMessageReply(tt.ToString())
+        msgArg.QuickMessageReply(tt.ToString())
 
     [<CommandHandlerMethodAttribute("mentor", "今日导随运势", "")>]
     member x.HandleMentor(msgArg : CommandArgs) =
@@ -81,7 +81,7 @@ type XivModule() =
             let idx = dicer.GetRandom(count + 1u)
             MentorUtils.location.[idx].Value
         sw.WriteLine("推荐排本场所: {0}", location.Value)
-        msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
+        msgArg.QuickMessageReply(sw.ToString())
 
     [<CommandHandlerMethodAttribute("宝图", "盲猜宝图位置", "")>]
     member x.HandleTreasureMap(msgArg : CommandArgs) = 
@@ -106,4 +106,4 @@ type XivModule() =
         for (name, score) in TreasureMap.Compare(bitmap, msg) do 
             let name = IO.Path.GetFileNameWithoutExtension(name).Split(Array.singleton ' ', 2)
             tt.AddRow(score, name.[1])
-        msgArg.CqEventArgs.QuickMessageReply(tt.ToString())
+        msgArg.QuickMessageReply(tt.ToString())

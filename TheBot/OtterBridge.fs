@@ -119,7 +119,7 @@ type OtterBridge() as x =
         sw.WriteLine("CloseStatus状态：{0} : {1}", ws.CloseStatus, ws.CloseStatusDescription)
         sw.WriteLine("wsError状态：{0}", wsError)
 
-        msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
+        msgArg.QuickMessageReply(sw.ToString())
 
     [<CommandHandlerMethodAttribute("#tata", "(群管理) 允许/拒绝桥接獭獭bot", "")>]
     member x.HandleTataCmd(msgArg : CommandArgs) = 
@@ -132,9 +132,9 @@ type OtterBridge() as x =
         let now = cm.Get<bool>(key, false) |> not
         cm.Put(key, now)
         if now then
-            msgArg.CqEventArgs.QuickMessageReply("已启用獭獭桥接，要禁用就再来一次")
+            msgArg.QuickMessageReply("已启用獭獭桥接，要禁用就再来一次")
         else
-            msgArg.CqEventArgs.QuickMessageReply("已禁用獭獭桥接，要启用就再来一次")
+            msgArg.QuickMessageReply("已禁用獭獭桥接，要启用就再来一次")
 
     override x.HandleMessage(arg, e) =
         base.HandleMessage(arg, e)

@@ -27,7 +27,7 @@ type EatModule() =
         let dicer = new Dicer(SeedOption.SeedByUserDay(msgArg.MessageEvent), AutoRefreshSeed = false)
 
         if eatFuncs.ContainsKey(str) then
-            msgArg.CqEventArgs.QuickMessageReply(eatFuncs.[str](dicer))
+            msgArg.QuickMessageReply(eatFuncs.[str](dicer))
         else
             let types = [|"早餐"; "午餐"; "晚餐"; "加餐"|]
             let sb = Text.StringBuilder()
@@ -47,4 +47,4 @@ type EatModule() =
                         x.Logger.Fatal(sprintf "ret is %i" d)
                         failwith "你说啥来着？"
                 sb.AppendLine(sprintf "%s : %s(%i)" str ret d) |> ignore
-            msgArg.CqEventArgs.QuickMessageReply(sb.ToString())
+            msgArg.QuickMessageReply(sb.ToString())

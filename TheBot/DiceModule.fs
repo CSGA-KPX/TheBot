@@ -1,6 +1,7 @@
 module TheBot.Module.DiceModule
 
 open System
+open KPX.FsCqHttp.Api
 open KPX.FsCqHttp.DataType
 open KPX.FsCqHttp.Handler.CommandHandlerBase
 
@@ -65,7 +66,6 @@ module ChoiceHelper =
                         yield seed, c
             ]
 
-
 module DiceExpression =
     open System.Text.RegularExpressions
 
@@ -129,14 +129,16 @@ type DiceModule() =
         let atUser = msgArg.MessageEvent.Message.GetAts() |> Array.tryHead
         let sw = new IO.StringWriter()
         if atUser.IsSome then
+            let loginInfo = msgArg.ApiCaller.CallApi<SystemApi.GetLoginInfo>()
             match atUser.Value with
             | Message.AtUserType.All ->
-                failwithf "公共事件请用at bot账号"
-            | Message.AtUserType.User x when x = msgArg.CqEventArgs.SelfId ->
+                failwithf "公共事件请at bot账号"
+            | Message.AtUserType.User x when x = msgArg.SelfId
+                                          && not <| msgArg.RawMessage.Contains(loginInfo.Nickname) ->
                 sw.WriteLine("公投：")
             | Message.AtUserType.User x ->
-                let atUserName = KPX.FsCqHttp.Api.GroupApi.GetGroupMemberInfo(msgArg.MessageEvent.GroupId, x)
-                msgArg.CqEventArgs.ApiCaller.CallApi(atUserName)
+                let atUserName = GroupApi.GetGroupMemberInfo(msgArg.MessageEvent.GroupId, x)
+                msgArg.ApiCaller.CallApi(atUserName)
                 sw.WriteLine("{0} 为 {1} 投掷：", msgArg.MessageEvent.GetNicknameOrCard, atUserName.DisplayName)
 
         let tt = TextTable.FromHeader([| "1D100"; "选项" |])
@@ -162,17 +164,17 @@ type DiceModule() =
         |> Array.iter (fun (c, n) -> tt.AddRow((sprintf "%03i" n), c))
 
         sw.Write(tt.ToString())
-        msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
+        msgArg.QuickMessageReply(sw.ToString())
 
     [<CommandHandlerMethodAttribute("jrrp", "今日人品值", "")>]
     member x.HandleJrrp(msgArg : CommandArgs) =
         let dicer = Dicer(SeedOption.SeedByUserDay(msgArg.MessageEvent))
         let jrrp = dicer.GetRandom(100u)
-        msgArg.CqEventArgs.QuickMessageReply(sprintf "%s今日人品值是%i" msgArg.MessageEvent.GetNicknameOrCard jrrp)
+        msgArg.QuickMessageReply(sprintf "%s今日人品值是%i" msgArg.MessageEvent.GetNicknameOrCard jrrp)
 
     [<CommandHandlerMethodAttribute("cal", "计算器", "")>]
     member x.HandleCalculator(msgArg : CommandArgs) =
-        let sw = new System.IO.StringWriter()
+        let sw = new IO.StringWriter()
         let dicer = Dicer(SeedRandom)
         let parser = DiceExpression.DiceExpression()
         for arg in msgArg.Arguments do
@@ -180,7 +182,7 @@ type DiceModule() =
             match ret with
             | Error e -> sw.WriteLine("对{0}失败{1}", arg, e.ToString())
             | Ok i -> sw.WriteLine("对{0}求值得{1}", arg, i.Value)
-        msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
+        msgArg.QuickMessageReply(sw.ToString())
 
     [<CommandHandlerMethodAttribute("gacha", "抽10连 概率3%", "")>]
     member x.HandleGacha(msgArg : CommandArgs) =
@@ -211,4 +213,4 @@ type DiceModule() =
                 .AppendLine(String.Join(" ", ret))
                 .ToString()
 
-        msgArg.CqEventArgs.QuickMessageReply(reply)
+        msgArg.QuickMessageReply(reply)

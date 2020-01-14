@@ -54,7 +54,7 @@ type XivMarketModule() =
                 | Ok ma ->
                     tt.AddRow(ma.ItemRecord.Name, ma.StdEvPrice(), ma.MinPrice(), ma.MaxPrice(), ma.LastUpdateTime())
         sw.Write(tt.ToString())
-        msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
+        msgArg.QuickMessageReply(sw.ToString())
 
     [<CommandHandlerMethodAttribute("market", "查询市场订单", "物品Id或全名...")>]
     member x.HandleMarket(msgArg : CommandArgs) =
@@ -80,7 +80,7 @@ type XivMarketModule() =
                     let hq = ma.TakeHQ().TakeVolume(25).StdEvPrice()
                     tt.AddRow(tryLookupNpcPrice (ma.ItemRecord), all, hq, ma.LastUpdateTime())
         sw.Write(tt.ToString())
-        msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
+        msgArg.QuickMessageReply(sw.ToString())
 
     [<CommandHandlerMethodAttribute("alltradelog", "查询全服交易记录", "物品Id或全名...")>]
     member x.HandleTradelogCrossWorld(msgArg : CommandArgs) =
@@ -105,7 +105,7 @@ type XivMarketModule() =
                                 (ma.ItemRecord.Name, world.WorldName, ma.StdEvPrice(), ma.MinPrice(), ma.MaxPrice(),
                                  ma.LastUpdateTime())
         sw.Write(tt.ToString())
-        msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
+        msgArg.QuickMessageReply(sw.ToString())
 
     [<CommandHandlerMethodAttribute("allmarket", "查询全服市场订单", "物品Id或全名...")>]
     member x.HandleMarketCrossWorld(msgArg : CommandArgs) =
@@ -132,7 +132,7 @@ type XivMarketModule() =
                                 (tryLookupNpcPrice (ma.ItemRecord), world.WorldName, ma.StdEvPrice(), ma.MinPrice(),
                                  ma.LastUpdateTime())
         sw.Write(tt.ToString())
-        msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
+        msgArg.QuickMessageReply(sw.ToString())
 
     [<CommandHandlerMethodAttribute("r", "根据表达式汇总多个物品的材料，不查询价格\r\n大于50数字视为物品ID", "")>]
     member x.HandleRecipeSumExpr(msgArg : CommandArgs) =
@@ -162,7 +162,7 @@ type XivMarketModule() =
         for (item, amount) in final do
             tt.AddRow(item.Name, amount)
         sw.Write(tt.ToString())
-        msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
+        msgArg.QuickMessageReply(sw.ToString())
 
     [<CommandHandlerMethodAttribute("rr", "根据表达式汇总多个物品的基础材料，不查询价格\r\n大于50数字视为物品ID", "")>]
     member x.HandleRecipeSumExprRec(msgArg : CommandArgs) =
@@ -192,7 +192,7 @@ type XivMarketModule() =
         for (item, amount) in final do
             tt.AddRow(item.Name, amount)
         sw.Write(tt.ToString())
-        msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
+        msgArg.QuickMessageReply(sw.ToString())
 
     [<CommandHandlerMethodAttribute("rc", "计算物品基础材料成本（不支持表达式）", "物品Id或全名...")>]
     member x.HandleItemFinalRecipeExpr(msgArg : CommandArgs) =
@@ -236,7 +236,7 @@ type XivMarketModule() =
                 tt.AddRow(tryLookupNpcPrice (ma.ItemRecord), ma.StdEvPrice(), count, total, ma.LastUpdateTime())
         tt.AddRow("总计", sum, "--", "--", "--")
         sw.Write(tt.ToString())
-        msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
+        msgArg.QuickMessageReply(sw.ToString())
 
     [<CommandHandlerMethodAttribute("rrc", "计算物品基础材料成本（不支持表达式）", "物品Id或全名...")>]
     member x.HandleItemFinalRecipeRecExpr(msgArg : CommandArgs) =
@@ -280,7 +280,7 @@ type XivMarketModule() =
                 tt.AddRow(tryLookupNpcPrice (ma.ItemRecord), ma.StdEvPrice(), count, total, ma.LastUpdateTime())
         tt.AddRow("总计", sum, "--", "--", "--")
         sw.Write(tt.ToString())
-        msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
+        msgArg.QuickMessageReply(sw.ToString())
 
     [<CommandHandlerMethodAttribute("ssc", "计算部分道具兑换的价格", "兑换所需道具的名称或ID，只处理1个")>]
     member x.HandleSSS(msgArg : CommandArgs) =
@@ -308,4 +308,4 @@ type XivMarketModule() =
                 tt.AddRow(item, tryLookupNpcPrice (i), stdev, low, v, upd)
             | Error err -> raise err
         sw.Write(tt.ToString())
-        msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
+        msgArg.QuickMessageReply(sw.ToString())
