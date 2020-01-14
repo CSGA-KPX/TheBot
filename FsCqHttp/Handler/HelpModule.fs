@@ -27,7 +27,7 @@ type HelpModule() =
             let sw = new IO.StringWriter()
             for (attrib, _) in attribs do
                 sw.WriteLine("\t {0} {1}", attrib.Command, attrib.HelpDesc)
-            msgArg.CqEventArgs.QuickMessageReply(sw.ToString())
+            msgArg.QuickMessageReply(sw.ToString())
         else
             for arg in msgArg.Arguments do
                 let str = CommandHandlerMethodAttribute.CommandStart + arg.ToLowerInvariant()
@@ -35,6 +35,6 @@ type HelpModule() =
                     attribs |> Array.tryFind (fun (cmd, _) -> cmd.Command = str || cmd.Command = arg.ToLowerInvariant())
                 if ret.IsSome then
                     let (cmd, _) = ret.Value
-                    msgArg.CqEventArgs.QuickMessageReply(cmd.LongHelp)
+                    msgArg.QuickMessageReply(cmd.LongHelp)
                 else
-                    msgArg.CqEventArgs.QuickMessageReply(sprintf "找不到命令%s" str)
+                    msgArg.QuickMessageReply(sprintf "找不到命令%s" str)

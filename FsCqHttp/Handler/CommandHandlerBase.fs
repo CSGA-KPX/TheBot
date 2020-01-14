@@ -8,20 +8,21 @@ open KPX.FsCqHttp.Handler
 type CommandHandlerMethodAttribute(command : string, desc, lh) =
     inherit Attribute()
     member val Command : string = CommandHandlerMethodAttribute.CommandStart + command.ToLowerInvariant()
-    member val HelpDesc : string = desc
-    member val LongHelp : string = lh
+    member x.HelpDesc : string = desc
+    member x.LongHelp : string = lh
 
     static member CommandStart = "#"
 
 type CommandArgs(msg : Message.MessageEvent, cqArg : ClientEventArgs) =
+    inherit ClientEventArgs(cqArg.ApiCaller, cqArg.RawEvent)
+
     let rawMsg = msg.Message.ToString()
     let cmdLine = rawMsg.Split([| ' ' |], StringSplitOptions.RemoveEmptyEntries)
     let isCmd = rawMsg.StartsWith(CommandHandlerMethodAttribute.CommandStart)
 
-    member val MessageEvent = msg
-    member val CqEventArgs = cqArg
-    member val RawMessage = rawMsg
-    member val CommandLine = cmdLine
+    member x.MessageEvent = msg
+    member x.RawMessage = rawMsg
+    member x.CommandLine = cmdLine
 
     member val Command : string option = if isCmd then Some(cmdLine.[0].ToLowerInvariant())
                                          else None
