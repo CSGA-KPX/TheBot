@@ -39,11 +39,11 @@ type CraftRecipeProvider private () =
         db.EnsureIndex("_id", true) |> ignore
         db.EnsureIndex("ResultItem.Id") |> ignore
         printfn "Building CraftRecipeProvider"
-        let col = new XivCollection(XivLanguage.ChineseSimplified) :> IXivCollection
+        let col = EmbeddedXivCollection(XivLanguage.ChineseSimplified) :> IXivCollection
         let lookup id = Item.ItemCollection.Instance.LookupById(id)
         seq {
             for row in col.GetSheet("Recipe") do
-                let itemsKeys = row.AsArray<XivSheetReference>("Item{Ingredient}", 10) |> Array.map (fun x -> x.Key)
+                let itemsKeys = row.AsArray<int>("Item{Ingredient}", 10)
                 let amounts = row.AsArray<byte>("Amount{Ingredient}", 10) |> Array.map (fun x -> float x)
 
                 let materials =
@@ -51,7 +51,7 @@ type CraftRecipeProvider private () =
                     |> Array.filter (fun (id, _) -> id > 0)
                     |> Array.map (fun (id, runs) -> (lookup id, runs))
                 yield { Id = row.Key.Main
-                        ResultItem = row.As<XivSheetReference>("Item{Result}").Key |> lookup
+                        ResultItem = row.As<int>("Item{Result}") |> lookup
                         ProductCount = row.As<byte>("Amount{Result}") |> float
                         Materials = materials }
         }
@@ -79,7 +79,7 @@ type CompanyCraftRecipeProvider private () =
         db.EnsureIndex("_id", true) |> ignore
         db.EnsureIndex("ResultItem.Id") |> ignore
         printfn "Building CompanyCraftRecipeProvider"
-        let col = new XivCollection(XivLanguage.ChineseSimplified) :> IXivCollection
+        let col = EmbeddedXivCollection(XivLanguage.ChineseSimplified) :> IXivCollection
         let lookup id = Item.ItemCollection.Instance.LookupById(id)
         seq {
             for ccs in col.GetSheet("CompanyCraftSequence") do
@@ -87,8 +87,8 @@ type CompanyCraftRecipeProvider private () =
                     [| for part in ccs.AsRowArray("CompanyCraftPart", 8) do
                         for proc in part.AsRowArray("CompanyCraftProcess", 3) do
                             let itemsKeys =
-                                proc.AsRowArray("SupplyItem", 12, false)
-                                |> Array.map (fun r -> r.As<XivSheetReference>("Item").Key)
+                                proc.AsRowArray("SupplyItem", 12)
+                                |> Array.map (fun r -> r.As<int>("Item"))
 
                             let amounts =
                                 let setAmount = proc.AsArray<uint16>("SetQuantity", 12)
@@ -102,7 +102,7 @@ type CompanyCraftRecipeProvider private () =
 
                             yield! materials |]
                 yield { Id = ccs.Key.Main
-                        ResultItem = ccs.As<XivSheetReference>("ResultItem").Key  |> lookup
+                        ResultItem = ccs.As<int>("ResultItem") |> lookup
                         ProductCount = 1.0
                         Materials = materials }
         }

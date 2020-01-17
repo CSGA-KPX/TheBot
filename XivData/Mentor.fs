@@ -21,7 +21,7 @@ type ShouldOrAvoidCollection private () =
     override x.BuildCollection() =
         let db = x.Collection
         printfn "Building ShouldOrAvoidCollection"
-        let col = new XivCollection(XivLanguage.ChineseSimplified) :> IXivCollection
+        let col = EmbeddedXivCollection(XivLanguage.ChineseSimplified) :> IXivCollection
         let sht = col.GetSheet("ContentFinderCondition", [| "Name"; "MentorRoulette" |])
         seq {
             for row in sht do
@@ -45,7 +45,7 @@ type LocationCollection private () =
     override x.BuildCollection() =
         let db = x.Collection
         printfn "Building LocationCollection"
-        let col = new XivCollection(XivLanguage.ChineseSimplified) :> IXivCollection
+        let col = EmbeddedXivCollection(XivLanguage.ChineseSimplified) :> IXivCollection
         let sht = col.GetSheet("TerritoryType", [| "PlaceName"; "TerritoryIntendedUse" |])
         seq {
             for row in sht do

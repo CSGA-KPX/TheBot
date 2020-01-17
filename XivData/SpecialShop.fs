@@ -34,7 +34,7 @@ type SpecialShopCollection private () =
         printfn "Building SpecialShopInfo"
         db.EnsureIndex("_id", true) |> ignore
         db.EnsureIndex("ReceiveItem") |> ignore
-        let col = new XivCollection(XivLanguage.ChineseSimplified) :> IXivCollection
+        let col = EmbeddedXivCollection(XivLanguage.ChineseSimplified) :> IXivCollection
         let sht = col.GetSheet("SpecialShop")
         seq {
             for row in sht do
@@ -48,11 +48,11 @@ type SpecialShopCollection private () =
                               ReceiveItem = rItem.Key.Main
                               ReceiveCount = row.As<uint32>(index "Count{Receive}" col page)
                               ReceiveHQ = row.As<bool>(index "HQ{Receive}" col page)
-                              CostItem = row.AsRaw(index "Item{Cost}" col page) |> int32
+                              CostItem = row.As<int>(index "Item{Cost}" col page)
                               CostCount = row.As<uint32>(index "Count{Cost}" col page) }
                         if rItem.Key.Main > 0 && r.ReceiveCount > 0u && r.ReceiveHQ = false
                            && rItem.As<bool>("IsUntradable") = false
-                           && allowItemUICategory.Contains(rItem.AsRaw("ItemUICategory") |> int) then yield r
+                           && allowItemUICategory.Contains(rItem.As<int>("ItemUICategory")) then yield r
         }
         |> Seq.distinctBy (fun x -> sprintf "%i%i" x.ReceiveItem x.CostItem)
         |> db.InsertBulk

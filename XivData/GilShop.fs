@@ -30,7 +30,7 @@ type GilShopCollection private () =
         let db = x.Collection
         printfn "Building GilShopCollection"
         db.EnsureIndex("_id", true) |> ignore
-        let col = new XivCollection(XivLanguage.ChineseSimplified) :> IXivCollection
+        let col = EmbeddedXivCollection(XivLanguage.ChineseSimplified) :> IXivCollection
 
         //用于缓存
         col.GetSheet("Item", [| AskKey; BidKey |])
