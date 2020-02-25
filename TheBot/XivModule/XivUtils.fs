@@ -72,8 +72,10 @@ module MarketUtils =
             DateTimeOffset.FromUnixTimeSeconds(ts |> int64).ToOffset(TimeSpan.FromHours(8.0))
 
     type MarketAnalyzer(item : Item.ItemRecord, data : MarketData []) =
+
         member x.ItemRecord = item
         member x.IsEmpty = data.Length = 0
+        member x.Data = data
 
         member x.LastUpdateTime() =
             let dt = (data |> Array.maxBy (fun x -> x.UpdateTime)).UpdateTime

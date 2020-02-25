@@ -69,7 +69,7 @@ module ChoiceHelper =
 module DiceExpression =
     open System.Text.RegularExpressions
 
-    type DicerOperand(i : int) =
+    type DicerOperand(i : float) =
         member x.Value = i
 
         interface IOperand<DicerOperand> with
@@ -78,7 +78,11 @@ module DiceExpression =
             override l.Div(r) = DicerOperand(l.Value / r.Value)
             override l.Mul(r) = DicerOperand(l.Value * r.Value)
 
-        override x.ToString() = i.ToString()
+        override x.ToString() = 
+            let fmt =
+                if (i % 1.0) <> 0.0 then "{0:N2}"
+                else "{0:N0}"
+            System.String.Format(fmt, i)
 
     type DiceExpression() as x =
         inherit GenericRPNParser<DicerOperand>()
@@ -93,7 +97,7 @@ module DiceExpression =
             [| let strs = tokenRegex.Split(str) |> Array.filter (fun x -> x <> "")
                for str in strs do
                    match str with
-                   | _ when Char.IsDigit(str.[0]) -> yield Operand(DicerOperand(str |> int))
+                   | _ when Char.IsDigit(str.[0]) -> yield Operand(DicerOperand(str |> float))
                    | _ when x.Operatos.ContainsKey(str) -> yield Operator(x.Operatos.[str])
                    | _ -> failwithf "无法解析 %s" str |]
 
@@ -109,8 +113,8 @@ module DiceExpression =
                 | '/' -> l.Div(r)
                 | 'D'
                 | 'd' ->
-                    let ret = Array.init<int> d (fun _ -> dicer.GetRandom(r.Value |> uint32)) |> Array.sum
-                    DicerOperand(ret)
+                    let ret = Array.init<int> (d |> int) (fun _ -> dicer.GetRandom(r.Value |> uint32)) |> Array.sum
+                    DicerOperand(ret |> float)
                 | _ -> failwithf "")
             x.EvalWith(str, func)
 
@@ -181,7 +185,7 @@ type DiceModule() =
             let ret = parser.TryEval(arg, dicer)
             match ret with
             | Error e -> sw.WriteLine("对{0}失败{1}", arg, e.ToString())
-            | Ok i -> sw.WriteLine("对{0}求值得{1}", arg, i.Value)
+            | Ok i -> sw.WriteLine("对{0}求值得{1}", arg, i.ToString())
         msgArg.QuickMessageReply(sw.ToString())
 
     [<CommandHandlerMethodAttribute("gacha", "抽10连 概率3%", "")>]

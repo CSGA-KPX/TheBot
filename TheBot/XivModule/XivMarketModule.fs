@@ -292,12 +292,26 @@ type XivMarketModule() =
         let item = args.[0]
         let ret = SpecialShop.SpecialShopCollection.Instance.TrySearchByName(item)
         if ret.IsNone then failwithf "%s 不能兑换道具" item
-        let tt = TextTable.FromHeader([| "道具"; "名称"; "价格(前25%订单)"; "低"; "单道具价值"; "更新时间" |])
+        let tt = TextTable.FromHeader([| "道具"; "名称"; "价格(前25%订单)"; "低"; "单道具价值"; "最近成交"; "更新时间" |])
         for info in ret.Value do
             let i = itemCol.LookupById(info.ReceiveItem)
             let ret = MarketUtils.MarketAnalyzer.FetchOrdersWorld(i, world)
+            let log = 
+                let t = MarketUtils.MarketAnalyzer.FetchTradesWorld(i, world)
+                match t with 
+                | Ok ret when ret.IsEmpty -> "无记录"
+                | Ok ret when not ret.IsEmpty ->
+                    let d = 
+                        ret.Data
+                        |> Array.map (fun data -> data.UpdateTime.Date, data.Count)
+                        |> Array.groupBy (fst)
+                        |> Array.map (fun (_, pair) -> Array.sumBy (snd) pair |> float)
+                        |> MarketUtils.StdEv.FromData
+                    d.ToString()
+                | _ -> "失败"
+           
             match ret with
-            | Ok x when x.IsEmpty -> tt.AddRow(item, i.Name, "无记录", "--", "--", "--")
+            | Ok x when x.IsEmpty -> tt.AddRow(item, i.Name, "无记录", "--", "--", "--", "--")
             | Ok ret ->
                 let ret = ret.TakeVolume(25)
                 let stdev = ret.StdEvPrice()
@@ -305,7 +319,7 @@ type XivMarketModule() =
                 let upd = ret.LastUpdateTime()
 
                 let v = stdev * (info.ReceiveCount |> float) / (info.CostCount |> float)
-                tt.AddRow(item, tryLookupNpcPrice (i), stdev, low, v, upd)
+                tt.AddRow(item, tryLookupNpcPrice (i), stdev, low, v, log, upd)
             | Error err -> raise err
         sw.Write(tt.ToString())
         msgArg.QuickMessageReply(sw.ToString())

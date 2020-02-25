@@ -49,6 +49,15 @@ type XivModule() =
 
         msgArg.QuickMessageReply(tt.ToString())
 
+    [<CommandHandlerMethodAttribute("仙人彩", "仙人彩周常", "")>]
+    member x.HandleCactpot(msgArg : CommandArgs) =
+        let dicer = Dicer(SeedRandom)
+        let nums = 
+            Seq.initInfinite (fun _ -> sprintf "%04i" (dicer.GetRandom(10000u) - 1))
+            |> Seq.distinctBy (fun numStr -> numStr.[3])
+            |> Seq.take 3
+        msgArg.QuickMessageReply(sprintf "%s" (String.Join(" ", nums)))
+
     [<CommandHandlerMethodAttribute("mentor", "今日导随运势", "")>]
     member x.HandleMentor(msgArg : CommandArgs) =
         let sw = new IO.StringWriter()

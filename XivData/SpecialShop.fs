@@ -21,7 +21,8 @@ type SpecialShopCollection private () =
     inherit Utils.XivDataSource<int, SpecialShopInfo>()
 
     static let allowItemUICategory =
-        HashSet<int>([| yield 45
+        HashSet<int>([| yield 33
+                        yield 45
                         yield! [ 47 .. 54 ]
                         yield 58
                         yield 59 |])

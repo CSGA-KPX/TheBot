@@ -67,7 +67,7 @@ let private DoCompare(loc : Bitmap, map : Bitmap) =
                  if colorToMomochromeLoc(l) = colorToMomochromeMap(m) then
                     i + 1
                  else
-                    i + 0) 0
+                    i - 1) 0
 
     (float score)* 100.0 / (loc.Width * loc.Height |> float)
 
