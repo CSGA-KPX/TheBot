@@ -17,9 +17,9 @@ type GroupFile =
 
 type GroupUploadEvent =
     { [<JsonProperty("group_id")>]
-      GroupId : int64
+      GroupId : uint64
       [<JsonProperty("user_id")>]
-      UserId : int64
+      UserId : uint64
       [<JsonProperty("file")>]
       File : GroupFile }
 
@@ -28,9 +28,9 @@ type GroupAdminEvent =
     { [<JsonProperty("sub_type")>]
       SubType : string
       [<JsonProperty("group_id")>]
-      GroupId : int64
+      GroupId : uint64
       [<JsonProperty("user_id")>]
-      UserId : int64 }
+      UserId : uint64 }
 
     ///设置管理员
     member x.IsSet = x.SubType = "set"
@@ -43,11 +43,11 @@ type GroupDecreaseEvent =
     { [<JsonProperty("sub_type")>]
       SubType : string
       [<JsonProperty("group_id")>]
-      GroupId : int64
+      GroupId : uint64
       [<JsonProperty("operator_id")>]
-      OperatorId : int64
+      OperatorId : uint64
       [<JsonProperty("user_id")>]
-      UserId : int64 }
+      UserId : uint64 }
 
     /// 成员主动退群
     member x.IsLeave = x.SubType = "leave"
@@ -62,11 +62,11 @@ type GroupIncreaseEvent =
     { [<JsonProperty("sub_type")>]
       SubType : string
       [<JsonProperty("group_id")>]
-      GroupId : int64
+      GroupId : uint64
       [<JsonProperty("operator_id")>]
-      OperatorId : int64
+      OperatorId : uint64
       [<JsonProperty("user_id")>]
-      UserId : int64 }
+      UserId : uint64 }
 
     /// 管理员已同意入群
     member x.IsApprove = x.SubType = "approve"
@@ -76,7 +76,7 @@ type GroupIncreaseEvent =
 
 type FriendAddEvent =
     { [<JsonProperty("user_id")>]
-      UserId : int64 }
+      UserId : uint64 }
 
 [<JsonConverter(typeof<NoticeEventConverter>)>]
 type NoticeEvent =

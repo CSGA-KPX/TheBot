@@ -11,7 +11,7 @@ type CommandHandlerMethodAttribute(command : string, desc, lh) =
     member x.HelpDesc : string = desc
     member x.LongHelp : string = lh
 
-    static member CommandStart = "#"
+    static member val CommandStart = "#" with get, set
 
 type CommandArgs(msg : Message.MessageEvent, cqArg : ClientEventArgs) =
     inherit ClientEventArgs(cqArg.ApiCaller, cqArg.RawEvent)

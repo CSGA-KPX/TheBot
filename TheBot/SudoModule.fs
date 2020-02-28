@@ -36,8 +36,9 @@ type SudoModule() =
     member x.HandleRebuildXivDb(msgArg : CommandArgs) =
         failOnNonAdmin(msgArg)
         XivData.Utils.ClearDb()
+        msgArg.QuickMessageReply("清空数据库完成")
         XivData.Utils.InitAllDb()
-        msgArg.QuickMessageReply("已完成重建")
+        msgArg.QuickMessageReply("重建数据库完成")
 
     override x.HandleRequest(args, e) =
         match e with

@@ -52,8 +52,8 @@ type SpecialShopCollection private () =
                               CostItem = row.As<int>(index "Item{Cost}" col page)
                               CostCount = row.As<uint32>(index "Count{Cost}" col page) }
                         if rItem.Key.Main > 0 && r.ReceiveCount > 0u && r.ReceiveHQ = false
-                           && rItem.As<bool>("IsUntradable") = false
-                           && allowItemUICategory.Contains(rItem.As<int>("ItemUICategory")) then yield r
+                           && rItem.As<bool>("IsUntradable") = false then yield r
+                           //&& allowItemUICategory.Contains(rItem.As<int>("ItemUICategory")) then yield r
         }
         |> Seq.distinctBy (fun x -> sprintf "%i%i" x.ReceiveItem x.CostItem)
         |> db.InsertBulk

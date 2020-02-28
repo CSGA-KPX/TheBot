@@ -173,10 +173,14 @@ module MentorUtils =
     let location = LocationCollection.Instance
 
 module CommandUtils =
+    open TheBot.Utils.Config
+
     let formatNumber (i : uint32) = System.String.Format("{0:N0}", i)
 
     /// 拉诺西亚
     let defaultServer = World.WorldFromId.[1042us]
+
+    let defaultServerKey = "defaultServerKey"
 
     /// 扫描参数，查找第一个服务器名
     /// 如果没找到，返回None
@@ -195,6 +199,15 @@ module CommandUtils =
         match tryGetWorld (a) with
         | Some x, args -> (true, x, args)
         | None, args -> (false, defaultServer, args)
+
+    /// 扫描参数，查找第一个服务器名
+    /// 成功返回 true 服务器，失败返回 false 默认服务器
+    let GetWorldWithDefaultEx(arg : KPX.FsCqHttp.Handler.CommandHandlerBase.CommandArgs) =
+        match tryGetWorld (arg.Arguments) with
+        | Some x, args -> (true, x, args)
+        | None, args -> 
+            let cm = ConfigManager(ConfigOwner.User (arg.MessageEvent.UserId))
+            (false, cm.Get(defaultServerKey, defaultServer), args)
 
 module XivExpression =
     open System.Text.RegularExpressions

@@ -4,7 +4,7 @@ open System
 open System.Collections
 open KPX.FsCqHttp.Handler.CommandHandlerBase
 
-let private admins = [| 313388419L; 343512452L |] |> Set.ofArray
+let private admins = [| 313388419UL; 343512452UL |] |> Set.ofArray
 
 /// 检查发信人是不是管理员
 let isSenderAdmin (msgArg : CommandArgs)  = 

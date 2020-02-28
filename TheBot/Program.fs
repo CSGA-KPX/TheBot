@@ -7,14 +7,18 @@ open KPX.FsCqHttp.Instance
 let logger = NLog.LogManager.GetCurrentClassLogger()
 let accessUrl = "wss://coolqapi.danmaku.org"
 let token = "0194caec-12a2-473d-bc08-962049999446"
-
+let mutable loadModules = true
 
 let StartBot() =
+    //KPX.FsCqHttp.Handler.CommandHandlerBase.CommandHandlerMethodAttribute.CommandStart <- "#!"
     let client = CqWebSocketClient(Uri(accessUrl), token)
     let ms = KPX.FsCqHttp.Handler.Utils.AllDefinedModules
-    for m in ms do
-        logger.Info("正在注册模块{0}", m.FullName)
-        client.RegisterModule(m)
+    if loadModules then
+        for m in ms do
+            logger.Info("正在注册模块{0}", m.FullName)
+            client.RegisterModule(m)
+    else
+        logger.Info("启动观测者模式")
 
     client.Connect()
     client.StartListen()
@@ -38,6 +42,7 @@ let main argv =
         XivData.Utils.ClearDb()
         XivData.Utils.InitAllDb()
         printfn "Rebuilt Completed"
-    else
-        StartBot()
+    elif  argv.Length <> 0 && argv.[0].ToLowerInvariant() = "ob" then
+        loadModules <- false
+    StartBot()
     0 // return an integer exit code

@@ -184,8 +184,8 @@ type DiceModule() =
         for arg in msgArg.Arguments do
             let ret = parser.TryEval(arg, dicer)
             match ret with
-            | Error e -> sw.WriteLine("对{0}失败{1}", arg, e.ToString())
-            | Ok i -> sw.WriteLine("对{0}求值得{1}", arg, i.ToString())
+            | Error e -> sw.WriteLine("对{0}求值失败：{1}", arg, e.Message)
+            | Ok i -> sw.WriteLine("{0} = {1}", arg, i.ToString())
         msgArg.QuickMessageReply(sw.ToString())
 
     [<CommandHandlerMethodAttribute("gacha", "抽10连 概率3%", "")>]

@@ -8,7 +8,7 @@ open Newtonsoft.Json
 [<CLIMutable>]
 type Sender =
     { [<JsonProperty("user_id")>]
-      UserId : int64
+      UserId : uint64
       [<JsonProperty("nickname")>]
       NickName : string
       /// male/female/unknown
@@ -53,7 +53,7 @@ type Sender =
 type AnonymousUser =
     { /// 匿名用户 ID
       [<JsonProperty("id")>]
-      Id : int64
+      Id : uint64
       /// 匿名用户名称
       [<JsonProperty("name")>]
       Name : string
@@ -70,7 +70,7 @@ type MessageEvent =
       [<JsonProperty("message_id")>]
       MessageId : int32
       [<JsonProperty("user_id")>]
-      UserId : int64
+      UserId : uint64
       [<JsonProperty("message")>]
       Message : KPX.FsCqHttp.DataType.Message.Message
       [<JsonProperty("raw_message")>]

@@ -4,8 +4,8 @@ open System
 open KPX.FsCqHttp.Handler.CommandHandlerBase
 open XivData
 open TheBot.Module.XivModule.Utils
-open TheBot.Utils.Dicer
 open TheBot.Utils.TextTable
+open TheBot.Utils.Config
 
 
 type XivMarketModule() =
@@ -32,10 +32,20 @@ type XivMarketModule() =
         if ret.IsSome then sprintf "%s(%i)" item.Name ret.Value.Ask
         else item.Name
 
+    [<CommandHandlerMethodAttribute("xivsrv", "设置默认查询的服务器", "")>]
+    member x.HandleXivDefSrv(msgArg : CommandArgs) =
+        let (succ, world, _) = CommandUtils.GetWorldWithDefault(msgArg.Arguments)
+        if succ then
+            let cm = ConfigManager(ConfigOwner.User (msgArg.MessageEvent.UserId))
+            cm.Put(CommandUtils.defaultServerKey, world)
+            msgArg.QuickMessageReply(sprintf "%s的默认服务器设置为%s" msgArg.MessageEvent.GetNicknameOrCard world.WorldName)
+        else
+            msgArg.QuickMessageReply("不认识这个土豆")
+
     [<CommandHandlerMethodAttribute("tradelog", "查询交易记录", "物品Id或全名...")>]
     member x.HandleTradelog(msgArg : CommandArgs) =
         let sw = new IO.StringWriter()
-        let (succ, world, args) = CommandUtils.GetWorldWithDefault(msgArg.Arguments)
+        let (succ, world, args) = CommandUtils.GetWorldWithDefaultEx(msgArg)
         if succ then sw.WriteLine("服务器：{0}", world.WorldName)
         else sw.WriteLine("默认服务器：{0}", world.WorldName)
         let tt = TextTable.FromHeader([| "名称"; "平均"; "低"; "高"; "更新时间" |])
@@ -59,7 +69,7 @@ type XivMarketModule() =
     [<CommandHandlerMethodAttribute("market", "查询市场订单", "物品Id或全名...")>]
     member x.HandleMarket(msgArg : CommandArgs) =
         let sw = new IO.StringWriter()
-        let (succ, world, args) = CommandUtils.GetWorldWithDefault(msgArg.Arguments)
+        let (succ, world, args) = CommandUtils.GetWorldWithDefaultEx(msgArg)
         if succ then sw.WriteLine("服务器：{0}", world.WorldName)
         else sw.WriteLine("默认服务器：{0}", world.WorldName)
         let tt = TextTable.FromHeader([| "名称"; "总体价格"; "HQ价格"; "更新时间" |])
@@ -134,7 +144,7 @@ type XivMarketModule() =
         sw.Write(tt.ToString())
         msgArg.QuickMessageReply(sw.ToString())
 
-    [<CommandHandlerMethodAttribute("r", "根据表达式汇总多个物品的材料，不查询价格\r\n大于50数字视为物品ID", "")>]
+    [<CommandHandlerMethodAttribute("r", "根据表达式汇总多个物品的材料，不查询价格", "")>]
     member x.HandleRecipeSumExpr(msgArg : CommandArgs) =
         let sw = new IO.StringWriter()
         let acc = XivExpression.ItemAccumulator()
@@ -164,7 +174,7 @@ type XivMarketModule() =
         sw.Write(tt.ToString())
         msgArg.QuickMessageReply(sw.ToString())
 
-    [<CommandHandlerMethodAttribute("rr", "根据表达式汇总多个物品的基础材料，不查询价格\r\n大于50数字视为物品ID", "")>]
+    [<CommandHandlerMethodAttribute("rr", "根据表达式汇总多个物品的基础材料，不查询价格", "")>]
     member x.HandleRecipeSumExprRec(msgArg : CommandArgs) =
         let sw = new IO.StringWriter()
         let acc = XivExpression.ItemAccumulator()
@@ -197,7 +207,7 @@ type XivMarketModule() =
     [<CommandHandlerMethodAttribute("rc", "计算物品基础材料成本（不支持表达式）", "物品Id或全名...")>]
     member x.HandleItemFinalRecipeExpr(msgArg : CommandArgs) =
         let sw = new IO.StringWriter()
-        let (succ, world, args) = CommandUtils.GetWorldWithDefault(msgArg.Arguments)
+        let (succ, world, args) = CommandUtils.GetWorldWithDefaultEx(msgArg)
         if succ then sw.WriteLine("服务器：{0}", world.WorldName)
         else sw.WriteLine("默认服务器：{0}", world.WorldName)
         let acc = XivExpression.ItemAccumulator()
@@ -241,7 +251,7 @@ type XivMarketModule() =
     [<CommandHandlerMethodAttribute("rrc", "计算物品基础材料成本（不支持表达式）", "物品Id或全名...")>]
     member x.HandleItemFinalRecipeRecExpr(msgArg : CommandArgs) =
         let sw = new IO.StringWriter()
-        let (succ, world, args) = CommandUtils.GetWorldWithDefault(msgArg.Arguments)
+        let (succ, world, args) = CommandUtils.GetWorldWithDefaultEx(msgArg)
         if succ then sw.WriteLine("服务器：{0}", world.WorldName)
         else sw.WriteLine("默认服务器：{0}", world.WorldName)
         let acc = XivExpression.ItemAccumulator()
@@ -284,10 +294,10 @@ type XivMarketModule() =
 
     [<CommandHandlerMethodAttribute("ssc", "计算部分道具兑换的价格", "兑换所需道具的名称或ID，只处理1个")>]
     member x.HandleSSS(msgArg : CommandArgs) =
-        let sw = new IO.StringWriter()
-        let (succ, world, args) = CommandUtils.GetWorldWithDefault(msgArg.Arguments)
-        if succ then sw.WriteLine("服务器：{0}", world.WorldName)
-        else sw.WriteLine("默认服务器：{0}", world.WorldName)
+        use resp = msgArg.OpenResponse()
+        let (succ, world, args) = CommandUtils.GetWorldWithDefaultEx(msgArg)
+        if succ then resp.WriteLine("服务器：{0}", world.WorldName)
+        else resp.WriteLine("默认服务器：{0}", world.WorldName)
         if args.Length = 0 then failwithf "参数不足"
         let item = args.[0]
         let ret = SpecialShop.SpecialShopCollection.Instance.TrySearchByName(item)
@@ -321,5 +331,4 @@ type XivMarketModule() =
                 let v = stdev * (info.ReceiveCount |> float) / (info.CostCount |> float)
                 tt.AddRow(item, tryLookupNpcPrice (i), stdev, low, v, log, upd)
             | Error err -> raise err
-        sw.Write(tt.ToString())
-        msgArg.QuickMessageReply(sw.ToString())
+        resp.Write(tt)

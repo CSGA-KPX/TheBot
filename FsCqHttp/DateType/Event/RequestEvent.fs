@@ -6,7 +6,7 @@ open Newtonsoft.Json.Linq
 
 type FriendRequestEvent =
     { [<JsonProperty("user_id")>]
-      UserId : int64
+      UserId : uint64
       [<JsonProperty("comment")>]
       Comment : string
       [<JsonProperty("flag")>]
@@ -16,9 +16,9 @@ type GroupRequestEvent =
     { [<JsonProperty("sub_type")>]
       SubType : string
       [<JsonProperty("group_id")>]
-      GroupId : int64
+      GroupId : uint64
       [<JsonProperty("user_id")>]
-      UserId : int64
+      UserId : uint64
       [<JsonProperty("comment")>]
       Comment : string
       [<JsonProperty("flag")>]
