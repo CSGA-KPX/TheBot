@@ -106,13 +106,13 @@ type XivModule() =
         if not <| ret.Value.ContainsKey("url") then
             failwithf "下图失败，以后再来"
 
-        use stream = wc.OpenRead(ret.Value.["url"])
-        use bitmap = new Bitmap(stream)
+        use ms = new IO.MemoryStream()
+        wc.OpenRead(ret.Value.["url"]).CopyTo(ms)
 
         let msg = msgArg.MessageEvent.Message.ToString()
 
         let tt = TextTable.FromHeader([|"评分"; "名称"|])
-        for (name, score) in TreasureMap.Compare(bitmap, msg) do 
+        for (name, score) in TreasureMap.Compare(ms, msg) do 
             let name = IO.Path.GetFileNameWithoutExtension(name).Split(Array.singleton ' ', 2)
             tt.AddRow(score, name.[1])
         msgArg.QuickMessageReply(tt.ToString())

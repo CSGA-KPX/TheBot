@@ -19,6 +19,8 @@ type ClientEventArgs(api : IApiCallProvider, obj : JObject) =
 
     member x.ApiCaller = api
 
+    member x.OpenResponse() = new TextResponse(x)
+
     member x.SendResponse(r : Response.EventResponse) =
         if r <> Response.EmptyResponse then
             let rep = SystemApi.QuickOperation(obj.ToString(Newtonsoft.Json.Formatting.None))
@@ -38,12 +40,9 @@ type ClientEventArgs(api : IApiCallProvider, obj : JObject) =
             | _ -> raise <| InvalidOperationException("")
         | _ -> raise <| InvalidOperationException("")
 
-    member x.OpenResponse() = new TextResponse(x)
-
 and TextResponse(arg : ClientEventArgs) = 
     inherit TextWriter()
 
-    let logger = NLog.LogManager.GetCurrentClassLogger()
     let sizeLimit = 3000
     let buf = Queue<string>()
     let sb = StringBuilder()
@@ -83,14 +82,11 @@ and TextResponse(arg : ClientEventArgs) =
                 if sb.Length <> 0 then
                     yield sb.ToString()
             |]
-        logger.Info("{0} Pages!", pages.Length)
         for page in pages do 
-            logger.Info("{0}", page)
             arg.QuickMessageReply(page, false)
 
     interface IDisposable with
         member x.Dispose() = 
-            logger.Info("Dispose() Called!")
             base.Dispose()
             x.Flush()
             

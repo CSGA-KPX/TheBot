@@ -5,6 +5,7 @@ open System.Reflection
 open System.IO
 open System.Drawing
 open System.Drawing.Imaging
+open CoenM.ImageHash
 
 let private nameMapping = 
     [|
@@ -71,7 +72,84 @@ let private DoCompare(loc : Bitmap, map : Bitmap) =
 
     (float score)* 100.0 / (loc.Width * loc.Height |> float)
 
-let Compare(map : Bitmap, msg : string) = 
+
+let private grayMatrix = 
+    [|
+        [| 0.299f; 0.299f; 0.299f; 0.0f; 0.0f |] // R
+        [| 0.587f; 0.587f; 0.587f; 0.0f; 0.0f |] // G
+        [| 0.114f; 0.114f; 0.114f; 0.0f; 0.0f |] // B
+        [| 0.0f; 0.0f; 0.0f; 1.0f; 0.0f|]        // A
+        [| 0.0f; 0.0f; 0.0f; 0.0f; 1.0f|]        // W
+    |] |> ColorMatrix
+
+let colorToBrightness (c : Color) = 
+    (c.R |> float) * 0.299 +
+        (c.G |> float) * 0.587 +
+        (c.B |> float) * 0.114
+    
+
+let private DoCompare2(loc : Bitmap, map : Bitmap) = 
+    let centerOfMap (loc : Bitmap) = 
+        let startX = (map.Width - loc.Width) / 2
+        let startY = (map.Height - loc.Height) / 2
+        let nb = new Bitmap(loc.Width, loc.Height)
+        use g  = Graphics.FromImage(nb)
+        let dstRect = Rectangle(0, 0, loc.Width, loc.Height)
+        let srcRect = Rectangle((map.Width - loc.Width) / 2, (map.Height - loc.Height) / 2, loc.Width, loc.Height)
+        g.DrawImage(map,  dstRect, srcRect, GraphicsUnit.Pixel)
+        nb
+    let resizeAndGrayBitmap (bmp: Bitmap) = 
+        let size = Size(33,32)
+        let output = new Bitmap(size.Width, size.Height)
+        use g = Graphics.FromImage(output)
+        g.InterpolationMode <- Drawing2D.InterpolationMode.High
+        g.CompositingQuality <- Drawing2D.CompositingQuality.HighQuality
+        g.SmoothingMode <- Drawing2D.SmoothingMode.AntiAlias
+        g.DrawImage(bmp, Rectangle(0,0,size.Width, size.Height))
+
+        output
+        //new Bitmap(bmp, size)
+        //use resized = new Bitmap(bmp, size)
+        //let gray = new Bitmap(size.Width, size.Height)
+        //use g = Graphics.FromImage(gray)
+        //use attr = new ImageAttributes()
+        //attr.SetColorMatrix(grayMatrix)
+        //let rect = new Rectangle(0,0,size.Width, size.Height)
+        //g.DrawImage(resized, rect, 0, 0 ,size.Width, size.Height, GraphicsUnit.Pixel, attr)
+        //gray
+
+    let dHash (bmp : Bitmap) = 
+        let sb = Text.StringBuilder()
+        for row = 0 to bmp.Width - 1 do 
+            for col = 0 to bmp.Height - 2 do 
+                let cur = bmp.GetPixel(row, col) |> colorToBrightness
+                let nxt = bmp.GetPixel(row, col+1) |> colorToBrightness
+                if cur > nxt then
+                    sb.Append("1") |> ignore
+                else
+                    sb.Append("0") |> ignore
+        
+        sb.ToString().ToCharArray()
+
+    let gsLoc = loc |> centerOfMap |> resizeAndGrayBitmap |> dHash
+    let gsMap = map |> resizeAndGrayBitmap |> dHash
+
+    let distance =
+        Array.map2 (fun a b -> if a = b then 1 else 0) gsLoc gsMap
+        |> Array.sum
+    
+    distance
+
+let private DoCompare3(user : Stream, map : Stream) = 
+    let hasher = HashAlgorithms.PerceptualHash()
+    user.Position <- 0L
+
+    let usrHash = hasher.Hash(user)
+    let mapHash = hasher.Hash(map)
+    CompareHash.Similarity(usrHash, mapHash)
+    
+
+let Compare(loc : Stream, msg : string) = 
     let needle = msg.ToUpperInvariant()
     let ret = nameMapping |> Array.tryFind (fun (x,_) -> needle.Contains(x))
     if ret.IsNone then failwithf "请提供宝图级别（G1-G12、隐藏、绿图、深层）"
@@ -82,8 +160,7 @@ let Compare(map : Bitmap, msg : string) =
         |> Array.filter (fun (f, _) -> f.StartsWith(start))
     [|
         for (name, e) in maps do 
-            use loc = new Bitmap(e.Open()) 
-            yield name, DoCompare(loc, map)
+            yield name, DoCompare3(loc, e.Open())
     |]
     |> Array.sortByDescending snd
     |> Array.take 5

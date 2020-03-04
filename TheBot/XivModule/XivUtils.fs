@@ -175,6 +175,12 @@ module MentorUtils =
 module CommandUtils =
     open TheBot.Utils.Config
 
+    let XivSpecialChars = 
+        [|
+            '\ue03c' // HQ
+            '\ue03d' //收藏品
+        |]
+
     let formatNumber (i : uint32) = System.String.Format("{0:N0}", i)
 
     /// 拉诺西亚
@@ -295,7 +301,7 @@ module XivExpression =
                        yield Operand(Number(num |> float))
                    | _ when x.Operatos.ContainsKey(str) -> yield Operator(x.Operatos.[str])
                    | _ ->
-                       let item = Item.ItemCollection.Instance.TryLookupByName(str)
+                       let item = Item.ItemCollection.Instance.TryLookupByName(str.TrimEnd(CommandUtils.XivSpecialChars))
                        if item.IsSome then yield Operand(Accumulator(ItemAccumulator.Singleton(item.Value)))
                        else failwithf "无法解析 %s" str |]
 

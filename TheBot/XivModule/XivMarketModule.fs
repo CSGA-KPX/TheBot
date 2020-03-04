@@ -22,7 +22,7 @@ type XivMarketModule() =
     let strToItemResult (str : string) =
         let ret =
             if isNumber (str) then itemCol.TryLookupById(Convert.ToInt32(str))
-            else itemCol.TryLookupByName(str)
+            else itemCol.TryLookupByName(str.TrimEnd(CommandUtils.XivSpecialChars))
         if ret.IsSome then Ok ret.Value
         else Error str
 
@@ -296,9 +296,11 @@ type XivMarketModule() =
     member x.HandleSSS(msgArg : CommandArgs) =
         use resp = msgArg.OpenResponse()
         let (succ, world, args) = CommandUtils.GetWorldWithDefaultEx(msgArg)
+        if args.Length = 0 then failwithf "参数不足"
+
         if succ then resp.WriteLine("服务器：{0}", world.WorldName)
         else resp.WriteLine("默认服务器：{0}", world.WorldName)
-        if args.Length = 0 then failwithf "参数不足"
+        
         let item = args.[0]
         let ret = SpecialShop.SpecialShopCollection.Instance.TrySearchByName(item)
         if ret.IsNone then failwithf "%s 不能兑换道具" item

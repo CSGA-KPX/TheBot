@@ -67,6 +67,7 @@ module ChoiceHelper =
             ]
 
 module DiceExpression =
+    open System.Globalization
     open System.Text.RegularExpressions
 
     type DicerOperand(i : float) =
@@ -87,7 +88,7 @@ module DiceExpression =
     type DiceExpression() as x =
         inherit GenericRPNParser<DicerOperand>()
 
-        let tokenRegex = Regex("([^0-9])", RegexOptions.Compiled)
+        let tokenRegex = Regex("([^\.,0-9])", RegexOptions.Compiled)
 
         do
             x.AddOperator(GenericOperator('D', 5))
@@ -97,7 +98,7 @@ module DiceExpression =
             [| let strs = tokenRegex.Split(str) |> Array.filter (fun x -> x <> "")
                for str in strs do
                    match str with
-                   | _ when Char.IsDigit(str.[0]) -> yield Operand(DicerOperand(str |> float))
+                   | _ when Char.IsDigit(str.[0]) -> yield Operand(DicerOperand(Double.Parse(str, NumberStyles.Number)))
                    | _ when x.Operatos.ContainsKey(str) -> yield Operator(x.Operatos.[str])
                    | _ -> failwithf "无法解析 %s" str |]
 
