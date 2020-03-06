@@ -108,12 +108,19 @@ type XivMarketModule() =
                 match ma with
                 | Error exn -> raise exn
                 | Ok wma ->
-                    for (world, ma) in wma do
-                        if ma.IsEmpty then tt.AddRow(ma.ItemRecord.Name, world.WorldName, "无记录", "--", "--", "--")
-                        else
-                            tt.AddRow
-                                (ma.ItemRecord.Name, world.WorldName, ma.StdEvPrice(), ma.MinPrice(), ma.MaxPrice(),
-                                 ma.LastUpdateTime())
+                    let sorted = 
+                        wma
+                        |> Array.groupBy (fun (w, _) -> World.WorldToDC.[w])
+                        |> Array.sortBy (fun (dc, _) -> dc)
+
+                    for dc, wma in sorted do 
+                        tt.AddRow(dc, "", "", "", "", "")
+                        for (world, ma) in wma do
+                            if ma.IsEmpty then tt.AddRow(ma.ItemRecord.Name, world.WorldName, "无记录", "--", "--", "--")
+                            else
+                                tt.AddRow
+                                    (ma.ItemRecord.Name, world.WorldName, ma.StdEvPrice(), ma.MinPrice(), ma.MaxPrice(),
+                                     ma.LastUpdateTime())
         sw.Write(tt.ToString())
         msgArg.QuickMessageReply(sw.ToString())
 
@@ -133,14 +140,21 @@ type XivMarketModule() =
                 match ma with
                 | Error exn -> raise exn
                 | Ok wma ->
-                    for (world, ma) in wma do
-                        if ma.IsEmpty then
-                            tt.AddRow(tryLookupNpcPrice (ma.ItemRecord), world.WorldName, "无记录", "--", "--")
-                        else
-                            let ma = ma.TakeVolume(cutoff)
-                            tt.AddRow
-                                (tryLookupNpcPrice (ma.ItemRecord), world.WorldName, ma.StdEvPrice(), ma.MinPrice(),
-                                 ma.LastUpdateTime())
+                    let sorted = 
+                        wma
+                        |> Array.groupBy (fun (w, _) -> World.WorldToDC.[w])
+                        |> Array.sortBy (fun (dc, _) -> dc)
+
+                    for dc, wma in sorted do 
+                        tt.AddRow(dc, "", "", "", "")
+                        for (world, ma) in wma do
+                            if ma.IsEmpty then
+                                tt.AddRow(tryLookupNpcPrice (ma.ItemRecord), world.WorldName, "无记录", "--", "--")
+                            else
+                                let ma = ma.TakeVolume(cutoff)
+                                tt.AddRow
+                                    (tryLookupNpcPrice (ma.ItemRecord), world.WorldName, ma.StdEvPrice(), ma.MinPrice(),
+                                     ma.LastUpdateTime())
         sw.Write(tt.ToString())
         msgArg.QuickMessageReply(sw.ToString())
 

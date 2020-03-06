@@ -41,6 +41,15 @@ let Worlds =
         { WorldId = id
           WorldName = n })
 
+let DataCenters = 
+    [|
+        "一鸟", "晨曦王座,沃仙曦染,宇宙和音,红玉海,萌芽池,神意之地,幻影群岛,拉诺西亚"
+        "二猪", "拂晓之间,龙巢神殿,旅人栈桥,白金幻象,白银乡,神拳痕,潮风亭"
+        "三猫", "琥珀原,柔风海湾,海猫茶屋,延夏,静语庄园,摩杜纳,紫水栈桥"
+    |]
+    |> Array.map (fun (dc,ws) -> dc, ws.Split(','))
+    
+
 let WorldFromId =
     Worlds
     |> Array.map (fun x -> x.WorldId, x)
@@ -50,3 +59,11 @@ let WorldFromName =
     Worlds
     |> Array.map (fun x -> x.WorldName, x)
     |> readOnlyDict
+
+let WorldToDC = 
+    seq {
+        for dc, worlds in DataCenters do 
+            for world in worlds do 
+                yield WorldFromName.[world], dc
+    } |> readOnlyDict
+    

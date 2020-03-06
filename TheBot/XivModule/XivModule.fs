@@ -6,9 +6,6 @@ open XivData
 open TheBot.Module.XivModule.Utils
 open TheBot.Utils.Dicer
 open TheBot.Utils.TextTable
-open KPX.FsCqHttp.DataType.Message
-open System.Drawing
-open System.Drawing.Imaging
 
 type XivModule() =
     inherit CommandHandlerBase()
@@ -91,28 +88,3 @@ type XivModule() =
             MentorUtils.location.[idx].Value
         sw.WriteLine("推荐排本场所: {0}", location.Value)
         msgArg.QuickMessageReply(sw.ToString())
-
-    [<CommandHandlerMethodAttribute("宝图", "盲猜宝图位置", "")>]
-    member x.HandleTreasureMap(msgArg : CommandArgs) = 
-        let ret =
-            msgArg.MessageEvent.Message
-            |> Seq.choose (fun x ->
-                match x with
-                | Other o when (fst o) = "image" -> Some(snd o)
-                | _ -> None)
-            |> Seq.tryHead
-        
-        if ret.IsNone then failwith "给个图谢谢"
-        if not <| ret.Value.ContainsKey("url") then
-            failwithf "下图失败，以后再来"
-
-        use ms = new IO.MemoryStream()
-        wc.OpenRead(ret.Value.["url"]).CopyTo(ms)
-
-        let msg = msgArg.MessageEvent.Message.ToString()
-
-        let tt = TextTable.FromHeader([|"评分"; "名称"|])
-        for (name, score) in TreasureMap.Compare(ms, msg) do 
-            let name = IO.Path.GetFileNameWithoutExtension(name).Split(Array.singleton ' ', 2)
-            tt.AddRow(score, name.[1])
-        msgArg.QuickMessageReply(tt.ToString())
