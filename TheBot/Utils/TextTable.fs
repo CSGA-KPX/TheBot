@@ -79,6 +79,18 @@ type TextTable(cols : int) =
                 sb.AppendLine("") |> ignore
         sb.ToString()
 
+
+type AutoTextTable<'T>(cfg : (string * ('T -> obj)) []) as x = 
+    inherit TextTable(cfg.Length)
+
+    do
+        x.AddRow(cfg |> Array.map (fst >> box))
+
+    member x.AddRow(obj : 'T) = 
+        cfg
+        |> Array.map (fun (_, func) -> func obj)
+        |> x.AddRow
+
 type TextResponse with
     member x.Write(tt : TextTable) = 
         for line in tt.ToLines() do 

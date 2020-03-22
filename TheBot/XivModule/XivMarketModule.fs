@@ -244,7 +244,7 @@ type XivMarketModule() =
         let final =
             acc
             |> Seq.toArray
-            |> Array.map (fun x -> (x.Key, MarketUtils.MarketAnalyzer.FetchTradesWorld(x.Key, world), x.Value))
+            |> Array.map (fun x -> (x.Key, MarketUtils.MarketAnalyzer.FetchOrdersWorld(x.Key, world), x.Value))
             |> Array.sortBy (fun (i, _, _) -> i.Id)
 
         let mutable sum = MarketUtils.StdEv.Zero
@@ -254,6 +254,7 @@ type XivMarketModule() =
             | Error err -> raise err
             | Ok ma when ma.IsEmpty -> tt.AddRow(tryLookupNpcPrice (ma.ItemRecord), "无记录", "--", "--", "--")
             | Ok ma ->
+                let ma = ma.TakeVolume(25)
                 let std = ma.StdEvPrice()
                 let total = std * count
                 sum <- sum + total
@@ -288,7 +289,7 @@ type XivMarketModule() =
         let final =
             acc
             |> Seq.toArray
-            |> Array.map (fun x -> (x.Key, MarketUtils.MarketAnalyzer.FetchTradesWorld(x.Key, world), x.Value))
+            |> Array.map (fun x -> (x.Key, MarketUtils.MarketAnalyzer.FetchOrdersWorld(x.Key, world), x.Value))
             |> Array.sortBy (fun (i, _, _) -> i.Id)
 
         let mutable sum = MarketUtils.StdEv.Zero
@@ -298,6 +299,7 @@ type XivMarketModule() =
             | Error err -> raise err
             | Ok ma when ma.IsEmpty -> tt.AddRow(tryLookupNpcPrice (ma.ItemRecord), "无记录", "--", "--", "--")
             | Ok ma ->
+                let ma = ma.TakeVolume(25)
                 let std = ma.StdEvPrice()
                 let total = std * count
                 sum <- sum + total
