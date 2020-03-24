@@ -71,8 +71,9 @@ module MarketUtils =
                 | Trade x -> x.TimeStamp
             DateTimeOffset.FromUnixTimeSeconds(ts |> int64).ToOffset(TimeSpan.FromHours(8.0))
 
-    type MarketAnalyzer(item : Item.ItemRecord, data : MarketData []) =
+    type MarketAnalyzer(item : Item.ItemRecord, world : World.World, data : MarketData []) =
 
+        member x.World = world
         member x.ItemRecord = item
         member x.IsEmpty = data.Length = 0
         member x.Data = data
@@ -97,11 +98,14 @@ module MarketUtils =
             |> Array.map (fun x -> x.Count |> float)
             |> StdEv.FromData
 
-        member x.TakeNQ() = MarketAnalyzer(item, data |> Array.filter (fun x -> not x.IsHq))
-        member x.TakeHQ() = MarketAnalyzer(item, data |> Array.filter (fun x -> x.IsHq))
+        member x.TakeNQ() = MarketAnalyzer(item, world, data |> Array.filter (fun x -> not x.IsHq))
+        member x.TakeHQ() = MarketAnalyzer(item, world, data |> Array.filter (fun x -> x.IsHq))
+
+        /// 默认25%市场容量
+        member x.TakeVolume() = x.TakeVolume(25)
 
         member x.TakeVolume(cutPct : int) =
-            MarketAnalyzer(item,
+            MarketAnalyzer(item, world,
                                [| let samples = data |> Array.sortBy (fun x -> x.Price)
                                   let itemCount = data |> Array.sumBy (fun x -> x.Count |> int)
                                   let cutLen = itemCount * cutPct / 100
@@ -124,7 +128,7 @@ module MarketUtils =
             MarketOrder.MarketOrderProxy.callSafely <@ fun server -> server.GetByIdWorld worldId itemId @>
             |> Async.RunSynchronously
             |> Result.map (fun o -> o.Orders |> Array.map (Order))
-            |> Result.map (fun o -> MarketAnalyzer(item, o))
+            |> Result.map (fun o -> MarketAnalyzer(item, world, o))
 
         static member FetchOrdersAllWorld(item : Item.ItemRecord) =
             let itemId = item.Id |> uint32
@@ -133,8 +137,8 @@ module MarketUtils =
             |> Result.map (fun oa ->
                 [| for o in oa do
                     let world = World.WorldFromId.[o.WorldId]
-                    let ma = MarketAnalyzer(item, o.Orders |> Array.map (Order))
-                    yield world, ma |])
+                    let ma = MarketAnalyzer(item, world, o.Orders |> Array.map (Order))
+                    yield ma |])
 
         static member FetchTradesWorld(item : Item.ItemRecord, world : World.World) =
             let itemId = item.Id |> uint32
@@ -142,7 +146,7 @@ module MarketUtils =
             TradeLog.TradelogProxy.callSafely <@ fun server -> server.GetByIdWorld worldId itemId 20 @>
             |> Async.RunSynchronously
             |> Result.map (Array.map (Trade))
-            |> Result.map (fun o -> MarketAnalyzer(item, o))
+            |> Result.map (fun o -> MarketAnalyzer(item, world, o))
 
         static member FetchTradesAllWorld(item : Item.ItemRecord) =
             let itemId = item.Id |> uint32
@@ -151,7 +155,7 @@ module MarketUtils =
             |> Result.map (fun t ->
                 t
                 |> Array.groupBy (fun t -> World.WorldFromId.[t.WorldId])
-                |> Array.map (fun (x, y) -> (x, MarketAnalyzer(item, y |> Array.map (Trade)))))
+                |> Array.map (fun (x, y) -> MarketAnalyzer(item, x, y |> Array.map (Trade))))
 
 module MentorUtils =
     open XivData.Mentor
@@ -206,14 +210,13 @@ module CommandUtils =
         | Some x, args -> (true, x, args)
         | None, args -> (false, defaultServer, args)
 
-    /// 扫描参数，查找第一个服务器名
-    /// 成功返回 true 服务器，失败返回 false 默认服务器
-    let GetWorldWithDefaultEx(arg : KPX.FsCqHttp.Handler.CommandHandlerBase.CommandArgs) =
+    /// 扫描参数，查找第一个服务器名，如果没有返回默认服务器
+    let GetWorldWithDefaultEx2(arg : KPX.FsCqHttp.Handler.CommandHandlerBase.CommandArgs) =
         match tryGetWorld (arg.Arguments) with
-        | Some x, args -> (true, x, args)
+        | Some x, args -> (x, args)
         | None, args -> 
             let cm = ConfigManager(ConfigOwner.User (arg.MessageEvent.UserId))
-            (false, cm.Get(defaultServerKey, defaultServer), args)
+            (cm.Get(defaultServerKey, defaultServer), args)
 
 module XivExpression =
     open System.Text.RegularExpressions

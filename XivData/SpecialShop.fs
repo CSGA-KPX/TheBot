@@ -60,11 +60,14 @@ type SpecialShopCollection private () =
         |> ignore
         GC.Collect()
 
+    member x.AllCostItems() = 
+        let ic = Item.ItemCollection.Instance
+        x.Collection.FindAll()
+        |> Seq.map (fun r -> r.CostItem)
+        |> Seq.distinct
+        |> Seq.map (fun id -> ic.LookupById(id))
+        |> Seq.toArray
+        
     member x.SearchByCostItemId(id : int) =
         let ret = x.Collection.Find(Query.EQ("CostItem", BsonValue(id)))
         ret |> Seq.toArray
-
-    member x.TrySearchByName(name : string) =
-        let item = ItemCollection.Instance.TryLookupByName(name)
-        if item.IsSome then Some(x.SearchByCostItemId(item.Value.Id))
-        else None

@@ -5,6 +5,9 @@ open System.Collections.Generic
 open KPX.FsCqHttp.Handler
 
 type TextTable(cols : int) =
+    let preTableLines  = List<string>()
+    let postTableLines = List<string>()
+
     let col = Array.init cols (fun _ -> List<string>())
     static let fullWidthSpace = '　'
 
@@ -21,6 +24,17 @@ type TextTable(cols : int) =
         let x = TextTable(header.Length)
         x.AddRow(header)
         x
+
+    member x.AddPreTable(str : string) =  preTableLines.Add(str)
+
+    member x.AddPostTable(str : string) = postTableLines.Add(str)
+
+    /// 添加一行，用"--"补齐不足行数
+    member x.AddRowPadding([<ParamArray>] fields : Object []) = 
+        if fields.Length > col.Length then
+            raise <| ArgumentException(sprintf "列数不一致 需求:%i, 提供:%i" col.Length fields.Length)
+        let padding = Array.create (col.Length - fields.Length) (box "--")
+        x.AddRow(Array.append fields padding)
 
     member x.AddRow([<ParamArray>] fields : Object []) =
         if fields.Length <> col.Length then
@@ -42,6 +56,7 @@ type TextTable(cols : int) =
 
     member x.ToLines() = 
         [|
+            yield! preTableLines.ToArray()
             if col.[0].Count <> 0 then
                 let maxLens =
                     col
@@ -58,26 +73,11 @@ type TextTable(cols : int) =
                         let pad = (maxLens.[c] - strDispLen (str)) / 2 + 1 + str.Length
                         sb.Append(str.PadRight(pad, fullWidthSpace)) |> ignore
                     yield sb.ToString()
+            yield! postTableLines.ToArray()
         |]
 
     override x.ToString() =
-        let sb = Text.StringBuilder("")
-        if col.[0].Count <> 0 then
-            let maxLens =
-                col
-                |> Array.map (fun l ->
-                    l
-                    |> Seq.map (strDispLen)
-                    |> Seq.max)
-
-            for i = 0 to col.[0].Count - 1 do
-                for c = 0 to col.Length - 1 do
-                    let str = col.[c].[i]
-                    let len = maxLens.[c]
-                    let pad = (maxLens.[c] - strDispLen (str)) / 2 + 1 + str.Length
-                    sb.Append(str.PadRight(pad, fullWidthSpace)) |> ignore
-                sb.AppendLine("") |> ignore
-        sb.ToString()
+        String.Join("\r\n", x.ToLines())
 
 
 type AutoTextTable<'T>(cfg : (string * ('T -> obj)) []) as x = 
@@ -86,10 +86,11 @@ type AutoTextTable<'T>(cfg : (string * ('T -> obj)) []) as x =
     do
         x.AddRow(cfg |> Array.map (fst >> box))
 
-    member x.AddRow(obj : 'T) = 
-        cfg
-        |> Array.map (fun (_, func) -> func obj)
-        |> x.AddRow
+    member x.AddObject(obj : 'T) = 
+        let objs = 
+            cfg
+            |> Array.map (fun (_, func) -> func obj)
+        x.AddRow(objs)
 
 type TextResponse with
     member x.Write(tt : TextTable) = 

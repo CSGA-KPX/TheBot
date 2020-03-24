@@ -89,7 +89,7 @@ type CqWebSocketClient(url, token) =
         let json = obj.ToString(Newtonsoft.Json.Formatting.None)
         if obj.ContainsKey("post_type") then
             logger.Trace("收到上报：{0}", json)
-            let args = ClientEventArgs(x, obj)
+            let args = new ClientEventArgs(x, obj)
             cqHttpEvent.Trigger(args)
         elif obj.ContainsKey("retcode") then
             //API调用结果

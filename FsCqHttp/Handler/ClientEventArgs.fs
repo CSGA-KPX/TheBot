@@ -19,6 +19,8 @@ type ClientEventArgs(api : IApiCallProvider, obj : JObject) =
 
     member x.ApiCaller = api
 
+    /// 获取一个回复流
+    /// 每次执行都是新对象
     member x.OpenResponse() = new TextResponse(x)
 
     member x.SendResponse(r : Response.EventResponse) =
@@ -43,11 +45,17 @@ type ClientEventArgs(api : IApiCallProvider, obj : JObject) =
 and TextResponse(arg : ClientEventArgs) = 
     inherit TextWriter()
 
+    let mutable isUsed = false
+
     let sizeLimit = 3000
     let buf = Queue<string>()
     let sb = StringBuilder()
     
+    member x.IsUsed = isUsed
+
     override x.Write(c:char) = 
+        if not isUsed then
+            isUsed <- true
         sb.Append(c) |> ignore
 
     override x.WriteLine() = 
@@ -88,5 +96,6 @@ and TextResponse(arg : ClientEventArgs) =
     interface IDisposable with
         member x.Dispose() = 
             base.Dispose()
-            x.Flush()
+            if isUsed then
+                x.Flush()
             

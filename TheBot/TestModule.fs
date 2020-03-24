@@ -17,5 +17,5 @@ type TestModule() =
                 "Test", fun i -> box (i+100)
                 "Test", fun i -> box (i+1000)
                 |])
-            tt.AddRow(1)
+            tt.AddObject(1)
             msgArg.QuickMessageReply(tt.ToString())
