@@ -39,10 +39,19 @@ type CraftRecipeProvider private () =
         db.EnsureIndex("_id", true) |> ignore
         db.EnsureIndex("ResultItem.Id") |> ignore
         printfn "Building CraftRecipeProvider"
-        let col = EmbeddedXivCollection(XivLanguage.ChineseSimplified) :> IXivCollection
         let lookup id = Item.ItemCollection.Instance.LookupById(id)
+
+        let chs = 
+            let col = EmbeddedXivCollection(XivLanguage.ChineseSimplified, false) :> IXivCollection
+            col.GetSheet("Recipe")
+
+        let eng = 
+            Utils.GlobalVerCollection.GetSheet("Recipe")
+
+        let merged = Utils.MergeSheet(chs, eng, (fun (a,b) -> a.As<string>("Item{Result}") = "0"))
+
         seq {
-            for row in col.GetSheet("Recipe") do
+            for row in merged do
                 let itemsKeys = row.AsArray<int>("Item{Ingredient}", 10)
                 let amounts = row.AsArray<byte>("Amount{Ingredient}", 10) |> Array.map (fun x -> float x)
 
@@ -79,10 +88,20 @@ type CompanyCraftRecipeProvider private () =
         db.EnsureIndex("_id", true) |> ignore
         db.EnsureIndex("ResultItem.Id") |> ignore
         printfn "Building CompanyCraftRecipeProvider"
-        let col = EmbeddedXivCollection(XivLanguage.ChineseSimplified) :> IXivCollection
         let lookup id = Item.ItemCollection.Instance.LookupById(id)
+
+        let chs = 
+            let col = EmbeddedXivCollection(XivLanguage.ChineseSimplified, false) :> IXivCollection
+            col.GetSheet("CompanyCraftSequence")
+
+        let eng = 
+            Utils.GlobalVerCollection.GetSheet("CompanyCraftSequence")
+
+        let merged = Utils.MergeSheet(chs, eng, (fun (a,b) -> a.As<string>("ResultItem") = "0"))
+
+
         seq {
-            for ccs in col.GetSheet("CompanyCraftSequence") do
+            for ccs in merged do
                 let materials =
                     [| for part in ccs.AsRowArray("CompanyCraftPart", 8) do
                         for proc in part.AsRowArray("CompanyCraftProcess", 3) do

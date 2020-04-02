@@ -11,28 +11,59 @@ type XivModule() =
     inherit CommandHandlerBase()
 
     let itemCol = Item.ItemCollection.Instance
-    let wc = new System.Net.WebClient()
 
     let isNumber (str : string) =
         if str.Length <> 0 then String.forall (Char.IsDigit) str
         else false
 
-    [<CommandHandlerMethodAttribute("is", "查找名字包含字符的物品", "关键词...")>]
-    member x.HandleItemSearch(msgArg : CommandArgs) =
-        let tt = TextTable.FromHeader([| "查询"; "Id"; "物品" |])
-        for i in msgArg.Arguments do
-            if isNumber (i) then
-                let ret = itemCol.TryLookupById(i |> int32)
-                if ret.IsSome then tt.AddRow(i, ret.Value.Name, ret.Value.Id.ToString())
-            else
-                let ret = itemCol.SearchByName(i) |> Array.sortBy (fun x -> x.Id)
-                if ret.Length = 0 then
-                    tt.AddRow(i, "无", "无")
-                else
-                    for item in ret do
-                        tt.AddRow(i, item.Id.ToString(), item.Name)
+    [<CommandHandlerMethodAttribute("cgss", "查找指定职业和品级的套装", "职业 品级")>]
+    member x.HandleCGSS(msgArg : CommandArgs) =
+        let mutable job = None
+        let mutable iLv = None
 
-        msgArg.QuickMessageReply(tt.ToString())
+        let cjm = XivData.ClassJobMapping.ClassJobMappingCollection.Instance
+        for item in msgArg.Arguments do 
+            if isNumber(item) then
+                iLv <- Some(Int32.Parse(item))
+            else
+                let ret = cjm.TryLookupById(item.ToUpperInvariant())
+                if ret.IsSome then job <- Some (ret.Value.Value)
+        if job.IsNone || iLv.IsNone then
+            failwithf "请提供职业和品级信息。职业可以使用：单字简称/全程/英文简称"
+
+        let cgc = XivData.CraftGearSet.CraftableGearCollection.Instance
+        let ret = 
+            cgc.Search(iLv.Value, job.Value)
+            |> Array.map (fun g ->
+                let item = XivData.Item.ItemCollection.Instance.LookupById(g.Id)
+                if item.Name.Contains(" ") then
+                    sprintf "#%i" item.Id
+                else
+                    item.Name
+            )
+        msgArg.QuickMessageReply(String.Join("+", ret))
+
+    [<CommandHandlerMethodAttribute("is", "查找名字包含字符的物品", "关键词（大小写敏感）")>]
+    member x.HandleItemSearch(msgArg : CommandArgs) =
+        let att = AutoTextTable<Item.ItemRecord>(
+                    [|
+                        "Id", fun item -> box(item.Id.ToString())
+                        "物品", fun item -> box(item.Name)
+                    |])
+        let i = String.Join(" ", msgArg.Arguments)
+        if isNumber (i) then
+            let ret = itemCol.TryLookupById(i |> int32)
+            if ret.IsSome then 
+                att.AddObject(ret.Value)
+        else
+            let ret = itemCol.SearchByName(i) |> Array.sortBy (fun x -> x.Id)
+            if ret.Length = 0 then
+                att.AddRow("无", "无")
+            else
+                for item in ret do
+                    att.AddObject(item)
+
+        using (msgArg.OpenResponse()) (fun r -> r.Write(att))
 
     [<CommandHandlerMethodAttribute("gate", "挖宝选门", "")>]
     member x.HandleGate(msgArg : CommandArgs) =

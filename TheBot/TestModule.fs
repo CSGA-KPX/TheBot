@@ -9,13 +9,16 @@ type TestModule() =
     inherit CommandHandlerBase()
 
     [<CommandHandlerMethodAttribute("tttest", "", "")>]
-        member x.HandleTest(msgArg : CommandArgs) = 
-            let tt = AutoTextTable<int>([|
-                "Test", fun i -> box i
-                "Test", fun i -> box (i+1)
-                "Test", fun i -> box (i+10)
-                "Test", fun i -> box (i+100)
-                "Test", fun i -> box (i+1000)
+        member x.HandleTest(msgArg : CommandArgs) =
+            ()
+            (*
+            let api = msgArg.ApiCaller.CallApi<KPX.FsCqHttp.Api.SystemApi.GetGroupList>()
+
+            let tt = AutoTextTable<KPX.FsCqHttp.Api.SystemApi.GroupInfo>([|
+                "群号", fun i -> box (i.GroupId)
+                "名称", fun i -> box (i.GroupName)
                 |])
-            tt.AddObject(1)
+            for g in api.Groups do 
+                tt.AddObject(g)
             msgArg.QuickMessageReply(tt.ToString())
+            *)

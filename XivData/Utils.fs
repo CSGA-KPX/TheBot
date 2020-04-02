@@ -2,6 +2,7 @@ module XivData.Utils
 
 open System
 open System.Reflection
+open LibFFXIV.GameData.Raw
 
 let TryGetToOption(x : bool, y : 'Value) =
     if x then Some(y)
@@ -18,6 +19,36 @@ let ClearDb() =
     for name in Db.GetCollectionNames() |> Seq.toArray do
         Db.DropCollection(name) |> ignore
     Db.Shrink() |> ignore
+
+let GlobalVerCollection = 
+    let ss = 
+        let archive = 
+                let ResName = "XivData.ffxiv-datamining-master.zip"
+                let assembly = Reflection.Assembly.GetExecutingAssembly()
+                let stream = assembly.GetManifestResourceStream(ResName)
+                new IO.Compression.ZipArchive(stream, IO.Compression.ZipArchiveMode.Read)
+        EmbeddedCsvStroage(archive, "ffxiv-datamining-master/csv/") :> ISheetStroage<seq<string []>>
+    EmbeddedXivCollection(ss, XivLanguage.None, true) :> IXivCollection
+
+/// 整合两个不同版本的表
+/// b >= a
+/// func a b -> bool = true then b else a
+let MergeSheet(a : IXivSheet, b : IXivSheet, func : XivRow * XivRow -> bool ) = 
+    if a.Name <> b.Name then
+        invalidOp "Must merge on same sheet!"
+
+    seq {
+        for row in b do
+            if a.ContainsKey(row.Key) then
+                let rowA = a.[row.Key.Main, row.Key.Alt]
+                let ret = func(rowA, row)
+                if ret then
+                    yield row
+                else
+                    yield rowA
+            else
+                yield row
+    }
 
 type IXivDataSource =
     abstract BuildOrder : int

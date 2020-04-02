@@ -26,10 +26,18 @@ type ItemCollection private () =
         printfn "Building ItemCollection"
         db.EnsureIndex("_id", true) |> ignore
         db.EnsureIndex("Name") |> ignore
-        let col = EmbeddedXivCollection(XivLanguage.ChineseSimplified) :> IXivCollection
-        let sht = col.GetSheet("Item", [| "Name" |])
+
+        let chs = 
+            let col = EmbeddedXivCollection(XivLanguage.ChineseSimplified, true) :> IXivCollection
+            col.GetSheet("Item", [| "Name" |])
+
+        let eng = 
+            Utils.GlobalVerCollection.GetSheet("Item", [| "Name" |])
+
+        let merged = Utils.MergeSheet(chs, eng, (fun (a,b) -> a.As<string>("Name") = ""))
+
         seq {
-            for row in sht do
+            for row in merged do
                 yield { Id = row.Key.Main
                         Name = row.As<string>("Name") }
         }

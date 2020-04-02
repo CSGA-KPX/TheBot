@@ -6,6 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="ffxiv-datamining-master.zip" />
     <Compile Include="Utils.fs" />
     <Compile Include="Item.fs" />
     <Compile Include="Recipe.fs" />
@@ -13,6 +14,9 @@
     <Compile Include="Mentor.fs" />
     <Compile Include="SpecialShop.fs" />
     <Compile Include="GilShop.fs" />
+    <Compile Include="ClassJobMapping.fs" />
+    <Compile Include="CraftGearSet.fs" />
+    <Compile Include="LiteCachedSheet.fs" />
   </ItemGroup>
 
   <ItemGroup>
