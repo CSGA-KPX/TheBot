@@ -45,8 +45,8 @@ module MarketUtils =
 
         member x.ItemRecord =
             match x with
-            | Order x -> Item.ItemCollection.Instance.LookupById(x.ItemId |> int)
-            | Trade x -> Item.ItemCollection.Instance.LookupById(x.ItemId |> int)
+            | Order x -> Item.ItemCollection.Instance.LookupByItemId(x.ItemId |> int)
+            | Trade x -> Item.ItemCollection.Instance.LookupByItemId(x.ItemId |> int)
 
         member x.IsHq =
             match x with
@@ -321,7 +321,7 @@ module XivExpression =
                     // l = r when uniary
                     match r with
                     | Number f ->
-                        let item = Item.ItemCollection.Instance.LookupById(int f)
+                        let item = Item.ItemCollection.Instance.LookupByItemId(int f)
                         let acu = ItemAccumulator.Singleton item
                         Accumulator acu
                     | Accumulator a -> failwithf "#符号仅对数字使用"

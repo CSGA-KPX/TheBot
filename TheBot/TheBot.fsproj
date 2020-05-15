@@ -12,13 +12,15 @@
     <Compile Include="Utils\GenericRPN.fs" />
     <Compile Include="Utils\EmbeddedResource.fs" />
     <Compile Include="Utils\HandlerUtils.fs" />
-    <Compile Include="DiceModule.fs" />
     <Compile Include="EatModule\EatUtils.fs" />
     <Compile Include="EatModule\EatModule.fs" />
+    <Compile Include="DiceModule.fs" />
     <Compile Include="SudoModule.fs" />
     <Compile Include="XivModule\XivUtils.fs" />
     <Compile Include="XivModule\XivMarketModule.fs" />
     <Compile Include="XivModule\XivModule.fs" />
+    <Compile Include="EVEModule\EveUtils.fs" />
+    <Compile Include="EVEModule\EveModule.fs" />
     <Compile Include="RepeaterModule.fs" />
     <Compile Include="TataruBridgeModule.fs" />
     <Compile Include="OtterBridge.fs" />
@@ -40,13 +42,16 @@
     <ProjectReference Include="..\..\LibFFXIV\LibFFXIV.GameData.Raw\LibFFXIV.GameData.Raw.fsproj" />
     <ProjectReference Include="..\..\LibFFXIV\LibFFXIV.Network\LibFFXIV.Network.fsproj" />
     <ProjectReference Include="..\FsCqHttp\FsCqHttp.fsproj" />
-    <ProjectReference Include="..\XivData\XivData.fsproj" />
+    <ProjectReference Include="..\XivData\BotData.fsproj" />
     <ProjectReference Include="K:\KPX\Documents\Visual Studio 2017\Projects\FFXIVNetwork\LibDmfXivClient\LibDmfXivClient.fsproj" />
     <ProjectReference Include="K:\KPX\Documents\Visual Studio 2017\Projects\FFXIVNetwork\LibXIVServerFable\LibDmfXivShared.fsproj" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Update="Eat.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Eve.resx">
       <Generator>ResXFileCodeGenerator</Generator>
     </EmbeddedResource>
   </ItemGroup>

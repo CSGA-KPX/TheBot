@@ -37,3 +37,6 @@ type ClassJobMappingCollection private () =
         |> db.InsertBulk
         |> ignore
         GC.Collect()
+
+    member x.SearchByName(name) = x.LookupById(name)
+    member x.TrySearchByName(name) = x.TryLookupById(name)

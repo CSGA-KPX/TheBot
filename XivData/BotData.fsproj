@@ -1,0 +1,36 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <OutputType>Library</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="EVEData.zip" />
+    <EmbeddedResource Include="ffxiv-datamining-master.zip" />
+    <Compile Include="XivData\Utils.fs" />
+    <Compile Include="XivData\Item.fs" />
+    <Compile Include="XivData\Recipe.fs" />
+    <Compile Include="XivData\World.fs" />
+    <Compile Include="XivData\Mentor.fs" />
+    <Compile Include="XivData\SpecialShop.fs" />
+    <Compile Include="XivData\GilShop.fs" />
+    <Compile Include="XivData\ClassJobMapping.fs" />
+    <Compile Include="XivData\CraftGearSet.fs" />
+    <Compile Include="EveData\EveData.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="LiteDB.FSharp" Version="2.14.0" />
+    <PackageReference Include="System.IO.Compression" Version="4.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\LibFFXIV\LibFFXIV.GameData.Raw\LibFFXIV.GameData.Raw.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="FSharp.Core" Version="4.7.0" />
+  </ItemGroup>
+
+</Project>

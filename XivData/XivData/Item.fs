@@ -45,6 +45,9 @@ type ItemCollection private () =
         |> ignore
         GC.Collect()
 
+    member x.LookupByItemId(id : int) = x.LookupById(id)
+
+    member x.TryLookupByItemId(id : int) = x.TryLookupById(id)
 
     member x.TryLookupByName(name : string) =
         let ret = x.Collection.FindOne(LiteDB.Query.EQ("Name", new LiteDB.BsonValue(name)))

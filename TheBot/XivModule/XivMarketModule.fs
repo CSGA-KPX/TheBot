@@ -20,7 +20,7 @@ type XivMarketModule() =
 
     let strToItemResult (str : string) =
         let ret =
-            if isNumber (str) then itemCol.TryLookupById(Convert.ToInt32(str))
+            if isNumber (str) then itemCol.TryLookupByItemId(Convert.ToInt32(str))
             else itemCol.TryLookupByName(str.TrimEnd(CommandUtils.XivSpecialChars))
         if ret.IsSome then Ok ret.Value
         else Error str
@@ -248,7 +248,7 @@ type XivMarketModule() =
             let hdrs = 
                 [|
                     "兑换", fun (info : SpecialShop.SpecialShopInfo) ->
-                                curItem <- Some (itemCol.LookupById(info.ReceiveItem))
+                                curItem <- Some (itemCol.LookupByItemId(info.ReceiveItem))
                                 updateCur(curItem.Value)
                                 box (curItem.Value.Name)
                     "价格", fun _ -> 

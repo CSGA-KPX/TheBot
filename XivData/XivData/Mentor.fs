@@ -35,6 +35,8 @@ type ShouldOrAvoidCollection private () =
         |> ignore
         GC.Collect()
 
+    member x.GetByKey(key : int) = x.LookupById(key)
+
 type LocationCollection private () =
     inherit Utils.XivDataSource<int, StringRecord>()
 
@@ -58,3 +60,5 @@ type LocationCollection private () =
         |> db.InsertBulk
         |> ignore
         GC.Collect()
+
+    member x.GetByKey(key : int) = x.LookupById(key)

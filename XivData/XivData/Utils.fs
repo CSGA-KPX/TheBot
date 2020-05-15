@@ -23,7 +23,7 @@ let ClearDb() =
 let GlobalVerCollection = 
     let ss = 
         let archive = 
-                let ResName = "XivData.ffxiv-datamining-master.zip"
+                let ResName = "BotData.ffxiv-datamining-master.zip"
                 let assembly = Reflection.Assembly.GetExecutingAssembly()
                 let stream = assembly.GetManifestResourceStream(ResName)
                 new IO.Compression.ZipArchive(stream, IO.Compression.ZipArchiveMode.Read)
@@ -31,7 +31,9 @@ let GlobalVerCollection =
     EmbeddedXivCollection(ss, XivLanguage.None, true) :> IXivCollection
 
 /// 整合两个不同版本的表
+//
 /// b >= a
+//
 /// func a b -> bool = true then b else a
 let MergeSheet(a : IXivSheet, b : IXivSheet, func : XivRow * XivRow -> bool ) = 
     if a.Name <> b.Name then
@@ -62,18 +64,18 @@ type XivDataSource<'Id, 'Value>() as x =
 
     member x.Count() = col.Count()
 
-    member x.Item(id : 'Id) = x.TryLookupById(id)
+    member internal x.Item(id : 'Id) = x.TryLookupById(id)
 
     member _.ClearCollection() = Db.DropCollection(cName) |> ignore
     member _.CollectionExists() = Db.CollectionExists(cName)
 
     /// 部分类型Id无效，请用别的方法
     /// 有可能返回null
-    member _.LookupById(id : 'Id) = col.FindById(LiteDB.BsonValue(id))
+    member internal _.LookupById(id : 'Id) = col.FindById(LiteDB.BsonValue(id))
 
 
     /// 部分类型Id无效，请用别的方法
-    member _.TryLookupById(id : 'Id) =
+    member internal _.TryLookupById(id : 'Id) =
         let ret = col.FindById(LiteDB.BsonValue(id))
         if isNull (box ret) then None
         else Some ret

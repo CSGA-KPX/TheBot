@@ -9,6 +9,7 @@ open KPX.FsCqHttp.Handler.CommandHandlerBase
 open Newtonsoft.Json.Linq
 open TheBot.Utils.Config
 
+(*
 type MessageEvent = KPX.FsCqHttp.DataType.Event.Message.MessageEvent
 
 let private removeRes() = 
@@ -66,7 +67,7 @@ type OtterBridge() as x =
                 cts.Cancel()
                 ws <- new ClientWebSocket()
                 cts <- new CancellationTokenSource()
-            ws.Options.SetRequestHeader("User-Agent", "CQHttp/4.14.1")
+            ws.Options.SetRequestHeader("User-Agent", "CQHttp/4.15.0")
             ws.Options.SetRequestHeader("Authorization", "Token Authorization")
             ws.Options.SetRequestHeader("X-Self-ID", "3084801066")
             ws.Options.SetRequestHeader("X-Client-Role", "Universal")
@@ -162,3 +163,5 @@ type OtterBridge() as x =
         member x.Dispose() = 
             ws.Dispose()
             cts.Dispose()
+
+*)

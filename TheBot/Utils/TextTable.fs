@@ -27,7 +27,15 @@ type TextTable(cols : int) =
 
     member x.AddPreTable(str : string) =  preTableLines.Add(str)
 
+    member x.AddPreTable(tt : TextTable) = 
+        for line in tt.ToLines() do 
+            preTableLines.Add(line)
+
     member x.AddPostTable(str : string) = postTableLines.Add(str)
+
+    member x.AddPostTable(tt : TextTable) = 
+        for line in tt.ToLines() do 
+        postTableLines.Add(line)
 
     /// 添加一行，用"--"补齐不足行数
     member x.AddRowPadding([<ParamArray>] fields : Object []) = 
