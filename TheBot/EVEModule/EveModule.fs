@@ -11,29 +11,6 @@ open EveData
 type EveModule() =
     inherit CommandHandlerBase()
 
-    static let (EveTypeIdCache, EveTypeNameCache) = 
-        let name = new Dictionary<string, EveData.EveType>()
-        let id   = new Dictionary<int, EveData.EveType>()
-
-        for item in EveData.GetEveTypes() do 
-            if not <| name.ContainsKey(item.TypeName) then
-                name.Add(item.TypeName, item)
-            id.Add(item.TypeId, item)
-
-        (id, name)
-
-    static let (EveBlueprintCache, itemToBp) = 
-        let bp = Dictionary<int, EveData.EveBlueprint>()
-        let item = Dictionary<int, EveData.EveBlueprint>()
-
-        for bpinfo in EveData.GetBlueprints() do 
-            bp.Add(bpinfo.BlueprintTypeID, bpinfo)
-            let p = bpinfo.Products |> Array.tryHead
-            if p.IsSome && EveTypeIdCache.ContainsKey(bpinfo.BlueprintTypeID) then
-                item.Add(p.Value.TypeId, bpinfo)
-
-        (bp, item)
-
     [<CommandHandlerMethodAttribute("updateevedb", "刷新价格数据库（管理员）", "")>]
         member x.HandleRefreshCache(msgArg : CommandArgs) =
             failOnNonAdmin(msgArg)
@@ -105,7 +82,7 @@ type EveModule() =
 
             let final = 
                 bp.AdjustMaterialsByME(cfg.MaterialEfficiency)
-                |> Array.map (fun m -> {m with Quantity = m.Quantity * (float runs)})
+                |> Array.map (fun m -> {m with Quantity = m.Quantity * (float runs) |> ceil })
 
             for m in final do 
                 tt.AddRow(EveTypeIdCache.[m.TypeId].TypeName, m.Quantity)
@@ -132,7 +109,7 @@ type EveModule() =
             let rec loop (bp : EveData.EveBlueprint, runs : float) = 
                 let ms =
                     bp.AdjustMaterialsByME(cfg.MaterialEfficiency)
-                    |> Array.map (fun m -> {m with Quantity = m.Quantity * runs})
+                    |> Array.map (fun m -> {m with Quantity = m.Quantity * runs |> ceil })
 
                 for m in ms do 
                     let next, bp = itemToBp.TryGetValue(m.TypeId)
@@ -180,7 +157,7 @@ type EveModule() =
             let rec loop (bp : EveData.EveBlueprint, runs : float) = 
                 let ms =
                     bp.AdjustMaterialsByME(cfg.MaterialEfficiency)
-                    |> Array.map (fun m -> {m with Quantity = m.Quantity * runs})
+                    |> Array.map (fun m -> {m with Quantity = m.Quantity * runs |> ceil })
 
                 let total = 
                     ms
@@ -232,7 +209,6 @@ type EveModule() =
 
             msgArg.QuickMessageReply(tt.ToString())
 
-    
     [<CommandHandlerMethodAttribute("EVE压矿", "EVE蓝图成本计算", "")>]
         member x.HandleOreCompression(msgArg : CommandArgs) =
             let ores = 
@@ -249,4 +225,82 @@ type EveModule() =
 
                     if np <> 0.0 then
                         tt.AddRow(normal.TypeName, np*100.0, cp, cp/np/100.0)
+            msgArg.QuickMessageReply(tt.ToString())
+
+        [<CommandHandlerMethodAttribute("errc2", "EVE蓝图成本计算", "")>]
+        member x.HandleERRCV2(msgArg : CommandArgs) = 
+            let (name, cfg) = ScanConfig(msgArg.Arguments)
+            let succ, item = EveTypeNameCache.TryGetValue(name)
+            if not succ then
+                failwithf "找不到物品"
+
+            let bp = 
+                let succ, bp = EveBlueprintCache.TryGetValue(item.TypeId)
+                if not succ then
+                    let succ, bp = itemToBp.TryGetValue(item.TypeId)
+                    if not succ then
+                        failwithf "找不到蓝图信息'"
+                    else
+                        // 输入是物品，但是存在制造蓝图
+                        bp
+                else
+                    // 输入是蓝图
+                    bp
+
+            let tt = TextTable.FromHeader([|"组件（无基本材料）"; "买成品"; "搓（材料+费）"|])
+            tt.AddPreTable("价格有延迟，算法不稳定，市场有风险, 投资需谨慎")
+            tt.AddPreTable(sprintf "材料效率：%i%% 成本指数：%i%% 设施调整：%i%% 设施税率%i%%"
+                cfg.MaterialEfficiency
+                cfg.SystemCostIndex
+                cfg.StructureBonuses
+                cfg.StructureTax
+            )
+
+            let getFee price = 
+                let fee = price * (pct cfg.SystemCostIndex) * (pct cfg.StructureBonuses)
+                let tax = fee * (pct cfg.StructureTax)
+                fee + tax
+  
+            let rec getRootMaterialsPrice (bp : EveBlueprint) (need : float) = 
+                let pp = bp.Products |> Array.head
+                let runs = need / pp.Quantity
+                let ms = bp.AdjustMaterialsByME(cfg.DefME)
+
+                let mutable sum = 0.0
+
+                for m in ms do 
+                    let amount = m.Quantity * runs |> ceil
+                    let price = GetItemPriceCached(m.TypeId) * amount
+                    let fee = getFee(price)
+                    sum <- sum + price + fee
+
+                    let succ, bp = itemToBp.TryGetValue(m.TypeId)
+                    if succ then
+                        //有蓝图
+                        let p = bp.Products |> Array.head
+          
+                        sum <- sum + getRootMaterialsPrice bp amount
+                sum
+
+            let mutable optCost = 0.0
+            // 所有材料
+            // 材料名称 数量 售价（小计） 制造成本（小计） 最佳成本（小计）
+            let ms, runs = bp.AdjustMaterialsByME(cfg.InputME), cfg.GetRuns(bp)
+            for m in ms do 
+                let amount = m.Quantity * runs |> ceil
+                let name   = EveTypeIdCache.[m.TypeId].TypeName
+                let buy = GetItemPriceCached(m.TypeId) * amount
+
+                let succ, bp = itemToBp.TryGetValue(m.TypeId)
+                if succ then
+                    let cost = getRootMaterialsPrice bp amount
+                    optCost <- optCost + (if cost >= buy then buy else cost)
+                    tt.AddRow(name, buy, cost |> ceil)
+                else
+                    optCost <- optCost + buy
+                    tt.AddRow(name, buy, "--")
+
+            let sell = GetItemPriceCached((bp.Products |> Array.head).TypeId) * (cfg.GetItems(bp))
+
+            tt.AddRowPadding("售价/最佳造价", sell |> ceil, optCost |> ceil)
             msgArg.QuickMessageReply(tt.ToString())

@@ -1,6 +1,7 @@
 namespace TheBot.Module.XivModule
 
 open System
+open System.Text
 open KPX.FsCqHttp.Handler.CommandHandlerBase
 open XivData
 open TheBot.Module.XivModule.Utils
@@ -155,3 +156,38 @@ type XivModule() =
             MentorUtils.location.GetByKey(idx).Value
         sw.WriteLine("推荐排本场所: {0}", location)
         msgArg.QuickMessageReply(sw.ToString())
+
+    [<CommandHandlerMethodAttribute("nuannuan", "暖暖", "")>]
+    [<CommandHandlerMethodAttribute("nrnr", "暖暖", "")>]
+    member x.HandleNrnr(msgArg : CommandArgs) = 
+        use hc = new Net.Http.HttpClient()
+        hc.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)")
+        let html = hc
+                    .GetStreamAsync("https://bbs.nga.cn/read.php?tid=14561874")
+                    .ConfigureAwait(false)
+                    .GetAwaiter()
+                    .GetResult()
+
+        let doc = HtmlAgilityPack.HtmlDocument()
+        doc.Load(html, Encoding.GetEncoding("GBK"))
+
+        let n = doc.DocumentNode.SelectSingleNode("//span[@id = \"postcontentandsubject0\"]")
+        //x.Logger.Info(n.InnerHtml)
+        let ts =
+            n.ChildNodes
+            |> Seq.filter (fun n -> (n.InnerText.Trim() <> ""))
+            |> Seq.map (fun n -> n.InnerText)
+            |> Seq.toArray
+
+        let sb = StringBuilder()
+
+        sb.AppendLine(ts.[0]) |> ignore
+
+        let is = ts |> Array.findIndex (fun s -> s.Contains("至"))
+        let ie = ts |> Array.findIndex (fun s -> s.Contains("附件"))
+
+        for str in ts.[is .. ie - 2] do 
+            if str = "染色：" then sb.AppendLine() |> ignore
+            if str <> "------" then sb.AppendLine(str) |> ignore
+        msgArg.QuickMessageReply(sb.ToString())
+        ()

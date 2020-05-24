@@ -27,14 +27,38 @@ type EveBlueprint =
         BlueprintTypeID : int
     }
 
+    /// 计算所需流程数的材料，结果会ceil
+    member x.GetMaterialsByRuns(r : float) = 
+        let ms = 
+            x.Materials
+            |> Array.map (fun m -> {m with Quantity = m.Quantity * r |> ceil})
+        let ps = 
+            x.Products
+            |> Array.map (fun p -> {p with Quantity = p.Quantity * r |> ceil})
+
+        {x with Materials = ms; Products = ps}
+
+    /// 计算所需物品数量的材料，结果会ceil
+    member x.GetMaterialsByItems(q : float) = 
+        let runs = q / x.ProductQuantity
+        x.GetMaterialsByRuns(runs)
+
+
+    /// 根据材料效率调整材料数量
     member x.AdjustMaterialsByME(me : int) =
         let factor = (100 - me) |> pct
         x.Materials
         |> Array.map (fun m -> 
-            let q = (float m.Quantity) * factor |> ceil
+            let q = (float m.Quantity) * factor
             printfn "%i 需要 %f -> %f 个" m.TypeId m.Quantity q
             {m with Quantity = q}
         )
+
+    /// 仅有一个产品时返回材料Id，其他则抛出异常
+    member x.ProductId = (x.Products |> Array.head).TypeId
+
+    /// 仅有一个产品时返回材料数量，其他则抛出异常
+    member x.ProductQuantity = (x.Products |> Array.head).Quantity
 
 type EveGroup =
     {

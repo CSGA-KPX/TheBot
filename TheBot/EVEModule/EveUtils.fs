@@ -5,6 +5,30 @@ open System.Collections.Generic
 open System.Net.Http
 open Newtonsoft.Json.Linq
 
+let (EveTypeIdCache, EveTypeNameCache) = 
+    let name = new Dictionary<string, EveData.EveType>()
+    let id   = new Dictionary<int, EveData.EveType>()
+
+    for item in EveData.GetEveTypes() do 
+        if not <| name.ContainsKey(item.TypeName) then
+            name.Add(item.TypeName, item)
+        id.Add(item.TypeId, item)
+
+    (id, name)
+
+let (EveBlueprintCache, itemToBp) = 
+    let bp = Dictionary<int, EveData.EveBlueprint>()
+    let item = Dictionary<int, EveData.EveBlueprint>()
+
+    for bpinfo in EveData.GetBlueprints() do 
+        bp.Add(bpinfo.BlueprintTypeID, bpinfo)
+        let p = bpinfo.Products |> Array.tryHead
+        if p.IsSome && EveTypeIdCache.ContainsKey(bpinfo.BlueprintTypeID) then
+            item.Add(p.Value.TypeId, bpinfo)
+
+    (bp, item)
+
+
 type internal PriceCache = 
     {
         TypeId : int
@@ -91,6 +115,11 @@ type FinalMaterials() =
 
 type EveCalculatorConfig = 
     {
+        // 默认材料效率
+        DefME : int
+        // 输入物品材料效率
+        InputME : int
+
         MaterialEfficiency : int
         SystemCostIndex    : int
         StructureBonuses   : int
@@ -110,8 +139,25 @@ type EveCalculatorConfig =
             else
                 items / (bp.Products |> Array.head).Quantity
 
+    member x.GetItems(bp : EveData.EveBlueprint) = 
+        let pp = bp.Products |> Array.head
+        let runs = x.InitRuns |> float
+        let items = x.InitItems |> float
+
+        if runs <> 0.0 then
+            runs * pp.Quantity
+        else
+            if items = 0.0 then
+                invalidOp ""
+            else
+                items
+
     static member Default = 
         {
+            // 默认材料效率
+            DefME = 10
+            // 输入图材料效率
+            InputME = 10
             MaterialEfficiency = 5
             SystemCostIndex    = 5
             StructureBonuses   = 100
@@ -133,6 +179,8 @@ let ScanConfig (input : string[]) =
                     if not vsucc then
                         failwithf "参数不合法"
                     match arg.ToLowerInvariant() with
+                    | "ime" -> config <- {config with InputME = value}
+                    | "dme" -> config <- {config with DefME = value}
                     |  "me" -> config <- {config with MaterialEfficiency = value}
                     | "sci" -> config <- {config with SystemCostIndex = value}
                     |  "sb" -> config <- {config with StructureBonuses = value}
@@ -143,4 +191,5 @@ let ScanConfig (input : string[]) =
                 else
                     yield i
         |]
+    
     String.Join(" ", left), config
