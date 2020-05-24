@@ -120,7 +120,6 @@ type EveCalculatorConfig =
         // 输入物品材料效率
         InputME : int
 
-        MaterialEfficiency : int
         SystemCostIndex    : int
         StructureBonuses   : int
         StructureTax       : int
@@ -128,29 +127,19 @@ type EveCalculatorConfig =
         InitItems          : int
     }
 
-    member x.GetRuns(bp : EveData.EveBlueprint) = 
-        let runs = x.InitRuns |> float
-        let items = x.InitItems |> float
-        if runs <> 0.0 then
-            runs
-        else
-            if items = 0.0 then
-                invalidOp ""
-            else
-                items / (bp.Products |> Array.head).Quantity
-
-    member x.GetItems(bp : EveData.EveBlueprint) = 
-        let pp = bp.Products |> Array.head
+    /// 调整蓝图信息，合并计算材料效率和流程/物品数
+    member x.ConfigureBlueprint(bp : EveData.EveBlueprint) = 
         let runs = x.InitRuns |> float
         let items = x.InitItems |> float
 
+        let bp = bp.ApplyMaterialEfficiency(x.InputME)
+        
         if runs <> 0.0 then
-            runs * pp.Quantity
+            bp.GetBlueprintByRuns(runs)
         else
             if items = 0.0 then
-                invalidOp ""
-            else
-                items
+                invalidOp "item = 0 && run = 0"
+            bp.GetBlueprintByItems(items)
 
     static member Default = 
         {
@@ -158,7 +147,6 @@ type EveCalculatorConfig =
             DefME = 10
             // 输入图材料效率
             InputME = 10
-            MaterialEfficiency = 5
             SystemCostIndex    = 5
             StructureBonuses   = 100
             StructureTax       = 10
@@ -181,7 +169,7 @@ let ScanConfig (input : string[]) =
                     match arg.ToLowerInvariant() with
                     | "ime" -> config <- {config with InputME = value}
                     | "dme" -> config <- {config with DefME = value}
-                    |  "me" -> config <- {config with MaterialEfficiency = value}
+                    |  "me" -> config <- {config with InputME = value; DefME = value}
                     | "sci" -> config <- {config with SystemCostIndex = value}
                     |  "sb" -> config <- {config with StructureBonuses = value}
                     | "tax" -> config <- {config with StructureTax = value}

@@ -28,7 +28,7 @@ type EveBlueprint =
     }
 
     /// 计算所需流程数的材料，结果会ceil
-    member x.GetMaterialsByRuns(r : float) = 
+    member x.GetBlueprintByRuns(r : float) = 
         let ms = 
             x.Materials
             |> Array.map (fun m -> {m with Quantity = m.Quantity * r |> ceil})
@@ -39,20 +39,20 @@ type EveBlueprint =
         {x with Materials = ms; Products = ps}
 
     /// 计算所需物品数量的材料，结果会ceil
-    member x.GetMaterialsByItems(q : float) = 
+    member x.GetBlueprintByItems(q : float) = 
         let runs = q / x.ProductQuantity
-        x.GetMaterialsByRuns(runs)
-
+        x.GetBlueprintByRuns(runs)
 
     /// 根据材料效率调整材料数量
-    member x.AdjustMaterialsByME(me : int) =
+    member x.ApplyMaterialEfficiency(me : int) =
         let factor = (100 - me) |> pct
-        x.Materials
-        |> Array.map (fun m -> 
-            let q = (float m.Quantity) * factor
-            printfn "%i 需要 %f -> %f 个" m.TypeId m.Quantity q
-            {m with Quantity = q}
-        )
+        let ms = 
+            x.Materials
+            |> Array.map (fun m -> 
+                let q = (float m.Quantity) * factor
+                {m with Quantity = q}
+            )
+        {x with Materials = ms}
 
     /// 仅有一个产品时返回材料Id，其他则抛出异常
     member x.ProductId = (x.Products |> Array.head).TypeId
