@@ -1,7 +1,6 @@
 ﻿module EveData
 open System
 open System.Collections.Generic
-open System.Text
 open System.IO
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
@@ -12,6 +11,9 @@ type EveType =
     {
         TypeId : int
         TypeName : string
+        GroupId : int
+        CategoryId : int
+        Volume : float
     }
 
 type EveMaterial = 
@@ -66,6 +68,14 @@ type EveGroup =
         CategoryId : int
     }
 
+type RefineInfo = 
+    {
+        OreType : EveType
+        Volume  : float
+        RefineUnit : float
+        Yields  : EveMaterial []
+    }
+
 let GetGroup() =
     use archive = 
             let ResName = "BotData.EVEData.zip"
@@ -77,7 +87,6 @@ let GetGroup() =
 
     JObject.Load(r).ToObject<Dictionary<int, EveGroup>>()
     
-
 let GetEveTypes() = 
     seq {
         use archive = 
@@ -105,15 +114,23 @@ let GetEveTypes() =
 
                 let tid = o.GetValue("typeID").ToObject<int>()
                 let mutable name = o.GetValue("typeName").ToObject<string>()
-
                 if tid = 37170 then name <- "屹立大型设备制造效率 I"
                 
+                let vol = 
+                    if o.ContainsKey("volume") then
+                        o.GetValue("volume").ToObject<float>()
+                    else
+                        nan
+
                 let published = o.GetValue("published").ToObject<bool>()
 
                 if allow && published then
                     yield {
                         TypeId = tid
                         TypeName = name
+                        GroupId = gid
+                        CategoryId = cat
+                        Volume = vol
                     }
     }
 
@@ -154,3 +171,41 @@ let GetBlueprints() =
                         BlueprintTypeID = bpid
                     }
     }
+
+let GetTypeMaterials() = 
+    seq {
+        use archive = 
+                let ResName = "BotData.EVEData.zip"
+                let assembly = Reflection.Assembly.GetExecutingAssembly()
+                let stream = assembly.GetManifestResourceStream(ResName)
+                new IO.Compression.ZipArchive(stream, IO.Compression.ZipArchiveMode.Read)
+        use f = archive.GetEntry("typematerials.json").Open()
+        use r = new JsonTextReader(new StreamReader(f))
+
+        while r.Read() do 
+            if r.TokenType = JsonToken.PropertyName then
+                let inputTypeId = r.Value :?> string |> int
+                r.Read() |> ignore
+                let o = JObject.Load(r)
+                let ms = o.GetValue("materials") :?> JArray
+                yield inputTypeId, [|
+                    for m in ms do 
+                        let m = m :?> JObject
+                        let tid = m.GetValue("materialTypeID").ToObject<int>()
+                        let q   = m.GetValue("quantity").ToObject<float>()
+                        yield {TypeId = tid; Quantity = q}
+                |]
+    }
+
+[<Literal>]
+/// 普通矿
+let OreNames = "凡晶石,灼烧岩,干焦岩,斜长岩,奥贝尔石,水硼砂,杰斯贝矿,希莫非特,同位原矿,片麻岩,黑赭石,灰岩,克洛基石,双多特石,艾克诺岩,基腹断岩"
+
+[<Literal>]
+/// 冰矿
+let IceNames = "白釉冰,冰晶矿,粗蓝冰,电冰体,富清冰,光滑聚合冰,黑闪冰,加里多斯冰矿,聚合冰体,蓝冰矿,朴白釉冰,清冰锥"
+
+[<Literal>]
+/// 卫星矿石
+let MoonNames = "沸石,钾盐,沥青,柯石英,磷钇矿,独居石,铈铌钙钛矿,硅铍钇矿,菱镉矿,砷铂矿,钒铅矿,铬铁矿,钴酸盐,黑稀金矿,榍石,白钨矿,钒钾铀矿,锆石,铯榴石,朱砂"
+

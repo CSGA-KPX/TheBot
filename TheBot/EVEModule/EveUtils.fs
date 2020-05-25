@@ -1,13 +1,15 @@
 ﻿module TheBot.Module.EveModule.Utils
 open System
+open System.IO
 open System.Xml
 open System.Collections.Generic
 open System.Net.Http
 open Newtonsoft.Json.Linq
+open EveData
 
 let (EveTypeIdCache, EveTypeNameCache) = 
-    let name = new Dictionary<string, EveData.EveType>()
-    let id   = new Dictionary<int, EveData.EveType>()
+    let name = new Dictionary<string, EveType>()
+    let id   = new Dictionary<int, EveType>()
 
     for item in EveData.GetEveTypes() do 
         if not <| name.ContainsKey(item.TypeName) then
@@ -17,10 +19,10 @@ let (EveTypeIdCache, EveTypeNameCache) =
     (id, name)
 
 let (EveBlueprintCache, itemToBp) = 
-    let bp = Dictionary<int, EveData.EveBlueprint>()
-    let item = Dictionary<int, EveData.EveBlueprint>()
+    let bp = Dictionary<int, EveBlueprint>()
+    let item = Dictionary<int, EveBlueprint>()
 
-    for bpinfo in EveData.GetBlueprints() do 
+    for bpinfo in GetBlueprints() do 
         bp.Add(bpinfo.BlueprintTypeID, bpinfo)
         let p = bpinfo.Products |> Array.tryHead
         if p.IsSome && EveTypeIdCache.ContainsKey(bpinfo.BlueprintTypeID) then
@@ -28,6 +30,35 @@ let (EveBlueprintCache, itemToBp) =
 
     (bp, item)
 
+/// 采矿分析数据
+let OreRefineInfo = 
+    seq {
+        let moon = MoonNames.Split(',') |> set
+        let ice  = IceNames.Split(',') |> set
+        let ore  = OreNames.Split(',') |> set
+
+        for tid, ms in GetTypeMaterials() do 
+            let succ, t = EveTypeIdCache.TryGetValue(tid)
+            // 25 = 小行星
+            if succ && t.CategoryId = 25 then
+                let tn = t.TypeName
+                let isMoon = moon.Contains(tn)
+                let isIce  = ice.Contains(tn)
+                let isOre  = ore.Contains(tn)
+                if isMoon || isIce || isOre then
+                    let refine = 
+                        {
+                            OreType = t
+                            Volume = t.Volume
+                            RefineUnit = 
+                                if isMoon || isOre then 100.0
+                                elif isIce then 1.0
+                                else failwith "这不是矿"
+                            Yields = ms
+                        }
+                    yield tn, refine
+    }
+    |> readOnlyDict
 
 type internal PriceCache = 
     {
@@ -111,7 +142,6 @@ type FinalMaterials() =
     member x.Get() =
         [| for kv in m do
             yield (kv.Key, kv.Value) |]
-
 
 type EveCalculatorConfig = 
     {
