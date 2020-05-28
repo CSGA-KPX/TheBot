@@ -77,6 +77,8 @@ let private hc = new HttpClient()
 
 let private globalCache = Dictionary<int, PriceCache>()
 
+
+
 let GetItemPrice (typeid : int) = 
     let url = MarketEndpoint typeid
     printfn "正在请求：%s" url
@@ -86,8 +88,11 @@ let GetItemPrice (typeid : int) =
                 .GetAwaiter()
                 .GetResult()
     let obj = JObject.Parse(json)
-    let obj = obj.GetValue("sell") :?> JObject
-    obj.GetValue("min").ToObject<float>()
+    let sellMin = (obj.GetValue("sell") :?> JObject).GetValue("min").ToObject<float>()
+    let buyMax  = (obj.GetValue("buy") :?> JObject).GetValue("max").ToObject<float>()
+
+    sellMin, buyMax
+
 
 let GetItemPriceCached (item : int) =
     let succ, price = globalCache.TryGetValue(item)
@@ -95,7 +100,7 @@ let GetItemPriceCached (item : int) =
         let cache = 
             {
                 TypeId = item
-                Price  = GetItemPrice(item)
+                Price  = GetItemPrice(item) |> fst
                 Updated = DateTime.Now
             }
         globalCache.[item] <- cache

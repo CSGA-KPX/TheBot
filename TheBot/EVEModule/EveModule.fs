@@ -25,7 +25,17 @@ type EveModule() =
                 failwith "找不到物品"
             else
                 let sell = GetItemPriceCached(item.TypeId)
-                msgArg.QuickMessageReply(String.Format("物品{0} 出售价格：{1:N2}", item.TypeName, sell))
+                msgArg.QuickMessageReply(String.Format("{0} 出售价格：{1:N2}", item.TypeName, sell))
+
+    [<CommandHandlerMethodAttribute("emr", "实时价格查询（市场中心API）", "")>]
+        member x.HandleEveMarketR(msgArg : CommandArgs) =
+            let name = String.Join(" ", msgArg.Arguments)
+            let succ, item = EveTypeNameCache.TryGetValue(name)
+            if not succ then
+                failwith "找不到物品"
+            else
+                let sell, buy = GetItemPrice(item.TypeId)
+                msgArg.QuickMessageReply(String.Format("{0} 出售：{1:N2} 买入：{2:N2}", item.TypeName, sell, buy))
 
     [<CommandHandlerMethodAttribute("eme", "EVE蓝图材料效率计算", "")>]
         member x.HandleME(msgArg : CommandArgs) =
@@ -142,6 +152,7 @@ type EveModule() =
                         tt.AddRow(normal.TypeName, np*100.0, cp, cp/np/100.0)
             msgArg.QuickMessageReply(tt.ToString())
 
+    [<CommandHandlerMethodAttribute("EVE采矿", "EVE挖矿利润", "")>]
     [<CommandHandlerMethodAttribute("EVE挖矿", "EVE挖矿利润", "")>]
         member x.HandleOreMining(msgArg : CommandArgs) =
             let mineSpeed = 10.0 // m^3/s
@@ -240,6 +251,7 @@ type EveModule() =
                 sum
 
             let mutable optCost = 0.0
+            let mutable allCost = 0.0
 
             // 所有材料
             // 材料名称 数量 售价（小计） 制造成本（小计） 最佳成本（小计）
@@ -249,18 +261,21 @@ type EveModule() =
                 let buy    = GetItemPriceCached(m.TypeId) * amount
                 
                 optCost <- optCost + getFee(buy)
+                allCost <- allCost + getFee(buy)
 
                 let succ, bp = itemToBp.TryGetValue(m.TypeId)
                 if succ then
                     let bp = bp.ApplyMaterialEfficiency(cfg.DefME).GetBlueprintByItems(amount)
                     let cost = getRootMaterialsPrice bp
                     optCost <- optCost + (if (cost >= buy) && (buy <> 0.0) then buy else cost)
+                    allCost <- allCost + cost
                     tt.AddRow(name, amount, buy, cost |> ceil)
                 else
                     optCost <- optCost + buy
+                    allCost <- allCost + buy
                     tt.AddRow(name, amount, buy, "--")
 
             let sell = GetItemPriceCached((bp.Products |> Array.head).TypeId) * (finalBp.ProductQuantity)
 
-            tt.AddRowPadding("售价/最佳造价", sell |> ceil, optCost |> ceil)
+            tt.AddRowPadding("售价/最佳/造价", sell |> ceil, optCost |> ceil, allCost |> ceil)
             msgArg.QuickMessageReply(tt.ToString())

@@ -40,10 +40,19 @@ type EveBlueprint =
 
         {x with Materials = ms; Products = ps}
 
-    /// 计算所需物品数量的材料，结果会ceil
+    /// 计算所需物品数量的材料，结果不进行ceil
     member x.GetBlueprintByItems(q : float) = 
+        let one = x.GetBlueprintByRuns(1.0)
         let runs = q / x.ProductQuantity
-        x.GetBlueprintByRuns(runs)
+
+        let ms = 
+            x.Materials
+            |> Array.map (fun m -> {m with Quantity = m.Quantity * runs})
+        let ps = 
+            x.Products
+            |> Array.map (fun p -> {p with Quantity = p.Quantity * runs})
+
+        {x with Materials = ms; Products = ps}
 
     /// 根据材料效率调整材料数量
     member x.ApplyMaterialEfficiency(me : int) =
