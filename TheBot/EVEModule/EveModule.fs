@@ -11,6 +11,24 @@ open EveData
 type EveModule() =
     inherit CommandHandlerBase()
 
+    /// 物品名或蓝图名查找蓝图
+    let typeNameToBp(name : string) = 
+        let succ, item = EveTypeNameCache.TryGetValue(name)
+        if not succ then
+            failwithf "找不到物品"
+
+        let succ, bp = EveBlueprintCache.TryGetValue(item.TypeId)
+        if not succ then
+            let succ, bp = itemToBp.TryGetValue(item.TypeId)
+            if not succ then
+                failwithf "找不到蓝图信息"
+            else
+                // 输入是物品，但是存在制造蓝图
+                bp
+        else
+            // 输入是蓝图
+            bp
+
     [<CommandHandlerMethodAttribute("updateevedb", "刷新价格数据库（管理员）", "")>]
         member x.HandleRefreshCache(msgArg : CommandArgs) =
             failOnNonAdmin(msgArg)
@@ -76,12 +94,7 @@ type EveModule() =
         member x.HandleR(msgArg : CommandArgs) =
             let (name, cfg) = ScanConfig(msgArg.Arguments)
 
-            let succ, item = EveTypeNameCache.TryGetValue(name)
-            if not succ then
-                failwithf "找不到物品"
-            let succ, bp = EveBlueprintCache.TryGetValue(item.TypeId)
-            if not succ then
-                failwithf "找不到蓝图信息'"
+            let bp = typeNameToBp(name)
 
             let tt = TextTable.FromHeader([|"名称"; "数量";|])
 
@@ -101,12 +114,7 @@ type EveModule() =
         member x.HandleRR(msgArg : CommandArgs) =
             let (name, cfg) = ScanConfig(msgArg.Arguments)
 
-            let succ, item = EveTypeNameCache.TryGetValue(name)
-            if not succ then
-                failwithf "找不到物品"
-            let succ, bp = EveBlueprintCache.TryGetValue(item.TypeId)
-            if not succ then
-                failwithf "找不到蓝图信息'"
+            let bp = typeNameToBp(name)
 
             let tt = TextTable.FromHeader([|"名称"; "数量";|])
 
@@ -116,12 +124,13 @@ type EveModule() =
                 cfg.DefME
                 finalBp.ProductQuantity
             )
+            tt.AddPreTable(sprintf "展开行星材料：%b 展开反应公式：%b" cfg.ExpandPlanet cfg.ExpandReaction)
 
             let final = FinalMaterials()
             let rec loop (bp : EveData.EveBlueprint) = 
                 for m in bp.Materials do 
-                    let next, bp = itemToBp.TryGetValue(m.TypeId)
-                    if next then
+                    let hasNext, bp = itemToBp.TryGetValue(m.TypeId)
+                    if hasNext && cfg.BpCanExpand(bp) then
                         let bp = bp.ApplyMaterialEfficiency(cfg.DefME).GetBlueprintByItems(m.Quantity)
                         loop(bp)
                     else
@@ -196,86 +205,73 @@ type EveModule() =
 
             msgArg.QuickMessageReply(tt.ToString())
 
-        [<CommandHandlerMethodAttribute("errc", "EVE蓝图成本计算", "")>]
-        member x.HandleERRCV2(msgArg : CommandArgs) = 
-            let (name, cfg) = ScanConfig(msgArg.Arguments)
-            let succ, item = EveTypeNameCache.TryGetValue(name)
-            if not succ then
-                failwithf "找不到物品"
+    [<CommandHandlerMethodAttribute("errc", "EVE蓝图成本计算", "")>]
+    member x.HandleERRCV2(msgArg : CommandArgs) = 
+        let (name, cfg) = ScanConfig(msgArg.Arguments)
 
-            let bp = 
-                let succ, bp = EveBlueprintCache.TryGetValue(item.TypeId)
-                if not succ then
-                    let succ, bp = itemToBp.TryGetValue(item.TypeId)
-                    if not succ then
-                        failwithf "找不到蓝图信息'"
-                    else
-                        // 输入是物品，但是存在制造蓝图
-                        bp
-                else
-                    // 输入是蓝图
-                    bp
+        let bp = typeNameToBp(name)
+        let finalBp = cfg.ConfigureBlueprint(bp)
 
-            let finalBp = cfg.ConfigureBlueprint(bp)
+        let tt = TextTable.FromHeader([|"组件"; "数量"; "买成品"; "搓（材料+费）"|])
+        tt.AddPreTable("价格有延迟，算法不稳定，市场有风险, 投资需谨慎")
+        tt.AddPreTable(sprintf "输入效率：%i%% 默认效率：%i%% 成本指数：%i%% 设施税率%i%% 产品个数:%g"
+            cfg.InputME
+            cfg.DefME
+            cfg.SystemCostIndex
+            cfg.StructureTax
+            finalBp.ProductQuantity
+        )
 
-            let tt = TextTable.FromHeader([|"组件"; "数量"; "买成品"; "搓（材料+费）"|])
-            tt.AddPreTable("价格有延迟，算法不稳定，市场有风险, 投资需谨慎")
-            tt.AddPreTable(sprintf "输入效率：%i%% 默认效率：%i%% 成本指数：%i%% 设施税率%i%% 产品个数:%g"
-                cfg.InputME
-                cfg.DefME
-                cfg.SystemCostIndex
-                cfg.StructureTax
-                finalBp.ProductQuantity
-            )
+        tt.AddPreTable(sprintf "展开行星材料：%b 展开反应公式：%b" cfg.ExpandPlanet cfg.ExpandReaction)
 
-            let getFee price = 
-                let fee = price * (pct cfg.SystemCostIndex) * (pct cfg.StructureBonuses)
-                let tax = fee * (pct cfg.StructureTax)
-                fee + tax
+        let getFee price = 
+            let fee = price * (pct cfg.SystemCostIndex)
+            let tax = fee * (pct cfg.StructureTax)
+            fee + tax
 
-            let rec getRootMaterialsPrice (bp : EveBlueprint) = 
-                let mutable sum = 0.0
+        let rec getRootMaterialsPrice (bp : EveBlueprint) = 
+            let mutable sum = 0.0
 
-                for m in bp.Materials do 
-                    let amount = m.Quantity
-                    let price = GetItemPriceCached(m.TypeId) * amount
-                    let fee = getFee(price)
-                    sum <- sum + fee
-
-                    let succ, bp = itemToBp.TryGetValue(m.TypeId)
-                    if succ then
-                        let bp = bp.ApplyMaterialEfficiency(cfg.DefME).GetBlueprintByItems(amount)
-                        sum <- sum + getRootMaterialsPrice bp
-                    else
-                        sum <- sum + price
-                sum
-
-            let mutable optCost = 0.0
-            let mutable allCost = 0.0
-
-            // 所有材料
-            // 材料名称 数量 售价（小计） 制造成本（小计） 最佳成本（小计）
-            for m in finalBp.Materials do 
+            for m in bp.Materials do 
                 let amount = m.Quantity
-                let name   = EveTypeIdCache.[m.TypeId].TypeName
-                let buy    = GetItemPriceCached(m.TypeId) * amount
-                
-                optCost <- optCost + getFee(buy)
-                allCost <- allCost + getFee(buy)
+                let price = GetItemPriceCached(m.TypeId) * amount
+                let fee = getFee(price)
+                sum <- sum + fee
 
-                let succ, bp = itemToBp.TryGetValue(m.TypeId)
-                if succ then
+                let hasNext, bp = itemToBp.TryGetValue(m.TypeId)
+                if hasNext && cfg.BpCanExpand(bp) then
                     let bp = bp.ApplyMaterialEfficiency(cfg.DefME).GetBlueprintByItems(amount)
-                    let cost = getRootMaterialsPrice bp
-                    optCost <- optCost + (if (cost >= buy) && (buy <> 0.0) then buy else cost)
-                    allCost <- allCost + cost
-                    tt.AddRow(name, amount, buy, cost |> ceil)
+                    sum <- sum + getRootMaterialsPrice bp
                 else
-                    optCost <- optCost + buy
-                    allCost <- allCost + buy
-                    tt.AddRow(name, amount, buy, "--")
+                    sum <- sum + price
+            sum
 
-            let sell = GetItemPriceCached((bp.Products |> Array.head).TypeId) * (finalBp.ProductQuantity)
+        let mutable optCost = 0.0
+        let mutable allCost = 0.0
 
-            tt.AddRowPadding("售价/最佳/造价", sell |> ceil, optCost |> ceil, allCost |> ceil)
-            msgArg.QuickMessageReply(tt.ToString())
+        // 所有材料
+        // 材料名称 数量 售价（小计） 制造成本（小计） 最佳成本（小计）
+        for m in finalBp.Materials do 
+            let amount = m.Quantity
+            let name   = EveTypeIdCache.[m.TypeId].TypeName
+            let buy    = GetItemPriceCached(m.TypeId) * amount
+                
+            optCost <- optCost + getFee(buy)
+            allCost <- allCost + getFee(buy)
+
+            let succ, bp = itemToBp.TryGetValue(m.TypeId)
+            if succ then
+                let bp = bp.ApplyMaterialEfficiency(cfg.DefME).GetBlueprintByItems(amount)
+                let cost = getRootMaterialsPrice bp
+                optCost <- optCost + (if (cost >= buy) && (buy <> 0.0) then buy else cost)
+                allCost <- allCost + cost
+                tt.AddRow(name, amount, buy, cost |> ceil)
+            else
+                optCost <- optCost + buy
+                allCost <- allCost + buy
+                tt.AddRow(name, amount, buy, "--")
+
+        let sell = GetItemPriceCached((bp.Products |> Array.head).TypeId) * (finalBp.ProductQuantity)
+
+        tt.AddRowPadding("售价/最佳/造价", sell |> ceil, optCost |> ceil, allCost |> ceil)
+        msgArg.QuickMessageReply(tt.ToString())

@@ -22,12 +22,27 @@ type EveMaterial =
         TypeId   : int
     }
 
+type BlueprintType = 
+    | Unknown = 0
+    | Manufacturing = 1
+    | Planet = 2
+    | Reaction = 3
+
 type EveBlueprint = 
     {
         Materials : EveMaterial []
         Products : EveMaterial []
         BlueprintTypeID : int
+        Type : BlueprintType
     }
+
+    static member Default =
+        {
+            Materials = Array.empty
+            Products = Array.empty
+            BlueprintTypeID = 0
+            Type = BlueprintType.Unknown
+        }
 
     /// 计算所需流程数的材料，结果会ceil
     member x.GetBlueprintByRuns(r : float) = 
@@ -55,21 +70,33 @@ type EveBlueprint =
         {x with Materials = ms; Products = ps}
 
     /// 根据材料效率调整材料数量
+    /// 仅对“制造”蓝图有效，其他蓝图直接返回
     member x.ApplyMaterialEfficiency(me : int) =
-        let factor = (100 - me) |> pct
-        let ms = 
-            x.Materials
-            |> Array.map (fun m -> 
-                let q = (float m.Quantity) * factor
-                {m with Quantity = q}
-            )
-        {x with Materials = ms}
+        if x.Type = BlueprintType.Manufacturing then
+            let factor = (100 - me) |> pct
+            let ms = 
+                x.Materials
+                |> Array.map (fun m -> 
+                    let q = (float m.Quantity) * factor
+                    {m with Quantity = q}
+                )
+            {x with Materials = ms}
+        else
+            x
+
+    member private x.FailOnMultipleProducts() = 
+        if x.Products.Length > 1 then
+            failwithf "当前产品数多于1个，%A" x
 
     /// 仅有一个产品时返回材料Id，其他则抛出异常
-    member x.ProductId = (x.Products |> Array.head).TypeId
+    member x.ProductId =
+        x.FailOnMultipleProducts()
+        (x.Products |> Array.head).TypeId
 
     /// 仅有一个产品时返回材料数量，其他则抛出异常
-    member x.ProductQuantity = (x.Products |> Array.head).Quantity
+    member x.ProductQuantity =
+        x.FailOnMultipleProducts()
+        (x.Products |> Array.head).Quantity
 
 type EveGroup =
     {
@@ -83,6 +110,13 @@ type RefineInfo =
         Volume  : float
         RefineUnit : float
         Yields  : EveMaterial []
+    }
+
+type TypeDogma =
+    {
+        TypeId : int
+        AttributeId : int
+        AttributeValue  : float
     }
 
 let GetGroup() =
@@ -102,7 +136,7 @@ let GetEveTypes() =
                 let ResName = "BotData.EVEData.zip"
                 let assembly = Reflection.Assembly.GetExecutingAssembly()
                 let stream = assembly.GetManifestResourceStream(ResName)
-                new IO.Compression.ZipArchive(stream, IO.Compression.ZipArchiveMode.Read)
+                new IO.Compression.ZipArchive(stream, Compression.ZipArchiveMode.Read)
         use f = archive.GetEntry("evetypes.json").Open()
         use r = new JsonTextReader(new StreamReader(f))
 
@@ -123,8 +157,7 @@ let GetEveTypes() =
 
                 let tid = o.GetValue("typeID").ToObject<int>()
                 let mutable name = o.GetValue("typeName").ToObject<string>()
-                if tid = 37170 then name <- "屹立大型设备制造效率 I"
-                
+
                 let vol = 
                     if o.ContainsKey("volume") then
                         o.GetValue("volume").ToObject<float>()
@@ -143,13 +176,46 @@ let GetEveTypes() =
                     }
     }
 
+let private GetPlanetSchema() = 
+    use archive = 
+            let ResName = "BotData.EVEData.zip"
+            let assembly = Reflection.Assembly.GetExecutingAssembly()
+            let stream = assembly.GetManifestResourceStream(ResName)
+            new IO.Compression.ZipArchive(stream, IO.Compression.ZipArchiveMode.Read)
+    use f = archive.GetEntry("planetschematicstypemap.json").Open()
+    use r = new JsonTextReader(new StreamReader(f))
+
+    // reactionTypeID * EveBlueprint
+    let dict = Dictionary<int, EveBlueprint>()
+
+    for item in JArray.Load(r) do 
+        let item = item  :?> JObject
+        let isInput = item.GetValue("isInput").ToObject<int>() = 1
+        let q       = item.GetValue("quantity").ToObject<float>()
+        // 转换成负数，以免和正常蓝图冲突
+        let rid     = -(item.GetValue("schematicID").ToObject<int>())
+        let tid     = item.GetValue("typeID").ToObject<int>()
+
+        let em = {TypeId = tid; Quantity = q}
+        let bp = 
+            if dict.ContainsKey(rid) then
+                dict.[rid]
+            else
+                {EveBlueprint.Default with BlueprintTypeID = rid ; Type = BlueprintType.Planet}
+        if isInput then
+            dict.[rid] <- {bp with Materials = Array.append bp.Materials [|em|] }
+        else
+            dict.[rid] <- {bp with Products = Array.append bp.Products [|em|] }
+
+    dict.Values
+
 let GetBlueprints() = 
     seq {
         use archive = 
                 let ResName = "BotData.EVEData.zip"
                 let assembly = Reflection.Assembly.GetExecutingAssembly()
                 let stream = assembly.GetManifestResourceStream(ResName)
-                new IO.Compression.ZipArchive(stream, IO.Compression.ZipArchiveMode.Read)
+                new Compression.ZipArchive(stream, IO.Compression.ZipArchiveMode.Read)
         use f = archive.GetEntry("blueprints.json").Open()
         use r = new JsonTextReader(new StreamReader(f))
 
@@ -178,7 +244,37 @@ let GetBlueprints() =
                         Materials = input
                         Products  = output
                         BlueprintTypeID = bpid
+                        Type = BlueprintType.Manufacturing
                     }
+
+                // 以后再优化
+                elif a.ContainsKey("reaction") then
+                    let m = a.GetValue("reaction") :?> JObject
+
+                    let input = 
+                        let hasInput = m.ContainsKey("materials")
+                        if hasInput then
+                            m.GetValue("materials").ToObject<EveMaterial []>()
+                        else
+                            Array.empty
+                    let output = 
+                        let hasOutput = m.ContainsKey("products")
+                        if hasOutput then
+                            m.GetValue("products").ToObject<EveMaterial []>()
+                        else
+                            Array.empty
+                    yield {
+                        Materials = input
+                        Products  = output
+                        BlueprintTypeID = bpid
+                        Type = BlueprintType.Reaction
+                    }
+
+        // 回收相关资源，节约点内存
+        (r :> IDisposable).Dispose()
+        f.Dispose()
+        archive.Dispose()
+        yield! GetPlanetSchema()
     }
 
 let GetTypeMaterials() = 
@@ -187,7 +283,7 @@ let GetTypeMaterials() =
                 let ResName = "BotData.EVEData.zip"
                 let assembly = Reflection.Assembly.GetExecutingAssembly()
                 let stream = assembly.GetManifestResourceStream(ResName)
-                new IO.Compression.ZipArchive(stream, IO.Compression.ZipArchiveMode.Read)
+                new IO.Compression.ZipArchive(stream, Compression.ZipArchiveMode.Read)
         use f = archive.GetEntry("typematerials.json").Open()
         use r = new JsonTextReader(new StreamReader(f))
 

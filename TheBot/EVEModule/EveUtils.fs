@@ -1,6 +1,5 @@
 ﻿module TheBot.Module.EveModule.Utils
 open System
-open System.IO
 open System.Xml
 open System.Collections.Generic
 open System.Net.Http
@@ -24,9 +23,24 @@ let (EveBlueprintCache, itemToBp) =
 
     for bpinfo in GetBlueprints() do 
         bp.Add(bpinfo.BlueprintTypeID, bpinfo)
-        let p = bpinfo.Products |> Array.tryHead
-        if p.IsSome && EveTypeIdCache.ContainsKey(bpinfo.BlueprintTypeID) then
-            item.Add(p.Value.TypeId, bpinfo)
+        let plen = bpinfo.Products.Length
+        if plen = 1 then
+            let isManufacturing = bpinfo.Type = BlueprintType.Manufacturing
+            let doAddCache = 
+                match bpinfo.Type with
+                | BlueprintType.Planet -> true
+                | BlueprintType.Reaction
+                    when EveTypeIdCache.ContainsKey(bpinfo.BlueprintTypeID) -> true
+                | BlueprintType.Manufacturing
+                    when EveTypeIdCache.ContainsKey(bpinfo.BlueprintTypeID) -> true
+                | _ -> false
+
+            if doAddCache then
+                item.Add(bpinfo.ProductId, bpinfo)
+        elif plen = 0 then
+            printfn "Bp ignored : No products : %A" bpinfo
+        else
+            printfn "Bp ignored : Multiple products : %A" bpinfo
 
     (bp, item)
 
@@ -156,25 +170,29 @@ type EveCalculatorConfig =
         InputME : int
 
         SystemCostIndex    : int
-        StructureBonuses   : int
         StructureTax       : int
         InitRuns           : int
-        InitItems          : int
+        ExpandReaction     : bool
+        ExpandPlanet       : bool
     }
+
+    /// 测试蓝图能否继续展开
+    member x.BpCanExpand(bp : EveData.EveBlueprint) = 
+        match bp.Type with
+        | BlueprintType.Manufacturing -> true
+        | BlueprintType.Planet -> x.ExpandPlanet
+        | BlueprintType.Reaction -> x.ExpandReaction
+        | _ -> failwithf "未知蓝图类型 %A" bp
 
     /// 调整蓝图信息，合并计算材料效率和流程/物品数
     member x.ConfigureBlueprint(bp : EveData.EveBlueprint) = 
         let runs = x.InitRuns |> float
-        let items = x.InitItems |> float
-
         let bp = bp.ApplyMaterialEfficiency(x.InputME)
         
-        if runs <> 0.0 then
+        if runs > 0.0 then
             bp.GetBlueprintByRuns(runs)
         else
-            if items = 0.0 then
-                invalidOp "item = 0 && run = 0"
-            bp.GetBlueprintByItems(items)
+            invalidOp "流程数无效"
 
     static member Default = 
         {
@@ -183,10 +201,10 @@ type EveCalculatorConfig =
             // 输入图材料效率
             InputME = 10
             SystemCostIndex    = 5
-            StructureBonuses   = 100
             StructureTax       = 10
-            InitRuns           = 0
-            InitItems          = 1
+            InitRuns           = 1
+            ExpandReaction     = false
+            ExpandPlanet       = false
         }
 
 /// 扫描输入参数，返回物品名和参数
@@ -199,17 +217,22 @@ let ScanConfig (input : string[]) =
                 if i.Contains(":") || i.Contains("：") then
                     let s = i.Split(':', '：')
                     let arg, (vsucc, value) = s.[0], Int32.TryParse(s.[1])
-                    if not vsucc then
-                        failwithf "参数不合法"
+                    let value = 
+                        if vsucc then
+                            value
+                        else
+                            0
                     match arg.ToLowerInvariant() with
                     | "ime" -> config <- {config with InputME = value}
                     | "dme" -> config <- {config with DefME = value}
                     |  "me" -> config <- {config with InputME = value; DefME = value}
                     | "sci" -> config <- {config with SystemCostIndex = value}
-                    |  "sb" -> config <- {config with StructureBonuses = value}
                     | "tax" -> config <- {config with StructureTax = value}
                     | "run" -> config <- {config with InitRuns = value}
-                    |"item" -> config <- {config with InitItems = value}
+                    |   "p" -> config <- {config with ExpandPlanet = true}
+                    | "日球 " -> config <- {config with ExpandPlanet = true}
+                    |   "r" -> config <- {config with ExpandReaction = true}
+                    | "反应 " -> config <- {config with ExpandReaction = true}
                     | _ -> ()
                 else
                     yield i
