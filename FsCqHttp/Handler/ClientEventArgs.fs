@@ -47,7 +47,7 @@ and TextResponse(arg : ClientEventArgs) =
 
     let mutable isUsed = false
 
-    let sizeLimit = 3000
+    let sizeLimit = 2900
     let buf = Queue<string>()
     let sb = StringBuilder()
     

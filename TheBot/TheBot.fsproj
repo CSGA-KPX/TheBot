@@ -12,6 +12,7 @@
     <Compile Include="Utils\GenericRPN.fs" />
     <Compile Include="Utils\EmbeddedResource.fs" />
     <Compile Include="Utils\HandlerUtils.fs" />
+    <Compile Include="Utils\RecipeRPN.fs" />
     <Compile Include="EatModule\EatUtils.fs" />
     <Compile Include="EatModule\EatModule.fs" />
     <Compile Include="DiceModule.fs" />
@@ -20,6 +21,7 @@
     <Compile Include="XivModule\XivMarketModule.fs" />
     <Compile Include="XivModule\XivModule.fs" />
     <Compile Include="EVEModule\EveUtils.fs" />
+    <Compile Include="EVEModule\EveExpression.fs" />
     <Compile Include="EVEModule\EveModule.fs" />
     <Compile Include="RepeaterModule.fs" />
     <Compile Include="TataruBridgeModule.fs" />

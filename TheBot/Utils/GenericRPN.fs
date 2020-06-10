@@ -1,5 +1,5 @@
-module TheBot.Utils.GenericRPN
-
+﻿module TheBot.Utils.GenericRPN
+open System
 open System.Collections.Generic
 
 type IOperand<'T when 'T :> IOperand<'T>> =
@@ -8,54 +8,75 @@ type IOperand<'T when 'T :> IOperand<'T>> =
     abstract Sub : 'T -> 'T
     abstract Mul : 'T -> 'T
 
-type GenericOperator(c, p) =
+type GenericOperator<'Operand>(c, p, f : 'Operand -> 'Operand -> 'Operand) =
     member x.Char = c
     member x.Precedence = p
-
+    /// l -> r -> return
+    member x.Func = f
     member x.IsLeftParen = x.Char = '('
     member x.IsRightParen = x.Char = ')'
     member x.IsParen = x.IsLeftParen || x.IsRightParen
-    // unary or binary?
+
+    /// 一元运算符还是二元运算符
+    ///
+    /// 一元运算符时，Func中l=r
     member val IsBinary = true with get, set
     override x.ToString() = x.Char |> string
 
 type RPNToken<'T when 'T :> IOperand<'T>> =
     | Operand of 'T
-    | Operator of GenericOperator
+    | Operator of GenericOperator<'T>
 
     override x.ToString() =
         match x with
         | Operand i -> sprintf "(Operand %O)" i
         | Operator o -> sprintf "(Operator %O)" o
 
-type EvalDelegate<'T when 'T :> IOperand<'T>> = delegate of (char * 'T * 'T) -> 'T
-
 [<AbstractClass>]
 type GenericRPNParser<'Operand when 'Operand :> IOperand<'Operand>>() =
-
-    static let defaultOps =
-        [| GenericOperator('(', -1)
-           GenericOperator(')', -1)
-           GenericOperator('+', 2)
-           GenericOperator('-', 2)
-           GenericOperator('*', 3)
-           GenericOperator('/', 3) |]
-
-
     let opsDict =
-        let dict = Dictionary<string, GenericOperator>()
+        let defaultOps =
+                [| GenericOperator<'Operand>('(', -1, fun _ -> invalidOp "")
+                   GenericOperator<'Operand>(')', -1, fun _ -> invalidOp "")
+                   GenericOperator<'Operand>('+',  2, fun l r -> l.Add(r))
+                   GenericOperator<'Operand>('-',  2, fun l r -> l.Sub(r))
+                   GenericOperator<'Operand>('*',  3, fun l r -> l.Mul(r))
+                   GenericOperator<'Operand>('/',  3, fun l r -> l.Div(r)) |]
+
+        let col = 
+            { new System.Collections.ObjectModel.KeyedCollection<char, GenericOperator<'Operand>>() with
+                member x.GetKeyForItem(item) = item.Char}
+
         for op in defaultOps do
-            dict.Add(op.Char.ToString(), op)
-        dict
+            col.Add(op)
+        col
 
-    abstract Tokenize : string -> RPNToken<'Operand> []
+    /// 把字符串转换为操作数
+    abstract Tokenize : string -> RPNToken<'Operand>
 
+    /// 获得操作符集合
+    /// 
+    /// 写入会破坏线程安全
     member x.Operatos = opsDict
 
-    member x.AddOperator(o : GenericOperator) = opsDict.Add(o.Char.ToString(), o)
+    member private x.SplitString(str : string) = 
+        [|
+            let sb = Text.StringBuilder()
+            for i = 0 to str.Length - 1 do 
+                let c = str.[i]
+                if x.Operatos.Contains(c) then
+                    let token = sb.ToString()
+                    sb.Clear() |> ignore
+                    if not <| String.IsNullOrWhiteSpace(token) then yield Choice1Of2 token
+                    yield Choice2Of2 x.Operatos.[c]
+                else
+                    sb.Append(c) |> ignore
+            let last = sb.ToString()
+            if not <| String.IsNullOrWhiteSpace(last) then yield Choice1Of2 last
+        |]
 
     member private x.InfixToPostfix(tokens : RPNToken<'Operand> []) =
-        let stack = Stack<GenericOperator>()
+        let stack = Stack<GenericOperator<'Operand>>()
         let output = Queue<RPNToken<'Operand>>()
         for token in tokens do
             match token with
@@ -74,19 +95,30 @@ type GenericRPNParser<'Operand when 'Operand :> IOperand<'Operand>>() =
             output.Enqueue(Operator(stack.Pop()))
         output |> Seq.toList
 
-    member x.EvalWith(str, func : EvalDelegate<'Operand>) =
-        let tokens = x.Tokenize(str)
-        let rpn = x.InfixToPostfix(tokens)
+    member x.Eval(str) =
+        let rpn =
+            str
+            |> x.SplitString
+            |> Array.map (
+                function
+                | Choice1Of2 str -> x.Tokenize(str)
+                | Choice2Of2 op -> Operator op)
+            |> x.InfixToPostfix
+
         let stack = Stack<'Operand>()
         for token in rpn do
             match token with
             | Operand i -> stack.Push(i)
             | Operator o when not o.IsBinary  ->
                 let l = stack.Pop()
-                let ret = func.Invoke(o.Char, l, l)
-                stack.Push(ret)
+                stack.Push(o.Func l l)
             | Operator o ->
                 let r, l = stack.Pop(), stack.Pop()
-                let ret = func.Invoke(o.Char, l, r)
-                stack.Push(ret)
+                stack.Push(o.Func l r)
         stack.Pop()
+
+    member x.TryEval(str : string) =
+        try
+            let ret = x.Eval(str)
+            Ok(ret)
+        with e -> Error e

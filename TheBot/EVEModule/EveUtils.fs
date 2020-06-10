@@ -10,7 +10,7 @@ let (EveTypeIdCache, EveTypeNameCache) =
     let name = new Dictionary<string, EveType>()
     let id   = new Dictionary<int, EveType>()
 
-    for item in EveData.GetEveTypes() do 
+    for item in EveData.EveType.GetEveTypes() do 
         if not <| name.ContainsKey(item.TypeName) then
             name.Add(item.TypeName, item)
         id.Add(item.TypeId, item)
@@ -21,7 +21,7 @@ let (EveBlueprintCache, itemToBp) =
     let bp = Dictionary<int, EveBlueprint>()
     let item = Dictionary<int, EveBlueprint>()
 
-    for bpinfo in GetBlueprints() do 
+    for bpinfo in EveBlueprint.GetBlueprints() do 
         bp.Add(bpinfo.BlueprintTypeID, bpinfo)
         let plen = bpinfo.Products.Length
         if plen = 1 then
@@ -44,6 +44,11 @@ let (EveBlueprintCache, itemToBp) =
 
     (bp, item)
 
+let CorporationName = 
+    NpcCorporation.GetNpcCorporations()
+    |> Seq.map (fun i -> i.CorporationName, i)
+    |> readOnlyDict
+
 /// 采矿分析数据
 let OreRefineInfo = 
     seq {
@@ -51,7 +56,7 @@ let OreRefineInfo =
         let ice  = IceNames.Split(',') |> set
         let ore  = OreNames.Split(',') |> set
 
-        for tid, ms in GetTypeMaterials() do 
+        for tid, ms in RefineInfo.GetRefineInfos() do 
             let succ, t = EveTypeIdCache.TryGetValue(tid)
             // 25 = 小行星
             if succ && t.CategoryId = 25 then
@@ -86,15 +91,12 @@ type internal PriceCache =
 
     static member Threshold = TimeSpan.FromHours(24.0)
 
-let private MarketEndpoint = sprintf @"https://www.ceve-market.org/api/market/region/10000002/system/30000142/type/%i.json"
 let private hc = new HttpClient()
 
 let private globalCache = Dictionary<int, PriceCache>()
 
-
-
 let GetItemPrice (typeid : int) = 
-    let url = MarketEndpoint typeid
+    let url = sprintf @"https://www.ceve-market.org/api/market/region/10000002/system/30000142/type/%i.json" typeid
     printfn "正在请求：%s" url
     let json = hc
                 .GetStringAsync(url)
@@ -106,7 +108,6 @@ let GetItemPrice (typeid : int) =
     let buyMax  = (obj.GetValue("buy") :?> JObject).GetValue("max").ToObject<float>()
 
     sellMin, buyMax
-
 
 let GetItemPriceCached (item : int) =
     let succ, price = globalCache.TryGetValue(item)
@@ -190,7 +191,7 @@ type EveCalculatorConfig =
         let bp = bp.ApplyMaterialEfficiency(x.InputME)
         
         if runs > 0.0 then
-            bp.GetBlueprintByRuns(runs)
+            bp.GetBpByRuns(runs)
         else
             invalidOp "流程数无效"
 
@@ -230,12 +231,53 @@ let ScanConfig (input : string[]) =
                     | "tax" -> config <- {config with StructureTax = value}
                     | "run" -> config <- {config with InitRuns = value}
                     |   "p" -> config <- {config with ExpandPlanet = true}
-                    | "日球 " -> config <- {config with ExpandPlanet = true}
+                    | "日球" -> config <- {config with ExpandPlanet = true}
                     |   "r" -> config <- {config with ExpandReaction = true}
-                    | "反应 " -> config <- {config with ExpandReaction = true}
+                    | "反应" -> config <- {config with ExpandReaction = true}
                     | _ -> ()
                 else
                     yield i
         |]
     
     String.Join(" ", left), config
+
+let GetLpStoreOffersByCorp(corp : NpcCorporation) = 
+    let url =
+        sprintf "https://esi.evepc.163.com/latest/loyalty/stores/%i/offers/?datasource=serenity"
+            corp.CorporationID
+    printfn "正在请求：%s" url
+    let json = hc
+                .GetStringAsync(url)
+                .ConfigureAwait(false)
+                .GetAwaiter()
+                .GetResult()
+    [|
+        for item in JArray.Parse(json) do 
+            let item = item :?> JObject
+            // 无视所有分析点兑换
+            if not <| item.ContainsKey("ak_cost") then
+                let isk = item.GetValue("isk_cost").ToObject<float>()
+                let lp  = item.GetValue("lp_cost").ToObject<float>()
+                let id  = item.GetValue("offer_id").ToObject<int>()
+                let offers = 
+                    let q   = item.GetValue("quantity").ToObject<float>()
+                    let t   = item.GetValue("type_id").ToObject<int>()
+                    {EveMaterial.TypeId = t; Quantity = q}
+
+                let requires = 
+                    [|
+                        for ii in item.GetValue("required_items") :?> JArray do 
+                            let i = ii :?> JObject
+                            let iq = i.GetValue("quantity").ToObject<float>()
+                            let it = i.GetValue("type_id").ToObject<int>()
+                            yield {EveMaterial.TypeId = it; Quantity = iq}
+                    |]
+
+                yield {
+                    IskCost = isk
+                    LpCost  = lp
+                    OfferId = id
+                    Offer = offers
+                    Required = requires
+                }
+    |]

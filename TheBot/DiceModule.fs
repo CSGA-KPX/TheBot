@@ -67,8 +67,8 @@ module ChoiceHelper =
             ]
 
 module DiceExpression =
+    open System.Text
     open System.Globalization
-    open System.Text.RegularExpressions
 
     type DicerOperand(i : float) =
         member x.Value = i
@@ -88,42 +88,29 @@ module DiceExpression =
     type DiceExpression() as x =
         inherit GenericRPNParser<DicerOperand>()
 
-        let tokenRegex = Regex("([^\.,0-9])", RegexOptions.Compiled)
+        let dicer = Dicer(SeedOption.SeedRandom)
 
         do
-            x.AddOperator(GenericOperator('D', 5))
-            x.AddOperator(GenericOperator('d', 5))
+            let func (l : DicerOperand) (r : DicerOperand) =
+                let ret = Array.init<int> (l.Value |> int) (fun _ -> dicer.GetRandom(r.Value |> uint32)) |> Array.sum
+                DicerOperand(ret |> float)
 
-        override x.Tokenize(str) =
-            [| let strs = tokenRegex.Split(str) |> Array.filter (fun x -> x <> "")
+            x.Operatos.Add(GenericOperator<_>('D', Int32.MaxValue, func))
+            x.Operatos.Add(GenericOperator<_>('d', Int32.MaxValue, func))
+
+        override x.Tokenize(token) =
+            (*[| let strs = tokenRegex.Split(str) |> Array.filter (fun x -> x <> "")
                for str in strs do
                    match str with
                    | _ when Char.IsDigit(str.[0]) -> yield Operand(DicerOperand(Double.Parse(str, NumberStyles.Number)))
-                   | _ when x.Operatos.ContainsKey(str) -> yield Operator(x.Operatos.[str])
-                   | _ -> failwithf "无法解析 %s" str |]
+                   | _ when x.Operatos.Contains(str) -> yield Operator(x.Operatos.[str])
+                   | _ -> failwithf "无法解析 %s" str |]*)
 
-        member x.Eval(str : string, dicer : Dicer) =
-            let func =
-                EvalDelegate<DicerOperand>(fun (c, l, r) ->
-                let d = l.Value
-                let l = l :> IOperand<DicerOperand>
-                match c with
-                | '+' -> l.Add(r)
-                | '-' -> l.Sub(r)
-                | '*' -> l.Mul(r)
-                | '/' -> l.Div(r)
-                | 'D'
-                | 'd' ->
-                    let ret = Array.init<int> (d |> int) (fun _ -> dicer.GetRandom(r.Value |> uint32)) |> Array.sum
-                    DicerOperand(ret |> float)
-                | _ -> failwithf "")
-            x.EvalWith(str, func)
-
-        member x.TryEval(str : string, dicer : Dicer) =
-            try
-                let ret = x.Eval(str, dicer)
-                Ok(ret)
-            with e -> Error e
+            match token with
+            | _ when String.forall Char.IsDigit token ->
+                Operand(DicerOperand(Double.Parse(token, NumberStyles.Number)))
+            | _ ->
+                failwithf "无法解析 %s" token
 
 type DiceModule() =
     inherit CommandHandlerBase()
@@ -180,10 +167,9 @@ type DiceModule() =
     [<CommandHandlerMethodAttribute("cal", "计算器", "")>]
     member x.HandleCalculator(msgArg : CommandArgs) =
         let sw = new IO.StringWriter()
-        let dicer = Dicer(SeedRandom)
         let parser = DiceExpression.DiceExpression()
         for arg in msgArg.Arguments do
-            let ret = parser.TryEval(arg, dicer)
+            let ret = parser.TryEval(arg)
             match ret with
             | Error e -> sw.WriteLine("对{0}求值失败：{1}", arg, e.Message)
             | Ok i -> sw.WriteLine("{0} = {1}", arg, i.ToString())

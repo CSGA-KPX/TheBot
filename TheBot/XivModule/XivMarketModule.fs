@@ -6,13 +6,15 @@ open XivData
 open TheBot.Module.XivModule.Utils
 open TheBot.Utils.TextTable
 open TheBot.Utils.Config
-
+open TheBot.Utils.RecipeRPN
 
 type XivMarketModule() =
     inherit CommandHandlerBase()
+
     let rm = Recipe.RecipeManager.GetInstance()
     let itemCol = Item.ItemCollection.Instance
     let gilShop = GilShop.GilShopCollection.Instance
+    let xivExpr = XivExpression.XivExpression()
 
     let isNumber (str : string) =
         if str.Length <> 0 then String.forall (Char.IsDigit) str
@@ -203,12 +205,11 @@ type XivMarketModule() =
             att.AddPreTable(sprintf "服务器：%s" world.WorldName)
 
         let acc = XivExpression.ItemAccumulator()
-        let parser = XivExpression.XivExpression()
         for str in args do
-            match parser.TryEval(str) with
+            match xivExpr.TryEval(str) with
             | Error err -> raise err
-            | Ok(XivExpression.XivOperand.Number i) -> att.AddPreTable(sprintf "计算结果为数字%f，物品Id请加#" i)
-            | Ok(XivExpression.XivOperand.Accumulator a) ->
+            | Ok(Number i) -> att.AddPreTable(sprintf "计算结果为数字%f，物品Id请加#" i)
+            | Ok(Accumulator a) ->
                 for kv in a do
                     let (item, runs) = kv.Key, kv.Value
                     let recipe = materialFunc(item)

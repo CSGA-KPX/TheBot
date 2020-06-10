@@ -219,10 +219,31 @@ module CommandUtils =
             (cm.Get(defaultServerKey, defaultServer), args)
 
 module XivExpression =
+    open TheBot.Utils.GenericRPN
+    open TheBot.Utils.RecipeRPN
+
+    type ItemAccumulator = ItemAccumulator<Item.ItemRecord>
+
+    type XivExpression() as x = 
+        inherit RecipeExpression<Item.ItemRecord>()
+        
+        do
+            let itemOperator = GenericOperator<_>('#', Int32.MaxValue, fun l r ->
+                match l with
+                | Number f ->
+                    let item = Item.ItemCollection.Instance.LookupByItemId(int f)
+                    let acu = ItemAccumulator.Singleton item
+                    Accumulator acu
+                | Accumulator a -> failwithf "#符号仅对数字使用")
+
+            itemOperator.IsBinary <- false
+            x.Operatos.Add(itemOperator)
+
+        override x.TryGetItemByName(str) = 
+            Item.ItemCollection.Instance.TryLookupByName(str.TrimEnd(CommandUtils.XivSpecialChars))
+    (*
     open System.Text.RegularExpressions
     open TheBot.Utils.GenericRPN
-
-    let t = Collections.Generic.HashSet<string>()
 
     type ItemAccumulator() =
         inherit Collections.Generic.Dictionary<Item.ItemRecord, float>()
@@ -333,3 +354,4 @@ module XivExpression =
                 let ret = x.Eval(str)
                 Ok(ret)
             with e -> Error e
+            *)
