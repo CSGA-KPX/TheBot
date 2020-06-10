@@ -152,17 +152,6 @@ let UpdatePriceCache() =
 
     updated
 
-type FinalMaterials() =
-    let m = Dictionary<EveData.EveType, float>()
-
-    member x.AddOrUpdate(item, runs) =
-        if m.ContainsKey(item) then m.[item] <- m.[item] + runs
-        else m.Add(item, runs)
-
-    member x.Get() =
-        [| for kv in m do
-            yield (kv.Key, kv.Value) |]
-
 type EveCalculatorConfig = 
     {
         // 默认材料效率

@@ -17,24 +17,27 @@ type EveModule() =
             failwithf "找不到物品"
         item
 
-    let typeToBp(item : EveType) = 
+    let tryTypeToBp(item : EveType) = 
         let succ, bp = EveBlueprintCache.TryGetValue(item.TypeId)
         if not succ then
             let succ, bp = itemToBp.TryGetValue(item.TypeId)
             if not succ then
-                failwithf "找不到蓝图信息"
+                None
             else
                 // 输入是物品，但是存在制造蓝图
-                bp
+                Some(bp)
         else
             // 输入是蓝图
-            bp
+            Some(bp)
+
+    let typeToBp(item : EveType) = 
+        let ret = tryTypeToBp(item)
+        if ret.IsNone then failwithf "找不到蓝图信息: %s" item.TypeName 
+        ret.Value
 
     /// 物品名或蓝图名查找蓝图
     let typeNameToBp(name : string) = 
         name |> typeNameToItem |> typeToBp
-
-    let mutable debugPriceUpdated = false
 
     [<CommandHandlerMethodAttribute("eveTest", "测试用（管理员）", "")>]
     member x.HandleEveTest(msgArg : CommandArgs) =
@@ -69,7 +72,6 @@ type EveModule() =
 
         use tr = new TextResponse(msgArg)
         tr.Write(tt)
-
 
     [<CommandHandlerMethodAttribute("updateevedb", "刷新价格数据库（管理员）", "")>]
     member x.HandleRefreshCache(msgArg : CommandArgs) =
@@ -137,7 +139,7 @@ type EveModule() =
         let (expr, cfg) = ScanConfig(msgArg.Arguments)
         let er = EveExpression.EveExpression()
 
-        let final = FinalMaterials()
+        let final = ItemAccumulator()
         let tt = TextTable.FromHeader([|"名称"; "数量";|])
         tt.AddPreTable(sprintf "输入效率：%i%% "cfg.InputME)
         match er.Eval(expr) with
@@ -146,25 +148,36 @@ type EveModule() =
         | Accumulator a ->
             for kv in a do 
                 let q  = kv.Value
-                let bp = typeToBp(kv.Key).ApplyMaterialEfficiency(cfg.InputME).GetBpByRuns(q)
-                let outType = EveTypeIdCache.[bp.ProductId]
-                tt.AddRow("产出："+outType.TypeName, bp.ProductQuantity)
 
-                for m in bp.Materials do
-                    let item = EveTypeIdCache.[m.TypeId]
-                    final.AddOrUpdate(item, m.Quantity)
+                let bp = tryTypeToBp(kv.Key)
+                
+                match bp with
+                | _ when bp.IsSome && q > 0.0 -> 
+                    // 需要计算
+                    let bp = typeToBp(kv.Key).ApplyMaterialEfficiency(cfg.InputME).GetBpByRuns(q)
+                    let outType = EveTypeIdCache.[bp.ProductId]
+                    tt.AddRow("产出："+outType.TypeName, bp.ProductQuantity)
+
+                    for m in bp.Materials do
+                        let item = EveTypeIdCache.[m.TypeId]
+                        final.AddOrUpdate(item, m.Quantity)
+
+                | _ when q < 0.0 -> 
+                    // 已有材料需要扣除
+                    final.AddOrUpdate(kv.Key, kv.Value)
+                | _ -> failwithf "不知道如何处理：%s * %g" kv.Key.TypeName kv.Value
+
             
-        for (item, q) in final.Get() do 
-            tt.AddRow(item.TypeName, q)
+        for kv in final do 
+            tt.AddRow(kv.Key.TypeName, kv.Value)
         msgArg.QuickMessageReply(tt.ToString())
-
 
     [<CommandHandlerMethodAttribute("err", "EVE蓝图材料计算（可用表达式）", "")>]
     member x.HandleRR(msgArg : CommandArgs) =
         let (expr, cfg) = ScanConfig(msgArg.Arguments)
         let er = EveExpression.EveExpression()
 
-        let final = FinalMaterials()
+        let final = ItemAccumulator()
         let tt = TextTable.FromHeader([|"名称"; "数量";|])
         tt.AddPreTable(sprintf "输入效率：%i%% 默认效率：%i%%"
             cfg.InputME
@@ -193,8 +206,8 @@ type EveModule() =
 
                 loop(bp)
             
-        for (item, q) in final.Get() do 
-            tt.AddRow(item.TypeName, q)
+        for kv in final do 
+            tt.AddRow(kv.Key.TypeName, kv.Value)
         msgArg.QuickMessageReply(tt.ToString())
 
     [<CommandHandlerMethodAttribute("EVE压矿", "EVE压矿利润", "")>]
@@ -314,7 +327,7 @@ type EveModule() =
             allCost <- allCost + getFee(buy)
 
             let succ, bp = itemToBp.TryGetValue(m.TypeId)
-            if succ then
+            if succ && cfg.BpCanExpand(bp) then
                 let bp = bp.ApplyMaterialEfficiency(cfg.DefME).GetBpByItemNoCeil(amount)
                 let cost = getRootMaterialsPrice bp
                 optCost <- optCost + (if (cost >= buy) && (buy <> 0.0) then buy else cost)
