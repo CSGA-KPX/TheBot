@@ -67,7 +67,6 @@ module ChoiceHelper =
             ]
 
 module DiceExpression =
-    open System.Text
     open System.Globalization
 
     type DicerOperand(i : float) =
@@ -99,17 +98,10 @@ module DiceExpression =
             x.Operatos.Add(GenericOperator<_>('d', Int32.MaxValue, func))
 
         override x.Tokenize(token) =
-            (*[| let strs = tokenRegex.Split(str) |> Array.filter (fun x -> x <> "")
-               for str in strs do
-                   match str with
-                   | _ when Char.IsDigit(str.[0]) -> yield Operand(DicerOperand(Double.Parse(str, NumberStyles.Number)))
-                   | _ when x.Operatos.Contains(str) -> yield Operator(x.Operatos.[str])
-                   | _ -> failwithf "无法解析 %s" str |]*)
-
-            match token with
-            | _ when String.forall Char.IsDigit token ->
-                Operand(DicerOperand(Double.Parse(token, NumberStyles.Number)))
-            | _ ->
+            let succ, number = Double.TryParse(token)
+            if succ then
+                Operand(DicerOperand(number))
+            else
                 failwithf "无法解析 %s" token
 
 type DiceModule() =
