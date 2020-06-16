@@ -22,6 +22,7 @@
     <Compile Include="XivModule\XivMarketModule.fs" />
     <Compile Include="XivModule\XivModule.fs" />
     <Compile Include="EVEModule\EveUtils.fs" />
+    <Compile Include="EVEModule\EveExtensions.fs" />
     <Compile Include="EVEModule\EveExpression.fs" />
     <Compile Include="EVEModule\EveModule.fs" />
     <Compile Include="RepeaterModule.fs" />
