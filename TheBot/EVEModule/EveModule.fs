@@ -40,6 +40,8 @@ type EveModule() =
     let typeNameToBp(name : string) = 
         name |> typeNameToItem |> typeToBp
 
+    static let er = EveExpression.EveExpression()
+
     [<CommandHandlerMethodAttribute("eveTest", "测试用（管理员）", "")>]
     member x.HandleEveTest(msgArg : CommandArgs) =
         failOnNonAdmin(msgArg)
@@ -56,12 +58,11 @@ type EveModule() =
             let item = EveTypeIdCache.[offer.Offer.TypeId]
             let itemCost = 
                 offer.Required
-                |> Array.map (fun m -> GetItemPriceCached(m.TypeId) * m.Quantity)
-                |> Array.sum
+                |> Array.sumBy (fun m -> m.GetTotalPrice())
 
             let totalCost = itemCost + offer.IskCost
             let profit = 
-                let sell = GetItemPriceCached(offer.Offer.TypeId) * offer.Offer.Quantity 
+                let sell = offer.Offer.GetTotalPrice()
                 sell - totalCost
             let profitPerLp = profit / offer.LpCost
             let offerStr = sprintf "%s*%g" item.TypeName offer.Offer.Quantity
@@ -77,21 +78,42 @@ type EveModule() =
     [<CommandHandlerMethodAttribute("updateevedb", "刷新价格数据库（管理员）", "")>]
     member x.HandleRefreshCache(msgArg : CommandArgs) =
         failOnNonAdmin(msgArg)
+        failwithf "此命令暂时废弃"
         let updated = UpdatePriceCache()
         msgArg.QuickMessageReply(sprintf "价格缓存刷新成功 @ %O" updated)
 
     [<CommandHandlerMethodAttribute("em", "查询物品价格", "")>]
-    member x.HandleEveMarket(msgArg : CommandArgs) =
-        let name = String.Join(" ", msgArg.Arguments)
-        let item = typeNameToItem(name)
-        let sell = item.GetSellPrice()
-        msgArg.QuickMessageReply(String.Format("{0} 出售价格：{1:N2}", item.TypeName, sell))
-
     [<CommandHandlerMethodAttribute("emr", "实时价格查询（市场中心API）", "")>]
+    member x.HandleEveMarket(msgArg : CommandArgs) =
+        let t = er.Eval(String.Join(" ", msgArg.Arguments))
+        let priceFunc = 
+            match msgArg.Command with
+            | Some "#em"  -> fun (t : EveType) -> t.GetPrice()
+            | Some "#emr" -> fun (t : EveType) -> GetItemPrice(t.TypeId)
+            | _ -> failwithf "%A" msgArg.Command
+
+        let tt = TextTable.FromHeader([|"物品"; "数量"; "卖出"; "买入"; "更新时间"|])
+
+        match t with
+        | Accumulator a ->
+            for kv in a do 
+                let item = kv.Key
+                let q    = kv.Value
+                let p    = priceFunc(item)
+                let sell = p.Sell * q
+                let buy  = p.Buy * q
+                let updated = p.Updated.ToOffset(TimeSpan.FromHours(8.0))
+                tt.AddRow(item.TypeName, q, sell, buy, updated)
+                ()
+        | _ -> failwithf "求值失败，结果是%A" t
+
+        msgArg.QuickMessageReply(tt.ToString())
+
+    
     member x.HandleEveMarketR(msgArg : CommandArgs) =
         let name = String.Join(" ", msgArg.Arguments)
         let item = typeNameToItem(name)
-        let sell, buy = GetItemPrice(item.TypeId)
+        let sell, buy = item.GetSellPrice(), item.GetBuyPrice()
         msgArg.QuickMessageReply(String.Format("{0} 出售：{1:N2} 买入：{2:N2}", item.TypeName, sell, buy))
 
     [<CommandHandlerMethodAttribute("eme", "EVE蓝图材料效率计算", "")>]
@@ -118,7 +140,6 @@ type EveModule() =
     [<CommandHandlerMethodAttribute("er", "EVE蓝图材料计算（可用表达式）", "")>]
     member x.HandleR(msgArg : CommandArgs) =
         let (expr, cfg) = ScanConfig(msgArg.Arguments)
-        let er = EveExpression.EveExpression()
 
         let final = ItemAccumulator()
         let tt = TextTable.FromHeader([|"名称"; "数量";|])
@@ -154,7 +175,6 @@ type EveModule() =
     [<CommandHandlerMethodAttribute("err", "EVE蓝图材料计算（可用表达式）", "")>]
     member x.HandleRR(msgArg : CommandArgs) =
         let (expr, cfg) = ScanConfig(msgArg.Arguments)
-        let er = EveExpression.EveExpression()
 
         let final = ItemAccumulator()
         let tt = TextTable.FromHeader([|"名称"; "数量";|])
@@ -188,86 +208,56 @@ type EveModule() =
             tt.AddRow(kv.Key.TypeName, kv.Value)
         msgArg.QuickMessageReply(tt.ToString())
 
-    [<CommandHandlerMethodAttribute("EVE压矿", "EVE压矿利润", "")>]
-    member x.HandleOreCompression(msgArg : CommandArgs) =
-        let ores = 
-            EveTypeNameCache.Values
-            |> Seq.filter (fun x -> x.TypeName.StartsWith("高密度"))
-        let tt = TextTable.FromHeader([|"矿"; "压缩前（1化矿单位）"; "压缩后"; "溢价比"|])
-        for ore in ores do
-            if not <| ore.TypeName.Contains("冰") then
-                let compressed = ore
-                let normal     = EveTypeNameCache.[ore.TypeName.[3..]]
-
-                let cp = GetItemPriceCached(compressed.TypeId)
-                let np = GetItemPriceCached(normal.TypeId)
-
-                if np <> 0.0 then
-                    tt.AddRow(normal.TypeName, np*100.0, cp, cp/np/100.0)
-        msgArg.QuickMessageReply(tt.ToString())
-
-    [<CommandHandlerMethodAttribute("EVE采矿", "EVE挖矿利润", "")>]
-    [<CommandHandlerMethodAttribute("EVE挖矿", "EVE挖矿利润", "")>]
-    member x.HandleOreMining(msgArg : CommandArgs) =
-        let mineSpeed = 10.0 // m^3/s
-        let refineYield = 0.70
-
-        let tt = TextTable.FromHeader([|"矿石"; "秒利润"; "冰矿"; "秒利润"; "月矿"; "秒利润";|])
-        tt.AddPreTable(sprintf "采集能力：%g m3/s 精炼效率:%g"
-            mineSpeed
-            refineYield
-        )
-            
-        let getSubTypes (names : string) = 
-            names.Split(',')
-            |> Array.map (fun name ->
-                let info = OreRefineInfo.[name]
-                let refinePerSec = mineSpeed / info.Volume / info.RefineUnit
-                let price =
-                    info.Yields
-                    |> Array.sumBy (fun m -> 
-                        m.Quantity * refinePerSec * refineYield * GetItemPriceCached(m.TypeId))
-                name, price|> ceil )
-            |> Array.sortByDescending snd
-
-        let moon= getSubTypes EveData.MoonNames
-        let ice = getSubTypes EveData.IceNames
-        let ore = getSubTypes EveData.OreNames
-
-        let tryGetRow (arr : (string * float) [])  (id : int)  = 
-            if id <= arr.Length - 1 then
-                let n,p = arr.[id]
-                (box n, box p)
-            else
-                (box "--", box "--")
-
-        let rowMax = (max (max ice.Length moon.Length) ore.Length) - 1
-        for i = 0 to rowMax do 
-            let eon, eop = tryGetRow ore i
-            let ein, eip = tryGetRow ice i
-            let emn, emp = tryGetRow moon i
-            tt.AddRow(eon, eop, ein, eip, emn, emp)
-
-        msgArg.QuickMessageReply(tt.ToString())
-
-    [<CommandHandlerMethodAttribute("errc", "EVE蓝图成本计算", "")>]
+    [<CommandHandlerMethodAttribute("errc", "EVE蓝图成本计算（可用表达式）", "")>]
     member x.HandleERRCV2(msgArg : CommandArgs) = 
-        let (name, cfg) = ScanConfig(msgArg.Arguments)
+        let (expr, cfg) = ScanConfig(msgArg.Arguments)
 
-        let bp = typeNameToBp(name)
-        let finalBp = cfg.ConfigureBlueprint(bp)
+        let finalBp = 
+            match er.Eval(expr) with
+            | Number n ->
+                failwithf "结算结果为数字:%g" n
+            | Accumulator a ->
+                /// 生成一个伪蓝图用于下游计算
+                let os = ItemAccumulator<EveType>()
+                let ms = ItemAccumulator<EveType>()
+                for kv in a do
+                    let t = kv.Key
+                    let q = kv.Value
+                    if q < 0.0 then failwith "暂不支持负数计算"
+
+                    let bp = (typeToBp t).GetBpByRuns(q)
+
+                    os.AddOrUpdate(bp.ProductItem, bp.ProductQuantity)
+                    for m in bp.Materials do
+                        ms.AddOrUpdate(m.MaterialItem, m.Quantity)
+
+                let ms = 
+                    [| for kv in ms do yield {EveMaterial.TypeId = kv.Key.TypeId; EveMaterial.Quantity = kv.Value} |]
+                let os = 
+                    [| for kv in os do yield {EveMaterial.TypeId = kv.Key.TypeId; EveMaterial.Quantity = kv.Value} |]
+
+                {   EveBlueprint.Materials = ms
+                    EveBlueprint.Products = os
+                    EveBlueprint.BlueprintTypeID = Int32.MinValue
+                    EveBlueprint.Type = BlueprintType.Unknown}
+
+        let outTt = TextTable.FromHeader([|"产出"; "数量";|])
+        for p in finalBp.Products do 
+            outTt.AddRow(p.MaterialItem.TypeName, p.Quantity)
 
         let tt = TextTable.FromHeader([|"组件"; "数量"; "买成品"; "搓（材料+费）"|])
+        //tt.AddPreTable("计算结果")
+        //tt.AddPreTable(outTt.ToString())
         tt.AddPreTable("价格有延迟，算法不稳定，市场有风险, 投资需谨慎")
-        tt.AddPreTable(sprintf "输入效率：%i%% 默认效率：%i%% 成本指数：%i%% 设施税率%i%% 产品个数:%g"
+        tt.AddPreTable(sprintf "输入效率：%i%% 默认效率：%i%% 成本指数：%i%% 设施税率%i%%"
             cfg.InputME
             cfg.DefME
             cfg.SystemCostIndex
             cfg.StructureTax
-            finalBp.ProductQuantity
         )
-
         tt.AddPreTable(sprintf "展开行星材料：%b 展开反应公式：%b" cfg.ExpandPlanet cfg.ExpandReaction)
+
+        
 
         let getFee price = 
             let fee = price * (pct cfg.SystemCostIndex)
@@ -309,14 +299,76 @@ type EveModule() =
                 let cost = getRootMaterialsPrice bp
                 optCost <- optCost + (if (cost >= buy) && (buy <> 0.0) then buy else cost)
                 allCost <- allCost + cost
-                tt.AddRow(name, amount, buy |> ceil , cost |> ceil)
+                tt.AddRow(name, amount, buy |> HumanReadableFloat , cost |> HumanReadableFloat)
             else
                 optCost <- optCost + buy
                 allCost <- allCost + buy
-                tt.AddRow(name, amount, buy |> ceil, "--")
+                tt.AddRow(name, amount, buy |> HumanReadableFloat, "--")
 
-        let sell = bp.GetTotalProductPrice()
+        let sell = finalBp.GetTotalProductPrice()
 
-        tt.AddRowPadding("售价/税后", sell |> ceil, sell * 0.94 |> ceil)
-        tt.AddRowPadding("买入造价/最佳造价", optCost |> ceil, allCost |> ceil)
+        tt.AddRowPadding("售价/税后", "--", sell |> HumanReadableFloat, sell * 0.94 |> HumanReadableFloat)
+        tt.AddRowPadding("买入造价/最佳造价", "--", optCost |> HumanReadableFloat, allCost |> HumanReadableFloat)
+        msgArg.QuickMessageReply(tt.ToString())
+
+    [<CommandHandlerMethodAttribute("EVE压矿", "EVE压矿利润", "")>]
+    member x.HandleOreCompression(msgArg : CommandArgs) =
+        let ores = 
+            EveTypeNameCache.Values
+            |> Seq.filter (fun x -> x.TypeName.StartsWith("高密度"))
+        let tt = TextTable.FromHeader([|"矿"; "压缩前（1化矿单位）"; "压缩后"; "溢价比"|])
+        for ore in ores do
+            if not <| ore.TypeName.Contains("冰") then
+                let compressed = ore
+                let normal     = EveTypeNameCache.[ore.TypeName.[3..]]
+
+                let cp = GetItemPriceCached(compressed.TypeId).Sell
+                let np = GetItemPriceCached(normal.TypeId).Sell
+
+                if np <> 0.0 then
+                    tt.AddRow(normal.TypeName, np*100.0, cp, cp/np/100.0)
+        msgArg.QuickMessageReply(tt.ToString())
+
+    [<CommandHandlerMethodAttribute("EVE采矿", "EVE挖矿利润", "")>]
+    [<CommandHandlerMethodAttribute("EVE挖矿", "EVE挖矿利润", "")>]
+    member x.HandleOreMining(msgArg : CommandArgs) =
+        let mineSpeed = 10.0 // m^3/s
+        let refineYield = 0.70
+
+        let tt = TextTable.FromHeader([|"矿石"; "秒利润"; "冰矿"; "秒利润"; "月矿"; "秒利润";|])
+        tt.AddPreTable(sprintf "采集能力：%g m3/s 精炼效率:%g"
+            mineSpeed
+            refineYield
+        )
+            
+        let getSubTypes (names : string) = 
+            names.Split(',')
+            |> Array.map (fun name ->
+                let info = OreRefineInfo.[name]
+                let refinePerSec = mineSpeed / info.Volume / info.RefineUnit
+                let price =
+                    info.Yields
+                    |> Array.sumBy (fun m -> 
+                        m.Quantity * refinePerSec * refineYield * GetItemPriceCached(m.TypeId).Sell)
+                name, price|> ceil )
+            |> Array.sortByDescending snd
+
+        let moon= getSubTypes EveData.MoonNames
+        let ice = getSubTypes EveData.IceNames
+        let ore = getSubTypes EveData.OreNames
+
+        let tryGetRow (arr : (string * float) [])  (id : int)  = 
+            if id <= arr.Length - 1 then
+                let n,p = arr.[id]
+                (box n, box p)
+            else
+                (box "--", box "--")
+
+        let rowMax = (max (max ice.Length moon.Length) ore.Length) - 1
+        for i = 0 to rowMax do 
+            let eon, eop = tryGetRow ore i
+            let ein, eip = tryGetRow ice i
+            let emn, emp = tryGetRow moon i
+            tt.AddRow(eon, eop, ein, eip, emn, emp)
+
         msgArg.QuickMessageReply(tt.ToString())

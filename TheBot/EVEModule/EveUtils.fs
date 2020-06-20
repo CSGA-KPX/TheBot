@@ -79,15 +79,16 @@ let OreRefineInfo =
     }
     |> readOnlyDict
 
-type internal PriceCache = 
+type PriceCache = 
     {
         TypeId : int
-        Price : float
-        Updated : DateTime
+        Sell : float
+        Buy  : float
+        Updated : DateTimeOffset
     }
 
     member x.NeedsUpdate() = 
-        (DateTime.Now - x.Updated) >= PriceCache.Threshold
+        (DateTimeOffset.Now - x.Updated) >= PriceCache.Threshold
 
     static member Threshold = TimeSpan.FromHours(24.0)
 
@@ -103,23 +104,23 @@ let GetItemPrice (typeid : int) =
                 .ConfigureAwait(false)
                 .GetAwaiter()
                 .GetResult()
+
     let obj = JObject.Parse(json)
     let sellMin = (obj.GetValue("sell") :?> JObject).GetValue("min").ToObject<float>()
     let buyMax  = (obj.GetValue("buy") :?> JObject).GetValue("max").ToObject<float>()
 
-    sellMin, buyMax
+    {   
+        TypeId  = typeid
+        Sell    = sellMin
+        Buy     = buyMax
+        Updated = DateTimeOffset.Now
+    }
 
-let GetItemPriceCached (item : int) =
-    let succ, price = globalCache.TryGetValue(item)
+let GetItemPriceCached (itemId : int) =
+    let succ, price = globalCache.TryGetValue(itemId)
     if (not succ) || price.NeedsUpdate() then
-        let cache = 
-            {
-                TypeId = item
-                Price  = GetItemPrice(item) |> fst
-                Updated = DateTime.Now
-            }
-        globalCache.[item] <- cache
-    globalCache.[item].Price
+        globalCache.[itemId] <- GetItemPrice(itemId) 
+    globalCache.[itemId]
 
 let UpdatePriceCache() = 
     let url = "https://www.ceve-market.org/dumps/price_all.xml"
@@ -130,11 +131,11 @@ let UpdatePriceCache() =
     let date = 
         ret.Content.Headers.LastModified
         |> Option.ofNullable
-        |> Option.map (fun dt -> dt.LocalDateTime)
+        |> Option.map (fun dt -> dt.ToOffset(TimeSpan.FromHours(8.0)))
 
     let updated = 
         date
-        |> Option.defaultValue DateTime.Now
+        |> Option.defaultValue DateTimeOffset.Now
 
     let str = 
         // 避免中途中断，一次读完
@@ -147,10 +148,46 @@ let UpdatePriceCache() =
     for node in xml.GetElementsByTagName("row") do 
         let attrs = node.Attributes
         let tid   = attrs.["typeID"].Value |> int32
-        let price = attrs.["lo"].Value |> float
-        globalCache.[tid] <- {TypeId = tid; Price = price; Updated = updated}
+
+        let buy = attrs.["lo"].Value |> float
+        let sell= attrs.["median"].Value |> float
+
+        globalCache.[tid] <- {TypeId = tid; Sell = sell; Buy = buy; Updated = updated}
 
     updated
+
+/// EVE小数进位
+///
+/// d 输入数字
+///
+/// n 保留有效位数
+let RoundFloat (d : float) (n : int) = 
+    if d = 0.0 then 0.0
+    else
+        let scale = 10.0 ** ((d |> abs |> log10 |> floor) + 1.0)
+        scale * Math.Round(d / scale, n)
+
+let HumanReadableFloat (d : float) = 
+    if d = 0.0 then "0.00"
+    else
+        let s = 10.0 ** ((d |> abs |> log10 |> floor) + 1.0)
+        let l = log10 s |> floor |> int
+        let (scale, postfix) = 
+            if l >= 9 then
+                8.0, "亿"
+            else
+                0.0, ""
+            (*
+            match l |> int with
+            | 0 | 1 | 2 | 3 | 4
+                 ->  0.0, ""
+            | 5  ->  4.0, "万"
+            | 6  ->  5.0, "十万"
+            | 7  ->  6.0, "百万"
+            | 8  ->  7.0, "千万"
+            | _  ->  8.0, "亿"*)
+
+        String.Format("{0:N2}{1}", d / 10.0 ** scale, postfix)
 
 type EveCalculatorConfig = 
     {
@@ -158,10 +195,8 @@ type EveCalculatorConfig =
         DefME : int
         // 输入物品材料效率
         InputME : int
-
         SystemCostIndex    : int
         StructureTax       : int
-        InitRuns           : int
         ExpandReaction     : bool
         ExpandPlanet       : bool
     }
@@ -174,16 +209,6 @@ type EveCalculatorConfig =
         | BlueprintType.Reaction -> x.ExpandReaction
         | _ -> failwithf "未知蓝图类型 %A" bp
 
-    /// 调整蓝图信息，合并计算材料效率和流程/物品数
-    member x.ConfigureBlueprint(bp : EveData.EveBlueprint) = 
-        let runs = x.InitRuns |> float
-        let bp = bp.ApplyMaterialEfficiency(x.InputME)
-        
-        if runs > 0.0 then
-            bp.GetBpByRuns(runs)
-        else
-            invalidOp "流程数无效"
-
     static member Default = 
         {
             // 默认材料效率
@@ -192,7 +217,6 @@ type EveCalculatorConfig =
             InputME = 10
             SystemCostIndex    = 5
             StructureTax       = 10
-            InitRuns           = 1
             ExpandReaction     = false
             ExpandPlanet       = false
         }
@@ -218,7 +242,6 @@ let ScanConfig (input : string[]) =
                     |  "me" -> config <- {config with InputME = value; DefME = value}
                     | "sci" -> config <- {config with SystemCostIndex = value}
                     | "tax" -> config <- {config with StructureTax = value}
-                    | "run" -> config <- {config with InitRuns = value}
                     |   "p" -> config <- {config with ExpandPlanet = true}
                     | "日球" -> config <- {config with ExpandPlanet = true}
                     |   "r" -> config <- {config with ExpandReaction = true}

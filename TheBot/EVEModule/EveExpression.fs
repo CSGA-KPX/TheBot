@@ -2,6 +2,7 @@
 open TheBot.Utils.RecipeRPN
 open EveData
 open TheBot.Module.EveModule.Utils
+open TheBot.Module.EveModule.Extensions
 
 type ItemAccumulator = ItemAccumulator<EveType>
 
@@ -11,3 +12,4 @@ type EveExpression() =
     override x.TryGetItemByName(str) = 
         let succ, item = EveTypeNameCache.TryGetValue(str)
         if succ then Some(item) else None
+

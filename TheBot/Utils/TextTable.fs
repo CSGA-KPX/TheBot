@@ -49,7 +49,7 @@ type TextTable(cols : int) =
             raise <| ArgumentException(sprintf "列数不一致 需求:%i, 提供:%i" col.Length fields.Length)
         fields
         |> Array.iteri (fun i o ->
-            let str =
+            let rec toStr(o : obj) =
                 match o with
                 | :? string as str -> str
                 | :? int32 as i -> System.String.Format("{0:N0}", i)
@@ -59,8 +59,14 @@ type TextTable(cols : int) =
                         if (f % 1.0) <> 0.0 then "{0:N2}"
                         else "{0:N0}"
                     System.String.Format(fmt, f)
+                | :? TimeSpan as ts ->
+                    sprintf "%i天%i时%i分前" ts.Days ts.Hours ts.Minutes
+                | :? DateTimeOffset as dto ->
+                    toStr(DateTimeOffset.Now - dto)
+                | :? DateTime as dt ->
+                    toStr(DateTime.Now - dt)
                 | _ -> o.ToString()
-            col.[i].Add(str))
+            col.[i].Add(toStr(o)))
 
     member x.ToLines() = 
         [|

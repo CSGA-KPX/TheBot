@@ -33,7 +33,7 @@ type RPNToken<'T when 'T :> IOperand<'T>> =
         | Operator o -> sprintf "(Operator %O)" o
 
 [<AbstractClass>]
-type GenericRPNParser<'Operand when 'Operand :> IOperand<'Operand>>() =
+type GenericRPNParser<'Operand when 'Operand :> IOperand<'Operand>>(?OperatorEscapeChar : Char) =
     let opsDict =
         let defaultOps =
                 [| GenericOperator<'Operand>('(', -1, fun _ -> invalidOp "")
@@ -54,6 +54,9 @@ type GenericRPNParser<'Operand when 'Operand :> IOperand<'Operand>>() =
     /// 把字符串转换为操作数
     abstract Tokenize : string -> RPNToken<'Operand>
 
+    /// 操作符转义字符
+    member val OperatorEscape = defaultArg OperatorEscapeChar '\\'
+
     /// 获得操作符集合
     /// 
     /// 写入会破坏线程安全
@@ -65,10 +68,20 @@ type GenericRPNParser<'Operand when 'Operand :> IOperand<'Operand>>() =
             for i = 0 to str.Length - 1 do 
                 let c = str.[i]
                 if x.Operatos.Contains(c) then
-                    let token = sb.ToString()
-                    sb.Clear() |> ignore
-                    if not <| String.IsNullOrWhiteSpace(token) then yield Choice1Of2 token
-                    yield Choice2Of2 x.Operatos.[c]
+                    let isEscaped = 
+                        // 前一个字符还不能是转义符号
+                        if i = 0 then
+                            false // 第一个字符不可能被转义
+                        else
+                            str.[i-1] = x.OperatorEscape
+                    if isEscaped then
+                        // 删掉转义字符，然后添加
+                        sb.Remove(sb.Length - 1, 1).Append(c) |> ignore
+                    else
+                        let token = sb.ToString()
+                        sb.Clear() |> ignore
+                        if not <| String.IsNullOrWhiteSpace(token) then yield Choice1Of2 token
+                        yield Choice2Of2 x.Operatos.[c]
                 else
                     sb.Append(c) |> ignore
             let last = sb.ToString()
