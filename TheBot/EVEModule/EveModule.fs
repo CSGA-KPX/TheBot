@@ -1,35 +1,27 @@
 ﻿namespace TheBot.Module.EveModule
+
 open System
+
 open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Handler.CommandHandlerBase
+
 open TheBot.Utils.HandlerUtils
 open TheBot.Utils.TextTable
 open TheBot.Utils.RecipeRPN
-open TheBot.Module.EveModule.Utils
+
 open EveData
-open TheBot.Module.EveModule.Extensions
+
+open TheBot.Module.EveModule.Utils.Helpers
+open TheBot.Module.EveModule.Utils.Config
+open TheBot.Module.EveModule.Utils.Data
+open TheBot.Module.EveModule.Utils.Extensions
 
 type EveModule() =
     inherit CommandHandlerBase()
 
-    let typeNameToItem(name : string) =
-        let succ, item = EveTypeNameCache.TryGetValue(name)
-        if not succ then
-            failwithf "找不到物品"
-        item
+    let data = DataBundle.Instance
 
-    let tryTypeToBp(item : EveType) = 
-        let succ, bp = EveBlueprintCache.TryGetValue(item.TypeId)
-        if not succ then
-            let succ, bp = itemToBp.TryGetValue(item.TypeId)
-            if not succ then
-                None
-            else
-                // 输入是物品，但是存在制造蓝图
-                Some(bp)
-        else
-            // 输入是蓝图
-            Some(bp)
+    let tryTypeToBp(item : EveType) = data.TryTypeToBp(item)
 
     let typeToBp(item : EveType) = 
         let ret = tryTypeToBp(item)
@@ -38,7 +30,7 @@ type EveModule() =
 
     /// 物品名或蓝图名查找蓝图
     let typeNameToBp(name : string) = 
-        name |> typeNameToItem |> typeToBp
+        name |> data.GetItem |> typeToBp
 
     static let er = EveExpression.EveExpression()
 
@@ -46,41 +38,61 @@ type EveModule() =
     member x.HandleEveTest(msgArg : CommandArgs) =
         failOnNonAdmin(msgArg)
 
-        let (name, cfg) = ScanConfig(msgArg.Arguments)
-        let succ, crop = CorporationName.TryGetValue(name)
-        if not succ then
-            failwithf "找不到NPC信息：%s" name
-        let tt = TextTable.FromHeader([|"兑换"; "成本"; "收益/LP"; |])
-        tt.AddPreTable("暂不支持蓝图计算，蓝图兑换已删除。")
-        GetLpStoreOffersByCorp(crop)
-        |> Array.filter (fun offer -> not <| EveBlueprintCache.ContainsKey(offer.Offer.TypeId))
-        |> Array.map (fun offer ->
-            let item = EveTypeIdCache.[offer.Offer.TypeId]
-            let itemCost = 
-                offer.Required
-                |> Array.sumBy (fun m -> m.GetTotalPrice())
+        ()
 
-            let totalCost = itemCost + offer.IskCost
-            let profit = 
-                let sell = offer.Offer.GetTotalPrice()
-                sell - totalCost
+    [<CommandHandlerMethodAttribute("eveLp", "EVE LP兑换计算", "#evelp 军团名")>]
+    member x.HandleEveLp(msgArg : CommandArgs) =
+        let cfg = EveConfigParser()
+        cfg.Parse(msgArg.Arguments)
+
+        let tt = TextTable.FromHeader([|"兑换"; "利润"; "利润/LP"; "日均交易"; |])
+
+        msgArg.QuickMessageReply("此命令可能需要很长时间，请耐心等待")
+
+        data.GetLpStoreOffersByCorp(data.GetNpcCorporation(cfg.CmdLineAsString))
+        |> Array.map (fun offer ->
+            let bpRet = data.TryGetBp(offer.Offer.TypeId)
+            let item = offer.Offer.MaterialItem
+
+            let totalCost = //兑换需要
+                (offer.Required
+                |> Array.sumBy (fun m -> m.GetTotalPrice(cfg.MaterialPriceMode)))
+                + offer.IskCost
+
+            let sellPrice = 
+                if bpRet.IsSome then
+                    // 兑换数就是流程数，默认材料效率0
+                    let bp = bpRet.Value.GetBpByRuns(offer.Offer.Quantity).ApplyMaterialEfficiency(0)
+                    bp.GetTotalProductPrice(PriceFetchMode.Sell) - bp.GetManufacturingPrice(cfg)
+                else
+                    offer.Offer.GetTotalPrice(PriceFetchMode.Sell)
+
+            let dailyVolume = 
+                let item = if bpRet.IsSome then bpRet.Value.ProductItem else item
+                data.GetItemTradeVolume(item)
+
+            let profit      = sellPrice - totalCost
             let profitPerLp = profit / offer.LpCost
+            let pPerLpVolume= profitPerLp * dailyVolume
+
             let offerStr = sprintf "%s*%g" item.TypeName offer.Offer.Quantity
 
-            (offerStr, totalCost, profitPerLp))
-        |> Array.sortByDescending (fun (_, _, ppl) -> ppl)
-        //|> Array.truncate 20
-        |> Array.iter (fun (n, c, ppl) -> tt.AddRow(n, c, ppl))
+            (offerStr, profit, profitPerLp, dailyVolume, pPerLpVolume))
+
+        |> Array.sortByDescending (fun (str, p, plp, vol, plpv) -> plpv)
+        |> Array.truncate 50
+        |> Array.iter (fun (str, p, plp, vol, plpv) -> tt.AddRow(str, p, plp, vol))
 
         use tr = new TextResponse(msgArg)
         tr.Write(tt)
 
-    [<CommandHandlerMethodAttribute("updateevedb", "刷新价格数据库（管理员）", "")>]
+    [<CommandHandlerMethodAttribute("eveclearcache", "清空价格缓存（管理员）", "")>]
     member x.HandleRefreshCache(msgArg : CommandArgs) =
         failOnNonAdmin(msgArg)
-        failwithf "此命令暂时废弃"
-        let updated = UpdatePriceCache()
-        msgArg.QuickMessageReply(sprintf "价格缓存刷新成功 @ %O" updated)
+
+        data.ClearPriceCache()
+
+        msgArg.QuickMessageReply(sprintf "完毕")
 
     [<CommandHandlerMethodAttribute("em", "查询物品价格", "")>]
     [<CommandHandlerMethodAttribute("emr", "实时价格查询（市场中心API）", "")>]
@@ -88,11 +100,11 @@ type EveModule() =
         let t = er.Eval(String.Join(" ", msgArg.Arguments))
         let priceFunc = 
             match msgArg.Command with
-            | Some "#em"  -> fun (t : EveType) -> t.GetPrice()
-            | Some "#emr" -> fun (t : EveType) -> GetItemPrice(t.TypeId)
+            | Some "#em"  -> fun (t : EveType) -> t.GetPriceInfo()
+            | Some "#emr" -> fun (t : EveType) -> data.GetItemPrice(t)
             | _ -> failwithf "%A" msgArg.Command
 
-        let tt = TextTable.FromHeader([|"物品"; "数量"; "卖出"; "买入"; "更新时间"|])
+        let tt = TextTable.FromHeader([|"物品"; "数量"; "卖出"; "买入"; "日均交易"; "更新时间"|])
 
         match t with
         | Accumulator a ->
@@ -102,17 +114,16 @@ type EveModule() =
                 let p    = priceFunc(item)
                 let sell = p.Sell * q
                 let buy  = p.Buy * q
+                let vol  = data.GetItemTradeVolume(item)
                 let updated = p.Updated.ToOffset(TimeSpan.FromHours(8.0))
-                tt.AddRow(item.TypeName, q, sell, buy, updated)
-                ()
+                tt.AddRow(item.TypeName, q, sell, buy, vol, updated)
         | _ -> failwithf "求值失败，结果是%A" t
 
         msgArg.QuickMessageReply(tt.ToString())
 
-    
     member x.HandleEveMarketR(msgArg : CommandArgs) =
         let name = String.Join(" ", msgArg.Arguments)
-        let item = typeNameToItem(name)
+        let item = data.GetItem(name)
         let sell, buy = item.GetSellPrice(), item.GetBuyPrice()
         msgArg.QuickMessageReply(String.Format("{0} 出售：{1:N2} 买入：{2:N2}", item.TypeName, sell, buy))
 
@@ -120,18 +131,17 @@ type EveModule() =
     member x.HandleME(msgArg : CommandArgs) =
         let name = String.Join(" ", msgArg.Arguments)
         let bp = typeNameToBp(name)
-        let me0Price = bp.ApplyMaterialEfficiency(0).GetTotalMaterialPrice()
+        let me0Price = bp.ApplyMaterialEfficiency(0).GetTotalMaterialPrice(PriceFetchMode.Sell)
 
         let att = AutoTextTable<int>(
                     [|
                         "材料等级", fun me -> box(me)
                         "节省", fun me -> 
-                                        bp.ApplyMaterialEfficiency(me).GetTotalMaterialPrice()
+                                        bp.ApplyMaterialEfficiency(me).GetTotalMaterialPrice(PriceFetchMode.Sell)
                                         |> (fun x -> (me0Price - x))
                                         |> box
                     |]
         )
-        att.AddPreTable(sprintf "产出 %s" EveTypeIdCache.[bp.ProductId].TypeName)
         att.AddPreTable("直接材料总价：" + System.String.Format("{0:N0}", me0Price))
         for i = 0 to 10 do
             att.AddObject(i)
@@ -139,12 +149,13 @@ type EveModule() =
 
     [<CommandHandlerMethodAttribute("er", "EVE蓝图材料计算（可用表达式）", "")>]
     member x.HandleR(msgArg : CommandArgs) =
-        let (expr, cfg) = ScanConfig(msgArg.Arguments)
+        let cfg = EveConfigParser()
+        cfg.Parse(msgArg.Arguments)
 
         let final = ItemAccumulator()
         let tt = TextTable.FromHeader([|"名称"; "数量";|])
-        tt.AddPreTable(sprintf "输入效率：%i%% "cfg.InputME)
-        match er.Eval(expr) with
+        tt.AddPreTable(sprintf "输入效率：%i%% "cfg.InputMe)
+        match er.Eval(cfg.CmdLineAsString) with
         | Number n ->
             failwithf "结算结果为数字:%g" n
         | Accumulator a ->
@@ -156,7 +167,7 @@ type EveModule() =
                 match bp with
                 | _ when bp.IsSome && q > 0.0 -> 
                     // 需要计算
-                    let bp = typeToBp(kv.Key).ApplyMaterialEfficiency(cfg.InputME).GetBpByRuns(q)
+                    let bp = typeToBp(kv.Key).GetBpByRuns(q).ApplyMaterialEfficiency(cfg.InputMe)
                     tt.AddRow("产出："+bp.ProductItem.TypeName, bp.ProductQuantity)
 
                     for m in bp.Materials do
@@ -174,32 +185,33 @@ type EveModule() =
 
     [<CommandHandlerMethodAttribute("err", "EVE蓝图材料计算（可用表达式）", "")>]
     member x.HandleRR(msgArg : CommandArgs) =
-        let (expr, cfg) = ScanConfig(msgArg.Arguments)
+        let cfg = EveConfigParser()
+        cfg.Parse(msgArg.Arguments)
 
         let final = ItemAccumulator()
         let tt = TextTable.FromHeader([|"名称"; "数量";|])
         tt.AddPreTable(sprintf "输入效率：%i%% 默认效率：%i%%"
-            cfg.InputME
-            cfg.DefME
+            cfg.InputMe
+            cfg.DerivativetMe
         )
         tt.AddPreTable(sprintf "展开行星材料：%b 展开反应公式：%b" cfg.ExpandPlanet cfg.ExpandReaction)
 
         let rec loop (bp : EveData.EveBlueprint) = 
             for m in bp.Materials do 
-                let hasNext, bp = itemToBp.TryGetValue(m.TypeId)
-                if hasNext && cfg.BpCanExpand(bp) then
-                    let bp = bp.ApplyMaterialEfficiency(cfg.DefME).GetBpByItemCeil(m.Quantity)
+                let ret = data.TryGetBpByProduct(m.MaterialItem)
+                if ret.IsSome && cfg.BpCanExpand(ret.Value) then
+                    let bp = ret.Value.GetBpByItemCeil(m.Quantity).ApplyMaterialEfficiency(cfg.DerivativetMe)
                     loop(bp)
                 else
                     final.AddOrUpdate(m.MaterialItem, m.Quantity)
 
-        match er.Eval(expr) with
+        match er.Eval(cfg.CmdLineAsString) with
         | Number n ->
             failwithf "结算结果为数字:%g" n
         | Accumulator a ->
             for kv in a do 
                 let q  = kv.Value
-                let bp = typeToBp(kv.Key).ApplyMaterialEfficiency(cfg.InputME).GetBpByRuns(q)
+                let bp = typeToBp(kv.Key).GetBpByRuns(q).ApplyMaterialEfficiency(cfg.InputMe)
                 tt.AddRow("产出："+ bp.ProductItem.TypeName, bp.ProductQuantity)
 
                 loop(bp)
@@ -210,22 +222,30 @@ type EveModule() =
 
     [<CommandHandlerMethodAttribute("errc", "EVE蓝图成本计算（可用表达式）", "")>]
     member x.HandleERRCV2(msgArg : CommandArgs) = 
-        let (expr, cfg) = ScanConfig(msgArg.Arguments)
+        let cfg = EveConfigParser()
+        cfg.Parse(msgArg.Arguments)
 
         let finalBp = 
-            match er.Eval(expr) with
+            match er.Eval(cfg.CmdLineAsString) with
             | Number n ->
                 failwithf "结算结果为数字:%g" n
             | Accumulator a ->
                 /// 生成一个伪蓝图用于下游计算
                 let os = ItemAccumulator<EveType>()
                 let ms = ItemAccumulator<EveType>()
+                let mutable bpTypeCheck = None
+
                 for kv in a do
                     let t = kv.Key
                     let q = kv.Value
                     if q < 0.0 then failwith "暂不支持负数计算"
 
-                    let bp = (typeToBp t).GetBpByRuns(q)
+                    let bp = (typeToBp t).GetBpByRuns(q).ApplyMaterialEfficiency(cfg.InputMe)
+
+                    if bpTypeCheck.IsNone then bpTypeCheck <- Some bp.Type
+                    else
+                        if bpTypeCheck.Value <> bp.Type then
+                            invalidOp "蓝图类型不一致，无法计算，请拆分后重试"
 
                     os.AddOrUpdate(bp.ProductItem, bp.ProductQuantity)
                     for m in bp.Materials do
@@ -239,7 +259,7 @@ type EveModule() =
                 {   EveBlueprint.Materials = ms
                     EveBlueprint.Products = os
                     EveBlueprint.BlueprintTypeID = Int32.MinValue
-                    EveBlueprint.Type = BlueprintType.Unknown}
+                    EveBlueprint.Type = bpTypeCheck.Value}
 
         let outTt = TextTable.FromHeader([|"产出"; "数量";|])
         for p in finalBp.Products do 
@@ -250,31 +270,24 @@ type EveModule() =
         //tt.AddPreTable(outTt.ToString())
         tt.AddPreTable("价格有延迟，算法不稳定，市场有风险, 投资需谨慎")
         tt.AddPreTable(sprintf "输入效率：%i%% 默认效率：%i%% 成本指数：%i%% 设施税率%i%%"
-            cfg.InputME
-            cfg.DefME
+            cfg.InputMe
+            cfg.DerivativetMe
             cfg.SystemCostIndex
             cfg.StructureTax
         )
         tt.AddPreTable(sprintf "展开行星材料：%b 展开反应公式：%b" cfg.ExpandPlanet cfg.ExpandReaction)
 
-        
-
-        let getFee price = 
-            let fee = price * (pct cfg.SystemCostIndex)
-            let tax = fee * (pct cfg.StructureTax)
-            fee + tax
-
         let rec getRootMaterialsPrice (bp : EveBlueprint) = 
             let mutable sum = 0.0
 
             for m in bp.Materials do 
-                let price = m.GetTotalPrice()
-                let fee = getFee(price)
-                sum <- sum + fee
+                let price = m.GetTotalPrice(cfg.MaterialPriceMode)
+                let fee = cfg.CalculateManufacturingFee(price, bp.Type)
+                sum <- sum + fee 
 
-                let hasNext, bp = itemToBp.TryGetValue(m.TypeId)
-                if hasNext && cfg.BpCanExpand(bp) then
-                    let bp = bp.ApplyMaterialEfficiency(cfg.DefME).GetBpByItemNoCeil(m.Quantity)
+                let ret = data.TryGetBpByProduct(m.MaterialItem)
+                if ret.IsSome && cfg.BpCanExpand(ret.Value) then
+                    let bp = ret.Value.GetBpByItemNoCeil(m.Quantity).ApplyMaterialEfficiency(cfg.DerivativetMe)
                     sum <- sum + getRootMaterialsPrice bp
                 else
                     sum <- sum + price
@@ -288,14 +301,14 @@ type EveModule() =
         for m in finalBp.Materials do 
             let amount = m.Quantity
             let name   = m.MaterialItem.TypeName
-            let buy    = m.GetTotalPrice()
+            let buy    = m.GetTotalPrice(cfg.MaterialPriceMode)
                 
-            optCost <- optCost + getFee(buy)
-            allCost <- allCost + getFee(buy)
+            optCost <- optCost + cfg.CalculateManufacturingFee(buy, finalBp.Type)
+            allCost <- allCost + cfg.CalculateManufacturingFee(buy, finalBp.Type)
 
-            let succ, bp = itemToBp.TryGetValue(m.TypeId)
-            if succ && cfg.BpCanExpand(bp) then
-                let bp = bp.ApplyMaterialEfficiency(cfg.DefME).GetBpByItemNoCeil(amount)
+            let ret = data.TryGetBpByProduct(m.MaterialItem)
+            if ret.IsSome && cfg.BpCanExpand(ret.Value) then
+                let bp = ret.Value.GetBpByItemNoCeil(amount).ApplyMaterialEfficiency(cfg.DerivativetMe)
                 let cost = getRootMaterialsPrice bp
                 optCost <- optCost + (if (cost >= buy) && (buy <> 0.0) then buy else cost)
                 allCost <- allCost + cost
@@ -305,28 +318,10 @@ type EveModule() =
                 allCost <- allCost + buy
                 tt.AddRow(name, amount, buy |> HumanReadableFloat, "--")
 
-        let sell = finalBp.GetTotalProductPrice()
+        let sell = finalBp.GetTotalProductPrice(PriceFetchMode.Sell)
 
         tt.AddRowPadding("售价/税后", "--", sell |> HumanReadableFloat, sell * 0.94 |> HumanReadableFloat)
         tt.AddRowPadding("买入造价/最佳造价", "--", optCost |> HumanReadableFloat, allCost |> HumanReadableFloat)
-        msgArg.QuickMessageReply(tt.ToString())
-
-    [<CommandHandlerMethodAttribute("EVE压矿", "EVE压矿利润", "")>]
-    member x.HandleOreCompression(msgArg : CommandArgs) =
-        let ores = 
-            EveTypeNameCache.Values
-            |> Seq.filter (fun x -> x.TypeName.StartsWith("高密度"))
-        let tt = TextTable.FromHeader([|"矿"; "压缩前（1化矿单位）"; "压缩后"; "溢价比"|])
-        for ore in ores do
-            if not <| ore.TypeName.Contains("冰") then
-                let compressed = ore
-                let normal     = EveTypeNameCache.[ore.TypeName.[3..]]
-
-                let cp = GetItemPriceCached(compressed.TypeId).Sell
-                let np = GetItemPriceCached(normal.TypeId).Sell
-
-                if np <> 0.0 then
-                    tt.AddRow(normal.TypeName, np*100.0, cp, cp/np/100.0)
         msgArg.QuickMessageReply(tt.ToString())
 
     [<CommandHandlerMethodAttribute("EVE采矿", "EVE挖矿利润", "")>]
@@ -344,12 +339,13 @@ type EveModule() =
         let getSubTypes (names : string) = 
             names.Split(',')
             |> Array.map (fun name ->
-                let info = OreRefineInfo.[name]
+                let item = data.GetItem(name)
+                let info = data.GetRefineInfo(item)
                 let refinePerSec = mineSpeed / info.Volume / info.RefineUnit
                 let price =
                     info.Yields
                     |> Array.sumBy (fun m -> 
-                        m.Quantity * refinePerSec * refineYield * GetItemPriceCached(m.TypeId).Sell)
+                        m.Quantity * refinePerSec * refineYield * data.GetItemPriceCached(m.TypeId).Sell)
                 name, price|> ceil )
             |> Array.sortByDescending snd
 

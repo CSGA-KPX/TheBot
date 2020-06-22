@@ -24,6 +24,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "TheBot-Test", "TheBot-Test\TheBot-Test.fsproj", "{787150A5-2986-4AA1-B96E-6731AA6FAC61}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -88,6 +90,14 @@ Global
 		{7249154C-B925-4006-88AA-192DACB0ACA3}.Release|Any CPU.Build.0 = Release|Any CPU
 		{7249154C-B925-4006-88AA-192DACB0ACA3}.Release|x86.ActiveCfg = Release|Any CPU
 		{7249154C-B925-4006-88AA-192DACB0ACA3}.Release|x86.Build.0 = Release|Any CPU
+		{787150A5-2986-4AA1-B96E-6731AA6FAC61}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{787150A5-2986-4AA1-B96E-6731AA6FAC61}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{787150A5-2986-4AA1-B96E-6731AA6FAC61}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{787150A5-2986-4AA1-B96E-6731AA6FAC61}.Debug|x86.Build.0 = Debug|Any CPU
+		{787150A5-2986-4AA1-B96E-6731AA6FAC61}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{787150A5-2986-4AA1-B96E-6731AA6FAC61}.Release|Any CPU.Build.0 = Release|Any CPU
+		{787150A5-2986-4AA1-B96E-6731AA6FAC61}.Release|x86.ActiveCfg = Release|Any CPU
+		{787150A5-2986-4AA1-B96E-6731AA6FAC61}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

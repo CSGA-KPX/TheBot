@@ -1,8 +1,8 @@
 ﻿module TheBot.Module.EveModule.EveExpression
 open TheBot.Utils.RecipeRPN
 open EveData
-open TheBot.Module.EveModule.Utils
-open TheBot.Module.EveModule.Extensions
+open TheBot.Module.EveModule.Utils.Data
+open TheBot.Module.EveModule.Utils.Extensions
 
 type ItemAccumulator = ItemAccumulator<EveType>
 
@@ -10,6 +10,5 @@ type EveExpression() =
     inherit RecipeExpression<EveType>()
 
     override x.TryGetItemByName(str) = 
-        let succ, item = EveTypeNameCache.TryGetValue(str)
-        if succ then Some(item) else None
+        DataBundle.Instance.TryGetItem(str)
 

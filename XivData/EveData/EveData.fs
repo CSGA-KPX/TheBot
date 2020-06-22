@@ -158,9 +158,10 @@ type EveBlueprint =
         
         {x with Materials = ms; Products = ps}
 
-    
-
-    /// 根据材料效率调整材料数量
+    /// 根据材料效率调整材料数量，结果向上取整(ceil)
+    ///
+    /// 在计算流程后使用
+    ///
     /// 仅对“制造”蓝图有效，其他蓝图直接返回
     member x.ApplyMaterialEfficiency(me : int) =
         if x.Type = BlueprintType.Manufacturing then
@@ -168,7 +169,7 @@ type EveBlueprint =
             let ms = 
                 x.Materials
                 |> Array.map (fun m -> 
-                    let q = (float m.Quantity) * factor
+                    let q = (float m.Quantity) * factor |> ceil
                     {m with Quantity = q}
                 )
             {x with Materials = ms}
