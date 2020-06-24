@@ -2,23 +2,48 @@
 
 open System
 open System.Collections.Generic
-open System.Net.Http
 
 open Newtonsoft.Json.Linq
 
 open EveData
 
+open TheBot.Module.EveModule.Utils.Helpers
+
 type PriceCache = 
     {
-        Sell : float
-        Buy  : float
+        TypeId : int
+        Sell   : float
+        Buy    : float
         Updated : DateTimeOffset
     }
 
-    member x.NeedsUpdate() = 
-        (DateTimeOffset.Now - x.Updated) >= PriceCache.Threshold
+type PriceCacheCollection() = 
+    inherit CachedCollection<int, PriceCache>()
 
-    static member Threshold = TimeSpan.FromHours(6.0)
+    static let threshold = TimeSpan.FromHours(6.0)
+
+    override x.GetKey(item) = item.TypeId
+
+    override x.IsExpired(item) =
+        (DateTimeOffset.Now - item.Updated) >= threshold
+
+    override x.FetchItem(key) = 
+        let url = sprintf @"https://www.ceve-market.org/api/market/region/10000002/system/30000142/type/%i.json" key
+
+        let json = hc
+                    .GetStringAsync(url)
+                    .ConfigureAwait(false)
+                    .GetAwaiter()
+                    .GetResult()
+
+        let obj = JObject.Parse(json)
+        let sellMin = (obj.GetValue("sell") :?> JObject).GetValue("min").ToObject<float>()
+        let buyMax  = (obj.GetValue("buy") :?> JObject).GetValue("max").ToObject<float>()
+
+        {   TypeId  = key
+            Sell    = sellMin
+            Buy     = buyMax
+            Updated = DateTimeOffset.Now }
 
 type MarketHistoryRecord = 
     {
@@ -30,10 +55,73 @@ type MarketHistoryRecord =
         Volume  : int64
     }
 
+type TradeVolumeCacheCollection() = 
+    inherit CachedCollection<int, int * float>()
+
+    static let threshold = TimeSpan.FromHours(24.0)
+
+    override x.GetKey(item) = fst item
+
+    override x.IsExpired(item) = false
+
+    override x.FetchItem(key) = 
+        let url =
+            sprintf "https://esi.evepc.163.com/latest/markets/10000002/history/?datasource=serenity&type_id=%i" key
+        let json = hc
+                    .GetStringAsync(url)
+                    .ConfigureAwait(false)
+                    .GetAwaiter()
+                    .GetResult()
+
+        let history = JArray.Parse(json).ToObject<MarketHistoryRecord[]>()
+        if history.Length = 0 then key, 0.0
+        else key, history |> Array.averageBy (fun x -> x.Volume |> float)
+
+type LpStoreOffersCacheCollection() = 
+    inherit CachedCollection<int, int * (LoyaltyStoreOffer [])>()
+
+    static let threshold = TimeSpan.FromHours(24.0)
+
+    override x.GetKey(item) = fst item
+
+    override x.IsExpired(item) = false
+
+    override x.FetchItem(key) = 
+            let url =
+                sprintf "https://esi.evepc.163.com/latest/loyalty/stores/%i/offers/?datasource=serenity" key
+            let json = hc
+                        .GetStringAsync(url)
+                        .ConfigureAwait(false)
+                        .GetAwaiter()
+                        .GetResult()
+            key, [|  for item in JArray.Parse(json) do 
+                        let item = item :?> JObject
+                        // 无视所有分析点兑换
+                        if not <| item.ContainsKey("ak_cost") then
+                            let isk = item.GetValue("isk_cost").ToObject<float>()
+                            let lp  = item.GetValue("lp_cost").ToObject<float>()
+                            let id  = item.GetValue("offer_id").ToObject<int>()
+                            let offers = 
+                                let q   = item.GetValue("quantity").ToObject<float>()
+                                let t   = item.GetValue("type_id").ToObject<int>()
+                                {EveMaterial.TypeId = t; Quantity = q}
+
+                            let requires = 
+                                [| for ii in item.GetValue("required_items") :?> JArray do 
+                                       let i = ii :?> JObject
+                                       let iq = i.GetValue("quantity").ToObject<float>()
+                                       let it = i.GetValue("type_id").ToObject<int>()
+                                       yield {EveMaterial.TypeId = it; Quantity = iq} |]
+
+                            yield { IskCost = isk
+                                    LpCost  = lp
+                                    OfferId = id
+                                    Offer = offers
+                                    Required = requires } |]
+
 type DataBundle private () = 
     let logger = NLog.LogManager.GetCurrentClassLogger()
-    let hc = new HttpClient()
-
+    
     let typeName = Dictionary<string, EveType>()
     let typeId   = Dictionary<int, EveType>()
 
@@ -44,9 +132,9 @@ type DataBundle private () =
 
     let refineInfo = Dictionary<int, RefineInfo>()
 
-    let priceCache = Dictionary<int, PriceCache>()
-    let volumeCache = Dictionary<int, float>()
-    let lpStoreCache = Dictionary<int, LoyaltyStoreOffer[]>()
+    let priceCache = PriceCacheCollection()
+    let volumeCache = TradeVolumeCacheCollection()
+    let lpStoreCache = LpStoreOffersCacheCollection()
 
     let itemNotFound = failwithf "找不到物品 %s"
 
@@ -156,97 +244,15 @@ type DataBundle private () =
         if succ then Some bp else None
 
     member x.GetItemPrice(t : EveType)  = x.GetItemPrice(t.TypeId)
-    member x.GetItemPrice(typeid : int) = 
-        let url = sprintf @"https://www.ceve-market.org/api/market/region/10000002/system/30000142/type/%i.json" typeid
-        logger.Info("GetItemPrice 正在请求： {0}", url)
-        let json = hc
-                    .GetStringAsync(url)
-                    .ConfigureAwait(false)
-                    .GetAwaiter()
-                    .GetResult()
-
-        let obj = JObject.Parse(json)
-        let sellMin = (obj.GetValue("sell") :?> JObject).GetValue("min").ToObject<float>()
-        let buyMax  = (obj.GetValue("buy") :?> JObject).GetValue("max").ToObject<float>()
-
-        {   
-            Sell    = sellMin
-            Buy     = buyMax
-            Updated = DateTimeOffset.Now
-        }
-
+    member x.GetItemPrice(id : int) = priceCache.FetchItem(id)
     member x.GetItemPriceCached(t : EveType) = x.GetItemPriceCached(t.TypeId)
-    member x.GetItemPriceCached(id : int) = 
-        let succ, price = priceCache.TryGetValue(id)
-        if (not succ) || price.NeedsUpdate() then
-            priceCache.[id] <- x.GetItemPrice(id) 
-        priceCache.[id]
+    member x.GetItemPriceCached(id : int) = priceCache.[id]
 
     member x.GetNpcCorporation(name : string) = npcCorpNames.[name]
 
-    member x.GetItemTradeVolume(t : EveType) = 
-        if not <| volumeCache.ContainsKey(t.TypeId) then
-            let url =
-                sprintf "https://esi.evepc.163.com/latest/markets/10000002/history/?datasource=serenity&type_id=%i"
-                    t.TypeId
-            logger.Info("GetItemTradeVolume 正在请求： {0}", url)
-            let json = hc
-                        .GetStringAsync(url)
-                        .ConfigureAwait(false)
-                        .GetAwaiter()
-                        .GetResult()
+    member x.GetItemTradeVolume(t : EveType) = volumeCache.[t.TypeId] |> snd
 
-            let history = JArray.Parse(json).ToObject<MarketHistoryRecord[]>()
-            let vol = 
-                if history.Length = 0 then 0.0
-                else history |> Array.averageBy (fun x -> x.Volume |> float)
-            volumeCache.[t.TypeId] <- vol
-        volumeCache.[t.TypeId]
-
-    member x.GetLpStoreOffersByCorp(c : NpcCorporation) = 
-        if not <| lpStoreCache.ContainsKey(c.CorporationID) then
-            let url =
-                sprintf "https://esi.evepc.163.com/latest/loyalty/stores/%i/offers/?datasource=serenity"
-                    c.CorporationID
-            logger.Info("GetLpStoreOffersByCorp 正在请求： {0}", url)
-            let json = hc
-                        .GetStringAsync(url)
-                        .ConfigureAwait(false)
-                        .GetAwaiter()
-                        .GetResult()
-            let data = 
-                [|
-                    for item in JArray.Parse(json) do 
-                        let item = item :?> JObject
-                        // 无视所有分析点兑换
-                        if not <| item.ContainsKey("ak_cost") then
-                            let isk = item.GetValue("isk_cost").ToObject<float>()
-                            let lp  = item.GetValue("lp_cost").ToObject<float>()
-                            let id  = item.GetValue("offer_id").ToObject<int>()
-                            let offers = 
-                                let q   = item.GetValue("quantity").ToObject<float>()
-                                let t   = item.GetValue("type_id").ToObject<int>()
-                                {EveMaterial.TypeId = t; Quantity = q}
-
-                            let requires = 
-                                [|
-                                    for ii in item.GetValue("required_items") :?> JArray do 
-                                        let i = ii :?> JObject
-                                        let iq = i.GetValue("quantity").ToObject<float>()
-                                        let it = i.GetValue("type_id").ToObject<int>()
-                                        yield {EveMaterial.TypeId = it; Quantity = iq}
-                                |]
-
-                            yield {
-                                IskCost = isk
-                                LpCost  = lp
-                                OfferId = id
-                                Offer = offers
-                                Required = requires
-                            }
-                |]
-            lpStoreCache.Add(c.CorporationID, data)
-        lpStoreCache.[c.CorporationID]
+    member x.GetLpStoreOffersByCorp(c : NpcCorporation) = lpStoreCache.[c.CorporationID] |> snd
 
     member x.GetRefineInfo(t : EveType) = refineInfo.[t.TypeId]
 

@@ -1,13 +1,19 @@
 ﻿module TheBot.Module.EveModule.Utils.Helpers
 
 open System
-
+open System.Net.Http
 
 [<Literal>]
 let EveSellTax = 6
 
 [<Literal>]
 let EveBuyTax = 4
+
+let hc = 
+    let hc = new HttpClient()
+    hc.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "https://github.com/CSGA-KPX/TheBot") |> ignore
+    hc
+
 
 /// EVE小数进位
 ///
@@ -41,3 +47,23 @@ let HumanReadableFloat (d : float) =
             | _  ->  8.0, "亿"*)
 
         String.Format("{0:N2}{1}", d / 10.0 ** scale, postfix)
+
+[<AbstractClass>]
+type CachedCollection<'Key, 'Value>() = 
+    let cache = Collections.Concurrent.ConcurrentDictionary<'Key, 'Value>()
+
+    /// 获取一个值，不通过缓存
+    abstract FetchItem : 'Key -> 'Value
+    abstract GetKey    : 'Value -> 'Key
+    abstract IsExpired : 'Value -> bool
+
+    member x.Clear() = cache.Clear()
+
+    member x.Item(key : 'Key) =
+        let item = cache.GetOrAdd(key, fun key -> x.FetchItem(key))
+        if x.IsExpired(item) then
+            let newVal = x.FetchItem(key)
+            let succ = cache.TryUpdate(key, newVal, item)
+            if succ then newVal else item
+         else
+            item

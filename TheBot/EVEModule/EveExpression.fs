@@ -2,7 +2,6 @@
 open TheBot.Utils.RecipeRPN
 open EveData
 open TheBot.Module.EveModule.Utils.Data
-open TheBot.Module.EveModule.Utils.Extensions
 
 type ItemAccumulator = ItemAccumulator<EveType>
 

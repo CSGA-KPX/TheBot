@@ -103,10 +103,10 @@ type EveModule() =
             | Some "#emr" -> fun (t : EveType) -> data.GetItemPrice(t)
             | Some "#eve矿物" -> 
                 argOverride <- Some(MineralNames.Replace(',', '+'))
-                fun (t : EveType) -> data.GetItemPrice(t)
+                fun (t : EveType) -> data.GetItemPriceCached(t)
             | _ -> failwithf "%A" msgArg.Command
 
-        let tt = TextTable.FromHeader([|"物品"; "数量"; "卖出"; "买入"; "日均交易"; "更新时间"|])
+        let tt = TextTable.FromHeader([|"物品"; "数量"; "卖出"; "买入"; "日均交易"|])
 
         let t =
             let str =
@@ -123,8 +123,7 @@ type EveModule() =
                 let sell = p.Sell * q
                 let buy  = p.Buy * q
                 let vol  = data.GetItemTradeVolume(item)
-                let updated = p.Updated.ToOffset(TimeSpan.FromHours(8.0))
-                tt.AddRow(item.TypeName, q, sell, buy, vol, updated)
+                tt.AddRow(item.TypeName, q, sell, buy, vol)
         | _ -> failwithf "求值失败，结果是%A" t
 
         msgArg.QuickMessageReply(tt.ToString())
