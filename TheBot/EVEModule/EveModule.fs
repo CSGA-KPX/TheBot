@@ -38,8 +38,6 @@ type EveModule() =
     member x.HandleEveTest(msgArg : CommandArgs) =
         failOnNonAdmin(msgArg)
 
-        ()
-
     [<CommandHandlerMethodAttribute("eveLp", "EVE LP兑换计算", "#evelp 军团名")>]
     member x.HandleEveLp(msgArg : CommandArgs) =
         let cfg = EveConfigParser()
@@ -63,9 +61,9 @@ type EveModule() =
                 if bpRet.IsSome then
                     // 兑换数就是流程数，默认材料效率0
                     let bp = bpRet.Value.GetBpByRuns(offer.Offer.Quantity).ApplyMaterialEfficiency(0)
-                    bp.GetTotalProductPrice(PriceFetchMode.Sell) - bp.GetManufacturingPrice(cfg)
+                    bp.GetTotalProductPrice(PriceFetchMode.SellWithTax) - bp.GetManufacturingPrice(cfg)
                 else
-                    offer.Offer.GetTotalPrice(PriceFetchMode.Sell)
+                    offer.Offer.GetTotalPrice(PriceFetchMode.SellWithTax)
 
             let dailyVolume = 
                 let item = if bpRet.IsSome then bpRet.Value.ProductItem else item
@@ -94,17 +92,27 @@ type EveModule() =
 
         msgArg.QuickMessageReply(sprintf "完毕")
 
+    [<CommandHandlerMethodAttribute("eve矿物", "查询实时矿物价格", "")>]
     [<CommandHandlerMethodAttribute("em", "查询物品价格", "")>]
-    [<CommandHandlerMethodAttribute("emr", "实时价格查询（市场中心API）", "")>]
+    [<CommandHandlerMethodAttribute("emr", "价格实时查询（市场中心API）", "")>]
     member x.HandleEveMarket(msgArg : CommandArgs) =
-        let t = er.Eval(String.Join(" ", msgArg.Arguments))
+        let mutable argOverride = None
         let priceFunc = 
             match msgArg.Command with
             | Some "#em"  -> fun (t : EveType) -> t.GetPriceInfo()
             | Some "#emr" -> fun (t : EveType) -> data.GetItemPrice(t)
+            | Some "#eve矿物" -> 
+                argOverride <- Some(MineralNames.Replace(',', '+'))
+                fun (t : EveType) -> data.GetItemPrice(t)
             | _ -> failwithf "%A" msgArg.Command
 
         let tt = TextTable.FromHeader([|"物品"; "数量"; "卖出"; "买入"; "日均交易"; "更新时间"|])
+
+        let t =
+            let str =
+                if argOverride.IsSome then argOverride.Value
+                else String.Join(" ", msgArg.Arguments)
+            er.Eval(str)
 
         match t with
         | Accumulator a ->
@@ -120,12 +128,6 @@ type EveModule() =
         | _ -> failwithf "求值失败，结果是%A" t
 
         msgArg.QuickMessageReply(tt.ToString())
-
-    member x.HandleEveMarketR(msgArg : CommandArgs) =
-        let name = String.Join(" ", msgArg.Arguments)
-        let item = data.GetItem(name)
-        let sell, buy = item.GetSellPrice(), item.GetBuyPrice()
-        msgArg.QuickMessageReply(String.Format("{0} 出售：{1:N2} 买入：{2:N2}", item.TypeName, sell, buy))
 
     [<CommandHandlerMethodAttribute("eme", "EVE蓝图材料效率计算", "")>]
     member x.HandleME(msgArg : CommandArgs) =
@@ -265,17 +267,16 @@ type EveModule() =
         for p in finalBp.Products do 
             outTt.AddRow(p.MaterialItem.TypeName, p.Quantity)
 
-        let tt = TextTable.FromHeader([|"组件"; "数量"; "买成品"; "搓（材料+费）"|])
-        //tt.AddPreTable("计算结果")
-        //tt.AddPreTable(outTt.ToString())
+        let tt = TextTable.FromHeader([|"材料"; "数量"; cfg.MaterialPriceMode.ToString() ; "生产"|])
+        tt.AddPreTable(outTt.ToString())
         tt.AddPreTable("价格有延迟，算法不稳定，市场有风险, 投资需谨慎")
-        tt.AddPreTable(sprintf "输入效率：%i%% 默认效率：%i%% 成本指数：%i%% 设施税率%i%%"
-            cfg.InputMe
-            cfg.DerivativetMe
-            cfg.SystemCostIndex
-            cfg.StructureTax
-        )
-        tt.AddPreTable(sprintf "展开行星材料：%b 展开反应公式：%b" cfg.ExpandPlanet cfg.ExpandReaction)
+        if cfg.IsDebug then
+            tt.AddPreTable(sprintf "输入效率：%i%% 默认效率：%i%% 成本指数：%i%% 设施税率%i%%"
+                cfg.InputMe
+                cfg.DerivativetMe
+                cfg.SystemCostIndex
+                cfg.StructureTax )
+            tt.AddPreTable(sprintf "展开行星材料：%b 展开反应公式：%b" cfg.ExpandPlanet cfg.ExpandReaction)
 
         let rec getRootMaterialsPrice (bp : EveBlueprint) = 
             let mutable sum = 0.0
@@ -318,9 +319,10 @@ type EveModule() =
                 allCost <- allCost + buy
                 tt.AddRow(name, amount, buy |> HumanReadableFloat, "--")
 
-        let sell = finalBp.GetTotalProductPrice(PriceFetchMode.Sell)
+        let sell = finalBp.GetTotalProductPrice(PriceFetchMode.Sell) |> HumanReadableFloat
+        let sellt= finalBp.GetTotalProductPrice(PriceFetchMode.SellWithTax) |> HumanReadableFloat
 
-        tt.AddRowPadding("售价/税后", "--", sell |> HumanReadableFloat, sell * 0.94 |> HumanReadableFloat)
+        tt.AddRowPadding("售价/税后", "--", sell, sellt)
         tt.AddRowPadding("买入造价/最佳造价", "--", optCost |> HumanReadableFloat, allCost |> HumanReadableFloat)
         msgArg.QuickMessageReply(tt.ToString())
 

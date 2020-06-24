@@ -5,7 +5,16 @@ open EveData
 [<RequireQualifiedAccess>]
 type PriceFetchMode = 
     | Sell
+    | SellWithTax
     | Buy
+    | BuyWithTax
+
+    override x.ToString() = 
+        match x with
+        | Sell -> "无税卖出"
+        | SellWithTax -> "含税卖出"
+        | Buy -> "无税收购"
+        | BuyWithTax -> "含税收购"
 
 type EveConfigParser() as x = 
     inherit TheBot.Utils.UserOption.UserOptionParser()
@@ -18,6 +27,9 @@ type EveConfigParser() as x =
         x.RegisterOption("p", "false")
         x.RegisterOption("r", "false")
         x.RegisterOption("buy", "")
+        x.RegisterOption("debug", "")
+
+    member x.IsDebug = x.IsDefined("debug")
 
     member x.InputMe = x.GetValue<int>("ime")
 
@@ -33,7 +45,7 @@ type EveConfigParser() as x =
 
     member x.MaterialPriceMode =
         if x.IsDefined("buy") then
-            PriceFetchMode.Buy
+            PriceFetchMode.BuyWithTax
         else
             PriceFetchMode.Sell
 

@@ -2,22 +2,20 @@
 
 open EveData
 
+open TheBot.Module.EveModule.Utils.Helpers
 open TheBot.Module.EveModule.Utils.Config
 open TheBot.Module.EveModule.Utils.Data
 
-
-
 type EveType with
     member x.GetPrice(pm : PriceFetchMode) =
+        let pi = x.GetPriceInfo()
         match pm with
-        | PriceFetchMode.Buy -> x.GetBuyPrice()
-        | PriceFetchMode.Sell -> x.GetSellPrice()
+        | PriceFetchMode.Buy -> pi.Buy
+        | PriceFetchMode.BuyWithTax -> pi.Buy * (pct <| 100 + EveBuyTax)
+        | PriceFetchMode.Sell -> pi.Sell
+        | PriceFetchMode.SellWithTax -> pi.Sell * (pct <| 100 - EveSellTax)
 
     member x.GetPriceInfo() = DataBundle.Instance.GetItemPriceCached(x)
-
-    member x.GetSellPrice() = x.GetPriceInfo().Sell
-
-    member x.GetBuyPrice()  = x.GetPriceInfo().Buy
 
     member x.GetTradeVolume() = DataBundle.Instance.GetItemTradeVolume(x)
 

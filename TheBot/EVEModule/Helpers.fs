@@ -2,6 +2,13 @@
 
 open System
 
+
+[<Literal>]
+let EveSellTax = 6
+
+[<Literal>]
+let EveBuyTax = 4
+
 /// EVE小数进位
 ///
 /// d 输入数字
