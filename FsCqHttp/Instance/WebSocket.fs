@@ -46,7 +46,6 @@ type CqWebSocketClient(url, token) =
 
     member x.IsAvailable = ws.State = WebSocketState.Open
 
-
     interface IApiCallProvider with
         member x.CallApi(req) =
             async {

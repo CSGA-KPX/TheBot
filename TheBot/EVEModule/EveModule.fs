@@ -81,7 +81,7 @@ type EveModule() =
         |> Array.truncate 50
         |> Array.iter (fun (str, p, plp, vol, plpv) -> tt.AddRow(str, p, plp, vol))
 
-        use tr = new TextResponse(msgArg)
+        use tr = msgArg.OpenResponse(cfg.IsImageOutput)
         tr.Write(tt)
 
     [<CommandHandlerMethodAttribute("eveclearcache", "清空价格缓存（管理员）", "")>]
@@ -267,7 +267,7 @@ type EveModule() =
             outTt.AddRow(p.MaterialItem.TypeName, p.Quantity)
 
         let tt = TextTable.FromHeader([|"材料"; "数量"; cfg.MaterialPriceMode.ToString() ; "生产"|])
-        tt.AddPreTable(outTt.ToString())
+        tt.AddPreTable(outTt)
         tt.AddPreTable("价格有延迟，算法不稳定，市场有风险, 投资需谨慎")
         if cfg.IsDebug then
             tt.AddPreTable(sprintf "输入效率：%i%% 默认效率：%i%% 成本指数：%i%% 设施税率%i%%"
@@ -323,7 +323,9 @@ type EveModule() =
 
         tt.AddRowPadding("售价/税后", "--", sell, sellt)
         tt.AddRowPadding("买入造价/最佳造价", "--", optCost |> HumanReadableFloat, allCost |> HumanReadableFloat)
-        msgArg.QuickMessageReply(tt.ToString())
+
+        use ret = msgArg.OpenResponse(cfg.IsImageOutput)
+        ret.Write(tt)
 
     [<CommandHandlerMethodAttribute("EVE采矿", "EVE挖矿利润", "")>]
     [<CommandHandlerMethodAttribute("EVE挖矿", "EVE挖矿利润", "")>]
@@ -368,4 +370,5 @@ type EveModule() =
             let emn, emp = tryGetRow moon i
             tt.AddRow(eon, eop, ein, eip, emn, emp)
 
-        msgArg.QuickMessageReply(tt.ToString())
+        use ret = msgArg.OpenResponse(true)
+        ret.Write(tt)

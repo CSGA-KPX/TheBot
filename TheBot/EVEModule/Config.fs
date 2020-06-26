@@ -28,6 +28,10 @@ type EveConfigParser() as x =
         x.RegisterOption("r", "false")
         x.RegisterOption("buy", "")
         x.RegisterOption("debug", "")
+        x.RegisterOption("text", "")
+
+    /// 是否强制文本输出。具体输出方式取决于酷Q
+    member x.IsImageOutput = not <| x.IsDefined("text")
 
     member x.IsDebug = x.IsDefined("debug")
 

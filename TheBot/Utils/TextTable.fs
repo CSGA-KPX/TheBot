@@ -9,6 +9,8 @@ type TextTable(cols : int) =
     let postTableLines = List<string>()
 
     let col = Array.init cols (fun _ -> List<string>())
+
+    static let halfWidthSpace = ' '
     static let fullWidthSpace = '　'
 
     static let charLen (c) =
@@ -83,9 +85,12 @@ type TextTable(cols : int) =
                     sb.Clear() |> ignore
                     for c = 0 to col.Length - 1 do
                         let str = col.[c].[i]
-                        let len = maxLens.[c]
-                        let pad = (maxLens.[c] - strDispLen (str)) / 2 + 1 + str.Length
-                        sb.Append(str.PadRight(pad, fullWidthSpace)) |> ignore
+                        let padCharLen = (maxLens.[c] - strDispLen (str))
+                        let padFullChr = "".PadLeft(padCharLen / 2 + 1, fullWidthSpace)
+                        let padHalfChr = "".PadLeft(padCharLen % 2, halfWidthSpace)
+                        //let pad = (maxLens.[c] - strDispLen (str)) / 2 + 1 + str.Length
+                        //sb.Append(str.PadRight(pad, fullWidthSpace)) |> ignore
+                        sb.Append(str).Append(padFullChr).Append(padHalfChr) |> ignore
                     yield sb.ToString()
             yield! postTableLines.ToArray()
         |]
