@@ -42,7 +42,7 @@ type ClientEventArgs(api : IApiCallProvider, obj : JObject) =
     member x.QuickMessageReply(msg : Message.Message, ?atUser : bool) = 
         let atUser = defaultArg atUser false
         match x.Event with
-        | Event.EventUnion.Message _ when msg.ToString().Length > 3000 -> x.QuickMessageReply("字数太多了，请优化命令或者向管理员汇报bug", true)
+        | _ when msg.ToString().Length > 3000 -> x.QuickMessageReply("字数太多了，请优化命令或者向管理员汇报bug", true)
         | Event.EventUnion.Message ctx ->
             match ctx with
             | _ when ctx.IsDiscuss -> x.SendResponse(Response.DiscusMessageResponse(msg, atUser))
@@ -153,18 +153,7 @@ and TextResponse(arg : ClientEventArgs) =
 
         if lines.Length <> 0 then
             use img = DrawLines(lines)
-            use ms  = new MemoryStream()
-            img.Save(ms, Imaging.ImageFormat.Jpeg)
-            let b64 = Convert.ToBase64String(ms.ToArray(), Base64FormattingOptions.None)
-            let segName = "image"
-            let segValue= [| "file", ("base64://" + b64) |] |> readOnlyDict
-            let seg = Message.RawMessageFmt (segName, segValue)
-            let msg = 
-                seg
-                |> Message.MessageSection.Other
-                |> Array.singleton
-                |> Message.Message
-            arg.QuickMessageReply(msg)
+            arg.QuickMessageReply(Message.Message.ImageMessage(img))
 
     override x.Flush() = 
         if x.PreferImageOutput && x.CanSendImage() then

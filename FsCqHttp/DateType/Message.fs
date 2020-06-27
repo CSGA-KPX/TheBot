@@ -38,6 +38,15 @@ type MessageSection =
         | ("text", data) -> Text data.["text"]
         | (name, data) -> Other(name, data)
 
+    /// 创建一个图像段，使用base64://格式
+    static member ImageSection(img : Drawing.Bitmap) = 
+        use ms  = new IO.MemoryStream()
+        img.Save(ms, Drawing.Imaging.ImageFormat.Jpeg)
+        let b64 = Convert.ToBase64String(ms.ToArray(), Base64FormattingOptions.None)
+        let segName = "image"
+        let segValue= [| "file", ("base64://" + b64) |] |> readOnlyDict
+        Other (RawMessageFmt (segName, segValue))
+
 [<JsonConverter(typeof<MessageConverter>)>]
 type Message(sec : MessageSection []) as x =
     inherit ResizeArray<MessageSection>()
@@ -53,8 +62,7 @@ type Message(sec : MessageSection []) as x =
     do x.AddRange(sec)
 
     new() = Message([||])
-
-    static member Empty = Message()
+    new (sec : MessageSection) = Message(Array.singleton sec)
 
     /// 获取At
     /// 默认不处理at全体成员
@@ -107,10 +115,9 @@ type Message(sec : MessageSection []) as x =
                 | _ -> sb) (Text.StringBuilder())
         sb.ToString()
 
-    static member TextMessage(str) =
-        let msg = Message()
-        msg.Add(Text str)
-        msg
+    static member TextMessage(str) = Message(Text str)
+    static member ImageMessage(img : Drawing.Bitmap) = 
+        Message(MessageSection.ImageSection(img))
 
 and MessageConverter() =
     inherit JsonConverter<Message>()

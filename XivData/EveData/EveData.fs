@@ -372,3 +372,7 @@ let MoonNames = "沸石,钾盐,沥青,柯石英,磷钇矿,独居石,铈铌钙钛
 [<Literal>]
 /// 矿物
 let MineralNames = "三钛合金,类晶体胶矿,类银超金属,同位聚合体,超新星诺克石,晶状石英核岩,超噬矿,莫尔石"
+
+[<Literal>]
+/// 导管矿石
+let TriglavianOreNames = "拉克岩,贝兹岩,塔拉岩"

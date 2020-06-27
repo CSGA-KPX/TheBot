@@ -20,7 +20,7 @@ type PriceCache =
 type PriceCacheCollection() = 
     inherit CachedCollection<int, PriceCache>()
 
-    static let threshold = TimeSpan.FromHours(6.0)
+    static let threshold = TimeSpan.FromHours(2.0)
 
     override x.GetKey(item) = item.TypeId
 
@@ -173,27 +173,20 @@ type DataBundle private () =
             npcCorpNames.Add(c.CorporationName, c)
     
     member private x.InitRefineInfo() = 
-        let moon = MoonNames.Split(',') |> set
-        let ice  = IceNames.Split(',') |> set
-        let ore  = OreNames.Split(',') |> set
-
         for tid, ms in RefineInfo.GetRefineInfos() do 
             let succ, t = typeId.TryGetValue(tid)
             // 25 = 小行星
             if succ && t.CategoryId = 25 then
                 let tn = t.TypeName
-                let isMoon = moon.Contains(tn)
-                let isIce  = ice.Contains(tn)
-                let isOre  = ore.Contains(tn)
-                if isMoon || isIce || isOre then
+                let isOre = MoonNames.Contains(tn) || OreNames.Contains(tn) ||
+                            IceNames.Contains(tn) || TriglavianOreNames.Contains(tn)
+                let isIce  = IceNames.Contains(tn)
+                if isOre then
                     let refine = 
                         {
                             OreType = t
                             Volume = t.Volume
-                            RefineUnit = 
-                                if isMoon || isOre then 100.0
-                                elif isIce then 1.0
-                                else failwith "这不是矿"
+                            RefineUnit = if isIce then 1.0 else 100.0
                             Yields = ms
                         }
                     refineInfo.Add(t.TypeId, refine)

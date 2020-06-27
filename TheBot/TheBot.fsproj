@@ -28,8 +28,6 @@
     <Compile Include="EVEModule\EveExpression.fs" />
     <Compile Include="EVEModule\EveModule.fs" />
     <Compile Include="RepeaterModule.fs" />
-    <Compile Include="TataruBridgeModule.fs" />
-    <Compile Include="OtterBridge.fs" />
     <Compile Include="TestModule.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>

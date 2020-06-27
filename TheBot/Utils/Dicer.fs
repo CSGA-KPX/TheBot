@@ -53,8 +53,6 @@ type Dicer(initSeed : byte []) as x =
             |> md5.ComputeHash
         Dicer(initSeed)
 
-
-    /// Init using SeedOption.SeedRandom
     new(seed : SeedOption) = Dicer(Array.singleton seed)
 
 

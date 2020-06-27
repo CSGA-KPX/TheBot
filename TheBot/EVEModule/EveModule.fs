@@ -45,9 +45,10 @@ type EveModule() =
 
         let tt = TextTable.FromHeader([|"兑换"; "利润"; "利润/LP"; "日均交易"; |])
 
+        let corp = data.GetNpcCorporation(cfg.CmdLineAsString)
         msgArg.QuickMessageReply("此命令可能需要很长时间，请耐心等待")
 
-        data.GetLpStoreOffersByCorp(data.GetNpcCorporation(cfg.CmdLineAsString))
+        data.GetLpStoreOffersByCorp(corp)
         |> Array.map (fun offer ->
             let bpRet = data.TryGetBp(offer.Offer.TypeId)
             let item = offer.Offer.MaterialItem
@@ -333,7 +334,7 @@ type EveModule() =
         let mineSpeed = 10.0 // m^3/s
         let refineYield = 0.70
 
-        let tt = TextTable.FromHeader([|"矿石"; "秒利润"; "冰矿"; "秒利润"; "月矿"; "秒利润";|])
+        let tt = TextTable.FromHeader([|"矿石"; "秒利润"; "冰矿"; "秒利润"; "月矿"; "秒利润"; "导管"; "秒利润";|])
         tt.AddPreTable(sprintf "采集能力：%g m3/s 精炼效率:%g"
             mineSpeed
             refineYield
@@ -355,6 +356,7 @@ type EveModule() =
         let moon= getSubTypes EveData.MoonNames
         let ice = getSubTypes EveData.IceNames
         let ore = getSubTypes EveData.OreNames
+        let tore= getSubTypes EveData.TriglavianOreNames
 
         let tryGetRow (arr : (string * float) [])  (id : int)  = 
             if id <= arr.Length - 1 then
@@ -368,7 +370,9 @@ type EveModule() =
             let eon, eop = tryGetRow ore i
             let ein, eip = tryGetRow ice i
             let emn, emp = tryGetRow moon i
-            tt.AddRow(eon, eop, ein, eip, emn, emp)
+            let etn, etp = tryGetRow tore i
+
+            tt.AddRow(eon, eop, ein, eip, emn, emp, etn, etp)
 
         use ret = msgArg.OpenResponse(true)
         ret.Write(tt)

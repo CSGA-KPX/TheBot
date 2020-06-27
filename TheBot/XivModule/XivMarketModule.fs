@@ -266,7 +266,7 @@ type XivMarketModule() =
                                 if cur.Value.IsEmpty then
                                     box "--"
                                 else
-                                    box (cur.Value.TakeVolume().StdEvPrice() / (float <|info.ReceiveCount))
+                                    box (cur.Value.TakeVolume().StdEvPrice() * (float <|info.ReceiveCount) / (float <|info.CostCount))
                     "更新", fun _ ->
                                 if cur.Value.IsEmpty then
                                     box "--"
@@ -285,4 +285,4 @@ type XivMarketModule() =
                     failwithf "%s 不能兑换道具" item.Name
                 for info in ia do 
                     att.AddObject(info)
-            using (msgArg.OpenResponse()) (fun x -> x.Write(att))
+            using (msgArg.OpenResponse(true)) (fun x -> x.Write(att))
