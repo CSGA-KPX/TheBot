@@ -46,7 +46,7 @@ type CraftRecipeProvider private () =
             col.GetSheet("Recipe")
 
         let eng = 
-            Utils.GlobalVerCollection.GetSheet("Recipe")
+            Utils.GlobalVerCollection.Value.GetSheet("Recipe")
 
         let merged = Utils.MergeSheet(chs, eng, (fun (a,b) -> a.As<string>("Item{Result}") = "0"))
 
@@ -95,7 +95,7 @@ type CompanyCraftRecipeProvider private () =
             col.GetSheet("CompanyCraftSequence")
 
         let eng = 
-            Utils.GlobalVerCollection.GetSheet("CompanyCraftSequence")
+            Utils.GlobalVerCollection.Value.GetSheet("CompanyCraftSequence")
 
         let merged = Utils.MergeSheet(chs, eng, (fun (a,b) -> a.As<string>("ResultItem") = "0"))
 

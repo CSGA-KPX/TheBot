@@ -32,7 +32,7 @@ type ItemCollection private () =
             col.GetSheet("Item", [| "Name" |])
 
         let eng = 
-            Utils.GlobalVerCollection.GetSheet("Item", [| "Name" |])
+            Utils.GlobalVerCollection.Value.GetSheet("Item", [| "Name" |])
 
         let merged = Utils.MergeSheet(chs, eng, (fun (a,b) -> a.As<string>("Name") = ""))
 

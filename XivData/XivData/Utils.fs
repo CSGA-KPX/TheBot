@@ -21,14 +21,14 @@ let ClearDb() =
     Db.Shrink() |> ignore
 
 let GlobalVerCollection = 
-    let ss = 
-        let archive = 
-                let ResName = "BotData.ffxiv-datamining-master.zip"
-                let assembly = Reflection.Assembly.GetExecutingAssembly()
-                let stream = assembly.GetManifestResourceStream(ResName)
-                new IO.Compression.ZipArchive(stream, IO.Compression.ZipArchiveMode.Read)
-        EmbeddedCsvStroage(archive, "ffxiv-datamining-master/csv/") :> ISheetStroage<seq<string []>>
-    EmbeddedXivCollection(ss, XivLanguage.None, true) :> IXivCollection
+    lazy (  let ss = 
+                let archive = 
+                        let ResName = "BotData.ffxiv-datamining-master.zip"
+                        let assembly = Reflection.Assembly.GetExecutingAssembly()
+                        let stream = assembly.GetManifestResourceStream(ResName)
+                        new IO.Compression.ZipArchive(stream, IO.Compression.ZipArchiveMode.Read)
+                EmbeddedCsvStroage(archive, "ffxiv-datamining-master/csv/") :> ISheetStroage<seq<string []>>
+            EmbeddedXivCollection(ss, XivLanguage.None, true) :> IXivCollection )
 
 /// 整合两个不同版本的表
 //

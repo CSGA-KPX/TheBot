@@ -8,6 +8,8 @@
   <ItemGroup>
     <EmbeddedResource Include="EVEData.zip" />
     <EmbeddedResource Include="ffxiv-datamining-master.zip" />
+    <Compile Include="Common\Resource.fs" />
+    <Compile Include="Common\Database.fs" />
     <Compile Include="XivData\Utils.fs" />
     <Compile Include="XivData\Item.fs" />
     <Compile Include="XivData\Recipe.fs" />

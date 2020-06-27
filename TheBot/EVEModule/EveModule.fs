@@ -80,7 +80,7 @@ type EveModule() =
 
         |> Array.sortByDescending (fun (str, p, plp, vol, plpv) -> plpv)
         |> Array.truncate 50
-        |> Array.iter (fun (str, p, plp, vol, plpv) -> tt.AddRow(str, p, plp, vol))
+        |> Array.iter (fun (str, p, plp, vol, plpv) -> tt.AddRow(str, p |> floor, plp |> floor, vol |> floor))
 
         use tr = msgArg.OpenResponse(cfg.IsImageOutput)
         tr.Write(tt)
@@ -124,7 +124,7 @@ type EveModule() =
                 let sell = p.Sell * q
                 let buy  = p.Buy * q
                 let vol  = data.GetItemTradeVolume(item)
-                tt.AddRow(item.TypeName, q, sell, buy, vol)
+                tt.AddRow(item.TypeName, q, sell, buy, vol |> HumanReadableFloat)
         | _ -> failwithf "求值失败，结果是%A" t
 
         msgArg.QuickMessageReply(tt.ToString())
@@ -375,4 +375,31 @@ type EveModule() =
             tt.AddRow(eon, eop, ein, eip, emn, emp, etn, etp)
 
         use ret = msgArg.OpenResponse(true)
+        ret.Write(tt)
+    
+    [<CommandHandlerMethodAttribute("EVE种菜", "EVE挖矿利润", "")>]
+    member x.HandlePlanetary(msgArg : CommandArgs) = 
+        let cfg = EveConfigParser()
+        cfg.Parse(msgArg.Arguments)
+
+        let pmStr = cfg.MaterialPriceMode.ToString()
+        let tt = TextTable.FromHeader([|"方案"; "直接材料/" + pmStr; "含税利润"; "日均交易"|])
+        data.GetBps()
+        |> Seq.filter (fun x -> x.Type = BlueprintType.Planet)
+        |> Seq.map (fun ps ->
+            let name = ps.ProductItem.TypeName
+            let cost = ps.GetTotalMaterialPrice(cfg.MaterialPriceMode)
+            let sell = ps.GetTotalProductPrice(PriceFetchMode.SellWithTax)
+            let volume = data.GetItemTradeVolume(ps.ProductItem)
+            {|
+                Name = name
+                Cost = cost
+                Quantity = ps.ProductQuantity
+                Profit = sell - cost
+                Volume = volume
+            |} )
+        |> Seq.sortByDescending (fun x -> x.Profit)
+        |> Seq.iter (fun x -> tt.AddRow(x.Name, x.Cost |> floor, x.Profit |> floor, x.Volume |> HumanReadableFloat))
+
+        use ret = msgArg.OpenResponse(cfg.IsImageOutput)
         ret.Write(tt)

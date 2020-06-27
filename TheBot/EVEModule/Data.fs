@@ -151,7 +151,6 @@ type DataBundle private () =
             bpIdToBp.Add(bpinfo.BlueprintTypeID, bpinfo)
             let plen = bpinfo.Products.Length
             if plen = 1 then
-                let isManufacturing = bpinfo.Type = BlueprintType.Manufacturing
                 let doAddCache = 
                     match bpinfo.Type with
                     | BlueprintType.Planet -> true
@@ -225,6 +224,8 @@ type DataBundle private () =
     member x.TryGetBp(id : int) = 
         let succ, bp = bpIdToBp.TryGetValue(id)
         if succ then Some bp else None
+
+    member x.GetBps() = seq {for value in bpIdToBp.Values do yield value}
 
     member x.GetBp(id : int) = bpIdToBp.[id]
 

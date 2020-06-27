@@ -33,7 +33,7 @@ type CraftableGearCollection private () =
 
         let fields = [|"EquipSlotCategory"; "Level{Equip}"; "Name"; "ClassJobCategory"; "Level{Item}"|]
         let chs = col.GetSheet("Item", fields)
-        let eng = Utils.GlobalVerCollection.GetSheet("Item", fields)
+        let eng = Utils.GlobalVerCollection.Value.GetSheet("Item", fields)
         let merged = Utils.MergeSheet(chs, eng, (fun (a,_) -> a.As<string>("Name") = ""))
 
         let ClassJobCategory = 
