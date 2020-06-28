@@ -65,7 +65,7 @@ type Message(sec : MessageSection []) as x =
     new (sec : MessageSection) = Message(Array.singleton sec)
 
     /// 获取At
-    /// 默认不处理at全体成员
+    /// 默认忽略at全体成员
     member x.GetAts(?allowAll : bool) =
         let allowAll = defaultArg allowAll false
         [| yield! x.FindAll(fun x ->

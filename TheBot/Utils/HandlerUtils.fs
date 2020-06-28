@@ -1,14 +1,30 @@
 ﻿module TheBot.Utils.HandlerUtils
 
-open System
-open System.Collections
 open KPX.FsCqHttp.Handler.CommandHandlerBase
 
-let private admins = [| 313388419UL; 343512452UL ; 1470746302UL|] |> Set.ofArray
+open TheBot.Utils.Config
+
+let setOwner(userId : uint64) =
+    ConfigManager.SystemConfig.Put("BotOwner", userId)
+
+let getOwner() =
+    let ret = ConfigManager.SystemConfig.Get("BotOwner", 0UL)
+    if ret = 0UL then None else Some ret
+
+/// 检查发信人是不是管理员
+let isSenderOwner (msgArg : CommandArgs)  = 
+    getOwner()
+    |> Option.map (fun uid -> uid = msgArg.MessageEvent.UserId)
+    |> Option.defaultValue false
+
+let addAdmin(userId : uint64) = 
+    let key = sprintf "IsAdmin:%i"userId
+    ConfigManager.SystemConfig.Put(key, true)
 
 /// 检查发信人是不是管理员
 let isSenderAdmin (msgArg : CommandArgs)  = 
-    admins.Contains(msgArg.MessageEvent.UserId)
+    let key = sprintf "IsAdmin:%i" msgArg.MessageEvent.UserId
+    ConfigManager.SystemConfig.Get(key, false)
 
 /// 检查发信人是不是管理员
 /// 如果不是，则抛异常

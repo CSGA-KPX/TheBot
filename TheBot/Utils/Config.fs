@@ -38,6 +38,7 @@ type ConfigItem =
 
 type ConfigManager (owner : ConfigOwner) = 
     static let col = Db.GetCollection<ConfigItem>()
+    static let sysCfg = ConfigManager(ConfigOwner.System)
 
     member x.Get<'T>(name : string, defVal : 'T) = 
         let id = sprintf "%s:%O" name owner
@@ -49,3 +50,7 @@ type ConfigManager (owner : ConfigOwner) =
         let id = sprintf "%s:%O" name owner
         let obj = {Id = id; Value = JsonConvert.SerializeObject(value)}
         col.Upsert(obj) |> ignore
+
+    /// 全局配置
+    static member SystemConfig = sysCfg
+    

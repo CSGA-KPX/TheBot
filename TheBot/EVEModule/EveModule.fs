@@ -40,14 +40,16 @@ type EveModule() =
 
     [<CommandHandlerMethodAttribute("eveLp", "EVE LP兑换计算", "#evelp 军团名")>]
     member x.HandleEveLp(msgArg : CommandArgs) =
-        let cfg = EveConfigParser()
+        let cfg = Utils.LpUtils.LpConfigParser()
         cfg.Parse(msgArg.Arguments)
 
         let tt = TextTable.FromHeader([|"兑换"; "利润"; "利润/LP"; "日均交易"; |])
+        
+        let minVol = cfg.MinimalVolume
+        let minVal = cfg.MinimalValue
+        tt.AddPreTable(sprintf "最低交易量(vol)：%g 最低LP价值(val)：%g 结果上限(count)：%i" minVol minVal cfg.RecordCount)
 
         let corp = data.GetNpcCorporation(cfg.CmdLineAsString)
-        msgArg.QuickMessageReply("此命令可能需要很长时间，请耐心等待")
-
         data.GetLpStoreOffersByCorp(corp)
         |> Array.map (fun offer ->
             let bpRet = data.TryGetBp(offer.Offer.TypeId)
@@ -70,17 +72,24 @@ type EveModule() =
                 let item = if bpRet.IsSome then bpRet.Value.ProductItem else item
                 data.GetItemTradeVolume(item)
 
-            let profit      = sellPrice - totalCost
-            let profitPerLp = profit / offer.LpCost
-            let pPerLpVolume= profitPerLp * dailyVolume
-
             let offerStr = sprintf "%s*%g" item.TypeName offer.Offer.Quantity
-
-            (offerStr, profit, profitPerLp, dailyVolume, pPerLpVolume))
-
-        |> Array.sortByDescending (fun (str, p, plp, vol, plpv) -> plpv)
-        |> Array.truncate 50
-        |> Array.iter (fun (str, p, plp, vol, plpv) -> tt.AddRow(str, p |> floor, plp |> floor, vol |> floor))
+            {|
+                Name      = offerStr
+                TotalCost = totalCost
+                SellPrice = sellPrice
+                Profit    = sellPrice - totalCost
+                ProfitPerLp = (sellPrice - totalCost) / offer.LpCost
+                Volume    = dailyVolume
+                LpCost    = offer.LpCost
+                Offer     = offer.Offer
+            |})
+        |> Array.filter (fun r -> (r.ProfitPerLp >= minVal) && (r.Volume >= minVol) )
+        |> Array.sortByDescending (fun r ->
+            let weightedVolume = r.Volume / r.Offer.Quantity
+            r.ProfitPerLp * weightedVolume)
+        |> Array.truncate cfg.RecordCount
+        |> Array.iter (fun r ->
+            tt.AddRow(r.Name, r.Profit |> floor, r.ProfitPerLp |> floor, r.Volume |> floor))
 
         use tr = msgArg.OpenResponse(cfg.IsImageOutput)
         tr.Write(tt)
@@ -263,12 +272,8 @@ type EveModule() =
                     EveBlueprint.BlueprintTypeID = Int32.MinValue
                     EveBlueprint.Type = bpTypeCheck.Value}
 
-        let outTt = TextTable.FromHeader([|"产出"; "数量";|])
-        for p in finalBp.Products do 
-            outTt.AddRow(p.MaterialItem.TypeName, p.Quantity)
-
         let tt = TextTable.FromHeader([|"材料"; "数量"; cfg.MaterialPriceMode.ToString() ; "生产"|])
-        tt.AddPreTable(outTt)
+        
         tt.AddPreTable("价格有延迟，算法不稳定，市场有风险, 投资需谨慎")
         if cfg.IsDebug then
             tt.AddPreTable(sprintf "输入效率：%i%% 默认效率：%i%% 成本指数：%i%% 设施税率%i%%"
@@ -319,11 +324,17 @@ type EveModule() =
                 allCost <- allCost + buy
                 tt.AddRow(name, amount, buy |> HumanReadableFloat, "--")
 
-        let sell = finalBp.GetTotalProductPrice(PriceFetchMode.Sell) |> HumanReadableFloat
-        let sellt= finalBp.GetTotalProductPrice(PriceFetchMode.SellWithTax) |> HumanReadableFloat
+        let sell = finalBp.GetTotalProductPrice(PriceFetchMode.Sell)
+        let sellt= finalBp.GetTotalProductPrice(PriceFetchMode.SellWithTax)
 
-        tt.AddRowPadding("售价/税后", "--", sell, sellt)
-        tt.AddRowPadding("买入造价/最佳造价", "--", optCost |> HumanReadableFloat, allCost |> HumanReadableFloat)
+        tt.AddRowPadding("卖出/税后", "--", sell |> HumanReadableFloat, sellt |> HumanReadableFloat)
+        tt.AddRowPadding("材料/最佳", "--", allCost |> HumanReadableFloat, optCost |> HumanReadableFloat)
+        tt.AddRowPadding("税后利润", "--", sellt - allCost |> HumanReadableFloat, sellt - optCost |> HumanReadableFloat)
+
+        let outTt = TextTable.FromHeader([|"产出"; "数量";|])
+        for p in finalBp.Products do 
+            outTt.AddRow(p.MaterialItem.TypeName, p.Quantity)
+        tt.AddPostTable(outTt)
 
         use ret = msgArg.OpenResponse(cfg.IsImageOutput)
         ret.Write(tt)
@@ -377,7 +388,7 @@ type EveModule() =
         use ret = msgArg.OpenResponse(true)
         ret.Write(tt)
     
-    [<CommandHandlerMethodAttribute("EVE种菜", "EVE挖矿利润", "")>]
+    [<CommandHandlerMethodAttribute("EVE种菜", "EVE种菜利润", "")>]
     member x.HandlePlanetary(msgArg : CommandArgs) = 
         let cfg = EveConfigParser()
         cfg.Parse(msgArg.Arguments)

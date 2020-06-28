@@ -6,6 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Utils\Dicer.fs" />
     <Compile Include="Utils\TextTable.fs" />
     <Compile Include="Utils\Config.fs" />
@@ -26,6 +27,7 @@
     <Compile Include="EVEModule\Data.fs" />
     <Compile Include="EVEModule\Extensions.fs" />
     <Compile Include="EVEModule\EveExpression.fs" />
+    <Compile Include="EVEModule\LpUtils.fs" />
     <Compile Include="EVEModule\EveModule.fs" />
     <Compile Include="RepeaterModule.fs" />
     <Compile Include="TestModule.fs" />
