@@ -10,8 +10,6 @@ type EventUnion =
     /// 目前没有适用于WebSocket的元事件
     | Meta
 
-    member private x.As<'T>() = ()
-
     member x.AsMessageEvent =
         match x with
         | Message x -> x

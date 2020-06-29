@@ -51,8 +51,10 @@ type ClientEventArgs(api : IApiCallProvider, obj : JObject) =
             | _ -> raise <| InvalidOperationException("")
         | _ -> raise <| InvalidOperationException("")
 
-    member x.QuickMessageReply(msg : string, ?atUser : bool) =
-        x.QuickMessageReply(Message.Message.TextMessage(msg.Trim()), defaultArg atUser false)
+    member x.QuickMessageReply(str : string, ?atUser : bool) =
+        let msg = new Message.Message()
+        msg.Add(str)
+        x.QuickMessageReply(msg, defaultArg atUser false)
 
 and TextResponse(arg : ClientEventArgs) = 
     inherit TextWriter()
@@ -153,7 +155,9 @@ and TextResponse(arg : ClientEventArgs) =
 
         if lines.Length <> 0 then
             use img = DrawLines(lines)
-            arg.QuickMessageReply(Message.Message.ImageMessage(img))
+            let message = Message.Message()
+            message.Add(img)
+            arg.QuickMessageReply(message)
 
     override x.Flush() = 
         if x.PreferImageOutput && x.CanSendImage() then
