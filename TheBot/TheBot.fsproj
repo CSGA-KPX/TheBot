@@ -28,6 +28,7 @@
     <Compile Include="EVEModule\Extensions.fs" />
     <Compile Include="EVEModule\EveExpression.fs" />
     <Compile Include="EVEModule\LpUtils.fs" />
+    <Compile Include="EVEModule\MarketUtils.fs" />
     <Compile Include="EVEModule\EveModule.fs" />
     <Compile Include="RepeaterModule.fs" />
     <Compile Include="TestModule.fs" />

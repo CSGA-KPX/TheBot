@@ -68,29 +68,42 @@ type TextTable(cols : int) =
                 | :? DateTime as dt ->
                     toStr(DateTime.Now - dt)
                 | _ -> o.ToString()
-            col.[i].Add(toStr(o)))
+
+            // 如果文本显示长度是奇数，补一个空格
+            let ret = toStr(o)
+            let padLeft = if i = 0 then 0 else 1
+            let padRight = (strDispLen(ret) % 2) + 1
+            let str = String(halfWidthSpace, padLeft) + ret + String(halfWidthSpace, padRight)
+            col.[i].Add(str))
 
     member x.ToLines() = 
         [|
             yield! preTableLines.ToArray()
-            if col.[0].Count <> 0 then
-                let maxLens =
+            if col.[0].Count <> 0 then // 至少得有一行
+                let maxLens =          // 每一列里最长的一格有多长
                     col
                     |> Array.map (fun l ->
                         l
                         |> Seq.map (strDispLen)
-                        |> Seq.max)
+                        |> Seq.max )
                 let sb = Text.StringBuilder()
+                //let padLen = strDispLen(fullWidthSpace |> string)
                 for i = 0 to col.[0].Count - 1 do
                     sb.Clear() |> ignore
                     for c = 0 to col.Length - 1 do
-                        let str = col.[c].[i]
-                        let padCharLen = (maxLens.[c] - strDispLen (str))
-                        let padFullChr = "".PadLeft(padCharLen / 2 + 1, fullWidthSpace)
-                        let padHalfChr = "".PadLeft(padCharLen % 2, halfWidthSpace)
+                        let str = col.[c].[i] // 这一行是什么
+                        let maxLen = maxLens.[c]
+                        let strLen = strDispLen(str)
+                        let padFull = (maxLen - strLen) / 2
+                        let padding = String(fullWidthSpace, padFull)
+                        sb.Append(str).Append(padding) |> ignore
+
+                        //let padCharLen = (maxLens.[c] - strDispLen (str))
+                        //let padFullChr = "".PadLeft(padCharLen / 2 + 1, fullWidthSpace)
+                        //let padHalfChr = "".PadLeft(padCharLen % 2, halfWidthSpace)
                         //let pad = (maxLens.[c] - strDispLen (str)) / 2 + 1 + str.Length
                         //sb.Append(str.PadRight(pad, fullWidthSpace)) |> ignore
-                        sb.Append(str).Append(padFullChr).Append(padHalfChr) |> ignore
+                        //sb.Append(str).Append(padFullChr).Append(padHalfChr) |> ignore
                     yield sb.ToString()
             yield! postTableLines.ToArray()
         |]

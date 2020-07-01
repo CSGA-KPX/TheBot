@@ -115,19 +115,22 @@ and TextResponse(arg : ClientEventArgs) =
 
     member private x.FlushImageMessage() = 
         let DrawLines(lines : string []) = 
-            let font = new Font("YaHei Mono", 10.0f)
+            use font = new Font("Yasolas", 10.0f)
+            let sf   = new StringFormat(StringFormat.GenericTypographic)
+            sf.FormatFlags <- sf.FormatFlags ||| StringFormatFlags.MeasureTrailingSpaces
             let fullSize = 
                 use bmp = new Bitmap(1, 1)
                 use draw= Graphics.FromImage(bmp)
                 let calc =
                     lines
-                    |> Array.map (fun str -> draw.MeasureString(str, font))
+                    |> Array.map (fun str -> draw.MeasureString(str, font, 0, sf))
                 let maxWidth = calc |> Array.maxBy (fun x -> x.Width)
                 let sumHeight= calc |> Array.sumBy (fun x -> x.Height)
                 SizeF(maxWidth.Width + 10.0f , sumHeight)
 
             let img = new Bitmap(int fullSize.Width, int fullSize.Height)
-            use draw = Graphics.FromImage(img)
+            use draw = Graphics.FromImage(img, TextRenderingHint = Text.TextRenderingHint.ClearTypeGridFit)
+
             use tb   = new SolidBrush(Color.Black)
             draw.Clear(Color.White)
 
@@ -138,11 +141,11 @@ and TextResponse(arg : ClientEventArgs) =
                 let bgColor = 
                     lineMode <- not lineMode
                     if lineMode then Brushes.White else Brushes.LightGray
-                let line = draw.MeasureString(str, font)
+                let line = draw.MeasureString(str, font, 0, sf)
                 
                 draw.FillRectangle(bgColor, RectangleF(lastPos, SizeF(fullSize.Width, line.Height)))
 
-                draw.DrawString(lines.[lineNo], font, tb, PointF(lastPos.X, lastPos.Y))
+                draw.DrawString(lines.[lineNo], font, tb, PointF(lastPos.X, lastPos.Y), sf)
                 lastPos <- PointF(0.0f, lastPos.Y + line.Height)
             img
         

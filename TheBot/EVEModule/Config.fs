@@ -11,10 +11,10 @@ type PriceFetchMode =
 
     override x.ToString() = 
         match x with
-        | Sell -> "无税卖出"
-        | SellWithTax -> "含税卖出"
-        | Buy -> "无税收购"
-        | BuyWithTax -> "含税收购"
+        | Sell -> "税前卖出"
+        | SellWithTax -> "税后卖出"
+        | Buy -> "税前收购"
+        | BuyWithTax -> "税后收购"
 
 type EveConfigParser() as x = 
     inherit TheBot.Utils.UserOption.UserOptionParser()

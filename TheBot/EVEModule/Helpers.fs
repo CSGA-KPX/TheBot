@@ -49,21 +49,32 @@ let HumanReadableFloat (d : float) =
         String.Format("{0:N2}{1}", d / 10.0 ** scale, postfix)
 
 [<AbstractClass>]
-type CachedCollection<'Key, 'Value>() = 
+type CachedCollection<'Key, 'Value>() as x = 
     let cache = Collections.Concurrent.ConcurrentDictionary<'Key, 'Value>()
+    let logger = NLog.LogManager.GetLogger(x.GetType().Name)
 
     /// 获取一个值，不通过缓存
     abstract FetchItem : 'Key -> 'Value
     abstract GetKey    : 'Value -> 'Key
     abstract IsExpired : 'Value -> bool
 
+    member internal x.Logger = logger
+
     member x.Clear() = cache.Clear()
+
+    /// 获取一个值，不通过缓存，然后写入缓存
+    member x.Force(key : 'Key) = 
+        let oldVal = cache.GetOrAdd(key, fun key -> x.FetchItem(key))
+        let newVal = x.FetchItem(key)
+        cache.TryUpdate(key, newVal, oldVal) |> ignore
+        newVal
 
     member x.Item(key : 'Key) =
         let item = cache.GetOrAdd(key, fun key -> x.FetchItem(key))
         if x.IsExpired(item) then
             let newVal = x.FetchItem(key)
             let succ = cache.TryUpdate(key, newVal, item)
+            x.Logger.Info(sprintf "updated : %A" succ)
             if succ then newVal else item
          else
             item

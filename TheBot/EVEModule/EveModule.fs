@@ -109,14 +109,12 @@ type EveModule() =
         let mutable argOverride = None
         let priceFunc = 
             match msgArg.Command with
-            | Some "#em"  -> fun (t : EveType) -> t.GetPriceInfo()
+            | Some "#em"  -> fun (t : EveType) -> data.GetItemPriceCached(t)
             | Some "#emr" -> fun (t : EveType) -> data.GetItemPrice(t)
             | Some "#eve矿物" -> 
                 argOverride <- Some(MineralNames.Replace(',', '+'))
                 fun (t : EveType) -> data.GetItemPriceCached(t)
             | _ -> failwithf "%A" msgArg.Command
-
-        let tt = TextTable.FromHeader([|"物品"; "数量"; "卖出"; "买入"; "日均交易"|])
 
         let t =
             let str =
@@ -124,19 +122,17 @@ type EveModule() =
                 else String.Join(" ", msgArg.Arguments)
             er.Eval(str)
 
+        let att = Utils.MarketUtils.GetPriceTable()
         match t with
         | Accumulator a ->
             for kv in a do 
-                let item = kv.Key
-                let q    = kv.Value
-                let p    = priceFunc(item)
-                let sell = p.Sell * q
-                let buy  = p.Buy * q
-                let vol  = data.GetItemTradeVolume(item)
-                tt.AddRow(item.TypeName, q, sell, buy, vol |> HumanReadableFloat)
+                att.AddObject(kv.Key, kv.Value)
         | _ -> failwithf "求值失败，结果是%A" t
 
-        msgArg.QuickMessageReply(tt.ToString())
+        let cfg = EveConfigParser()
+        cfg.Parse(msgArg.Arguments)
+        use ret = msgArg.OpenResponse(cfg.IsImageOutput)
+        ret.Write(att)
 
     [<CommandHandlerMethodAttribute("eme", "EVE蓝图材料效率计算", "")>]
     member x.HandleME(msgArg : CommandArgs) =
@@ -283,6 +279,13 @@ type EveModule() =
                 cfg.StructureTax )
             tt.AddPreTable(sprintf "展开行星材料：%b 展开反应公式：%b" cfg.ExpandPlanet cfg.ExpandReaction)
 
+        tt.AddPreTable("产品：")
+        let outTt = Utils.MarketUtils.GetPriceTable()
+        for p in finalBp.Products do 
+            outTt.AddObject(p.MaterialItem, p.Quantity)
+        tt.AddPreTable(outTt)
+        tt.AddPreTable("材料：")
+
         let rec getRootMaterialsPrice (bp : EveBlueprint) = 
             let mutable sum = 0.0
 
@@ -330,11 +333,6 @@ type EveModule() =
         tt.AddRowPadding("卖出/税后", "--", sell |> HumanReadableFloat, sellt |> HumanReadableFloat)
         tt.AddRowPadding("材料/最佳", "--", allCost |> HumanReadableFloat, optCost |> HumanReadableFloat)
         tt.AddRowPadding("税后利润", "--", sellt - allCost |> HumanReadableFloat, sellt - optCost |> HumanReadableFloat)
-
-        let outTt = TextTable.FromHeader([|"产出"; "数量";|])
-        for p in finalBp.Products do 
-            outTt.AddRow(p.MaterialItem.TypeName, p.Quantity)
-        tt.AddPostTable(outTt)
 
         use ret = msgArg.OpenResponse(cfg.IsImageOutput)
         ret.Write(tt)

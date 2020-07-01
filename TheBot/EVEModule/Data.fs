@@ -29,7 +29,7 @@ type PriceCacheCollection() =
 
     override x.FetchItem(key) = 
         let url = sprintf @"https://www.ceve-market.org/api/market/region/10000002/system/30000142/type/%i.json" key
-
+        x.Logger.Info(sprintf "Fetching %s" url)
         let json = hc
                     .GetStringAsync(url)
                     .ConfigureAwait(false)
@@ -67,6 +67,7 @@ type TradeVolumeCacheCollection() =
     override x.FetchItem(key) = 
         let url =
             sprintf "https://esi.evepc.163.com/latest/markets/10000002/history/?datasource=serenity&type_id=%i" key
+        x.Logger.Info(sprintf "Fetching %s" url)
         let json = hc
                     .GetStringAsync(url)
                     .ConfigureAwait(false)
@@ -89,6 +90,7 @@ type LpStoreOffersCacheCollection() =
     override x.FetchItem(key) = 
             let url =
                 sprintf "https://esi.evepc.163.com/latest/loyalty/stores/%i/offers/?datasource=serenity" key
+            x.Logger.Info(sprintf "Fetching %s" url)
             let json = hc
                         .GetStringAsync(url)
                         .ConfigureAwait(false)
@@ -238,7 +240,7 @@ type DataBundle private () =
         if succ then Some bp else None
 
     member x.GetItemPrice(t : EveType)  = x.GetItemPrice(t.TypeId)
-    member x.GetItemPrice(id : int) = priceCache.FetchItem(id)
+    member x.GetItemPrice(id : int) = priceCache.Force(id)
     member x.GetItemPriceCached(t : EveType) = x.GetItemPriceCached(t.TypeId)
     member x.GetItemPriceCached(id : int) = priceCache.[id]
 
