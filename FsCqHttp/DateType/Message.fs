@@ -90,34 +90,42 @@ type Message(sec : RawMessageSection []) as x =
         sb.ToString()
 
     member x.ToCqString() = 
-        (*
-                let sb = Text.StringBuilder()
-                for sec in x do 
-                    match sec with
-                    | Text str ->
-                        let mutable str = str
-                        for (c, esc) in cqStringReplace.[0..2] do 
-                            str <- str.Replace(c, esc)
-                        sb.Append(str) |> ignore
-                    | other ->
-                        let (cmd, arg) = other.ToRaw()
-                        let args = 
-                            arg
-                            |> Seq.map (fun kv ->
-                                let key = kv.Key
-                                let mutable str = kv.Value
-                                for (c, esc) in cqStringReplace do 
-                                    str <- str.Replace(c, esc)
-                                sprintf "%s=%s" key str)
-                        sb.AppendFormat("[CQ:{0},", cmd)
-                          .Append(String.Join(",", args))
-                          .Append("]") |> ignore
-                sb.ToString()
-        *)
-        raise <| NotImplementedException()
+        let escape (str : string) = 
+            let text = Text.StringBuilder(str)
+            for (c, esc) in cqStringReplace do
+                text.Replace(c, esc) |> ignore
+            text.ToString()
+
+        let sb = Text.StringBuilder()
+        for sec in x do
+            if sec.Type = TYPE_TEXT then
+                sb.Append(escape (sec.["text"])) |> ignore
+            else
+                let args = 
+                    sec.Values
+                    |> Seq.map (fun kv -> sprintf "%s=%s" kv.Key (escape (kv.Value)))
+                sb.AppendFormat("[CQ:{0},", sec.Type)
+                    .Append(String.Join(",", args))
+                    .Append("]") |> ignore
+        sb.ToString()
 
     static member FromCqString(str : string) = 
-        raise <| NotImplementedException()
+        let decode = System.Net.WebUtility.HtmlDecode
+        let segs = 
+            [|
+                for seg in str.Split('[', ']') do 
+                    if seg.StartsWith("CQ") then
+                        let segv = seg.Split(',')
+                        let name = segv.[0].Split(':').[1]
+                        let args = 
+                            [|  for arg in segv.[1..] do 
+                                    let argv = arg.Split('=')
+                                    yield argv.[0], decode(argv.[1])  |]
+                        yield RawMessageSection.Create(name, args)
+                    else
+                        yield RawMessageSection.Create(TYPE_TEXT, ["text", decode(seg)])
+            |]
+        new Message(segs)
 
 and MessageConverter() =
     inherit JsonConverter<Message>()
@@ -139,15 +147,21 @@ and MessageConverter() =
 
     override x.ReadJson(r : JsonReader, objType : Type, existingValue : Message, hasExistingValue : bool,
                         s : JsonSerializer) =
-        let msg = Message()
-
-        let arr = JArray.Load(r)
-        for sec in arr.Children<JObject>() do
-            let t = sec.["type"].Value<string>()
-            let d =
-                seq { if sec.["data"].HasValues then
-                        let child = sec.["data"].Value<JObject>()
-                        for p in child.Properties() do
-                            yield (p.Name, p.Value.ToString()) }
-            msg.Add(RawMessageSection.Create(t, d))
-        msg
+        
+        match r.TokenType with
+        | JsonToken.StartArray -> 
+            let msg = Message()
+            let arr = JArray.Load(r)
+            for sec in arr.Children<JObject>() do
+                let t = sec.["type"].Value<string>()
+                let d =
+                    seq { if sec.["data"].HasValues then
+                            let child = sec.["data"].Value<JObject>()
+                            for p in child.Properties() do
+                                yield (p.Name, p.Value.ToString()) }
+                msg.Add(RawMessageSection.Create(t, d))
+            msg
+        | JsonToken.String ->
+            Message.FromCqString(r.ReadAsString())
+        | other -> failwithf "未知消息类型:%A --> %O" other r
+        
