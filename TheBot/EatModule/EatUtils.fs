@@ -26,7 +26,7 @@ type EatChoices(array : string [], dicer : Dicer) =
     static let   noCutOff = 96
     let mapped = 
         array
-        |> Array.map (fun x -> x,dicer.GetRandomFromString(x, 100u))
+        |> Array.map (fun x -> x, dicer.GetRandom(100u, x))
         |> Array.sortBy (snd)
 
     member x.ToString(f : EatFormat) = 
@@ -57,7 +57,7 @@ let whenToEat (dicer : Dicer, str : string) =
     let sb = Text.StringBuilder()
     for t in types do 
         let str = sprintf "%s吃%s" t str
-        let d = dicer.GetRandomFromString(str, 100u)
+        let d = dicer.GetRandom(100u, str)
         let ret = 
             match d with
             | _ when d  =100 -> "黄连素备好"
@@ -73,14 +73,14 @@ let whenToEat (dicer : Dicer, str : string) =
     sb.ToString()
 
 let private mealsFunc prefix array (dicer : Dicer) = 
-    let luck = dicer.GetRandomFromString("吃"+prefix, 100u)
+    let luck = dicer.GetRandom(100u, "吃"+prefix)
 
     if luck >= 96 then
         dicer.GetRandomItem(ng)
     else
         let mapped = 
             array
-            |> Array.map (fun x -> x, dicer.GetRandomFromString(prefix + "吃" + x, 100u))
+            |> Array.map (fun x -> x, dicer.GetRandom(100u, prefix + "吃" + x))
         let eat = 
             mapped
             |> Array.filter (fun (_, c) -> c <= 5 )
@@ -100,17 +100,17 @@ let private hotpotFunc (dicer : Dicer) =
     sw.AppendLine(whenToEat(dicer, "火锅")) |> ignore
     let soup =
         hotpot_soup
-        |> Array.map (fun x -> x, dicer.GetRandomFromString("火锅吃"+x, 100u))
+        |> Array.map (fun x -> x, dicer.GetRandom(100u, "火锅吃"+x))
         |> Array.sortBy (snd)
         |> Array.map (fun (i,c) -> sprintf "%s(%i)" i c )
 
     let sauce =
         hotpot_sauce
-        |> Array.map (fun x -> x, dicer.GetRandomFromString("火锅吃"+x, 100u))
+        |> Array.map (fun x -> x, dicer.GetRandom(100u, "火锅吃"+x))
         |> Array.sortBy (snd)
         |> Array.map (fun (i,c) -> sprintf "%s(%i)" i c )
 
-    let dish = hotpot_dish |> Array.map (fun x -> x, dicer.GetRandomFromString("火锅吃"+x, 100u))
+    let dish = hotpot_dish |> Array.map (fun x -> x, dicer.GetRandom(100u, "火锅吃"+x))
     let dish_good =
         dish
         |> Array.filter (fun (_, c) -> c <= 10 )
@@ -143,7 +143,7 @@ let private saizeriyaFunc (dicer : Dicer) =
     for (name, c) in saizeriya do
         let mapped = 
             c
-            |> Array.map (fun x -> x, dicer.GetRandomFromString("萨莉亚吃" + x, 100u))
+            |> Array.map (fun x -> x, dicer.GetRandom(100u, "萨莉亚吃" + x))
             |> Array.filter (fun (_, c) -> c <= 50 )
             |> Array.sortBy (snd)
             |> Array.truncate 5

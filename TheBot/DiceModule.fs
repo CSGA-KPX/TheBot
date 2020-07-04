@@ -143,7 +143,7 @@ type DiceModule() =
                     if atUser.IsSome then SeedOption.SeedByAtUserDay(msgArg.MessageEvent)
                     else SeedOption.SeedByUserDay(msgArg.MessageEvent)
             let dicer = Dicer(seed, AutoRefreshSeed = false)
-            (c, dicer.GetRandomFromString(c, 100u)))
+            (c, dicer.GetRandom(100u, c)))
         |> Array.sortBy snd
         |> Array.iter (fun (c, n) -> tt.AddRow((sprintf "%03i" n), c))
 

@@ -46,7 +46,7 @@ type XivModule() =
         
         let tt = TextTable.FromHeader([|"1D100"; "选项"|])
         choices
-        |> Array.map (fun str -> str, dicer.GetRandomFromString(str, 100u))
+        |> Array.map (fun str -> str, dicer.GetRandom(100u, str))
         |> Array.sortBy (snd)
         |> Array.iter (fun (str, d) -> tt.AddRow(d, str))
 
@@ -108,7 +108,7 @@ type XivModule() =
         let tt = TextTable.FromHeader([|"1D100"; "门"|])
 
         [|"左"; "中"; "右"|]
-        |> Array.map (fun door -> door, dicer.GetRandomFromString(door, 100u))
+        |> Array.map (fun door -> door, dicer.GetRandom(100u, door))
         |> Array.sortBy (snd)
         |> Array.iter (fun (door, score) -> tt.AddRow((sprintf "%03i" score), door))
 
