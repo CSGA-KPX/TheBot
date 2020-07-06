@@ -39,8 +39,9 @@ let StartBot() =
 [<EntryPoint>]
 let main argv =
     if argv.Length <> 0 && argv.[0].ToLowerInvariant() = "rebuilddb" then
-        XivData.Utils.ClearDb()
-        XivData.Utils.InitAllDb()
+        BotData.Common.Database.BotDataInitializer.ClearCache()
+        BotData.Common.Database.BotDataInitializer.ShrinkCache()
+        BotData.Common.Database.BotDataInitializer.InitializeAllCollections()
         printfn "Rebuilt Completed"
     elif  argv.Length <> 0 && argv.[0].ToLowerInvariant() = "ob" then
         loadModules <- false

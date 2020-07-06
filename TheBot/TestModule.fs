@@ -13,9 +13,6 @@ type TestModule() =
 
     [<CommandHandlerMethodAttribute("tttest", "", "")>]
         member x.HandleTest(msgArg : CommandArgs) =
-            use font = new Font("Yasolas", 10.0f)
-            let ret = sprintf "%A %s" font font.Name
-            msgArg.QuickMessageReply(ret)
             ()
             (*
             let api = msgArg.ApiCaller.CallApi<KPX.FsCqHttp.Api.SystemApi.GetGroupList>()

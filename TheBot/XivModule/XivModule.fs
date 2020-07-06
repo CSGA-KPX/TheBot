@@ -2,8 +2,11 @@ namespace TheBot.Module.XivModule
 
 open System
 open System.Text
+
 open KPX.FsCqHttp.Handler.CommandHandlerBase
-open XivData
+
+open BotData.XivData
+
 open TheBot.Module.XivModule.Utils
 open TheBot.Utils.Dicer
 open TheBot.Utils.TextTable
@@ -58,7 +61,7 @@ type XivModule() =
         let mutable job = None
         let mutable iLv = None
 
-        let cjm = XivData.ClassJobMapping.ClassJobMappingCollection.Instance
+        let cjm = ClassJobMapping.ClassJobMappingCollection.Instance
         for item in msgArg.Arguments do 
             if isNumber(item) then
                 iLv <- Some(Int32.Parse(item))
@@ -68,11 +71,11 @@ type XivModule() =
         if job.IsNone || iLv.IsNone then
             failwithf "请提供职业和品级信息。职业可以使用：单字简称/全程/英文简称"
 
-        let cgc = XivData.CraftGearSet.CraftableGearCollection.Instance
+        let cgc = CraftGearSet.CraftableGearCollection.Instance
         let ret = 
             cgc.Search(iLv.Value, job.Value)
             |> Array.map (fun g ->
-                let item = XivData.Item.ItemCollection.Instance.LookupByItemId(g.Id)
+                let item = Item.ItemCollection.Instance.GetByItemId(g.Id)
                 if item.Name.Contains(" ") then
                     sprintf "#%i" item.Id
                 else
@@ -89,7 +92,7 @@ type XivModule() =
                     |])
         let i = String.Join(" ", msgArg.Arguments)
         if isNumber (i) then
-            let ret = itemCol.TryLookupByItemId(i |> int32)
+            let ret = itemCol.TryGetByItemId(i |> int32)
             if ret.IsSome then 
                 att.AddObject(ret.Value)
         else

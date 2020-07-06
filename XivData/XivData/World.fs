@@ -1,4 +1,4 @@
-module XivData.World
+﻿module BotData.XivData.World
 
 type World =
     { WorldId : uint16

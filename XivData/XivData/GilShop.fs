@@ -1,16 +1,13 @@
-module XivData.GilShop
+﻿namespace BotData.XivData.GilShop
 
 open System
 open System.Collections.Generic
-open XivData.Item
+
 open LiteDB
-open LibFFXIV.GameData.Raw
 
-[<Literal>]
-let AskKey = "Price{Mid}"
+open BotData.Common.Database
 
-[<Literal>]
-let BidKey = "Price{Low}"
+open BotData.XivData.Item
 
 [<CLIMutable>]
 type GilShopInfo =
@@ -21,16 +18,23 @@ type GilShopInfo =
 
 
 type GilShopCollection private () =
-    inherit Utils.XivDataSource<int, GilShopInfo>()
+    inherit CachedTableCollection<int, GilShopInfo>()
+
+    static let AskKey = "Price{Mid}"
+    static let BidKey = "Price{Low}"
 
     static let instance = GilShopCollection()
     static member Instance = instance
 
-    override x.BuildCollection() =
-        let db = x.Collection
+    override x.Depends = Array.empty
+
+    override x.IsExpired = false
+
+    override x.InitializeCollection() =
+        let db = x.DbCollection
         printfn "Building GilShopCollection"
         db.EnsureIndex("_id", true) |> ignore
-        let col = EmbeddedXivCollection(XivLanguage.ChineseSimplified) :> IXivCollection
+        let col = BotDataInitializer.GetXivCollectionChs()
 
         //用于缓存
         col.GetSheet("Item", [| AskKey; BidKey |])
@@ -47,4 +51,4 @@ type GilShopCollection private () =
         |> ignore
         GC.Collect()
 
-    member x.TryLookupByItem(item : Item.ItemRecord) = x.TryLookupById(item.Id)
+    member x.TryLookupByItem(item : ItemRecord) = x.TryGetByKey(item.Id)

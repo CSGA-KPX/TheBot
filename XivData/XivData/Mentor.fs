@@ -1,7 +1,8 @@
-module XivData.Mentor
+﻿namespace BotData.XivData.Mentor
 
 open System
-open LibFFXIV.GameData.Raw
+
+open BotData.Common.Database
 
 [<CLIMutable>]
 type StringRecord =
@@ -13,15 +14,19 @@ type StringRecord =
           Value = str }
 
 type ShouldOrAvoidCollection private () =
-    inherit Utils.XivDataSource<int, StringRecord>()
+    inherit CachedTableCollection<int, StringRecord>()
 
     static let instance = ShouldOrAvoidCollection()
     static member Instance = instance
 
-    override x.BuildCollection() =
-        let db = x.Collection
+    override x.Depends = Array.empty
+
+    override x.IsExpired = false
+
+    override x.InitializeCollection() =
+        let db = x.DbCollection
         printfn "Building ShouldOrAvoidCollection"
-        let col = EmbeddedXivCollection(XivLanguage.ChineseSimplified) :> IXivCollection
+        let col = BotDataInitializer.GetXivCollectionChs()
         let sht = col.GetSheet("ContentFinderCondition", [| "Name"; "MentorRoulette" |])
         seq {
             for row in sht do
@@ -35,19 +40,22 @@ type ShouldOrAvoidCollection private () =
         |> ignore
         GC.Collect()
 
-    member x.GetByKey(key : int) = x.LookupById(key)
-
 type LocationCollection private () =
-    inherit Utils.XivDataSource<int, StringRecord>()
+    inherit CachedTableCollection<int, StringRecord>()
 
     static let allowedLocation = Collections.Generic.HashSet<byte>([| 0uy; 1uy; 2uy; 6uy; 13uy; 14uy; 15uy |])
+
     static let instance = LocationCollection()
     static member Instance = instance
 
-    override x.BuildCollection() =
-        let db = x.Collection
+    override x.Depends = Array.empty
+
+    override x.IsExpired = false
+
+    override x.InitializeCollection() =
+        let db = x.DbCollection
         printfn "Building LocationCollection"
-        let col = EmbeddedXivCollection(XivLanguage.ChineseSimplified) :> IXivCollection
+        let col = BotDataInitializer.GetXivCollectionChs()
         let sht = col.GetSheet("TerritoryType", [| "PlaceName"; "TerritoryIntendedUse" |])
         seq {
             for row in sht do
@@ -60,5 +68,3 @@ type LocationCollection private () =
         |> db.InsertBulk
         |> ignore
         GC.Collect()
-
-    member x.GetByKey(key : int) = x.LookupById(key)

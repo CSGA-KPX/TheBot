@@ -1,12 +1,16 @@
 ﻿namespace TheBot.Module.XivMarketModule
 
 open System
+
 open KPX.FsCqHttp.Handler.CommandHandlerBase
-open XivData
-open TheBot.Module.XivModule.Utils
+
+open BotData.XivData
+
 open TheBot.Utils.TextTable
 open TheBot.Utils.Config
 open TheBot.Utils.RecipeRPN
+
+open TheBot.Module.XivModule.Utils
 
 type XivMarketModule() =
     inherit CommandHandlerBase()
@@ -22,8 +26,8 @@ type XivMarketModule() =
 
     let strToItemResult (str : string) =
         let ret =
-            if isNumber (str) then itemCol.TryLookupByItemId(Convert.ToInt32(str))
-            else itemCol.TryLookupByName(str.TrimEnd(CommandUtils.XivSpecialChars))
+            if isNumber (str) then itemCol.TryGetByItemId(Convert.ToInt32(str))
+            else itemCol.TryGetByName(str.TrimEnd(CommandUtils.XivSpecialChars))
         if ret.IsSome then Ok ret.Value
         else Error str
 
@@ -249,7 +253,7 @@ type XivMarketModule() =
             let hdrs = 
                 [|
                     "兑换", fun (info : SpecialShop.SpecialShopInfo) ->
-                                curItem <- Some (itemCol.LookupByItemId(info.ReceiveItem))
+                                curItem <- Some (itemCol.GetByItemId(info.ReceiveItem))
                                 updateCur(curItem.Value)
                                 box (curItem.Value.Name)
                     "价格", fun _ -> 

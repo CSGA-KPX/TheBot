@@ -1,7 +1,8 @@
-module XivData.Item
+﻿namespace BotData.XivData.Item
 
 open System
-open LibFFXIV.GameData.Raw
+
+open BotData.Common.Database
 
 [<CLIMutable>]
 type ItemRecord =
@@ -15,26 +16,28 @@ type ItemRecord =
         { Id = -1
           Name = "Unknown" }
 
-type ItemCollection private () =
-    inherit Utils.XivDataSource<int, ItemRecord>()
 
-    static let instance = new ItemCollection()
+type ItemCollection private () = 
+    inherit CachedTableCollection<int, ItemRecord>()
+
+    static let instance = ItemCollection()
     static member Instance = instance
 
-    override x.BuildCollection() =
-        let db = x.Collection
+    override x.Depends = Array.empty
+
+    override x.IsExpired = false
+
+    override x.InitializeCollection() = 
+        let db = x.DbCollection
         printfn "Building ItemCollection"
         db.EnsureIndex("_id", true) |> ignore
         db.EnsureIndex("Name") |> ignore
 
-        let chs = 
-            let col = EmbeddedXivCollection(XivLanguage.ChineseSimplified, true) :> IXivCollection
-            col.GetSheet("Item", [| "Name" |])
+        let chs = BotDataInitializer.GetXivCollectionChs().GetSheet("Item", [| "Name" |])
 
-        let eng = 
-            Utils.GlobalVerCollection.Value.GetSheet("Item", [| "Name" |])
+        let eng = BotDataInitializer.GetXivCollectionEng().GetSheet("Item", [| "Name" |])
 
-        let merged = Utils.MergeSheet(chs, eng, (fun (a,b) -> a.As<string>("Name") = ""))
+        let merged = Utils.MergeSheet(chs, eng, (fun (chs,_) -> chs.As<string>("Name") = ""))
 
         seq {
             for row in merged do
@@ -45,18 +48,12 @@ type ItemCollection private () =
         |> ignore
         GC.Collect()
 
-    member x.LookupByItemId(id : int) = x.LookupById(id)
+    member x.GetByItemId (id : int) = x.GetByKey(id)
+    member x.TryGetByItemId (id : int) = x.TryGetByKey(id)
 
-    member x.TryLookupByItemId(id : int) = x.TryLookupById(id)
-
-    member x.TryLookupByName(name : string) =
-        let ret = x.Collection.FindOne(LiteDB.Query.EQ("Name", new LiteDB.BsonValue(name)))
+    member x.TryGetByName(name : string) =
+        let ret = x.DbCollection.FindOne(LiteDB.Query.EQ("Name", new LiteDB.BsonValue(name)))
         if isNull (box ret) then None
         else Some ret
 
-    member x.SearchByName(str) = x.Collection.Find(LiteDB.Query.Contains("Name", str)) |> Seq.toArray
-
-    member x.AllItems() = x.Collection.FindAll() |> Seq.toArray
-
-    interface Utils.IXivDataSource with
-        override x.BuildOrder = Int32.MinValue
+    member x.SearchByName(str) = x.DbCollection.Find(LiteDB.Query.Contains("Name", str)) |> Seq.toArray

@@ -1,10 +1,13 @@
-module XivData.SpecialShop
+﻿namespace BotData.XivData.SpecialShop
 
 open System
 open System.Collections.Generic
-open XivData.Item
+
 open LiteDB
-open LibFFXIV.GameData.Raw
+
+open BotData.Common.Database
+
+open BotData.XivData.Item
 
 [<CLIMutable>]
 type SpecialShopInfo =
@@ -16,9 +19,8 @@ type SpecialShopInfo =
       CostItem : int32
       CostCount : uint32 }
 
-
 type SpecialShopCollection private () =
-    inherit Utils.XivDataSource<int, SpecialShopInfo>()
+    inherit CachedTableCollection<int, SpecialShopInfo>()
 
     static let allowItemUICategory =
         HashSet<int>([| yield 33
@@ -30,12 +32,16 @@ type SpecialShopCollection private () =
     static let instance = SpecialShopCollection()
     static member Instance = instance
 
-    override x.BuildCollection() =
-        let db = x.Collection
+    override x.Depends = Array.empty
+
+    override x.IsExpired = false
+
+    override x.InitializeCollection() =
+        let db = x.DbCollection
         printfn "Building SpecialShopInfo"
         db.EnsureIndex("_id", true) |> ignore
         db.EnsureIndex("ReceiveItem") |> ignore
-        let col = EmbeddedXivCollection(XivLanguage.ChineseSimplified) :> IXivCollection
+        let col = BotDataInitializer.GetXivCollectionChs()
         let sht = col.GetSheet("SpecialShop")
         seq {
             for row in sht do
@@ -61,13 +67,13 @@ type SpecialShopCollection private () =
         GC.Collect()
 
     member x.AllCostItems() = 
-        let ic = Item.ItemCollection.Instance
-        x.Collection.FindAll()
+        let ic = ItemCollection.Instance
+        x.DbCollection.FindAll()
         |> Seq.map (fun r -> r.CostItem)
         |> Seq.distinct
-        |> Seq.map (fun id -> ic.LookupById(id))
+        |> Seq.map (fun id -> ic.GetByKey(id))
         |> Seq.toArray
         
     member x.SearchByCostItemId(id : int) =
-        let ret = x.Collection.Find(Query.EQ("CostItem", BsonValue(id)))
+        let ret = x.DbCollection.Find(Query.EQ("CostItem", BsonValue(id)))
         ret |> Seq.toArray

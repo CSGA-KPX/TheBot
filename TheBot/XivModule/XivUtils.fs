@@ -2,7 +2,8 @@ module TheBot.Module.XivModule.Utils
 
 open System
 open LibDmfXiv
-open XivData
+
+open BotData.XivData
 
 module MarketUtils =
     open LibDmfXiv.Client
@@ -45,8 +46,8 @@ module MarketUtils =
 
         member x.ItemRecord =
             match x with
-            | Order x -> Item.ItemCollection.Instance.LookupByItemId(x.ItemId |> int)
-            | Trade x -> Item.ItemCollection.Instance.LookupByItemId(x.ItemId |> int)
+            | Order x -> Item.ItemCollection.Instance.GetByItemId(x.ItemId |> int)
+            | Trade x -> Item.ItemCollection.Instance.GetByItemId(x.ItemId |> int)
 
         member x.IsHq =
             match x with
@@ -158,7 +159,7 @@ module MarketUtils =
                 |> Array.map (fun (x, y) -> MarketAnalyzer(item, x, y |> Array.map (Trade))))
 
 module MentorUtils =
-    open XivData.Mentor
+    open BotData.XivData.Mentor
 
     let fortune =
         [| "大吉", "行会令连送/三导师高铁四人本/假风火土白给".Split('/')
@@ -231,7 +232,7 @@ module XivExpression =
             let itemOperator = GenericOperator<_>('#', Int32.MaxValue, fun l r ->
                 match l with
                 | Number f ->
-                    let item = Item.ItemCollection.Instance.LookupByItemId(int f)
+                    let item = Item.ItemCollection.Instance.GetByItemId(int f)
                     let acu = ItemAccumulator.Singleton item
                     Accumulator acu
                 | Accumulator a -> failwithf "#符号仅对数字使用")
@@ -240,7 +241,7 @@ module XivExpression =
             x.Operatos.Add(itemOperator)
 
         override x.TryGetItemByName(str) = 
-            Item.ItemCollection.Instance.TryLookupByName(str.TrimEnd(CommandUtils.XivSpecialChars))
+            Item.ItemCollection.Instance.TryGetByName(str.TrimEnd(CommandUtils.XivSpecialChars))
     (*
     open System.Text.RegularExpressions
     open TheBot.Utils.GenericRPN

@@ -10,6 +10,7 @@ open KPX.FsCqHttp.DataType.Response
 open KPX.FsCqHttp.DataType.Event
 open KPX.FsCqHttp.Handler.CommandHandlerBase
 
+open TheBot.Utils.TextTable
 open TheBot.Utils.HandlerUtils
 
 type SudoModule() =
@@ -40,12 +41,13 @@ type SudoModule() =
         msgArg.QuickMessageReply("已关闭加群")
         allow <- false
 
-    [<CommandHandlerMethodAttribute("#rebuildxivdb", "(管理) 重建FF14数据库", "")>]
+    [<CommandHandlerMethodAttribute("#rebuilddatacache", "(管理) 重建数据缓存", "")>]
     member x.HandleRebuildXivDb(msgArg : CommandArgs) =
         failOnNonAdmin(msgArg)
-        XivData.Utils.ClearDb()
+        BotData.Common.Database.BotDataInitializer.ClearCache()
+        BotData.Common.Database.BotDataInitializer.ShrinkCache()
         msgArg.QuickMessageReply("清空数据库完成")
-        XivData.Utils.InitAllDb()
+        BotData.Common.Database.BotDataInitializer.InitializeAllCollections()
         msgArg.QuickMessageReply("重建数据库完成")
 
     [<CommandHandlerMethodAttribute("#su", "提交凭据，添加当前用户为超管", "")>]
@@ -75,6 +77,19 @@ type SudoModule() =
                 sb.AppendLine(sprintf "已添加userId = %i" uid) |> ignore
             | _ -> failwith ""
         msgArg.QuickMessageReply(sb.ToString())
+
+    [<CommandHandlerMethodAttribute("#showgroups", "（超管）检查加群信息", "")>]
+    member x.HandleShowGroups(msgArg : CommandArgs) = 
+        if not <| isSenderOwner(msgArg) then failwithf "权限不足"
+        let api = msgArg.ApiCaller.CallApi<SystemApi.GetGroupList>()
+
+        let tt = AutoTextTable<SystemApi.GroupInfo>([|
+            "群号", fun i -> box (i.GroupId)
+            "名称", fun i -> box (i.GroupName)
+            |])
+        for g in api.Groups do 
+            tt.AddObject(g)
+        msgArg.QuickMessageReply(tt.ToString())
 
     override x.HandleRequest(args, e) =
         match e with

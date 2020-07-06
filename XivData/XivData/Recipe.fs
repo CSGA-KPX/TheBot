@@ -1,9 +1,11 @@
-module XivData.Recipe
+﻿namespace BotData.XivData.Recipe
 
 open System
 open System.Collections.Generic
-open LibFFXIV.GameData.Raw
-open XivData.Item
+
+open BotData.Common.Database
+open BotData.XivData.Item
+
 
 [<CLIMutable>]
 type RecipeRecord =
@@ -27,28 +29,29 @@ type FinalMaterials() =
 type IRecipeProvider =
     abstract TryGetRecipe : ItemRecord -> RecipeRecord option
 
-
 type CraftRecipeProvider private () =
-    inherit Utils.XivDataSource<int, RecipeRecord>()
+    inherit CachedTableCollection<int, RecipeRecord>()
 
     static let instance = CraftRecipeProvider()
     static member Instance = instance
 
-    override x.BuildCollection() =
-        let db = x.Collection
+    override x.Depends = Array.singleton typeof<ItemCollection>
+
+    override x.IsExpired = false
+
+    override x.InitializeCollection() = 
+        let db = x.DbCollection
         db.EnsureIndex("_id", true) |> ignore
         db.EnsureIndex("ResultItem.Id") |> ignore
         printfn "Building CraftRecipeProvider"
-        let lookup id = Item.ItemCollection.Instance.LookupById(id)
 
-        let chs = 
-            let col = EmbeddedXivCollection(XivLanguage.ChineseSimplified, false) :> IXivCollection
-            col.GetSheet("Recipe")
+        let lookup id = ItemCollection.Instance.GetByKey(id)
 
-        let eng = 
-            Utils.GlobalVerCollection.Value.GetSheet("Recipe")
+        let chs = BotDataInitializer.GetXivCollectionChs().GetSheet("Recipe")
 
-        let merged = Utils.MergeSheet(chs, eng, (fun (a,b) -> a.As<string>("Item{Result}") = "0"))
+        let eng = BotDataInitializer.GetXivCollectionEng().GetSheet("Recipe")
+
+        let merged = Utils.MergeSheet(chs, eng, (fun (a, b) -> a.As<string>("Item{Result}") = "0"))
 
         seq {
             for row in merged do
@@ -64,6 +67,7 @@ type CraftRecipeProvider private () =
                         ProductCount = row.As<byte>("Amount{Result}") |> float
                         Materials = materials }
         }
+        |> Seq.cache
         |> db.InsertBulk
         |> ignore
         GC.Collect()
@@ -71,31 +75,32 @@ type CraftRecipeProvider private () =
     interface IRecipeProvider with
         override x.TryGetRecipe(item) =
             let id = new LiteDB.BsonValue(item.Id)
-            let ret = x.Collection.FindOne(LiteDB.Query.EQ("ResultItem.Id", id))
+            let ret = x.DbCollection.FindOne(LiteDB.Query.EQ("ResultItem.Id", id))
             if isNull (box ret) then
                 None
             else
                 Some ret
 
 type CompanyCraftRecipeProvider private () =
-    inherit Utils.XivDataSource<int, RecipeRecord>()
+    inherit CachedTableCollection<int, RecipeRecord>()
 
     static let instance = CompanyCraftRecipeProvider()
     static member Instance = instance
 
-    override x.BuildCollection() =
-        let db = x.Collection
+    override x.Depends = Array.singleton typeof<ItemCollection>
+
+    override x.IsExpired = false
+
+    override x.InitializeCollection() =
+        let db = x.DbCollection
         db.EnsureIndex("_id", true) |> ignore
         db.EnsureIndex("ResultItem.Id") |> ignore
         printfn "Building CompanyCraftRecipeProvider"
-        let lookup id = Item.ItemCollection.Instance.LookupById(id)
+        let lookup id = ItemCollection.Instance.GetByKey(id)
 
-        let chs = 
-            let col = EmbeddedXivCollection(XivLanguage.ChineseSimplified, false) :> IXivCollection
-            col.GetSheet("CompanyCraftSequence")
+        let chs = BotDataInitializer.GetXivCollectionChs().GetSheet("CompanyCraftSequence")
 
-        let eng = 
-            Utils.GlobalVerCollection.Value.GetSheet("CompanyCraftSequence")
+        let eng = BotDataInitializer.GetXivCollectionEng().GetSheet("CompanyCraftSequence")
 
         let merged = Utils.MergeSheet(chs, eng, (fun (a,b) -> a.As<string>("ResultItem") = "0"))
 
@@ -132,7 +137,7 @@ type CompanyCraftRecipeProvider private () =
     interface IRecipeProvider with
         override x.TryGetRecipe(item) =
             let id = new LiteDB.BsonValue(item.Id)
-            let ret = x.Collection.FindOne(LiteDB.Query.EQ("ResultItem.Id", id))
+            let ret = x.DbCollection.FindOne(LiteDB.Query.EQ("ResultItem.Id", id))
             if isNull (box ret) then
                 None
             else

@@ -1,7 +1,8 @@
-﻿module XivData.ClassJobMapping
+﻿namespace BotData.XivData.ClassJobMapping
 
 open System
-open LibFFXIV.GameData.Raw
+
+open BotData.Common.Database
 
 type Mapping = 
     {
@@ -11,15 +12,19 @@ type Mapping =
     }
 
 type ClassJobMappingCollection private () =
-    inherit Utils.XivDataSource<string, Mapping>()
+    inherit CachedTableCollection<string, Mapping>()
 
     static let instance = ClassJobMappingCollection()
     static member Instance = instance
 
-    override x.BuildCollection() =
-        let db = x.Collection
+    override x.Depends = Array.empty
+
+    override x.IsExpired = false
+
+    override x.InitializeCollection() =
+        let db = x.DbCollection
         printfn "Building ClassJobMappingCollection"
-        let col = EmbeddedXivCollection(XivLanguage.ChineseSimplified) :> IXivCollection
+        let col = BotDataInitializer.GetXivCollectionChs()
 
         let sht = col.GetSheet("ClassJob")
         seq {
@@ -38,5 +43,5 @@ type ClassJobMappingCollection private () =
         |> ignore
         GC.Collect()
 
-    member x.SearchByName(name) = x.LookupById(name)
-    member x.TrySearchByName(name) = x.TryLookupById(name)
+    member x.SearchByName(name) = x.GetByKey(name)
+    member x.TrySearchByName(name) = x.TryGetByKey(name)
