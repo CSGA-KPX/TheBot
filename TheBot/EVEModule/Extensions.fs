@@ -1,6 +1,10 @@
 ﻿module TheBot.Module.EveModule.Utils.Extensions
 
-open EveData
+open BotData.EveData.Utils
+open BotData.EveData.EveType
+open BotData.EveData.EveBlueprint
+open BotData.EveData.MarketPriceCache
+open BotData.EveData.GameInternalPriceCache
 
 open TheBot.Module.EveModule.Utils.Helpers
 open TheBot.Module.EveModule.Utils.Config
@@ -14,6 +18,8 @@ type EveType with
         | PriceFetchMode.BuyWithTax -> pi.Buy * (pct <| 100 + EveBuyTax)
         | PriceFetchMode.Sell -> pi.Sell
         | PriceFetchMode.SellWithTax -> pi.Sell * (pct <| 100 - EveSellTax)
+        | PriceFetchMode.AdjustedPrice -> GameInternalPriceCollection.Instance.GetByKey(x.Id).AdjustedPrice
+        | PriceFetchMode.AveragePrice -> GameInternalPriceCollection.Instance.GetByKey(x.Id).AveragePrice
 
     member x.GetPriceInfo() = DataBundle.Instance.GetItemPriceCached(x)
 

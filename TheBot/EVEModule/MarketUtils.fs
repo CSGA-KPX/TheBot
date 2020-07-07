@@ -1,13 +1,17 @@
 ﻿module TheBot.Module.EveModule.Utils.MarketUtils
 
+open BotData.EveData.Utils
+open BotData.EveData.EveType
+
 open TheBot.Utils.TextTable
 open TheBot.Module.EveModule.Utils.Helpers
 open TheBot.Module.EveModule.Utils.Config
 open TheBot.Module.EveModule.Utils.Extensions
 
+
 let GetPriceTable() = 
-    AutoTextTable<EveData.EveType * float>(
-        [|  "名称", fun (t, q) -> t.TypeName |> box
+    AutoTextTable<EveType * float>(
+        [|  "名称", fun (t, q) -> t.Name |> box
             "数量", fun (t, q) -> q |> HumanReadableFloat |> box
             PriceFetchMode.Sell.ToString() + "/税后", fun (t, q) -> 
                 let nt = t.GetPrice(PriceFetchMode.Sell) * q |> HumanReadableFloat

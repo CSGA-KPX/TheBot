@@ -1,20 +1,7 @@
 ﻿namespace TheBot.Module.EveModule.Utils.Config
 
-open EveData
-
-[<RequireQualifiedAccess>]
-type PriceFetchMode = 
-    | Sell
-    | SellWithTax
-    | Buy
-    | BuyWithTax
-
-    override x.ToString() = 
-        match x with
-        | Sell -> "税前卖出"
-        | SellWithTax -> "税后卖出"
-        | Buy -> "税前收购"
-        | BuyWithTax -> "税后收购"
+open BotData.EveData.Utils
+open BotData.EveData.EveBlueprint
 
 type EveConfigParser() as x = 
     inherit TheBot.Utils.UserOption.UserOptionParser()
@@ -54,14 +41,14 @@ type EveConfigParser() as x =
             PriceFetchMode.Sell
 
     /// 测试蓝图能否继续展开
-    member x.BpCanExpand(bp : EveData.EveBlueprint) = 
+    member x.BpCanExpand(bp : EveBlueprint) = 
         match bp.Type with
         | BlueprintType.Manufacturing -> true
         | BlueprintType.Planet -> x.ExpandPlanet
         | BlueprintType.Reaction -> x.ExpandReaction
         | _ -> failwithf "未知蓝图类型 %A" bp
 
-    member x.CalculateManufacturingFee(cost : float, bpt : EveData.BlueprintType) = 
+    member x.CalculateManufacturingFee(cost : float, bpt : BlueprintType) = 
         match bpt with
         | BlueprintType.Planet -> 0.0
         | _ ->

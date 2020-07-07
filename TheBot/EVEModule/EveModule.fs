@@ -5,11 +5,13 @@ open System
 open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Handler.CommandHandlerBase
 
+open BotData.EveData.Utils
+open BotData.EveData.EveType
+open BotData.EveData.EveBlueprint
+
 open TheBot.Utils.HandlerUtils
 open TheBot.Utils.TextTable
 open TheBot.Utils.RecipeRPN
-
-open EveData
 
 open TheBot.Module.EveModule.Utils.Helpers
 open TheBot.Module.EveModule.Utils.Config
@@ -25,7 +27,7 @@ type EveModule() =
 
     let typeToBp(item : EveType) = 
         let ret = tryTypeToBp(item)
-        if ret.IsNone then failwithf "找不到蓝图信息: %s" item.TypeName 
+        if ret.IsNone then failwithf "找不到蓝图信息: %s" item.Name 
         ret.Value
 
     /// 物品名或蓝图名查找蓝图
@@ -37,6 +39,8 @@ type EveModule() =
     [<CommandHandlerMethodAttribute("eveTest", "测试用（管理员）", "")>]
     member x.HandleEveTest(msgArg : CommandArgs) =
         failOnNonAdmin(msgArg)
+        EveBlueprintCollection.Instance.Clear()
+        EveBlueprintCollection.Instance.InitializeCollection()
 
     [<CommandHandlerMethodAttribute("eveLp", "EVE LP兑换计算", "#evelp 军团名")>]
     member x.HandleEveLp(msgArg : CommandArgs) =
@@ -72,7 +76,7 @@ type EveModule() =
                 let item = if bpRet.IsSome then bpRet.Value.ProductItem else item
                 data.GetItemTradeVolume(item)
 
-            let offerStr = sprintf "%s*%g" item.TypeName offer.Offer.Quantity
+            let offerStr = sprintf "%s*%g" item.Name offer.Offer.Quantity
             {|
                 Name      = offerStr
                 TotalCost = totalCost
@@ -98,7 +102,7 @@ type EveModule() =
     member x.HandleRefreshCache(msgArg : CommandArgs) =
         failOnNonAdmin(msgArg)
 
-        data.ClearPriceCache()
+        BotData.EveData.MarketPriceCache.PriceCacheCollection.Instance.Clear()
 
         msgArg.QuickMessageReply(sprintf "完毕")
 
@@ -175,7 +179,7 @@ type EveModule() =
                 | _ when bp.IsSome && q > 0.0 -> 
                     // 需要计算
                     let bp = typeToBp(kv.Key).GetBpByRuns(q).ApplyMaterialEfficiency(cfg.InputMe)
-                    tt.AddRow("产出："+bp.ProductItem.TypeName, bp.ProductQuantity)
+                    tt.AddRow("产出："+bp.ProductItem.Name, bp.ProductQuantity)
 
                     for m in bp.Materials do
                         final.AddOrUpdate(m.MaterialItem, m.Quantity)
@@ -183,11 +187,11 @@ type EveModule() =
                 | _ when q < 0.0 -> 
                     // 已有材料需要扣除
                     final.AddOrUpdate(kv.Key, kv.Value)
-                | _ -> failwithf "不知道如何处理：%s * %g" kv.Key.TypeName kv.Value
+                | _ -> failwithf "不知道如何处理：%s * %g" kv.Key.Name kv.Value
 
             
         for kv in final do 
-            tt.AddRow(kv.Key.TypeName, kv.Value)
+            tt.AddRow(kv.Key.Name, kv.Value)
         msgArg.QuickMessageReply(tt.ToString())
 
     [<CommandHandlerMethodAttribute("err", "EVE蓝图材料计算（可用表达式）", "")>]
@@ -203,7 +207,7 @@ type EveModule() =
         )
         tt.AddPreTable(sprintf "展开行星材料：%b 展开反应公式：%b" cfg.ExpandPlanet cfg.ExpandReaction)
 
-        let rec loop (bp : EveData.EveBlueprint) = 
+        let rec loop (bp : EveBlueprint) = 
             for m in bp.Materials do 
                 let ret = data.TryGetBpByProduct(m.MaterialItem)
                 if ret.IsSome && cfg.BpCanExpand(ret.Value) then
@@ -219,12 +223,12 @@ type EveModule() =
             for kv in a do 
                 let q  = kv.Value
                 let bp = typeToBp(kv.Key).GetBpByRuns(q).ApplyMaterialEfficiency(cfg.InputMe)
-                tt.AddRow("产出："+ bp.ProductItem.TypeName, bp.ProductQuantity)
+                tt.AddRow("产出："+ bp.ProductItem.Name, bp.ProductQuantity)
 
                 loop(bp)
             
         for kv in final do 
-            tt.AddRow(kv.Key.TypeName, kv.Value)
+            tt.AddRow(kv.Key.Name, kv.Value)
         msgArg.QuickMessageReply(tt.ToString())
 
     [<CommandHandlerMethodAttribute("errc", "EVE蓝图成本计算（可用表达式）", "")>]
@@ -259,13 +263,13 @@ type EveModule() =
                         ms.AddOrUpdate(m.MaterialItem, m.Quantity)
 
                 let ms = 
-                    [| for kv in ms do yield {EveMaterial.TypeId = kv.Key.TypeId; EveMaterial.Quantity = kv.Value} |]
+                    [| for kv in ms do yield {EveMaterial.TypeId = kv.Key.Id; EveMaterial.Quantity = kv.Value} |]
                 let os = 
-                    [| for kv in os do yield {EveMaterial.TypeId = kv.Key.TypeId; EveMaterial.Quantity = kv.Value} |]
+                    [| for kv in os do yield {EveMaterial.TypeId = kv.Key.Id; EveMaterial.Quantity = kv.Value} |]
 
                 {   EveBlueprint.Materials = ms
                     EveBlueprint.Products = os
-                    EveBlueprint.BlueprintTypeID = Int32.MinValue
+                    EveBlueprint.Id = Int32.MinValue
                     EveBlueprint.Type = bpTypeCheck.Value}
 
         let tt = TextTable.FromHeader([|"材料"; "数量"; cfg.MaterialPriceMode.ToString() ; "生产"|])
@@ -309,7 +313,7 @@ type EveModule() =
         // 材料名称 数量 售价（小计） 制造成本（小计） 最佳成本（小计）
         for m in finalBp.Materials do 
             let amount = m.Quantity
-            let name   = m.MaterialItem.TypeName
+            let name   = m.MaterialItem.Name
             let buy    = m.GetTotalPrice(cfg.MaterialPriceMode)
                 
             optCost <- optCost + cfg.CalculateManufacturingFee(buy, finalBp.Type)
@@ -354,7 +358,7 @@ type EveModule() =
             |> Array.map (fun name ->
                 let item = data.GetItem(name)
                 let info = data.GetRefineInfo(item)
-                let refinePerSec = mineSpeed / info.Volume / info.RefineUnit
+                let refinePerSec = mineSpeed / info.InputType.Volume / info.RefineUnit
                 let price =
                     info.Yields
                     |> Array.sumBy (fun m -> 
@@ -362,10 +366,10 @@ type EveModule() =
                 name, price|> ceil )
             |> Array.sortByDescending snd
 
-        let moon= getSubTypes EveData.MoonNames
-        let ice = getSubTypes EveData.IceNames
-        let ore = getSubTypes EveData.OreNames
-        let tore= getSubTypes EveData.TriglavianOreNames
+        let moon= getSubTypes MoonNames
+        let ice = getSubTypes IceNames
+        let ore = getSubTypes OreNames
+        let tore= getSubTypes TriglavianOreNames
 
         let tryGetRow (arr : (string * float) [])  (id : int)  = 
             if id <= arr.Length - 1 then
@@ -396,7 +400,7 @@ type EveModule() =
         data.GetBps()
         |> Seq.filter (fun x -> x.Type = BlueprintType.Planet)
         |> Seq.map (fun ps ->
-            let name = ps.ProductItem.TypeName
+            let name = ps.ProductItem.Name
             let cost = ps.GetTotalMaterialPrice(cfg.MaterialPriceMode)
             let sell = ps.GetTotalProductPrice(PriceFetchMode.SellWithTax)
             let volume = data.GetItemTradeVolume(ps.ProductItem)

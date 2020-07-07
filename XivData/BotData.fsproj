@@ -19,16 +19,32 @@
     <Compile Include="XivData\GilShop.fs" />
     <Compile Include="XivData\ClassJobMapping.fs" />
     <Compile Include="XivData\CraftGearSet.fs" />
-    <Compile Include="EveData\EveData.fs" />
+    <Compile Include="EveData\Utils.fs" />
+    <Compile Include="EveData\EveGroup.fs" />
+    <Compile Include="EveData\EveType.fs" />
+    <Compile Include="EveData\EveBlueprint.fs" />
+    <Compile Include="EveData\RefineInfo.fs" />
+    <Compile Include="EveData\NpcCorporation.fs" />
+    <Compile Include="EveData\LoyaltyStoreOffer.fs" />
+    <Compile Include="EveData\MarketPriceCache.fs" />
+    <Compile Include="EveData\MarketHistoryCache.fs" />
+    <Compile Include="EveData\MarketOrdersCache.fs" />
+    <Compile Include="EveData\GameInternalPriceCache.fs" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="LiteDB.FSharp" Version="2.14.0" />
+    <PackageReference Include="NLog" Version="4.6.7" />
     <PackageReference Include="System.IO.Compression" Version="4.3.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\LibFFXIV\LibFFXIV.GameData.Raw\LibFFXIV.GameData.Raw.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="System.Net" />
+    <Reference Include="System.Net.Http" />
   </ItemGroup>
 
   <ItemGroup>

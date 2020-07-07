@@ -14,22 +14,27 @@ type IInitializationInfo =
 module private DataBase =
     // 警告：不要把数据库作为static let放入泛型类
     // static let不在每种泛型中共享
+    let logger = NLog.LogManager.GetLogger("LiteDB")
     let FsMapper = LiteDB.FSharp.FSharpBsonMapper()
     let Db =
-        let dbFile = @"Filename=../static/BotDataCache.db; Journal=true; Cache Size=500; Mode=Exclusive"
+        let dbFile = @"Filename=../static/BotDataCache.db; Journal=true; Cache Size=5000; Mode=Exclusive;"
         let db = new LiteDB.LiteDatabase(dbFile, FsMapper)
+        db.Log.add_Logging(fun str -> logger.Trace(str))
         db
 
 [<AbstractClass>]
 type BotDataCollection<'Key, 'Value>() as x = 
 
     let col = Db.GetCollection<'Value>(x.GetType().Name)
+    let logger = NLog.LogManager.GetLogger(x.GetType().Name)
 
     /// 声明依赖项
     abstract Depends : Type []
 
+    member internal x.Logger = logger
+
     /// 清空当前集合，不释放空间
-    member x.Clear() = col.Delete(LiteDB.Query.All())
+    member x.Clear() = col.Delete(LiteDB.Query.All()) |> ignore
 
     member x.Count() = col.Count()
 
@@ -74,6 +79,12 @@ type CachedItemCollection<'Key, 'Value>() =
         then x.Force(key)
         else item.Value
 
+type private TableUpdateTime = 
+    {
+        [<LiteDB.BsonId(false)>]
+        Id : string
+        Updated : DateTimeOffset
+    }
 
 [<AbstractClass>]
 type CachedTableCollection<'Key, 'Value>() = 
@@ -84,8 +95,19 @@ type CachedTableCollection<'Key, 'Value>() =
     /// 处理数据并添加到数据库，建议在事务内处理
     abstract InitializeCollection : unit -> unit
 
-type BotDataInitializer private () = 
+    member x.CheckUpdate() = 
+        if x.IsExpired then x.InitializeCollection()
+
+    member x.RegisterCollectionUpdate() = 
+        BotDataInitializer.RegisterCollectionUpdate(x.GetType().Name)
+
+    member x.GetLastUpdateTime() = 
+        BotDataInitializer.GetCollectionUpdateTime(x.GetType().Name)
+
+and BotDataInitializer private () = 
     static let StaticData = Dictionary<string, obj>()
+
+    static let updateCol = Db.GetCollection<TableUpdateTime>()
 
     static member ClearStaticData() = StaticData.Clear()
 
@@ -124,6 +146,23 @@ type BotDataInitializer private () =
                 EmbeddedXivCollection(ss, XivLanguage.None) :> IXivCollection
             StaticData.Add("XIV_COL_ENG", col)
             col
+
+
+    /// 记录CachedTableCollection<>的更新时间
+    static member RegisterCollectionUpdate(name : string) = 
+        let record = 
+            {
+                Id = name
+                Updated = DateTimeOffset.Now
+            }
+        updateCol.Upsert(record) |> ignore
+
+    static member GetCollectionUpdateTime(name : string ) =
+        let ret = updateCol.FindById(LiteDB.BsonValue(name))
+        if isNull (box ret) then
+            DateTimeOffset.MinValue
+        else
+            ret.Updated
 
     /// 输入BotDataCollection数组，按照依赖顺序排序
     static member private SolveDependency(modules : IInitializationInfo []) = 

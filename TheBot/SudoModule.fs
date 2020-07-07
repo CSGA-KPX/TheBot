@@ -41,7 +41,7 @@ type SudoModule() =
         msgArg.QuickMessageReply("已关闭加群")
         allow <- false
 
-    [<CommandHandlerMethodAttribute("#rebuilddatacache", "(管理) 重建数据缓存", "")>]
+    [<CommandHandlerMethodAttribute("#rebuilddatacache2", "(管理) 重建数据缓存", "")>]
     member x.HandleRebuildXivDb(msgArg : CommandArgs) =
         failOnNonAdmin(msgArg)
         BotData.Common.Database.BotDataInitializer.ClearCache()
