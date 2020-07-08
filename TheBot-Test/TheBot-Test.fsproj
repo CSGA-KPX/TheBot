@@ -15,8 +15,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="UnitTest1.fs" />
+    <Compile Include="DataTest.fs" />
     <Compile Include="Program.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TheBot\TheBot.fsproj" />
   </ItemGroup>
 
 </Project>
