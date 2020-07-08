@@ -39,8 +39,8 @@ type EveModule() =
     [<CommandHandlerMethodAttribute("eveTest", "测试用（管理员）", "")>]
     member x.HandleEveTest(msgArg : CommandArgs) =
         failOnNonAdmin(msgArg)
-        EveBlueprintCollection.Instance.Clear()
-        EveBlueprintCollection.Instance.InitializeCollection()
+        let cfg = EveConfigParser()
+        cfg.Parse(msgArg.Arguments)
 
     [<CommandHandlerMethodAttribute("eveLp", "EVE LP兑换计算", "#evelp 军团名")>]
     member x.HandleEveLp(msgArg : CommandArgs) =

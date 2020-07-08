@@ -38,9 +38,9 @@ type BotDataCollection<'Key, 'Value>() as x =
 
     member x.Count() = col.Count()
 
-    member x.GetByKey(key : 'Key) = col.FindById(LiteDB.BsonValue(key))
+    member internal x.GetByKey(key : 'Key) = col.FindById(LiteDB.BsonValue(key))
 
-    member x.TryGetByKey(key : 'Key) = 
+    member internal x.TryGetByKey(key : 'Key) = 
         let ret = col.FindById(LiteDB.BsonValue(key))
         if isNull (box ret) then None
         else Some ret
@@ -79,7 +79,8 @@ type CachedItemCollection<'Key, 'Value>() =
         then x.Force(key)
         else item.Value
 
-type private TableUpdateTime = 
+[<CLIMutable>]
+type TableUpdateTime = 
     {
         [<LiteDB.BsonId(false)>]
         Id : string
@@ -96,7 +97,10 @@ type CachedTableCollection<'Key, 'Value>() =
     abstract InitializeCollection : unit -> unit
 
     member x.CheckUpdate() = 
-        if x.IsExpired then x.InitializeCollection()
+        if x.IsExpired then 
+            x.Clear()
+            x.InitializeCollection()
+            x.RegisterCollectionUpdate()
 
     member x.RegisterCollectionUpdate() = 
         BotDataInitializer.RegisterCollectionUpdate(x.GetType().Name)

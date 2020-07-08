@@ -148,6 +148,12 @@ type EveBlueprintCollection private () =
     member x.GetByProduct(t : EveType) = x.TryGetByProduct(t).Value
     member x.GetByProduct(id : int) = x.TryGetByProduct(id).Value
 
+    member x.TryGetByBp(id : int) = x.TryGetByKey(id)
+    member x.TryGetByBp(t : EveType) = x.TryGetByBp(t.Id)
+
+    member x.GetByBp(id : int) = x.TryGetByBp(id).Value
+    member x.GetByBp(t : EveType) = x.TryGetByBp(t).Value
+
     /// 行星生产
     member private x.InitPlanetSchematics() = 
         use archive = 

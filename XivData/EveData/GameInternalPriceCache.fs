@@ -16,7 +16,9 @@ type GameInternalPrice =
         [<LiteDB.BsonId(false)>]
         [<JsonProperty("type_id")>]
         Id : int
+        [<JsonProperty("adjusted_price")>]
         AdjustedPrice : float
+        [<JsonProperty("average_price")>]
         AveragePrice : float
     }
 
@@ -42,3 +44,9 @@ type GameInternalPriceCollection private () =
         JArray.Parse(json).ToObject<GameInternalPrice[]>()
         |> x.DbCollection.InsertBulk
         |> ignore
+
+    member x.GetByItem(id : int) = 
+        x.CheckUpdate()
+        x.GetByKey(id)
+
+    member x.GetByItem(t : EveType) = x.GetByItem(t.Id)

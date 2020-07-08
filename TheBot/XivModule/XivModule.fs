@@ -146,7 +146,7 @@ type XivModule() =
         let s, a =
             let count = MentorUtils.shouldOrAvoid.Count() |> uint32
             let idx = dicer.GetRandomArray(count + 1u, 3 * 2)
-            let a = idx |> Array.map (fun id -> MentorUtils.shouldOrAvoid.GetByKey(id).Value)
+            let a = idx |> Array.map (fun id -> MentorUtils.shouldOrAvoid.GetByIndex(id).Value)
             a.[0..2], a.[3..]
         sw.WriteLine("宜：{0}", String.concat "/" s)
         sw.WriteLine("忌：{0}", String.concat "/" a)
@@ -156,7 +156,7 @@ type XivModule() =
         let location =
             let count = MentorUtils.location.Count() |> uint32
             let idx = dicer.GetRandom(count + 1u)
-            MentorUtils.location.GetByKey(idx).Value
+            MentorUtils.location.GetByIndex(idx).Value
         sw.WriteLine("推荐排本场所: {0}", location)
         msgArg.QuickMessageReply(sw.ToString())
 

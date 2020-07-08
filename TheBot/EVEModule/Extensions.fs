@@ -18,8 +18,8 @@ type EveType with
         | PriceFetchMode.BuyWithTax -> pi.Buy * (pct <| 100 + EveBuyTax)
         | PriceFetchMode.Sell -> pi.Sell
         | PriceFetchMode.SellWithTax -> pi.Sell * (pct <| 100 - EveSellTax)
-        | PriceFetchMode.AdjustedPrice -> GameInternalPriceCollection.Instance.GetByKey(x.Id).AdjustedPrice
-        | PriceFetchMode.AveragePrice -> GameInternalPriceCollection.Instance.GetByKey(x.Id).AveragePrice
+        | PriceFetchMode.AdjustedPrice -> GameInternalPriceCollection.Instance.GetByItem(x).AdjustedPrice
+        | PriceFetchMode.AveragePrice -> GameInternalPriceCollection.Instance.GetByItem(x).AveragePrice
 
     member x.GetPriceInfo() = DataBundle.Instance.GetItemPriceCached(x)
 
@@ -45,8 +45,12 @@ type EveBlueprint with
         x.Materials
         |> Array.sumBy (fun m -> m.GetTotalPrice(pm))
 
+    /// 获取生产费用（近似）
+    ///
+    /// 目前架构不允许获取0材料蓝图，按实际产量计算
     member x.GetManufacturingFee(cfg : EveConfigParser) = 
-        cfg.CalculateManufacturingFee(x.GetTotalMaterialPrice(PriceFetchMode.Sell), x.Type)
+        // 生产费用 = ME为0时的 加权物品价格
+        cfg.CalculateManufacturingFee(x.GetTotalMaterialPrice(PriceFetchMode.AdjustedPrice), x.Type)
 
     /// 获取制造费用（材料+税） LP计算用
     ///

@@ -40,6 +40,8 @@ type ShouldOrAvoidCollection private () =
         |> ignore
         GC.Collect()
 
+    member x.GetByIndex(id : int) = x.TryGetByKey(id).Value
+
 type LocationCollection private () =
     inherit CachedTableCollection<int, StringRecord>()
 
@@ -68,3 +70,5 @@ type LocationCollection private () =
         |> db.InsertBulk
         |> ignore
         GC.Collect()
+
+    member x.GetByIndex(id : int) = x.TryGetByKey(id).Value

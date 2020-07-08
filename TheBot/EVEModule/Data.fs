@@ -35,18 +35,18 @@ type DataBundle private () =
     member x.GetItem(id : int) = itemCol.GetById(id)
 
     member x.TryTypeToBp(t : EveType) = 
-        let ret = bpCol.TryGetByKey(t.Id)
+        let ret = bpCol.TryGetByBp(t)
         if ret.IsNone then
             x.TryGetBpByProduct(t)
         else
             ret
 
     member x.TryGetBp(id : int) = 
-        bpCol.TryGetByKey(id)
+        bpCol.TryGetByBp(id)
 
     member x.GetBps() = bpCol :> IEnumerable<EveBlueprint>
 
-    member x.GetBp(id : int) = bpCol.GetByKey(id)
+    member x.GetBp(id : int) = bpCol.GetByBp(id)
 
     member x.GetBpByProduct(id : int) = bpCol.GetByProduct(id)
 
