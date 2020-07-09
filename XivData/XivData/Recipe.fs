@@ -49,12 +49,8 @@ type CraftRecipeProvider private () =
 
         let chs = BotDataInitializer.GetXivCollectionChs().GetSheet("Recipe")
 
-        let eng = BotDataInitializer.GetXivCollectionEng().GetSheet("Recipe")
-
-        let merged = Utils.MergeSheet(chs, eng, (fun (a, b) -> a.As<string>("Item{Result}") = "0"))
-
         seq {
-            for row in merged do
+            for row in chs do
                 let itemsKeys = row.AsArray<int>("Item{Ingredient}", 10)
                 let amounts = row.AsArray<byte>("Amount{Ingredient}", 10) |> Array.map (fun x -> float x)
 
@@ -100,13 +96,8 @@ type CompanyCraftRecipeProvider private () =
 
         let chs = BotDataInitializer.GetXivCollectionChs().GetSheet("CompanyCraftSequence")
 
-        let eng = BotDataInitializer.GetXivCollectionEng().GetSheet("CompanyCraftSequence")
-
-        let merged = Utils.MergeSheet(chs, eng, (fun (a,b) -> a.As<string>("ResultItem") = "0"))
-
-
         seq {
-            for ccs in merged do
+            for ccs in chs do
                 let materials =
                     [| for part in ccs.AsRowArray("CompanyCraftPart", 8) do
                         for proc in part.AsRowArray("CompanyCraftProcess", 3) do

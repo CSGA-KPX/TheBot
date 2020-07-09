@@ -38,8 +38,6 @@ type CraftableGearCollection private () =
 
         let fields = [|"EquipSlotCategory"; "Level{Equip}"; "Name"; "ClassJobCategory"; "Level{Item}"|]
         let chs = BotDataInitializer.GetXivCollectionChs().GetSheet("Item", fields)
-        let eng = BotDataInitializer.GetXivCollectionEng().GetSheet("Item", fields)
-        let merged = Utils.MergeSheet(chs, eng, (fun (a,_) -> a.As<string>("Name") = ""))
 
         let ClassJobCategory = 
             [|
@@ -54,7 +52,7 @@ type CraftableGearCollection private () =
             |] |> readOnlyDict
         seq {
             let rm = RecipeManager.GetInstance()
-            for item in merged do 
+            for item in chs do 
                 let eq = item.As<int>("EquipSlotCategory") <> 0
                 let le = (item.As<int>("Level{Equip}") % 10) = 0
                 let cf = 

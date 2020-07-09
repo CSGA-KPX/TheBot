@@ -35,12 +35,8 @@ type ItemCollection private () =
 
         let chs = BotDataInitializer.GetXivCollectionChs().GetSheet("Item", [| "Name" |])
 
-        let eng = BotDataInitializer.GetXivCollectionEng().GetSheet("Item", [| "Name" |])
-
-        let merged = Utils.MergeSheet(chs, eng, (fun (chs,_) -> chs.As<string>("Name") = ""))
-
         seq {
-            for row in merged do
+            for row in chs do
                 yield { Id = row.Key.Main
                         Name = row.As<string>("Name") }
         }

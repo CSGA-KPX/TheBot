@@ -129,29 +129,6 @@ and BotDataInitializer private () =
             StaticData.Add("XIV_COL_CHS", col)
             col
 
-    /// 获得一个全局的英文FF14数据库
-    /// 
-    /// 会载入加载器缓存，在InitializeCollection外使用时需要调用ClearStaticData清除缓存
-    static member GetXivCollectionEng() = 
-        let succ, col = StaticData.TryGetValue("XIV_COL_ENG")
-        if succ then
-            let col = col :?> IXivCollection
-            col.ClearCache()
-            col
-        else
-            let col = 
-                let ss = 
-                    let archive = 
-                            let ResName = "BotData.ffxiv-datamining-master.zip"
-                            let assembly = Reflection.Assembly.GetExecutingAssembly()
-                            let stream = assembly.GetManifestResourceStream(ResName)
-                            new IO.Compression.ZipArchive(stream, IO.Compression.ZipArchiveMode.Read)
-                    EmbeddedCsvStroage(archive, "ffxiv-datamining-master/csv/") :> ISheetStroage<seq<string []>>
-                EmbeddedXivCollection(ss, XivLanguage.None) :> IXivCollection
-            StaticData.Add("XIV_COL_ENG", col)
-            col
-
-
     /// 记录CachedTableCollection<>的更新时间
     static member RegisterCollectionUpdate(name : string) = 
         let record = 
