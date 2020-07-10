@@ -158,14 +158,14 @@ type DiceModule() =
 
     [<CommandHandlerMethodAttribute("cal", "计算器", "")>]
     member x.HandleCalculator(msgArg : CommandArgs) =
-        let sw = new IO.StringWriter()
+        let sb = Text.StringBuilder()
         let parser = DiceExpression.DiceExpression()
         for arg in msgArg.Arguments do
             let ret = parser.TryEval(arg)
             match ret with
-            | Error e -> sw.WriteLine("对{0}求值失败：{1}", arg, e.Message)
-            | Ok i -> sw.WriteLine("{0} = {1}", arg, i.ToString())
-        msgArg.QuickMessageReply(sw.ToString())
+            | Error e -> sb.AppendLine(sprintf "对%s求值失败：%s" arg e.Message) |> ignore
+            | Ok i -> sb.AppendLine(sprintf "%s = %O" arg i) |> ignore
+        msgArg.QuickMessageReply(sb.ToString())
 
     [<CommandHandlerMethodAttribute("gacha", "抽10连 概率3%", "")>]
     member x.HandleGacha(msgArg : CommandArgs) =
