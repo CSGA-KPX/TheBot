@@ -211,7 +211,7 @@ type EveModule() =
             for m in bp.Materials do 
                 let ret = data.TryGetBpByProduct(m.MaterialItem)
                 if ret.IsSome && cfg.BpCanExpand(ret.Value) then
-                    let bp = ret.Value.GetBpByItemCeil(m.Quantity).ApplyMaterialEfficiency(cfg.DerivativetMe)
+                    let bp = ret.Value.GetBpByItemNoCeil(m.Quantity).ApplyMaterialEfficiency(cfg.DerivativetMe)
                     loop(bp)
                 else
                     final.AddOrUpdate(m.MaterialItem, m.Quantity)

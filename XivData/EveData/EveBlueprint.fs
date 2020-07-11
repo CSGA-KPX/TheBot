@@ -37,7 +37,9 @@ type EveBlueprint =
             Type = BlueprintType.Unknown
         }
 
-    /// 计算所需流程数的材料，结果会ceil
+    /// 计算所需流程数的材料，在计算材料效率后使用
+    /// 
+    /// 结果会ceil
     member x.GetBpByRuns(r : float) = 
         let ms = 
             x.Materials
@@ -48,37 +50,21 @@ type EveBlueprint =
 
         {x with Materials = ms; Products = ps}
 
-    /// 计算所需物品数量的材料，流程数向上取整
-    /// 
-    /// 用于材料计算
-    member x.GetBpByItemCeil(q : float) = 
-        let runs = q / x.ProductQuantity |> ceil
-        x.GetBpByRuns(runs)
-
-    /// 计算所需物品数量的材料
+    /// 按产出量计算所需材料，在计算材料效率后使用
     ///
-    /// 用于价格计算
+    /// 细节见 https://github.com/CSGA-KPX/TheBot/issues/7
     member x.GetBpByItemNoCeil(q : float) = 
         let runs = q / x.ProductQuantity
-        let headRuns = runs |> floor
-        let leftRuns = runs - headRuns
-
-        let head = x.GetBpByRuns(headRuns)
-        let one  = x.GetBpByRuns(1.0)
-
+        let oneRun = x.GetBpByRuns(1.0)
         let ms = 
-            Array.map2 (fun h o ->
-                if h.TypeId <> o.TypeId then failwith "GetBpByItemNoCeil :: TypeId mismatch"
-                {h with Quantity = h.Quantity + o.Quantity * leftRuns}
-            ) head.Materials one.Materials 
+            oneRun.Materials
+            |> Array.map (fun m -> {m with Quantity = m.Quantity * runs})
 
         let ps = 
-            Array.map2 (fun h o ->
-                if h.TypeId <> o.TypeId then failwith "GetBpByItemNoCeil :: TypeId mismatch"
-                {h with Quantity = h.Quantity + o.Quantity * leftRuns}
-            ) head.Products one.Products 
-        
-        {x with Materials = ms; Products = ps}
+            oneRun.Products
+            |> Array.map (fun p -> {p with Quantity = p.Quantity * runs})
+
+        {oneRun with Materials = ms; Products = ps}
 
     /// 根据材料效率调整材料数量，结果向上取整(ceil)
     ///
