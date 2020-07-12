@@ -5,13 +5,11 @@ open Mono.Unix.Native
 open KPX.FsCqHttp.Instance
 
 let logger = NLog.LogManager.GetCurrentClassLogger()
-let accessUrl = "wss://coolqapi.danmaku.org"
-let token = "0194caec-12a2-473d-bc08-962049999446"
 let mutable loadModules = true
 
-let StartBot() =
+let StartBot(endPoint : string, token : string) =
     //KPX.FsCqHttp.Handler.CommandHandlerBase.CommandHandlerMethodAttribute.CommandStart <- "#!"
-    let client = CqWebSocketClient(Uri(accessUrl), token)
+    let client = CqWebSocketClient(Uri(endPoint), token)
     let ms = KPX.FsCqHttp.Handler.Utils.AllDefinedModules
     if loadModules then
         for m in ms do
@@ -38,12 +36,24 @@ let StartBot() =
 
 [<EntryPoint>]
 let main argv =
-    if argv.Length <> 0 && argv.[0].ToLowerInvariant() = "rebuilddb" then
+    let parser = TheBot.Utils.UserOption.UserOptionParser()
+    parser.RegisterOption("rebuilddb", "")
+    parser.RegisterOption("debug", "")
+    parser.RegisterOption("endpoint", "")
+    parser.RegisterOption("token", "")
+    parser.Parse(argv)
+
+    if parser.IsDefined("rebuilddb") then
         BotData.Common.Database.BotDataInitializer.ClearCache()
         BotData.Common.Database.BotDataInitializer.ShrinkCache()
         BotData.Common.Database.BotDataInitializer.InitializeAllCollections()
         printfn "Rebuilt Completed"
-    elif  argv.Length <> 0 && argv.[0].ToLowerInvariant() = "ob" then
+    elif parser.IsDefined("debug") then
         loadModules <- false
-    StartBot()
+    
+    if parser.IsDefined("endpoint") && parser.IsDefined("token") then
+        StartBot(parser.GetValue("endpoint"), parser.GetValue("token"))
+    else
+        printfn "需要定义endpoint和token"
+        Console.ReadLine() |> ignore
     0 // return an integer exit code
