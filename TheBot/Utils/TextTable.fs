@@ -91,19 +91,13 @@ type TextTable(cols : int) =
                 for i = 0 to col.[0].Count - 1 do
                     sb.Clear() |> ignore
                     for c = 0 to col.Length - 1 do
-                        let str = col.[c].[i] // 这一行是什么
+                        let str = col.[c].[i]
                         let maxLen = maxLens.[c]
                         let strLen = strDispLen(str)
                         let padFull = (maxLen - strLen) / 2
                         let padding = String(fullWidthSpace, padFull)
                         sb.Append(str).Append(padding) |> ignore
 
-                        //let padCharLen = (maxLens.[c] - strDispLen (str))
-                        //let padFullChr = "".PadLeft(padCharLen / 2 + 1, fullWidthSpace)
-                        //let padHalfChr = "".PadLeft(padCharLen % 2, halfWidthSpace)
-                        //let pad = (maxLens.[c] - strDispLen (str)) / 2 + 1 + str.Length
-                        //sb.Append(str.PadRight(pad, fullWidthSpace)) |> ignore
-                        //sb.Append(str).Append(padFullChr).Append(padHalfChr) |> ignore
                     yield sb.ToString()
             yield! postTableLines.ToArray()
         |]

@@ -115,7 +115,7 @@ and TextResponse(arg : ClientEventArgs) =
 
     member private x.FlushImageMessage() = 
         let DrawLines(lines : string []) = 
-            use font = new Font("Yasolas", 10.0f)
+            use font = new Font("Sarasa Fixed CL", 12.0f)
             let sf   = new StringFormat(StringFormat.GenericTypographic)
             sf.FormatFlags <- sf.FormatFlags ||| StringFormatFlags.MeasureTrailingSpaces
             let fullSize = 
@@ -136,16 +136,14 @@ and TextResponse(arg : ClientEventArgs) =
 
             let mutable lineMode = false
             let mutable lastPos = PointF()
-            for lineNo = 0 to lines.Length - 1 do 
-                let str = lines.[lineNo]
+            for str in lines do 
                 let bgColor = 
                     lineMode <- not lineMode
                     if lineMode then Brushes.White else Brushes.LightGray
                 let line = draw.MeasureString(str, font, 0, sf)
                 
                 draw.FillRectangle(bgColor, RectangleF(lastPos, SizeF(fullSize.Width, line.Height)))
-
-                draw.DrawString(lines.[lineNo], font, tb, PointF(lastPos.X, lastPos.Y), sf)
+                draw.DrawString(str, font, tb, PointF(lastPos.X, lastPos.Y), sf)
                 lastPos <- PointF(0.0f, lastPos.Y + line.Height)
             img
         

@@ -65,13 +65,6 @@ type Dicer(initSeed : byte []) as x =
     /// 返回Base64编码后的初始种子
     member x.InitialSeed = Convert.ToBase64String(initSeed)
 
-    [<Obsolete>]
-    member x.GetRandomFromString(str : string, faceNum) =
-        refreshSeed()
-        let seed = Array.append (x.GetHash()) (utf8.GetBytes(str))
-        let hash = md5.ComputeHash(seed)
-        hashToDice (hash, faceNum)
-
     member x.GetRandom(faceNum, str : string) = 
         refreshSeed()
         let seed = Array.append (x.GetHash()) (utf8.GetBytes(str))
