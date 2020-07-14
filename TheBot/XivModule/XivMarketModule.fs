@@ -39,24 +39,28 @@ type XivMarketModule() =
 
     [<CommandHandlerMethodAttribute("xivsrv", "设置默认查询的服务器", "")>]
     member x.HandleXivDefSrv(msgArg : CommandArgs) =
-        let (succ, world, _) = CommandUtils.GetWorldWithDefault(msgArg.Arguments)
-        if succ then
+        let cfg = CommandUtils.XivConfig(msgArg)
+        if cfg.IsWorldDefined then
             let cm = ConfigManager(ConfigOwner.User (msgArg.MessageEvent.UserId))
+            let world = cfg.GetWorld()
             cm.Put(CommandUtils.defaultServerKey, world)
             msgArg.QuickMessageReply(sprintf "%s的默认服务器设置为%s" msgArg.MessageEvent.GetNicknameOrCard world.WorldName)
         else
-            msgArg.QuickMessageReply("不认识这个土豆")
+            msgArg.QuickMessageReply("没有指定服务器或服务器名称不正确")
 
     member _.GeneralMarketPrinter(msgArg : CommandArgs,
                                   headers : (string * (MarketUtils.MarketAnalyzer -> obj)) [],
                                   fetchFunc : Item.ItemRecord * World.World ->Result<MarketUtils.MarketAnalyzer, exn>) = 
+
         let att = AutoTextTable<MarketUtils.MarketAnalyzer>(headers)
 
-        let (world, args) = CommandUtils.GetWorldWithDefaultEx2(msgArg)
+        let cfg = CommandUtils.XivConfig(msgArg)
+        let world = cfg.GetWorld()
+
         att.AddPreTable(sprintf "服务器：%s" world.WorldName)
 
         let rets =
-            args
+            cfg.CommandLine
             |> Array.map (strToItemResult >> Result.map (fun i -> fetchFunc(i, world)))
 
         for ret in rets do 
@@ -168,7 +172,8 @@ type XivMarketModule() =
             else
                 fun (item : Item.ItemRecord) -> rm.GetMaterialsOne(item)
 
-        let (world, args) = CommandUtils.GetWorldWithDefaultEx2(msgArg)
+        let cfg = CommandUtils.XivConfig(msgArg)
+        let world = cfg.GetWorld()
 
         let mutable cur = None
         let updateCur(item : Item.ItemRecord) = 
@@ -209,7 +214,7 @@ type XivMarketModule() =
             att.AddPreTable(sprintf "服务器：%s" world.WorldName)
 
         let acc = XivExpression.ItemAccumulator()
-        for str in args do
+        for str in cfg.CommandLine do
             match xivExpr.TryEval(str) with
             | Error err -> raise err
             | Ok(Number i) -> att.AddPreTable(sprintf "计算结果为数字%f，物品Id请加#" i)
@@ -233,8 +238,10 @@ type XivMarketModule() =
     [<CommandHandlerMethodAttribute("ssc", "计算部分道具兑换的价格", "兑换所需道具的名称或ID，只处理1个")>]
     member x.HandleSSS(msgArg : CommandArgs) =
         let sc = SpecialShop.SpecialShopCollection.Instance
-        let (world, args) = CommandUtils.GetWorldWithDefaultEx2(msgArg)
-        if args.Length = 0 then
+        let cfg = CommandUtils.XivConfig(msgArg)
+        let world = cfg.GetWorld()
+
+        if cfg.CommandLine.Length = 0 then
             //回复所有可交易道具
             let tt = TextTable.FromHeader([|"名称"; "id"|])
             tt.AddPreTable("可交换道具：")
@@ -280,7 +287,7 @@ type XivMarketModule() =
 
             let att = AutoTextTable<SpecialShop.SpecialShopInfo>(hdrs)
 
-            let ret = strToItemResult(args.[0])
+            let ret = strToItemResult(cfg.CommandLine.[0])
             match ret with
             | Error x -> failwithf "找不到物品 %s" x
             | Ok item ->

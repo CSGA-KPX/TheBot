@@ -180,44 +180,45 @@ module MentorUtils =
 module CommandUtils =
     open TheBot.Utils.Config
 
+    let defaultServerKey = "defaultServerKey"
+
+    type XivConfig (args : KPX.FsCqHttp.Handler.CommandHandlerBase.CommandArgs) = 
+        let opts =  TheBot.Utils.UserOption.UserOptionParser()
+        let cm = ConfigManager(ConfigOwner.User (args.MessageEvent.UserId))
+
+        let defaultServerName = "拉诺西亚"
+        let defaultServer = World.WorldFromName.[defaultServerName]
+
+        do
+            opts.RegisterOption("text", "")
+            opts.RegisterOption("server", defaultServerName)
+
+            args.Arguments
+            |> Array.map (fun str -> 
+                if World.WorldFromName.ContainsKey(str) then
+                    "server:"+str
+                else
+                    str)
+            |> opts.Parse
+
+        member x.IsWorldDefined = opts.IsDefined("server")
+
+        /// 获得查询目标服务器
+        ///
+        /// 用户指定 -> 用户配置 -> 默认（拉诺西亚）
+        member x.GetWorld() = 
+            if x.IsWorldDefined then
+                World.WorldFromName.[opts.GetValue("server")]
+            else
+                cm.Get(defaultServerKey, defaultServer)
+
+        member x.CommandLine = opts.CommandLine
+
     let XivSpecialChars = 
         [|
             '\ue03c' // HQ
             '\ue03d' //收藏品
         |]
-
-    let formatNumber (i : uint32) = System.String.Format("{0:N0}", i)
-
-    /// 拉诺西亚
-    let defaultServer = World.WorldFromId.[1042us]
-
-    let defaultServerKey = "defaultServerKey"
-
-    /// 扫描参数，查找第一个服务器名
-    /// 如果没找到，返回None
-    let tryGetWorld (a : string []) =
-        let (w, args) = a |> Array.partition (fun x -> World.WorldFromName.ContainsKey(x))
-
-        let world =
-            if w.Length = 0 then None
-            else Some World.WorldFromName.[w.[0]]
-
-        world, args
-
-    /// 扫描参数，查找第一个服务器名
-    /// 成功返回 true 服务器，失败返回 false 默认服务器
-    let GetWorldWithDefault(a : string []) =
-        match tryGetWorld (a) with
-        | Some x, args -> (true, x, args)
-        | None, args -> (false, defaultServer, args)
-
-    /// 扫描参数，查找第一个服务器名，如果没有返回默认服务器
-    let GetWorldWithDefaultEx2(arg : KPX.FsCqHttp.Handler.CommandHandlerBase.CommandArgs) =
-        match tryGetWorld (arg.Arguments) with
-        | Some x, args -> (x, args)
-        | None, args -> 
-            let cm = ConfigManager(ConfigOwner.User (arg.MessageEvent.UserId))
-            (cm.Get(defaultServerKey, defaultServer), args)
 
 module XivExpression =
     open TheBot.Utils.GenericRPN
@@ -242,117 +243,3 @@ module XivExpression =
 
         override x.TryGetItemByName(str) = 
             Item.ItemCollection.Instance.TryGetByName(str.TrimEnd(CommandUtils.XivSpecialChars))
-    (*
-    open System.Text.RegularExpressions
-    open TheBot.Utils.GenericRPN
-
-    type ItemAccumulator() =
-        inherit Collections.Generic.Dictionary<Item.ItemRecord, float>()
-
-        member x.AddOrUpdate(item, runs) =
-            if x.ContainsKey(item) then x.[item] <- x.[item] + runs
-            else x.Add(item, runs)
-
-        member x.MergeWith(a : ItemAccumulator, ?isAdd : bool) =
-            let add = defaultArg isAdd true
-            for kv in a do
-                if add then x.AddOrUpdate(kv.Key, kv.Value)
-                else x.AddOrUpdate(kv.Key, -(kv.Value))
-            x
-
-        static member Singleton(item : Item.ItemRecord) =
-            let a = ItemAccumulator()
-            a.Add(item, 1.0)
-            a
-
-    type XivOperand =
-        | Number of float
-        | Accumulator of ItemAccumulator
-
-        interface IOperand<XivOperand> with
-
-            override l.Add(r) =
-                match l, r with
-                | (Number i1), (Number i2) -> Number(i1 + i2)
-                | (Accumulator a1), (Accumulator a2) -> Accumulator(a1.MergeWith(a2))
-                | (Number i), (Accumulator a) -> raise <| InvalidOperationException("不允许材料和数字相加")
-                | (Accumulator a), (Number i) -> (r :> IOperand<XivOperand>).Add(l)
-
-            override l.Sub(r) =
-                match l, r with
-                | (Number i1), (Number i2) -> Number(i1 - i2)
-                | (Accumulator a1), (Accumulator a2) -> Accumulator(a1.MergeWith(a2, false))
-                | (Number i), (Accumulator a) -> raise <| InvalidOperationException("不允许材料和数字相减")
-                | (Accumulator a), (Number i) -> (r :> IOperand<XivOperand>).Sub(l)
-
-            override l.Mul(r) =
-                match l, r with
-                | (Number i1), (Number i2) -> Number(i1 * i2)
-                | (Accumulator a1), (Accumulator a2) -> raise <| InvalidOperationException("不允许材料和材料相乘")
-                | (Number i), (Accumulator a) ->
-                    let keys = a.Keys |> Seq.toArray
-                    for k in keys do
-                        a.[k] <- a.[k] * i
-                    Accumulator a
-                | (Accumulator a), (Number i) -> (r :> IOperand<XivOperand>).Mul(l)
-
-            override l.Div(r) =
-                match l, r with
-                | (Number i1), (Number i2) -> Number(i1 / i2)
-                | (Accumulator a1), (Accumulator a2) -> raise <| InvalidOperationException("不允许材料和材料相减")
-                | (Number i), (Accumulator a) ->
-                    let keys = a.Keys |> Seq.toArray
-                    for k in keys do
-                        a.[k] <- a.[k] / i
-                    Accumulator a
-                | (Accumulator a), (Number i) -> (r :> IOperand<XivOperand>).Div(l)
-
-    type XivExpression() as x =
-        inherit GenericRPNParser<XivOperand>()
-
-        let tokenRegex = Regex("([\-+*/()#])", RegexOptions.Compiled)
-
-        do
-            //Uniary operator
-            let itemOperator = GenericOperator('#', Int32.MaxValue, IsBinary = false)
-            x.AddOperator(itemOperator)
-
-        override x.Tokenize(str) =
-            [| let strs = tokenRegex.Split(str) |> Array.filter (fun x -> x <> "")
-               for str in strs do
-                   match str with
-                   | _ when String.forall Char.IsDigit str ->
-                       let num = str |> int
-                       yield Operand(Number(num |> float))
-                   | _ when x.Operatos.ContainsKey(str) -> yield Operator(x.Operatos.[str])
-                   | _ ->
-                       let item = Item.ItemCollection.Instance.TryLookupByName(str.TrimEnd(CommandUtils.XivSpecialChars))
-                       if item.IsSome then yield Operand(Accumulator(ItemAccumulator.Singleton(item.Value)))
-                       else failwithf "无法解析 %s" str |]
-
-        member x.Eval(str : string) =
-            let func =
-                EvalDelegate<XivOperand>(fun (c, l, r) ->
-                let l = l :> IOperand<XivOperand>
-                match c with
-                | '+' -> l.Add(r)
-                | '-' -> l.Sub(r)
-                | '*' -> l.Mul(r)
-                | '/' -> l.Div(r)
-                | '#' ->
-                    // l = r when uniary
-                    match r with
-                    | Number f ->
-                        let item = Item.ItemCollection.Instance.LookupByItemId(int f)
-                        let acu = ItemAccumulator.Singleton item
-                        Accumulator acu
-                    | Accumulator a -> failwithf "#符号仅对数字使用"
-                | _ -> failwithf "")
-            x.EvalWith(str, func)
-
-        member x.TryEval(str : string) =
-            try
-                let ret = x.Eval(str)
-                Ok(ret)
-            with e -> Error e
-            *)

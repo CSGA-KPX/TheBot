@@ -66,6 +66,8 @@ type UserOptionParser() =
 
         parsed <- true
 
+    /// 解析后剩余的文本
     member x.CommandLine = cmdLine
 
+    /// 解析后剩余的文本拼接为字符串
     member x.CmdLineAsString = String.Join(" ", cmdLine)
