@@ -52,7 +52,7 @@ type EveModule() =
         let minVol = cfg.MinimalVolume
         let minVal = cfg.MinimalValue
         tt.AddPreTable(sprintf "最低交易量(vol)：%g 最低LP价值(val)：%g 结果上限(count)：%i" minVol minVal cfg.RecordCount)
-
+        tt.AddPreTable("警告：请参考交易量，利润很高的不一定卖得掉")
         let corp = data.GetNpcCorporation(cfg.CmdLineAsString)
         data.GetLpStoreOffersByCorp(corp)
         |> Array.map (fun offer ->
@@ -89,8 +89,9 @@ type EveModule() =
             |})
         |> Array.filter (fun r -> (r.ProfitPerLp >= minVal) && (r.Volume >= minVol) )
         |> Array.sortByDescending (fun r ->
-            let weightedVolume = r.Volume / r.Offer.Quantity
-            r.ProfitPerLp * weightedVolume)
+            //let weightedVolume = r.Volume / r.Offer.Quantity
+            //r.ProfitPerLp * weightedVolume)
+            r.ProfitPerLp)
         |> Array.truncate cfg.RecordCount
         |> Array.iter (fun r ->
             tt.AddRow(r.Name, r.Profit |> floor, r.ProfitPerLp |> floor, r.Volume |> floor))

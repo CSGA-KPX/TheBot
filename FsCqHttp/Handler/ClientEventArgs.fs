@@ -64,6 +64,8 @@ and TextResponse(arg : ClientEventArgs) =
     let sizeLimit = 2900
     let buf = Queue<string>()
     let sb = StringBuilder()
+
+    let canSendImage = lazy (arg.ApiCaller.CallApi<SystemApi.CanSendImage>().Can)
     
     member x.IsUsed = isUsed
 
@@ -110,8 +112,7 @@ and TextResponse(arg : ClientEventArgs) =
         for page in pages do 
             arg.QuickMessageReply(page, false)
 
-    member private x.CanSendImage() = 
-        arg.ApiCaller.CallApi<SystemApi.CanSendImage>().Can
+    member x.CanSendImage() = canSendImage.Force()
 
     member private x.FlushImageMessage() = 
         let DrawLines(lines : string []) = 
