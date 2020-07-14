@@ -8,11 +8,9 @@ let logger = NLog.LogManager.GetCurrentClassLogger()
 let mutable loadModules = true
 
 let StartBot(endPoint : string, token : string) =
-    //KPX.FsCqHttp.Handler.CommandHandlerBase.CommandHandlerMethodAttribute.CommandStart <- "#!"
     let client = CqWebSocketClient(Uri(endPoint), token)
-    let ms = KPX.FsCqHttp.Handler.Utils.AllDefinedModules
     if loadModules then
-        for m in ms do
+        for m in KPX.FsCqHttp.Handler.Utils.GetAllDefinedModules() do
             logger.Info("正在注册模块{0}", m.FullName)
             client.RegisterModule(m)
     else

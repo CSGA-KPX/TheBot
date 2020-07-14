@@ -57,7 +57,8 @@ type CqWebSocketClient(url, token) =
                 apiPending.Add(echo, (mre, req)) |> ignore
                 apiLock.ExitWriteLock()
 
-                logger.Trace("请求API：{0}", json)
+                if KPX.FsCqHttp.Config.Logging.LogApiCall then 
+                    logger.Trace("请求API：{0}", json)
                 let data = json |> utf8.GetBytes
                 do! ws.SendAsync(ArraySegment<byte>(data), WebSocketMessageType.Text, true, cts.Token) |> Async.AwaitTask
                 let! ret = Async.AwaitWaitHandle(mre :> WaitHandle)
@@ -87,18 +88,19 @@ type CqWebSocketClient(url, token) =
         // 用单行覆盖掉
         let json = obj.ToString(Newtonsoft.Json.Formatting.None)
         if obj.ContainsKey("post_type") then
-            logger.Trace("收到上报：{0}", json)
+            if KPX.FsCqHttp.Config.Logging.LogEventPost then
+                logger.Trace("收到上报：{0}", json)
             let args = new ClientEventArgs(x, obj)
             cqHttpEvent.Trigger(args)
         elif obj.ContainsKey("retcode") then
             //API调用结果
-            logger.Trace("收到API调用结果：{0}", sprintf "%A" json)
+            if KPX.FsCqHttp.Config.Logging.LogApiCall then
+                logger.Trace("收到API调用结果：{0}", sprintf "%A" json)
             let ret = obj.ToObject<Response.ApiResponse>()
             apiLock.EnterReadLock()
             let notEmpty = not <| String.IsNullOrEmpty(ret.Echo)
             let hasPending = apiPending.ContainsKey(ret.Echo)
             if notEmpty && hasPending then
-                logger.Trace("Passing {0}", ret.Echo)
                 let (mre, api) = apiPending.[ret.Echo]
                 api.HandleResponse(ret)
                 mre.Set() |> ignore

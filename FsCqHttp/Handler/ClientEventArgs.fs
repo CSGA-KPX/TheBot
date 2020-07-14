@@ -42,7 +42,7 @@ type ClientEventArgs(api : IApiCallProvider, obj : JObject) =
     member x.QuickMessageReply(msg : Message.Message, ?atUser : bool) = 
         let atUser = defaultArg atUser false
         match x.Event with
-        | _ when msg.ToString().Length > 3000 -> x.QuickMessageReply("字数太多了，请优化命令或者向管理员汇报bug", true)
+        | _ when msg.ToString().Length > KPX.FsCqHttp.Config.Output.TextLengthLimit -> x.QuickMessageReply("字数太多了，请优化命令或者向管理员汇报bug", true)
         | Event.EventUnion.Message ctx ->
             match ctx with
             | _ when ctx.IsDiscuss -> x.SendResponse(Response.DiscusMessageResponse(msg, atUser))
@@ -61,7 +61,8 @@ and TextResponse(arg : ClientEventArgs) =
 
     let mutable isUsed = false
 
-    let sizeLimit = 2900
+    let sizeLimit = KPX.FsCqHttp.Config.Output.TextLengthLimit - 100
+
     let buf = Queue<string>()
     let sb = StringBuilder()
 
@@ -116,7 +117,8 @@ and TextResponse(arg : ClientEventArgs) =
 
     member private x.FlushImageMessage() = 
         let DrawLines(lines : string []) = 
-            use font = new Font("Sarasa Fixed CL", 12.0f)
+            use font = new Font(KPX.FsCqHttp.Config.Output.ImageOutputFont,
+                                    KPX.FsCqHttp.Config.Output.ImageOutputSize)
             let sf   = new StringFormat(StringFormat.GenericTypographic)
             sf.FormatFlags <- sf.FormatFlags ||| StringFormatFlags.MeasureTrailingSpaces
             let fullSize = 

@@ -13,7 +13,7 @@ type HelpModule() =
 
     static let attribs =
         [| 
-            for t in Utils.AllDefinedModules do
+            for t in Utils.GetAllDefinedModules() do
                 for method in t.GetMethods() do
                     let ret = method.GetCustomAttributes(typeof<CommandHandlerMethodAttribute>, true)
                     for attrib in ret do
@@ -30,7 +30,7 @@ type HelpModule() =
             msgArg.QuickMessageReply(sw.ToString())
         else
             for arg in msgArg.Arguments do
-                let str = CommandHandlerMethodAttribute.CommandStart + arg.ToLowerInvariant()
+                let str = KPX.FsCqHttp.Config.Command.CommandStart + arg.ToLowerInvariant()
                 let ret =
                     attribs |> Array.tryFind (fun (cmd, _) -> cmd.Command = str || cmd.Command = arg.ToLowerInvariant())
                 if ret.IsSome then
