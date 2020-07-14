@@ -4,6 +4,87 @@ open System
 open System.Collections.Generic
 open KPX.FsCqHttp.Handler
 
+let private halfWidthSpace = ' '
+
+let private charLenRegex = 
+    Text.RegularExpressions.Regex(
+        @"\p{IsBasicLatin}|\p{IsGeneralPunctuation}",
+        Text.RegularExpressions.RegexOptions.Compiled )
+
+let private charLen (c) =
+    if charLenRegex.IsMatch(c.ToString()) then 1 else 2
+
+let private strDispLen (str : string) =
+    str.ToCharArray()
+    |> Array.sumBy charLen
+
+/// 用于区分显示细节
+[<DefaultAugmentation(false)>]
+type private CellType = 
+    | Text of string
+    | Number of string
+
+    member x.IsNumeric = match x with | Number _ -> true | _ -> false
+
+    /// 文本显示长度
+    member x.DisplayLength = strDispLen(x.ToString())
+
+    member x.ToString(i : int) = 
+        let ret = match x with | Text str -> str | Number str -> str
+
+        let left, right = 
+            if x.IsNumeric then
+                // 数字：左边补齐，右边一个
+                ((strDispLen(ret) % 2) + 1), 1
+            else
+                // 文本：左边补齐，右边补齐
+                (if i = 0 then 0 else 1), ((strDispLen(ret) % 2) + 1)
+
+        String(halfWidthSpace, left) + ret + String(halfWidthSpace, right)
+
+    override x.ToString() = 
+        x.ToString(0)
+
+    static member private IsNumericType(o : obj) = 
+        match Type.GetTypeCode(o.GetType()) with
+        | TypeCode.Byte
+        | TypeCode.SByte
+        | TypeCode.UInt16
+        | TypeCode.UInt32
+        | TypeCode.UInt64
+        | TypeCode.Int16
+        | TypeCode.Int32
+        | TypeCode.Int64
+        | TypeCode.Decimal
+        | TypeCode.Double
+        | TypeCode.Single
+            -> true
+        | _ -> false
+
+    static member Create(o : obj) =
+        let rec toStr(o : obj) =
+            match o with
+            | :? string as str -> str
+            | :? int32 as i -> System.String.Format("{0:N0}", i)
+            | :? uint32 as i -> System.String.Format("{0:N0}", i)
+            | :? float as f ->
+                let fmt =
+                    if (f % 1.0) <> 0.0 then "{0:N2}"
+                    else "{0:N0}"
+                System.String.Format(fmt, f)
+            | :? TimeSpan as ts ->
+                sprintf "%i天%i时%i分前" ts.Days ts.Hours ts.Minutes
+            | :? DateTimeOffset as dto ->
+                toStr(DateTimeOffset.Now - dto)
+            | :? DateTime as dt ->
+                toStr(DateTime.Now - dt)
+            | _ -> o.ToString()
+
+        let str = toStr(o)
+        let isNum = CellType.IsNumericType(o)
+
+        if isNum then Number str else Text str
+
 /// 延迟TextTable的求值时间点，便于在最终输出前对TextTable的参数进行调整
 type private DelayedTableItem =
     | StringItem of string
@@ -13,21 +94,7 @@ and TextTable(cols : int) =
     let preTableLines  = List<DelayedTableItem>()
     let postTableLines = List<DelayedTableItem>()
 
-    let col = Array.init cols (fun _ -> List<string>())
-
-    static let halfWidthSpace = ' '
-
-    static let charLenRegex = 
-        Text.RegularExpressions.Regex(
-            @"\p{IsBasicLatin}|\p{IsGeneralPunctuation}",
-            Text.RegularExpressions.RegexOptions.Compiled )
-
-    static let charLen (c) =
-        if charLenRegex.IsMatch(c.ToString()) then 1 else 2
-
-    static let strDispLen (str : string) =
-        str.ToCharArray()
-        |> Array.sumBy charLen
+    let col = Array.init cols (fun _ -> List<CellType>())
 
     static member FromHeader(header : Object []) =
         let x = TextTable(header.Length)
@@ -56,31 +123,7 @@ and TextTable(cols : int) =
         if fields.Length <> col.Length then
             raise <| ArgumentException(sprintf "列数不一致 需求:%i, 提供:%i" col.Length fields.Length)
         fields
-        |> Array.iteri (fun i o ->
-            let rec toStr(o : obj) =
-                match o with
-                | :? string as str -> str
-                | :? int32 as i -> System.String.Format("{0:N0}", i)
-                | :? uint32 as i -> System.String.Format("{0:N0}", i)
-                | :? float as f ->
-                    let fmt =
-                        if (f % 1.0) <> 0.0 then "{0:N2}"
-                        else "{0:N0}"
-                    System.String.Format(fmt, f)
-                | :? TimeSpan as ts ->
-                    sprintf "%i天%i时%i分前" ts.Days ts.Hours ts.Minutes
-                | :? DateTimeOffset as dto ->
-                    toStr(DateTimeOffset.Now - dto)
-                | :? DateTime as dt ->
-                    toStr(DateTime.Now - dt)
-                | _ -> o.ToString()
-
-            // 如果文本显示长度是奇数，补一个空格
-            let ret = toStr(o)
-            let padLeft = if i = 0 then 0 else 1 // 最左边一列不补
-            let padRight = (strDispLen(ret) % 2) + 1
-            let str = String(halfWidthSpace, padLeft) + ret + String(halfWidthSpace, padRight)
-            col.[i].Add(str))
+        |> Array.iteri (fun i o -> col.[i].Add(CellType.Create(o)))
 
     member private x.ExpandItems(l : List<DelayedTableItem>) = 
         seq {
@@ -101,19 +144,21 @@ and TextTable(cols : int) =
                     col
                     |> Array.map (fun l ->
                         l
-                        |> Seq.map (strDispLen)
+                        |> Seq.map (fun item -> item.DisplayLength)
                         |> Seq.max )
                 let sb = Text.StringBuilder()
                 let padLen = strDispLen(x.PaddingChar |> string)
                 for i = 0 to col.[0].Count - 1 do
                     sb.Clear() |> ignore
                     for c = 0 to col.Length - 1 do
-                        let str = col.[c].[i]
-                        let maxLen = maxLens.[c]
-                        let strLen = strDispLen(str)
-                        let padFull = (maxLen - strLen) / padLen
-                        let padding = String(x.PaddingChar, padFull)
-                        sb.Append(str).Append(padding) |> ignore
+                        let item = col.[c].[i]
+                        let str  = item.ToString(c)
+                        let padLength = (maxLens.[c] - item.DisplayLength) / padLen
+                        let padding = String(x.PaddingChar, padLength)
+                        if item.IsNumeric then
+                            sb.Append(padding).Append(str) |> ignore
+                        else
+                            sb.Append(str).Append(padding) |> ignore
 
                     yield sb.ToString()
             yield! x.ExpandItems(postTableLines)
