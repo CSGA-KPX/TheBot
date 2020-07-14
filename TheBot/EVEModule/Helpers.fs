@@ -27,7 +27,7 @@ let RoundFloat (d : float) (n : int) =
         scale * Math.Round(d / scale, n)
 
 let HumanReadableFloat (d : float) = 
-    if d = 0.0 then "0.00"
+    if d = 0.0 then "--"
     else
         let s = 10.0 ** ((d |> abs |> log10 |> floor) + 1.0)
         let l = log10 s |> floor |> int

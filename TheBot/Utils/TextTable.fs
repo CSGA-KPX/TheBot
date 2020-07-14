@@ -20,17 +20,17 @@ let private strDispLen (str : string) =
 
 /// 用于区分显示细节
 [<DefaultAugmentation(false)>]
-type private CellType = 
-    | Text of string
-    | Number of string
+type CellType = 
+    | TextCell of string
+    | NumberCell of string
 
-    member x.IsNumeric = match x with | Number _ -> true | _ -> false
+    member x.IsNumeric = match x with | NumberCell _ -> true | _ -> false
 
     /// 文本显示长度
     member x.DisplayLength = strDispLen(x.ToString())
 
     member x.ToString(i : int) = 
-        let ret = match x with | Text str -> str | Number str -> str
+        let ret = match x with | TextCell str -> str | NumberCell str -> str
 
         let left, right = 
             if x.IsNumeric then
@@ -80,10 +80,13 @@ type private CellType =
                 toStr(DateTime.Now - dt)
             | _ -> o.ToString()
 
-        let str = toStr(o)
-        let isNum = CellType.IsNumericType(o)
+        if o :? CellType then
+            o :?> CellType
+        else
+            let str = toStr(o)
+            let isNum = CellType.IsNumericType(o)
 
-        if isNum then Number str else Text str
+            if isNum then NumberCell str else TextCell str
 
 /// 延迟TextTable的求值时间点，便于在最终输出前对TextTable的参数进行调整
 type private DelayedTableItem =

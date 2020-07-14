@@ -326,18 +326,18 @@ type EveModule() =
                 let cost = getRootMaterialsPrice bp
                 optCost <- optCost + (if (cost >= buy) && (buy <> 0.0) then buy else cost)
                 allCost <- allCost + cost
-                tt.AddRow(name, amount, buy |> HumanReadableFloat , cost |> HumanReadableFloat)
+                tt.AddRow(name, amount, buy |> HumanReadableFloat |> NumberCell , cost |> HumanReadableFloat |> NumberCell)
             else
                 optCost <- optCost + buy
                 allCost <- allCost + buy
-                tt.AddRow(name, amount, buy |> HumanReadableFloat, "--")
+                tt.AddRow(name, amount, buy |> HumanReadableFloat |> NumberCell, "--" |> NumberCell)
 
         let sell = finalBp.GetTotalProductPrice(PriceFetchMode.Sell)
         let sellt= finalBp.GetTotalProductPrice(PriceFetchMode.SellWithTax)
 
-        tt.AddRowPadding("卖出/税后", "--", sell |> HumanReadableFloat, sellt |> HumanReadableFloat)
-        tt.AddRowPadding("材料/最佳", "--", allCost |> HumanReadableFloat, optCost |> HumanReadableFloat)
-        tt.AddRowPadding("税后利润", "--", sellt - allCost |> HumanReadableFloat, sellt - optCost |> HumanReadableFloat)
+        tt.AddRowPadding("卖出/税后", NumberCell "--", sell |> HumanReadableFloat |> NumberCell, sellt |> HumanReadableFloat |> NumberCell)
+        tt.AddRowPadding("材料/最佳", NumberCell "--", allCost |> HumanReadableFloat |> NumberCell, optCost |> HumanReadableFloat |> NumberCell)
+        tt.AddRowPadding("税后利润", NumberCell "--", sellt - allCost |> HumanReadableFloat |> NumberCell, sellt - optCost |> HumanReadableFloat |> NumberCell)
 
         use ret = msgArg.OpenResponse(cfg.IsImageOutput)
         ret.Write(tt)
@@ -413,7 +413,7 @@ type EveModule() =
                 Volume = volume
             |} )
         |> Seq.sortByDescending (fun x -> x.Profit)
-        |> Seq.iter (fun x -> tt.AddRow(x.Name, x.Cost |> floor, x.Profit |> floor, x.Volume |> HumanReadableFloat))
+        |> Seq.iter (fun x -> tt.AddRow(x.Name, x.Cost |> floor, x.Profit |> floor, x.Volume |> HumanReadableFloat |> NumberCell))
 
         use ret = msgArg.OpenResponse(cfg.IsImageOutput)
         ret.Write(tt)
