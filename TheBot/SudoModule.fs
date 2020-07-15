@@ -19,7 +19,7 @@ type SudoModule() =
     let mutable allow = false
     let mutable isSuUsed = false
 
-    [<CommandHandlerMethodAttribute("#selftest", "(管理) 返回系统信息", "")>]
+    [<CommandHandlerMethodAttribute("#selftest", "(管理) 返回系统信息", "", IsHidden = true)>]
     member x.HandleSelfTest(msgArg : CommandArgs) =
         failOnNonAdmin(msgArg)
         let caller = msgArg.ApiCaller
@@ -29,19 +29,19 @@ type SudoModule() =
             + caller.CallApi<SystemApi.GetVersionInfo>().ToString()
         msgArg.QuickMessageReply(info)
 
-    [<CommandHandlerMethodAttribute("#allow", "(管理) 允许好友、加群请求", "")>]
+    [<CommandHandlerMethodAttribute("#allow", "(管理) 允许好友、加群请求", "", IsHidden = true)>]
     member x.HandleAllow(msgArg : CommandArgs) =
         failOnNonAdmin(msgArg)
         msgArg.QuickMessageReply("已允许加群")
         allow <- true
 
-    [<CommandHandlerMethodAttribute("#disallow", "(管理) 禁止好友、加群请求", "")>]
+    [<CommandHandlerMethodAttribute("#disallow", "(管理) 禁止好友、加群请求", "", IsHidden = true)>]
     member x.HandleDisallow(msgArg : CommandArgs) =
         failOnNonAdmin(msgArg)
         msgArg.QuickMessageReply("已关闭加群")
         allow <- false
 
-    [<CommandHandlerMethodAttribute("#rebuilddatacache2", "(管理) 重建数据缓存", "")>]
+    [<CommandHandlerMethodAttribute("#rebuilddatacache2", "(管理) 重建数据缓存", "", IsHidden = true)>]
     member x.HandleRebuildXivDb(msgArg : CommandArgs) =
         failOnNonAdmin(msgArg)
         BotData.Common.Database.BotDataInitializer.ClearCache()
@@ -50,7 +50,7 @@ type SudoModule() =
         BotData.Common.Database.BotDataInitializer.InitializeAllCollections()
         msgArg.QuickMessageReply("重建数据库完成")
 
-    [<CommandHandlerMethodAttribute("#su", "提交凭据，添加当前用户为超管", "")>]
+    [<CommandHandlerMethodAttribute("#su", "提交凭据，添加当前用户为超管", "", IsHidden = true)>]
     member x.HandleSu(msgArg : CommandArgs) = 
         if isSuUsed then failwith "本次认证已被使用"
         let cb = Assembly.GetExecutingAssembly().CodeBase
@@ -65,7 +65,7 @@ type SudoModule() =
             msgArg.QuickMessageReply("完毕")
         isSuUsed <- true
 
-    [<CommandHandlerMethodAttribute("#grant", "（超管）添加被@用户为管理员", "")>]
+    [<CommandHandlerMethodAttribute("#grant", "（超管）添加被@用户为管理员", "", IsHidden = true)>]
     member x.HandleGrant(msgArg : CommandArgs) = 
         if not <| isSenderOwner(msgArg) then failwithf "权限不足"
         let ats = msgArg.MessageEvent.Message.GetAts()
@@ -78,15 +78,16 @@ type SudoModule() =
             | _ -> failwith ""
         msgArg.QuickMessageReply(sb.ToString())
 
-    [<CommandHandlerMethodAttribute("#showgroups", "（超管）检查加群信息", "")>]
+    [<CommandHandlerMethodAttribute("#showgroups", "（超管）检查加群信息", "", IsHidden = true)>]
     member x.HandleShowGroups(msgArg : CommandArgs) = 
         if not <| isSenderOwner(msgArg) then failwithf "权限不足"
         let api = msgArg.ApiCaller.CallApi<SystemApi.GetGroupList>()
 
         let tt = AutoTextTable<SystemApi.GroupInfo>([|
-            "群号", fun i -> box (i.GroupId)
+            "群号", fun (i : SystemApi.GroupInfo) -> box (i.GroupId)
             "名称", fun i -> box (i.GroupName)
             |])
+
         for g in api.Groups do 
             tt.AddObject(g)
         msgArg.QuickMessageReply(tt.ToString())

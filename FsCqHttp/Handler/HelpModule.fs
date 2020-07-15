@@ -26,7 +26,8 @@ type HelpModule() =
         if msgArg.Arguments.Length = 0 then
             let sw = new IO.StringWriter()
             for (attrib, _) in attribs do
-                sw.WriteLine("{0} {1}", attrib.Command, attrib.HelpDesc)
+                if not attrib.IsHidden then
+                    sw.WriteLine("{0} {1}", attrib.Command, attrib.HelpDesc)
             msgArg.QuickMessageReply(sw.ToString())
         else
             for arg in msgArg.Arguments do

@@ -47,6 +47,10 @@ type NpcCorporationoCollection private () =
         |> x.DbCollection.InsertBulk
         |> ignore
 
-    member x.GetByName(name : string) = 
+    member x.GetByName(name : string)= 
+        x.PassOrRaise(x.TryGetByName(name), "找不到军团:{0}", name)
+
+    member x.TryGetByName(name : string)= 
         let bson = LiteDB.BsonValue(name)
-        x.DbCollection.FindOne(LiteDB.Query.EQ("CorporationName", bson))
+        let ret = x.DbCollection.FindOne(LiteDB.Query.EQ("CorporationName", bson))
+        if isNull (box ret) then None else Some ret

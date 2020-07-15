@@ -97,16 +97,17 @@ type EveTypeCollection private () =
         |> x.DbCollection.InsertBulk
         |> ignore
 
-    member x.Item (typeId : int) = x.GetByKey(typeId)
+    member x.Item (typeId : int) = x.GetById(typeId)
 
-    member x.GetById(tid : int) = x.GetByKey(tid)
+    member x.GetById(tid : int) =
+        x.PassOrRaise(x.TryGetByKey(tid), "找不到物品:{0}", tid)
 
     member x.TryGetById(tid : int) = x.TryGetByKey(tid)
 
     member x.GetByName(name : string) =
-        let bson = LiteDB.BsonValue(name)
-        x.DbCollection.FindOne(LiteDB.Query.EQ("Name", bson))
+        x.PassOrRaise(x.TryGetByName(name), "找不到物品:{0}", name) 
 
     member x.TryGetByName(name : string) =
-        let ret = x.GetByName(name)
+        let bson = LiteDB.BsonValue(name)
+        let ret = x.DbCollection.FindOne(LiteDB.Query.EQ("Name", bson))
         if isNull (box ret) then None else Some(ret)

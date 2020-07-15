@@ -11,7 +11,7 @@ open TheBot.Utils.TextTable
 type TestModule() =
     inherit CommandHandlerBase()
 
-    [<CommandHandlerMethodAttribute("tttest", "", "")>]
+    [<CommandHandlerMethodAttribute("test", "", "", IsHidden = true)>]
         member x.HandleTest(msgArg : CommandArgs) =
             ()
             (*

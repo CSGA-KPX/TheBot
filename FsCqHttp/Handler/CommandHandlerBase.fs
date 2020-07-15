@@ -10,6 +10,7 @@ type CommandHandlerMethodAttribute(command : string, desc, lh) =
     member val Command : string = KPX.FsCqHttp.Config.Command.CommandStart + command.ToLowerInvariant()
     member x.HelpDesc : string = desc
     member x.LongHelp : string = lh
+    member val IsHidden = false with get, set
 
 type CommandArgs(msg : Message.MessageEvent, cqArg : ClientEventArgs) =
     inherit ClientEventArgs(cqArg.ApiCaller, cqArg.RawEvent)

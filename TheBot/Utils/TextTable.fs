@@ -8,7 +8,7 @@ let private halfWidthSpace = ' '
 
 let private charLenRegex = 
     Text.RegularExpressions.Regex(
-        @"\p{IsBasicLatin}|\p{IsGeneralPunctuation}",
+        @"\p{IsBasicLatin}|\p{IsGeneralPunctuation}|±", // ±被FF14 StdEv类的ToString()使用
         Text.RegularExpressions.RegexOptions.Compiled )
 
 let private charLen (c) =
@@ -21,16 +21,16 @@ let private strDispLen (str : string) =
 /// 用于区分显示细节
 [<DefaultAugmentation(false)>]
 type CellType = 
-    | TextCell of string
-    | NumberCell of string
+    | LeftAlignCell of string
+    | RightAlignCell of string
 
-    member x.IsNumeric = match x with | NumberCell _ -> true | _ -> false
+    member x.IsNumeric = match x with | RightAlignCell _ -> true | _ -> false
 
     /// 文本显示长度
     member x.DisplayLength = strDispLen(x.ToString())
 
     member x.ToString(i : int) = 
-        let ret = match x with | TextCell str -> str | NumberCell str -> str
+        let ret = match x with | LeftAlignCell str -> str | RightAlignCell str -> str
 
         let left, right = 
             if x.IsNumeric then
@@ -86,7 +86,7 @@ type CellType =
             let str = toStr(o)
             let isNum = CellType.IsNumericType(o)
 
-            if isNum then NumberCell str else TextCell str
+            if isNum then RightAlignCell str else LeftAlignCell str
 
 /// 延迟TextTable的求值时间点，便于在最终输出前对TextTable的参数进行调整
 type private DelayedTableItem =
@@ -171,11 +171,16 @@ and TextTable(cols : int) =
         String.Join("\r\n", x.ToLines())
 
 
-type AutoTextTable<'T>(cfg : (string * ('T -> obj)) []) as x = 
+type AutoTextTable<'T>(cfg : (CellType * ('T -> obj)) []) as x = 
     inherit TextTable(cfg.Length)
-
     do
         x.AddRow(cfg |> Array.map (fst >> box))
+
+    new(cfg : (string * ('T -> obj)) []) = 
+        let cfg = 
+            cfg
+            |> Array.map (fun (a, b) -> LeftAlignCell a, b)
+        AutoTextTable<'T>(cfg)
 
     member x.AddObject(obj : 'T) = 
         let objs = 

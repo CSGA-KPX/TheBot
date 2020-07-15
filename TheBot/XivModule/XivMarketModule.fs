@@ -49,7 +49,7 @@ type XivMarketModule() =
             msgArg.QuickMessageReply("没有指定服务器或服务器名称不正确")
 
     member _.GeneralMarketPrinter(msgArg : CommandArgs,
-                                  headers : (string * (MarketUtils.MarketAnalyzer -> obj)) [],
+                                  headers : (CellType * (MarketUtils.MarketAnalyzer -> obj)) [],
                                   fetchFunc : Item.ItemRecord * World.World ->Result<MarketUtils.MarketAnalyzer, exn>) = 
 
         let att = AutoTextTable<MarketUtils.MarketAnalyzer>(headers)
@@ -73,17 +73,17 @@ type XivMarketModule() =
                     if ma.IsEmpty then att.AddRowPadding(ma.ItemRecord.Name, "无记录")
                     else att.AddObject(ma)
 
-        using (msgArg.OpenResponse()) (fun x -> x.Write(att))
+        using (msgArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(att))
 
     [<CommandHandlerMethodAttribute("tradelog", "查询交易记录", "物品Id或全名...")>]
     member x.HandleTradelog(msgArg : CommandArgs) =
         let hdrs = 
             [|
-                "名称", fun (ma : MarketUtils.MarketAnalyzer) -> box(ma.ItemRecord |> tryLookupNpcPrice)
-                "平均", fun ma -> box(ma.StdEvPrice())
-                "低", fun ma -> box(ma.MinPrice())
-                "高", fun ma -> box(ma.MaxPrice())
-                "更新时间", fun ma -> box(ma.LastUpdateTime())
+                LeftAlignCell "名称", fun (ma : MarketUtils.MarketAnalyzer) -> box(ma.ItemRecord |> tryLookupNpcPrice)
+                RightAlignCell "平均", fun ma -> box(ma.StdEvPrice())
+                RightAlignCell "低", fun ma -> box(ma.MinPrice())
+                RightAlignCell "高", fun ma -> box(ma.MaxPrice())
+                LeftAlignCell "更新时间", fun ma -> box(ma.LastUpdateTime())
             |]
 
         let func = fun (i,w) -> MarketUtils.MarketAnalyzer.FetchTradesWorld(i, w)
@@ -93,22 +93,22 @@ type XivMarketModule() =
     member x.HandleMarket(msgArg : CommandArgs) =
         let hdrs = 
             [|
-                "名称", fun (ma : MarketUtils.MarketAnalyzer) -> box(ma.ItemRecord |> tryLookupNpcPrice)
-                "总体", fun ma -> box(ma.TakeVolume(25).StdEvPrice())
-                "HQ", fun ma -> box(ma.TakeHQ().TakeVolume(25).StdEvPrice())
-                "更新时间", fun ma -> box(ma.LastUpdateTime())
+                LeftAlignCell "名称", fun (ma : MarketUtils.MarketAnalyzer) -> box(ma.ItemRecord |> tryLookupNpcPrice)
+                RightAlignCell "总体", fun ma -> box(ma.TakeVolume(25).StdEvPrice())
+                RightAlignCell "HQ", fun ma -> box(ma.TakeHQ().TakeVolume(25).StdEvPrice())
+                LeftAlignCell "更新时间", fun ma -> box(ma.LastUpdateTime())
             |]
 
         let func = fun (i,w) -> MarketUtils.MarketAnalyzer.FetchOrdersWorld(i, w)
         x.GeneralMarketPrinter(msgArg, hdrs, func)
 
     member _.GeneralCrossWorldMarketPrinter(msgArg : CommandArgs,
-                                  headers : (string * (MarketUtils.MarketAnalyzer -> obj)) [],
+                                  headers : (CellType * (MarketUtils.MarketAnalyzer -> obj)) [],
                                   fetchFunc : Item.ItemRecord ->Result<MarketUtils.MarketAnalyzer[], exn>) = 
         let att = AutoTextTable<MarketUtils.MarketAnalyzer>(headers)
-
+        let cfg = CommandUtils.XivConfig(msgArg)
         let rets =
-            msgArg.Arguments
+            cfg.CommandLine
             |> Array.map (strToItemResult >> Result.map (fun i -> fetchFunc(i)))
 
         for ret in rets do 
@@ -128,18 +128,18 @@ type XivMarketModule() =
                             if m.IsEmpty then att.AddRowPadding(m.ItemRecord.Name, m.World.WorldName, "无记录")
                             else att.AddObject(m)
 
-        using (msgArg.OpenResponse()) (fun x -> x.Write(att))
+        using (msgArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(att))
 
     [<CommandHandlerMethodAttribute("alltradelog", "查询全服交易记录", "物品Id或全名...")>]
     member x.HandleTradelogCrossWorld(msgArg : CommandArgs) =
         let hdrs = 
             [|
-                "名称", fun (ma : MarketUtils.MarketAnalyzer) -> box(ma.ItemRecord  |> tryLookupNpcPrice)
-                "土豆", fun (ma : MarketUtils.MarketAnalyzer) -> box(ma.World.WorldName)
-                "平均", fun ma -> box(ma.StdEvPrice())
-                "低", fun ma -> box(ma.MinPrice())
-                "高", fun ma -> box(ma.MaxPrice())
-                "更新时间", fun ma -> box(ma.LastUpdateTime())
+                LeftAlignCell "名称", fun (ma : MarketUtils.MarketAnalyzer) -> box(ma.ItemRecord  |> tryLookupNpcPrice)
+                LeftAlignCell "土豆", fun (ma : MarketUtils.MarketAnalyzer) -> box(ma.World.WorldName)
+                RightAlignCell "平均", fun ma -> box(ma.StdEvPrice())
+                RightAlignCell "低", fun ma -> box(ma.MinPrice())
+                RightAlignCell "高", fun ma -> box(ma.MaxPrice())
+                LeftAlignCell "更新时间", fun ma -> box(ma.LastUpdateTime())
             |]
 
         let func = fun (i) -> MarketUtils.MarketAnalyzer.FetchTradesAllWorld(i)
@@ -149,11 +149,11 @@ type XivMarketModule() =
     member x.HandleMarketCrossWorld(msgArg : CommandArgs) =
         let hdrs = 
             [|
-                "名称", fun (ma : MarketUtils.MarketAnalyzer) -> box(ma.ItemRecord |> tryLookupNpcPrice)
-                "土豆", fun ma -> box(ma.World.WorldName)
-                "总体", fun ma -> box(ma.TakeVolume().StdEvPrice())
-                "HQ", fun ma -> box(ma.TakeHQ().TakeVolume().StdEvPrice())
-                "更新时间", fun ma -> box(ma.LastUpdateTime())
+                LeftAlignCell "名称", fun (ma : MarketUtils.MarketAnalyzer) -> box(ma.ItemRecord |> tryLookupNpcPrice)
+                LeftAlignCell "土豆", fun ma -> box(ma.World.WorldName)
+                RightAlignCell "总体", fun ma -> box(ma.TakeVolume().StdEvPrice())
+                RightAlignCell "HQ", fun ma -> box(ma.TakeHQ().TakeVolume().StdEvPrice())
+                LeftAlignCell "更新时间", fun ma -> box(ma.LastUpdateTime())
             |]
 
         let func = fun (i) -> MarketUtils.MarketAnalyzer.FetchOrdersAllWorld(i)
@@ -185,26 +185,26 @@ type XivMarketModule() =
         let mutable sum = MarketUtils.StdEv.Zero
         let hdrs = 
             [|
-                yield "物品", fun (item : Item.ItemRecord, amount : float) -> box (item |> tryLookupNpcPrice)
+                yield LeftAlignCell "物品", fun (item : Item.ItemRecord, amount : float) -> box (item |> tryLookupNpcPrice)
 
                 if doCalculateCost then
-                    yield "价格", fun (item, amount) ->
+                    yield LeftAlignCell "价格", fun (item, amount) ->
                             updateCur(item)
                             if cur.Value.IsEmpty then box "无记录"
                             else box (cur.Value.StdEvPrice())
 
-                yield "数量", snd >> box
+                yield LeftAlignCell "数量", snd >> box
 
                 if doCalculateCost then
-                    yield "小计", fun (item, amount) ->
-                            if cur.Value.IsEmpty then box "--"
+                    yield LeftAlignCell "小计", fun (item, amount) ->
+                            if cur.Value.IsEmpty then box <| RightAlignCell "--"
                             else
                                 let subtotal = cur.Value.StdEvPrice() * amount
                                 sum <- sum + subtotal
                                 box subtotal
 
-                    yield "更新时间", fun (item, amount) ->
-                            if cur.Value.IsEmpty then box "--"
+                    yield LeftAlignCell "更新时间", fun (item, amount) ->
+                            if cur.Value.IsEmpty then box <| RightAlignCell "--"
                             else box (cur.Value.LastUpdateTime())
             |]
 
@@ -233,7 +233,7 @@ type XivMarketModule() =
 
         if doCalculateCost then att.AddRowPadding("总计", sum)
 
-        using (msgArg.OpenResponse()) (fun x -> x.Write(att))
+        using (msgArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(att))
 
     [<CommandHandlerMethodAttribute("ssc", "计算部分道具兑换的价格", "兑换所需道具的名称或ID，只处理1个")>]
     member x.HandleSSS(msgArg : CommandArgs) =
@@ -265,7 +265,7 @@ type XivMarketModule() =
                                 box (curItem.Value.Name)
                     "价格", fun _ -> 
                                 if cur.Value.IsEmpty then
-                                    box "--"
+                                    box  "--"
                                 else
                                     box (cur.Value.TakeVolume().StdEvPrice())
                     "最低", fun _ ->
@@ -296,4 +296,4 @@ type XivMarketModule() =
                     failwithf "%s 不能兑换道具" item.Name
                 for info in ia do 
                     att.AddObject(info)
-            using (msgArg.OpenResponse(true)) (fun x -> x.Write(att))
+            using (msgArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(att))

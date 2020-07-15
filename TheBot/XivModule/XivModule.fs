@@ -87,7 +87,7 @@ type XivModule() =
     member x.HandleItemSearch(msgArg : CommandArgs) =
         let att = AutoTextTable<Item.ItemRecord>(
                     [|
-                        "Id", fun item -> box(item.Id.ToString())
+                        "Id", fun (item : Item.ItemRecord) -> box(item.Id.ToString())
                         "物品", fun item -> box(item.Name)
                     |])
         let i = String.Join(" ", msgArg.Arguments)

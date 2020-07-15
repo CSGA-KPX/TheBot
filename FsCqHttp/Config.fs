@@ -4,7 +4,7 @@ module KPX.FsCqHttp.Config
 [<RequireQualifiedAccess>]
 module Logging = 
     let mutable LogEventPost = false
-    let mutable LogApiCall = false
+    let mutable LogApiCall = true
     let mutable LogCommandCall = true
 
 [<RequireQualifiedAccess>]

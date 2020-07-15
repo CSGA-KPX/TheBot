@@ -44,12 +44,13 @@ type ItemCollection private () =
         |> ignore
         GC.Collect()
 
-    member x.GetByItemId (id : int) = x.GetByKey(id)
+    member x.GetByItemId (id : int) = 
+        x.PassOrRaise(x.TryGetByKey(id), "找不到物品:{0}", id)
+
     member x.TryGetByItemId (id : int) = x.TryGetByKey(id)
 
     member x.TryGetByName(name : string) =
         let ret = x.DbCollection.FindOne(LiteDB.Query.EQ("Name", new LiteDB.BsonValue(name)))
-        if isNull (box ret) then None
-        else Some ret
+        if isNull (box ret) then None else Some ret
 
     member x.SearchByName(str) = x.DbCollection.Find(LiteDB.Query.Contains("Name", str)) |> Seq.toArray

@@ -38,7 +38,14 @@ type BotDataCollection<'Key, 'Value>() as x =
 
     member x.Count() = col.Count()
 
-    member internal x.GetByKey(key : 'Key) = col.FindById(LiteDB.BsonValue(key))
+    /// 辅助方法：如果input为Some，返回值。如果为None，根据fmt和args生成KeyNotFoundException
+    member internal x.PassOrRaise(input : option<'T>, fmt : string, [<ParamArray>] args : obj []) = 
+        if input.IsNone then
+            raise <| KeyNotFoundException(String.Format(fmt, args))
+        input.Value
+
+    member internal x.GetByKey(key : 'Key) = 
+        x.PassOrRaise(x.TryGetByKey(key), "BotDataCollection内部错误：找不到键{0}", key)
 
     member internal x.TryGetByKey(key : 'Key) = 
         let ret = col.FindById(LiteDB.BsonValue(key))

@@ -214,6 +214,8 @@ module CommandUtils =
 
         member x.CommandLine = opts.CommandLine
 
+        member x.IsImageOutput = not <| opts.IsDefined("text")
+
     let XivSpecialChars = 
         [|
             '\ue03c' // HQ
