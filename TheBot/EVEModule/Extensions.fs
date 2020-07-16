@@ -25,6 +25,8 @@ type EveType with
 
     member x.GetTradeVolume() = DataBundle.Instance.GetItemTradeVolume(x)
 
+    member x.TypeGroup = DataBundle.Instance.GetGroup(x.GroupId)
+
 type EveMaterial with
     member x.MaterialItem = DataBundle.Instance.GetItem(x.TypeId)
 
@@ -56,15 +58,15 @@ type EveBlueprint with
     ///
     /// 当前蓝图不作调整，次级蓝图按照DME选项计算
     member x.GetManufacturingPrice(cfg : EveConfigParser) = 
-        let cost = x.GetTotalMaterialPrice(cfg.MaterialPriceMode)
-        let fee = x.GetManufacturingFee(cfg)
-        let mutable sum = cost + fee
+        let mutable sum = x.GetManufacturingFee(cfg)
 
         for m in x.Materials do 
             let ret = DataBundle.Instance.TryGetBpByProduct(m.MaterialItem)
-            if ret.IsSome then
+            if ret.IsNone then
+                sum <- sum + m.GetTotalPrice(cfg.MaterialPriceMode)
+            else
                 let bp = ret.Value
-                sum <- sum + bp.GetBpByItemNoCeil(m.Quantity)
-                               .ApplyMaterialEfficiency(cfg.DerivativetMe)
+                sum <- sum + bp.ApplyMaterialEfficiency(cfg.DerivativetMe)
+                               .GetBpByItemNoCeil(m.Quantity)
                                .GetManufacturingPrice(cfg)
         sum

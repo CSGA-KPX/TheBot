@@ -112,19 +112,23 @@ type EveBlueprintCollection private () =
     override x.InitializeCollection() =
         // 产物索引
         x.DbCollection.EnsureIndex("ProductId", "$.Products[0].TypeId") |> ignore
+        //x.DbCollection.EnsureIndex("ProductType", "$.Type") |> ignore
         seq {
             yield! x.InitPlanetSchematics()
             let ec = EveTypeCollection.Instance
             for bp in x.InitBlueprints() do 
                 // 检查蓝图信息
-                if bp.Products.Length = 1 && (ec.TryGetById(bp.Id).IsSome) then
+                // 只能有一个产物，蓝图存在，产物存在
+                if (bp.Products.Length = 1)
+                    && (ec.TryGetById(bp.Id).IsSome)
+                    && (ec.TryGetById(bp.ProductId).IsSome) then
                     yield bp
         }
         |> x.DbCollection.InsertBulk
         |> ignore
 
     member x.TryGetByProduct(id : int) = 
-        let bson = LiteDB.BsonValue(id)
+        let bson = BsonValue(id)
         let ret = x.DbCollection.FindOne(LiteDB.Query.EQ("ProductId", bson))
         if isNull(box ret) then None else Some(ret)
         
@@ -181,7 +185,7 @@ type EveBlueprintCollection private () =
                     let ResName = "BotData.EVEData.zip"
                     let assembly = Reflection.Assembly.GetExecutingAssembly()
                     let stream = assembly.GetManifestResourceStream(ResName)
-                    new Compression.ZipArchive(stream, IO.Compression.ZipArchiveMode.Read)
+                    new Compression.ZipArchive(stream, Compression.ZipArchiveMode.Read)
             use f = archive.GetEntry("blueprints.json").Open()
             use r = new JsonTextReader(new StreamReader(f))
 

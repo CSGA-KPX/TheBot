@@ -26,6 +26,9 @@ type DataBundle private () =
         let i = DataBundle()
         i
 
+    member x.GetGroup(groupId : int) = 
+        Group.EveGroupCollection.Instance.GetByGroupId(groupId)
+
     member x.TryGetItem(str : string) = 
         itemCol.TryGetByName(str)
 

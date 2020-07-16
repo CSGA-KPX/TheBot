@@ -398,29 +398,65 @@ type EveModule() =
         use ret = msgArg.OpenResponse(true)
         ret.Write(tt)
     
+    //[<CommandHandlerMethodAttribute("EVE舰船", "T2和旗舰组件制造总览", "")>]
+    [<CommandHandlerMethodAttribute("EVE组件", "T2和旗舰组件制造总览", "")>]
     [<CommandHandlerMethodAttribute("EVE种菜", "EVE种菜利润", "")>]
-    member x.HandlePlanetary(msgArg : CommandArgs) = 
+    member x.HandleManufacturingOverview(msgArg : CommandArgs) = 
         let cfg = EveConfigParser()
         cfg.Parse(msgArg.Arguments)
 
+        let filterFunc : (EveBlueprint -> bool) = 
+            match msgArg.Command with
+            | Some "#eve组件"  -> fun bp ->
+                (bp.Type = BlueprintType.Manufacturing) &&
+                    (
+                        (bp.ProductItem.GroupId = 334) || // Tech2ComponentGroupId
+                        (bp.ProductItem.GroupId = 873)    // CapitalComponentGroupId
+                    )
+            | Some "#eve种菜" -> fun bp -> 
+                 // 1042 = P0
+                (bp.Type = BlueprintType.Planet) && (bp.ProductItem.GroupId <> 1042)
+            | Some "#eve舰船" -> fun bp ->
+                (bp.Type = BlueprintType.Manufacturing)
+                    && (bp.ProductItem.CategoryId = 6) // 6 = 舰船
+            | _ -> failwithf "%A" msgArg.Command
+
+
         let pmStr = cfg.MaterialPriceMode.ToString()
-        let tt = TextTable.FromHeader([|"方案"; RightAlignCell <| "直接材料/" + pmStr; RightAlignCell "含税利润"; RightAlignCell "日均交易"|])
+
+        use ret = msgArg.OpenResponse(cfg.IsImageOutput)
+
         data.GetBps()
-        |> Seq.filter (fun x -> x.Type = BlueprintType.Planet)
+        |> Seq.filter filterFunc
         |> Seq.map (fun ps ->
             let name = ps.ProductItem.Name
             let cost = ps.GetTotalMaterialPrice(cfg.MaterialPriceMode)
-            let sell = ps.GetTotalProductPrice(PriceFetchMode.SellWithTax)
+            let sellWithTax = ps.GetTotalProductPrice(PriceFetchMode.SellWithTax)
             let volume = data.GetItemTradeVolume(ps.ProductItem)
             {|
                 Name = name
+                TypeGroup = ps.ProductItem.TypeGroup
                 Cost = cost
                 Quantity = ps.ProductQuantity
-                Profit = sell - cost
+                Sell = ps.GetTotalProductPrice(PriceFetchMode.Sell)
+                Profit = sellWithTax - cost
                 Volume = volume
             |} )
         |> Seq.sortByDescending (fun x -> x.Profit)
-        |> Seq.iter (fun x -> tt.AddRow(x.Name, x.Cost |> floor, x.Profit |> floor, x.Volume |> HumanReadableFloat |> RightAlignCell))
-
-        use ret = msgArg.OpenResponse(cfg.IsImageOutput)
-        ret.Write(tt)
+        |> Seq.groupBy (fun x -> x.TypeGroup)
+        |> Seq.iter (fun (group, data) -> 
+            ret.WriteLine(">>{0}<<", group.Name)
+            let tt = TextTable.FromHeader([|"方案"
+                                            RightAlignCell "出售价格/无税卖出"
+                                            RightAlignCell ("生产成本/" + pmStr)
+                                            RightAlignCell "含税利润"
+                                            RightAlignCell "日均交易"|])
+            for x in data do 
+                tt.AddRow(x.Name,
+                          x.Sell |> HumanReadableFloat |> RightAlignCell,
+                          x.Cost |> HumanReadableFloat |> RightAlignCell,
+                          x.Profit |> HumanReadableFloat |> RightAlignCell,
+                          x.Volume |> HumanReadableFloat |> RightAlignCell)
+            ret.Write(tt)
+            ret.WriteEmptyLine()
+        )

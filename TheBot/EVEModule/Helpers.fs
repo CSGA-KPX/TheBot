@@ -26,7 +26,10 @@ let RoundFloat (d : float) (n : int) =
         let scale = 10.0 ** ((d |> abs |> log10 |> floor) + 1.0)
         scale * Math.Round(d / scale, n)
 
+/// 保留4位有效数字，大于一亿按亿显示，0.0显示"--"
 let HumanReadableFloat (d : float) = 
+    let sigDigits = 4 //有效位数
+    let d = RoundFloat d sigDigits
     if d = 0.0 then "--"
     else
         let s = 10.0 ** ((d |> abs |> log10 |> floor) + 1.0)
@@ -36,17 +39,11 @@ let HumanReadableFloat (d : float) =
                 8.0, "亿"
             else
                 0.0, ""
-            (*
-            match l |> int with
-            | 0 | 1 | 2 | 3 | 4
-                 ->  0.0, ""
-            | 5  ->  4.0, "万"
-            | 6  ->  5.0, "十万"
-            | 7  ->  6.0, "百万"
-            | 8  ->  7.0, "千万"
-            | _  ->  8.0, "亿"*)
-
-        String.Format("{0:N2}{1}", d / 10.0 ** scale, postfix)
+        
+        if (l - (int scale) + 1) >= sigDigits then
+            String.Format("{0:N0}{1}", d / 10.0 ** scale, postfix)
+        else
+            String.Format("{0:N2}{1}", d / 10.0 ** scale, postfix)
 
 [<AbstractClass>]
 type CachedCollection<'Key, 'Value>() as x = 

@@ -92,6 +92,9 @@ and TextResponse(arg : ClientEventArgs) =
     override x.ToString() = 
         String.Join(x.NewLine, buf)
 
+    member x.WriteEmptyLine() = 
+        x.WriteLine("\u3000")
+
     member private x.FlushTextMessage() = 
         if sb.Length <> 0 then
             x.WriteLine()
@@ -106,9 +109,6 @@ and TextResponse(arg : ClientEventArgs) =
                         yield sb.ToString()
                         sb.Clear() |> ignore
                     sb.AppendLine(peek) |> ignore
-
-                if sb.Length <> 0 then
-                    yield sb.ToString()
             |]
         for page in pages do 
             arg.QuickMessageReply(page, false)
@@ -154,7 +154,7 @@ and TextResponse(arg : ClientEventArgs) =
             if sb.Length <> 0 then
                 x.WriteLine()
             buf
-            |> Seq.filter (fun line -> not <| String.IsNullOrWhiteSpace(line))
+            |> Seq.filter (fun line -> not <| String.IsNullOrEmpty(line))
             |> Seq.toArray
 
         if lines.Length <> 0 then
