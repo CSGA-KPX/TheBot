@@ -52,7 +52,11 @@ type EveBlueprint with
     /// 目前架构不允许获取0材料蓝图，按实际产量计算
     member x.GetManufacturingFee(cfg : EveConfigParser) = 
         // 生产费用 = ME为0时的 加权物品价格
-        cfg.CalculateManufacturingFee(x.GetTotalMaterialPrice(PriceFetchMode.AdjustedPrice), x.Type)
+        let cost = x.GetTotalMaterialPrice(PriceFetchMode.AdjustedPrice)
+        match x.Type with
+        | BlueprintType.Planet -> 0.0
+        | _ ->
+            cost * (pct cfg.SystemCostIndex) * (100 + cfg.StructureTax |> pct)
 
     /// 获取制造费用（材料+税） LP计算用
     ///
@@ -62,11 +66,11 @@ type EveBlueprint with
 
         for m in x.Materials do 
             let ret = DataBundle.Instance.TryGetBpByProduct(m.MaterialItem)
-            if ret.IsNone then
-                sum <- sum + m.GetTotalPrice(cfg.MaterialPriceMode)
-            else
+            if ret.IsSome && cfg.BpCanExpand(ret.Value) then
                 let bp = ret.Value
                 sum <- sum + bp.ApplyMaterialEfficiency(cfg.DerivativetMe)
                                .GetBpByItemNoCeil(m.Quantity)
                                .GetManufacturingPrice(cfg)
+            else
+                sum <- sum + m.GetTotalPrice(cfg.MaterialPriceMode)
         sum

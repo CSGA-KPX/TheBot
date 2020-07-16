@@ -300,7 +300,7 @@ type EveModule() =
 
             for m in bp.Materials do 
                 let price = m.GetTotalPrice(cfg.MaterialPriceMode)
-                let fee = cfg.CalculateManufacturingFee(price, bp.Type)
+                let fee = bp.GetManufacturingFee(cfg)
                 sum <- sum + fee 
 
                 let ret = data.TryGetBpByProduct(m.MaterialItem)
@@ -311,8 +311,8 @@ type EveModule() =
                     sum <- sum + price
             sum
 
-        let mutable optCost = 0.0
-        let mutable allCost = 0.0
+        let mutable optCost = finalBp.GetManufacturingFee(cfg)
+        let mutable allCost = finalBp.GetManufacturingFee(cfg)
 
         // 所有材料
         // 材料名称 数量 售价（小计） 制造成本（小计） 最佳成本（小计）
@@ -321,9 +321,6 @@ type EveModule() =
             let name   = m.MaterialItem.Name
             let buy    = m.GetTotalPrice(cfg.MaterialPriceMode)
                 
-            optCost <- optCost + cfg.CalculateManufacturingFee(buy, finalBp.Type)
-            allCost <- allCost + cfg.CalculateManufacturingFee(buy, finalBp.Type)
-
             let ret = data.TryGetBpByProduct(m.MaterialItem)
             if ret.IsSome && cfg.BpCanExpand(ret.Value) then
                 let bp = ret.Value.GetBpByItemNoCeil(amount).ApplyMaterialEfficiency(cfg.DerivativetMe)
@@ -429,8 +426,9 @@ type EveModule() =
         data.GetBps()
         |> Seq.filter filterFunc
         |> Seq.map (fun ps ->
+            let ps = ps.ApplyMaterialEfficiency(cfg.InputMe)
             let name = ps.ProductItem.Name
-            let cost = ps.GetTotalMaterialPrice(cfg.MaterialPriceMode)
+            let cost = ps.GetManufacturingPrice(cfg)
             let sellWithTax = ps.GetTotalProductPrice(PriceFetchMode.SellWithTax)
             let volume = data.GetItemTradeVolume(ps.ProductItem)
             {|

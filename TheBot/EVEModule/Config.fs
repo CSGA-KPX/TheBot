@@ -47,9 +47,3 @@ type EveConfigParser() as x =
         | BlueprintType.Planet -> x.ExpandPlanet
         | BlueprintType.Reaction -> x.ExpandReaction
         | _ -> failwithf "未知蓝图类型 %A" bp
-
-    member x.CalculateManufacturingFee(cost : float, bpt : BlueprintType) = 
-        match bpt with
-        | BlueprintType.Planet -> 0.0
-        | _ ->
-            cost * (pct x.SystemCostIndex) * (100 + x.StructureTax |> pct)

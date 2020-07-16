@@ -45,8 +45,15 @@ type GameInternalPriceCollection private () =
         |> x.DbCollection.InsertBulk
         |> ignore
 
+    /// 返回物品内部价格，如果不存在，返回0.0
     member x.GetByItem(id : int) = 
         x.CheckUpdate()
-        x.GetByKey(id)
+        let ret = x.TryGetByKey(id)
+        if ret.IsNone then
+            { Id = id
+              AdjustedPrice = 0.0
+              AveragePrice = 0.0 }
+        else
+            ret.Value
 
     member x.GetByItem(t : EveType) = x.GetByItem(t.Id)
