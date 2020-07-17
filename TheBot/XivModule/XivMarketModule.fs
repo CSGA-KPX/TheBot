@@ -80,10 +80,10 @@ type XivMarketModule() =
         let hdrs = 
             [|
                 LeftAlignCell "名称", fun (ma : MarketUtils.MarketAnalyzer) -> box(ma.ItemRecord |> tryLookupNpcPrice)
-                RightAlignCell "平均", fun ma -> box(ma.StdEvPrice())
+                RightAlignCell "平均", fun ma -> box(ma.StdEvPrice().Average)
                 RightAlignCell "低", fun ma -> box(ma.MinPrice())
                 RightAlignCell "高", fun ma -> box(ma.MaxPrice())
-                LeftAlignCell "更新时间", fun ma -> box(ma.LastUpdateTime())
+                RightAlignCell "更新时间", fun ma -> box(ma.LastUpdateTime())
             |]
 
         let func = fun (i,w) -> MarketUtils.MarketAnalyzer.FetchTradesWorld(i, w)
@@ -94,9 +94,9 @@ type XivMarketModule() =
         let hdrs = 
             [|
                 LeftAlignCell "名称", fun (ma : MarketUtils.MarketAnalyzer) -> box(ma.ItemRecord |> tryLookupNpcPrice)
-                RightAlignCell "总体", fun ma -> box(ma.TakeVolume(25).StdEvPrice())
-                RightAlignCell "HQ", fun ma -> box(ma.TakeHQ().TakeVolume(25).StdEvPrice())
-                LeftAlignCell "更新时间", fun ma -> box(ma.LastUpdateTime())
+                RightAlignCell "总体", fun ma -> box(ma.TakeVolume(25).StdEvPrice().Average)
+                RightAlignCell "HQ", fun ma -> box(ma.TakeHQ().TakeVolume(25).StdEvPrice().Average)
+                RightAlignCell "更新时间", fun ma -> box(ma.LastUpdateTime())
             |]
 
         let func = fun (i,w) -> MarketUtils.MarketAnalyzer.FetchOrdersWorld(i, w)
@@ -136,10 +136,10 @@ type XivMarketModule() =
             [|
                 LeftAlignCell "名称", fun (ma : MarketUtils.MarketAnalyzer) -> box(ma.ItemRecord  |> tryLookupNpcPrice)
                 LeftAlignCell "土豆", fun (ma : MarketUtils.MarketAnalyzer) -> box(ma.World.WorldName)
-                RightAlignCell "平均", fun ma -> box(ma.StdEvPrice())
+                RightAlignCell "平均", fun ma -> box(ma.StdEvPrice().Average)
                 RightAlignCell "低", fun ma -> box(ma.MinPrice())
                 RightAlignCell "高", fun ma -> box(ma.MaxPrice())
-                LeftAlignCell "更新时间", fun ma -> box(ma.LastUpdateTime())
+                RightAlignCell "更新时间", fun ma -> box(ma.LastUpdateTime())
             |]
 
         let func = fun (i) -> MarketUtils.MarketAnalyzer.FetchTradesAllWorld(i)
@@ -151,9 +151,9 @@ type XivMarketModule() =
             [|
                 LeftAlignCell "名称", fun (ma : MarketUtils.MarketAnalyzer) -> box(ma.ItemRecord |> tryLookupNpcPrice)
                 LeftAlignCell "土豆", fun ma -> box(ma.World.WorldName)
-                RightAlignCell "总体", fun ma -> box(ma.TakeVolume().StdEvPrice())
-                RightAlignCell "HQ", fun ma -> box(ma.TakeHQ().TakeVolume().StdEvPrice())
-                LeftAlignCell "更新时间", fun ma -> box(ma.LastUpdateTime())
+                RightAlignCell "总体", fun ma -> box(ma.TakeVolume().StdEvPrice().Average)
+                RightAlignCell "HQ", fun ma -> box(ma.TakeHQ().TakeVolume().StdEvPrice().Average)
+                RightAlignCell "更新时间", fun ma -> box(ma.LastUpdateTime())
             |]
 
         let func = fun (i) -> MarketUtils.MarketAnalyzer.FetchOrdersAllWorld(i)
@@ -188,24 +188,24 @@ type XivMarketModule() =
                 yield LeftAlignCell "物品", fun (item : Item.ItemRecord, amount : float) -> box (item |> tryLookupNpcPrice)
 
                 if doCalculateCost then
-                    yield LeftAlignCell "价格", fun (item, amount) ->
+                    yield RightAlignCell "价格", fun (item, amount) ->
                             updateCur(item)
-                            if cur.Value.IsEmpty then box "无记录"
-                            else box (cur.Value.StdEvPrice())
+                            if cur.Value.IsEmpty then box <| RightAlignCell "--"
+                            else box (cur.Value.StdEvPrice().Average)
 
-                yield LeftAlignCell "数量", snd >> box
+                yield RightAlignCell "数量", snd >> box
 
                 if doCalculateCost then
-                    yield LeftAlignCell "小计", fun (item, amount) ->
+                    yield RightAlignCell "小计", fun (item, amount) ->
                             if cur.Value.IsEmpty then box <| RightAlignCell "--"
                             else
                                 let subtotal = cur.Value.StdEvPrice() * amount
                                 sum <- sum + subtotal
-                                box subtotal
+                                box subtotal.Average
 
-                    yield LeftAlignCell "更新时间", fun (item, amount) ->
+                    yield RightAlignCell "更新时间", fun (item, amount) ->
                             if cur.Value.IsEmpty then box <| RightAlignCell "--"
-                            else box (cur.Value.LastUpdateTime())
+                            else box <| RightAlignCell (cur.Value.LastUpdateTime())
             |]
 
         let att = AutoTextTable<Item.ItemRecord * float>(hdrs)
@@ -231,7 +231,7 @@ type XivMarketModule() =
         for kv in acc |> Seq.sortBy (fun kv -> kv.Key.Id) do 
             att.AddObject(kv.Key, kv.Value)
 
-        if doCalculateCost then att.AddRowPadding("总计", sum)
+        if doCalculateCost then att.AddRowPadding("总计", RightAlignCell (sum.ToString()) )
 
         using (msgArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(att))
 
@@ -259,30 +259,30 @@ type XivMarketModule() =
 
             let hdrs = 
                 [|
-                    "兑换", fun (info : SpecialShop.SpecialShopInfo) ->
+                    LeftAlignCell "兑换", fun (info : SpecialShop.SpecialShopInfo) ->
                                 curItem <- Some (itemCol.GetByItemId(info.ReceiveItem))
                                 updateCur(curItem.Value)
                                 box (curItem.Value.Name)
-                    "价格", fun _ -> 
+                    RightAlignCell "价格", fun _ -> 
                                 if cur.Value.IsEmpty then
-                                    box  "--"
+                                    box  <| RightAlignCell "--"
                                 else
-                                    box (cur.Value.TakeVolume().StdEvPrice())
-                    "最低", fun _ ->
+                                    box (cur.Value.TakeVolume().StdEvPrice().Average)
+                    RightAlignCell "最低", fun _ ->
                                 if cur.Value.IsEmpty then
-                                    box "--"
+                                    box  <| RightAlignCell "--"
                                 else
                                 box (cur.Value.MinPrice())
-                    "价值", fun info ->
+                    RightAlignCell "价值", fun info ->
                                 if cur.Value.IsEmpty then
-                                    box "--"
+                                    box  <| RightAlignCell "--"
                                 else
-                                    box (cur.Value.TakeVolume().StdEvPrice() * (float <|info.ReceiveCount) / (float <|info.CostCount))
-                    "更新", fun _ ->
+                                    box (cur.Value.TakeVolume().StdEvPrice() * (float <|info.ReceiveCount) / (float <|info.CostCount)).Average
+                    RightAlignCell "更新", fun _ ->
                                 if cur.Value.IsEmpty then
-                                    box "--"
+                                    box  <| RightAlignCell "--"
                                 else
-                                    box (cur.Value.LastUpdateTime())
+                                    box  <| RightAlignCell (cur.Value.LastUpdateTime())
                 |]
 
             let att = AutoTextTable<SpecialShop.SpecialShopInfo>(hdrs)
