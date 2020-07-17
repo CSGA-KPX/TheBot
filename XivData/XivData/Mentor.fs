@@ -38,7 +38,6 @@ type ShouldOrAvoidCollection private () =
         }
         |> db.InsertBulk
         |> ignore
-        GC.Collect()
 
     member x.GetByIndex(id : int) = x.TryGetByKey(id).Value
 

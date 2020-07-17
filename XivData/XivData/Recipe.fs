@@ -66,7 +66,6 @@ type CraftRecipeProvider private () =
         |> Seq.cache
         |> db.InsertBulk
         |> ignore
-        GC.Collect()
 
     interface IRecipeProvider with
         override x.TryGetRecipe(item) =
@@ -123,7 +122,6 @@ type CompanyCraftRecipeProvider private () =
         }
         |> db.InsertBulk
         |> ignore
-        GC.Collect()
 
     interface IRecipeProvider with
         override x.TryGetRecipe(item) =

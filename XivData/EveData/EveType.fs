@@ -21,6 +21,7 @@ type EveType =
         MetaGroupId : int
         /// 用途不明，可能是最小精炼单位
         PortionSize : int
+        MarketGroupId : int
     }
 
 type EveTypeCollection private () = 
@@ -73,13 +74,19 @@ type EveTypeCollection private () =
                         if o.ContainsKey("metaGroupID") then
                             o.GetValue("metaGroupID").ToObject<int>()
                         else
-                            0
+                            1
 
                     let published = o.GetValue("published").ToObject<bool>()
 
                     let portionSize = 
                         if o.ContainsKey("portionSize") then
                             o.GetValue("portionSize").ToObject<int>()
+                        else
+                            0
+
+                    let marketGroupId = 
+                        if o.ContainsKey("marketGroupID") then
+                            o.GetValue("marketGroupID").ToObject<int>()
                         else
                             0
 
@@ -92,6 +99,7 @@ type EveTypeCollection private () =
                             Volume = vol
                             MetaGroupId = meta
                             PortionSize = portionSize
+                            MarketGroupId = marketGroupId
                         }
         }
         |> x.DbCollection.InsertBulk

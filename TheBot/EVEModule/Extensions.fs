@@ -27,6 +27,9 @@ type EveType with
 
     member x.TypeGroup = DataBundle.Instance.GetGroup(x.GroupId)
 
+    /// 不是所有物品都有市场分类
+    member x.MarketGroup = BotData.EveData.EveMarketGroup.MarketGroupCollection.Instance.TryGetById(x.MarketGroupId)
+
 type EveMaterial with
     member x.MaterialItem = DataBundle.Instance.GetItem(x.TypeId)
 

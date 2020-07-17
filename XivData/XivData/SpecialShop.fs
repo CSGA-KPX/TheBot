@@ -64,7 +64,6 @@ type SpecialShopCollection private () =
         |> Seq.distinctBy (fun x -> sprintf "%i%i" x.ReceiveItem x.CostItem)
         |> db.InsertBulk
         |> ignore
-        GC.Collect()
 
     member x.AllCostItems() = 
         let ic = ItemCollection.Instance

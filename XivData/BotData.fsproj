@@ -20,6 +20,7 @@
     <Compile Include="XivData\CraftGearSet.fs" />
     <Compile Include="EveData\Utils.fs" />
     <Compile Include="EveData\EveGroup.fs" />
+    <Compile Include="EveData\EveMarketGroup.fs" />
     <Compile Include="EveData\EveType.fs" />
     <Compile Include="EveData\EveBlueprint.fs" />
     <Compile Include="EveData\RefineInfo.fs" />

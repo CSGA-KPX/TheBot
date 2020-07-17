@@ -205,7 +205,9 @@ and BotDataInitializer private () =
             let isCollection = BotDataInitializer.IsSubclassOfRawGeneric(gt, t)
             printfn "正在处理：%s  -->  %A" t.Name isCollection
             if isCollection then
-                t.GetMethod("InitializeCollection").Invoke(o, null) |> ignore )
+                t.GetMethod("InitializeCollection").Invoke(o, null) |> ignore
+                GC.Collect()
+            )
         BotDataInitializer.ClearStaticData()
 
     /// 删除所有数据，不释放空间

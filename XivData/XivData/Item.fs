@@ -42,7 +42,6 @@ type ItemCollection private () =
         }
         |> db.InsertBulk
         |> ignore
-        GC.Collect()
 
     member x.GetByItemId (id : int) = 
         x.PassOrRaise(x.TryGetByKey(id), "找不到物品:{0}", id)

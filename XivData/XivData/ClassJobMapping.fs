@@ -41,7 +41,6 @@ type ClassJobMappingCollection private () =
         |> Seq.map (fun (a,b) -> {Id = a; Value = b})
         |> db.InsertBulk
         |> ignore
-        GC.Collect()
 
     member x.SearchByName(name) = x.GetByKey(name)
     member x.TrySearchByName(name) = x.TryGetByKey(name)

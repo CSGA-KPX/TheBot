@@ -49,6 +49,5 @@ type GilShopCollection private () =
         |> Seq.distinctBy (fun x -> x.Id)
         |> db.InsertBulk
         |> ignore
-        GC.Collect()
 
     member x.TryLookupByItem(item : ItemRecord) = x.TryGetByKey(item.Id)

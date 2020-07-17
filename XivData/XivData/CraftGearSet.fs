@@ -68,7 +68,6 @@ type CraftableGearCollection private () =
         }
         |> db.InsertBulk
         |> ignore
-        GC.Collect()
 
     member x.TryLookupByItem(item : ItemRecord) = x.TryGetByKey(item.Id)
 

@@ -395,7 +395,8 @@ type EveModule() =
         use ret = msgArg.OpenResponse(true)
         ret.Write(tt)
     
-    //[<CommandHandlerMethodAttribute("EVE舰船", "T2和旗舰组件制造总览", "")>]
+    [<CommandHandlerMethodAttribute("EVE舰船II", "T2舰船制造总览", "")>]
+    [<CommandHandlerMethodAttribute("EVE舰船", "T2舰船制造总览", "")>]
     [<CommandHandlerMethodAttribute("EVE组件", "T2和旗舰组件制造总览", "")>]
     [<CommandHandlerMethodAttribute("EVE种菜", "EVE种菜利润", "")>]
     member x.HandleManufacturingOverview(msgArg : CommandArgs) = 
@@ -405,17 +406,24 @@ type EveModule() =
         let filterFunc : (EveBlueprint -> bool) = 
             match msgArg.Command with
             | Some "#eve组件"  -> fun bp ->
-                (bp.Type = BlueprintType.Manufacturing) &&
-                    (
-                        (bp.ProductItem.GroupId = 334) || // Tech2ComponentGroupId
-                        (bp.ProductItem.GroupId = 873)    // CapitalComponentGroupId
-                    )
+                (bp.Type = BlueprintType.Manufacturing) 
+                    && ( (bp.ProductItem.GroupId = 334) // Tech2ComponentGroupId
+                            || (bp.ProductItem.GroupId = 873) )    // CapitalComponentGroupId
             | Some "#eve种菜" -> fun bp -> 
-                 // 1042 = P0
-                (bp.Type = BlueprintType.Planet) && (bp.ProductItem.GroupId <> 1042)
+                (bp.Type = BlueprintType.Planet) 
+                    && (bp.ProductItem.GroupId <> 1042) // 1042 = P0
             | Some "#eve舰船" -> fun bp ->
                 (bp.Type = BlueprintType.Manufacturing)
                     && (bp.ProductItem.CategoryId = 6) // 6 = 舰船
+                    && (bp.ProductItem.MetaGroupId <> 2) // T1
+                    && (let mg = bp.ProductItem.MarketGroup
+                        mg.IsSome && (not <| mg.Value.Name.Contains("特别")) )
+            | Some "#eve舰船ii" -> fun bp ->
+                (bp.Type = BlueprintType.Manufacturing)
+                    && (bp.ProductItem.CategoryId = 6) // 6 = 舰船
+                    && (bp.ProductItem.MetaGroupId = 2) // T2
+                    && (let mg = bp.ProductItem.MarketGroup
+                        mg.IsSome && (not <| mg.Value.Name.Contains("特别")) )
             | _ -> failwithf "%A" msgArg.Command
 
 
