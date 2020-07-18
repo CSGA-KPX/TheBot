@@ -213,6 +213,7 @@ type XivMarketModule() =
         if doCalculateCost then
             att.AddPreTable(sprintf "服务器：%s" world.WorldName)
 
+        let product = XivExpression.ItemAccumulator()
         let acc = XivExpression.ItemAccumulator()
         for str in cfg.CommandLine do
             match xivExpr.TryEval(str) with
@@ -220,6 +221,7 @@ type XivMarketModule() =
             | Ok(Number i) -> att.AddPreTable(sprintf "计算结果为数字%f，物品Id请加#" i)
             | Ok(Accumulator a) ->
                 for kv in a do
+                    product.AddOrUpdate(kv.Key, kv.Value)
                     let (item, runs) = kv.Key, kv.Value
                     let recipe = materialFunc(item)
                     if recipe.Length = 0 then
@@ -231,7 +233,15 @@ type XivMarketModule() =
         for kv in acc |> Seq.sortBy (fun kv -> kv.Key.Id) do 
             att.AddObject(kv.Key, kv.Value)
 
-        if doCalculateCost then att.AddRowPadding("总计", RightAlignCell (sum.ToString()) )
+        if doCalculateCost then
+            att.AddRowPadding("成本总计", sum.Average )
+            let totalSell = product |> Seq.sumBy (fun kv -> 
+                let ret = MarketUtils.MarketAnalyzer.FetchOrdersWorld(kv.Key, world)
+                match ret with
+                | Error exn -> raise exn
+                | Ok m  -> (if m.IsEmpty then m else m.TakeVolume()).StdEvPrice() * kv.Value)
+            att.AddRowPadding("卖出价格", totalSell.Average )
+            att.AddRowPadding("税前利润", (totalSell - sum).Average )
 
         using (msgArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(att))
 

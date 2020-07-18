@@ -25,6 +25,10 @@ module MarketUtils =
             { Average = x.Average + y.Average
               Deviation = x.Deviation + y.Deviation }
 
+        static member (-) (x : StdEv, y : StdEv) =
+            { Average = x.Average - y.Average
+              Deviation = x.Deviation - y.Deviation }
+
         static member Zero =
             { Average = 0.0
               Deviation = 0.0 }
