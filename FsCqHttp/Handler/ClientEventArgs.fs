@@ -109,6 +109,8 @@ and TextResponse(arg : ClientEventArgs) =
                         yield sb.ToString()
                         sb.Clear() |> ignore
                     sb.AppendLine(peek) |> ignore
+                if sb.Length <> 0 then
+                    yield sb.ToString()
             |]
         for page in pages do 
             arg.QuickMessageReply(page, false)
