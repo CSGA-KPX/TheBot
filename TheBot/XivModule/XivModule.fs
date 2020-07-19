@@ -81,7 +81,10 @@ type XivModule() =
                 else
                     item.Name
             )
-        msgArg.QuickMessageReply(String.Join("+", ret))
+        if ret.Length <> 0 then
+            msgArg.QuickMessageReply(String.Join("+", ret))
+        else
+            msgArg.QuickMessageReply("没找到")
 
     [<CommandHandlerMethodAttribute("is", "查找名字包含字符的物品", "关键词（大小写敏感）")>]
     member x.HandleItemSearch(msgArg : CommandArgs) =

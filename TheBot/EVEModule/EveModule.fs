@@ -34,7 +34,8 @@ type EveModule() =
     let typeNameToBp(name : string) = 
         name |> data.GetItem |> typeToBp
 
-    static let er = EveExpression.EveExpression()
+    let ToolWarning = "价格有延迟，算法不稳定，市场有风险, 投资需谨慎"
+    let er = EveExpression.EveExpression()
 
     [<CommandHandlerMethodAttribute("eveTest", "测试用（管理员）", "")>]
     member x.HandleEveTest(msgArg : CommandArgs) =
@@ -279,14 +280,13 @@ type EveModule() =
 
         let tt = TextTable.FromHeader([|"材料"; RightAlignCell "数量"; RightAlignCell <| cfg.MaterialPriceMode.ToString() ; RightAlignCell "生产"|])
         
-        tt.AddPreTable("价格有延迟，算法不稳定，市场有风险, 投资需谨慎")
-        if cfg.IsDebug then
-            tt.AddPreTable(sprintf "输入效率：%i%% 默认效率：%i%% 成本指数：%i%% 设施税率%i%%"
-                cfg.InputMe
-                cfg.DerivativetMe
-                cfg.SystemCostIndex
-                cfg.StructureTax )
-            tt.AddPreTable(sprintf "展开行星材料：%b 展开反应公式：%b" cfg.ExpandPlanet cfg.ExpandReaction)
+        tt.AddPreTable(ToolWarning)
+        tt.AddPreTable(sprintf "输入效率：%i%% 默认效率：%i%% 成本指数：%i%% 设施税率%i%%"
+            cfg.InputMe
+            cfg.DerivativetMe
+            cfg.SystemCostIndex
+            cfg.StructureTax )
+        tt.AddPreTable(sprintf "展开行星材料：%b 展开反应公式：%b" cfg.ExpandPlanet cfg.ExpandReaction)
 
         tt.AddPreTable("产品：")
         let outTt = Utils.MarketUtils.GetPriceTable()
@@ -353,6 +353,7 @@ type EveModule() =
                                          "月矿"; RightAlignCell "秒利润";
                                          "导管"; RightAlignCell "秒利润"; |])
 
+        tt.AddPreTable(ToolWarning)
         tt.AddPreTable(sprintf "采集能力：%g m3/s 精炼效率:%g"
             mineSpeed
             refineYield
@@ -399,9 +400,12 @@ type EveModule() =
     [<CommandHandlerMethodAttribute("EVE舰船", "T2舰船制造总览", "")>]
     [<CommandHandlerMethodAttribute("EVE组件", "T2和旗舰组件制造总览", "")>]
     [<CommandHandlerMethodAttribute("EVE种菜", "EVE种菜利润", "")>]
+    [<CommandHandlerMethodAttribute("EVE装备II", "EVET2装备利润", "需要关键词")>]
     member x.HandleManufacturingOverview(msgArg : CommandArgs) = 
         let cfg = EveConfigParser()
         cfg.Parse(msgArg.Arguments)
+
+        use ret = msgArg.OpenResponse(cfg.IsImageOutput)
 
         let filterFunc : (EveBlueprint -> bool) = 
             match msgArg.Command with
@@ -424,15 +428,27 @@ type EveModule() =
                     && (bp.ProductItem.MetaGroupId = 2) // T2
                     && (let mg = bp.ProductItem.MarketGroup
                         mg.IsSome && (not <| mg.Value.Name.Contains("特别")) )
+            | Some "#eve装备ii" -> fun bp ->
+                if cfg.CommandLine.Length <> 1 then ret.FailWith("需要一个装备名称关键词")
+                let keyword = cfg.CommandLine.[0]
+                if keyword.Length < 2 then ret.FailWith("至少2个字")
+                if keyword.Contains("I") then ret.FailWith("emmm 还是别想了")
+                (bp.Type = BlueprintType.Manufacturing)
+                    && (bp.ProductItem.CategoryId = 7) // 装备
+                    && (bp.ProductItem.MetaGroupId = 2) // T2
+                    && (bp.ProductItem.Name.Contains(keyword))
             | _ -> failwithf "%A" msgArg.Command
 
 
         let pmStr = cfg.MaterialPriceMode.ToString()
 
-        use ret = msgArg.OpenResponse(cfg.IsImageOutput)
-
+        
+        ret.WriteLine(ToolWarning)
         data.GetBps()
         |> Seq.filter filterFunc
+        |> (fun seq ->
+            if (Seq.length seq) = 0 then ret.FailWith("无符合要求的蓝图信息")
+            seq )
         |> Seq.map (fun ps ->
             let ps = ps.ApplyMaterialEfficiency(cfg.InputMe)
             let name = ps.ProductItem.Name

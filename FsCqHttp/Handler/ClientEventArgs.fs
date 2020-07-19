@@ -68,8 +68,6 @@ and TextResponse(arg : ClientEventArgs) =
 
     let canSendImage = lazy (arg.ApiCaller.CallApi<SystemApi.CanSendImage>().Can)
     
-    member x.IsUsed = isUsed
-
     /// 获取或设置一个值，指示是否优先通过图像回复
     member val PreferImageOutput = false with get, set
 
@@ -92,6 +90,12 @@ and TextResponse(arg : ClientEventArgs) =
     override x.ToString() = 
         String.Join(x.NewLine, buf)
 
+    /// 清空已有内容，中断文本输出，抛出异常
+    member x.FailWith(msg : string) = 
+        x.WriteLine()
+        buf.Clear()
+        failwith msg
+
     member x.WriteEmptyLine() = 
         x.WriteLine("\u3000")
 
@@ -101,19 +105,20 @@ and TextResponse(arg : ClientEventArgs) =
 
         let pages = 
             [|
-                let sb = StringBuilder()
+                let page = StringBuilder()
 
                 while buf.Count <> 0 do
                     let peek = buf.Dequeue()
-                    if sb.Length + peek.Length > sizeLimit then
-                        yield sb.ToString()
-                        sb.Clear() |> ignore
-                    sb.AppendLine(peek) |> ignore
-                if sb.Length <> 0 then
-                    yield sb.ToString()
+                    if page.Length + peek.Length > sizeLimit then
+                        yield page.ToString()
+                        page.Clear() |> ignore
+                    page.AppendLine(peek) |> ignore
+
+                if page.Length <> 0 then
+                    yield page.ToString()
             |]
         for page in pages do 
-            arg.QuickMessageReply(page, false)
+            arg.QuickMessageReply(page)
 
     member x.CanSendImage() = canSendImage.Force()
 
