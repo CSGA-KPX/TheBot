@@ -166,34 +166,38 @@ type XivModule() =
     [<CommandHandlerMethodAttribute("nuannuan", "暖暖", "")>]
     [<CommandHandlerMethodAttribute("nrnr", "暖暖", "")>]
     member x.HandleNrnr(msgArg : CommandArgs) = 
-        use hc = new Net.Http.HttpClient()
-        hc.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)")
+        let handler = new Net.Http.HttpClientHandler()
+        handler.AutomaticDecompression <- Net.DecompressionMethods.GZip
+
+        use hc = new Net.Http.HttpClient(handler)
+        hc.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:78.0) Gecko/20100101 Firefox/78.0")
+        hc.DefaultRequestHeaders.Referrer <- new Uri("https://space.bilibili.com/15503317/channel/detail?cid=55877")
+
+        let json = hc
+                    .GetStreamAsync("https://api.bilibili.com/x/space/channel/video?mid=15503317&cid=55877&pn=1&ps=30&order=0")
+                    .ConfigureAwait(false)
+                    .GetAwaiter()
+                    .GetResult()
+        use reader = new Newtonsoft.Json.JsonTextReader(new IO.StreamReader(json))
+        let json = Newtonsoft.Json.Linq.JObject.Load(reader)
+        let data = json.SelectToken("data.list.archives") :?> Newtonsoft.Json.Linq.JArray
+        let item = data
+                   |> Seq.find (fun x -> x.Value<string>("title").Contains("满分攻略"))
+        let bvid = item.Value<string>("bvid")
+
+        let url = sprintf "https://www.bilibili.com/video/%s" bvid
+
         let html = hc
-                    .GetStreamAsync("https://bbs.nga.cn/read.php?tid=14561874")
+                    .GetStreamAsync(url)
                     .ConfigureAwait(false)
                     .GetAwaiter()
                     .GetResult()
 
+
         let doc = HtmlAgilityPack.HtmlDocument()
-        doc.Load(html, Encoding.GetEncoding("GBK"))
 
-        let n = doc.DocumentNode.SelectSingleNode("//span[@id = \"postcontentandsubject0\"]")
-        //x.Logger.Info(n.InnerHtml)
-        let ts =
-            n.ChildNodes
-            |> Seq.filter (fun n -> (n.InnerText.Trim() <> ""))
-            |> Seq.map (fun n -> n.InnerText)
-            |> Seq.toArray
+        doc.Load(html, Encoding.GetEncoding("UTF-8"))
+        let n = doc.DocumentNode.SelectSingleNode("//div[@id = \"v_desc\"]")
 
-        let sb = StringBuilder()
-
-        sb.AppendLine(ts.[0]) |> ignore
-
-        let is = ts |> Array.findIndex (fun s -> s.Contains("至"))
-        let ie = ts |> Array.findIndex (fun s -> s.Contains("附件"))
-
-        for str in ts.[is .. ie - 2] do 
-            if str = "染色：" then sb.AppendLine() |> ignore
-            if str <> "------" then sb.AppendLine(str) |> ignore
-        msgArg.QuickMessageReply(sb.ToString())
-        ()
+        let cfg = Utils.CommandUtils.XivConfig(msgArg)
+        using (msgArg.OpenResponse(cfg.IsImageOutput)) (fun ret -> ret.Write(n.InnerText))
