@@ -17,7 +17,7 @@ module private DataBase =
     let logger = NLog.LogManager.GetLogger("LiteDB")
     let FsMapper = LiteDB.FSharp.FSharpBsonMapper()
     let Db =
-        let dbFile = @"Filename=../static/BotDataCache.db; Journal=true; Cache Size=5000; Mode=Exclusive;"
+        let dbFile = @"Filename=../static/BotDataCache.db; Journal=true; Mode=Exclusive;"
         let db = new LiteDB.LiteDatabase(dbFile, FsMapper)
         db.Log.add_Logging(fun str -> logger.Trace(str))
         db

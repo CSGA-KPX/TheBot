@@ -3,6 +3,8 @@
 open BotData.EveData.Utils
 open BotData.EveData.EveBlueprint
 
+open TheBot.Module.EveModule.Utils.Data
+
 type EveConfigParser() as x = 
     inherit TheBot.Utils.UserOption.UserOptionParser()
 
@@ -44,6 +46,8 @@ type EveConfigParser() as x =
     member x.BpCanExpand(bp : EveBlueprint) = 
         match bp.Type with
         | BlueprintType.Manufacturing -> true
-        | BlueprintType.Planet -> x.ExpandPlanet
+        | BlueprintType.Planet -> 
+            // 1042 = P1，屏蔽P0 -> P1生产过程
+            x.ExpandPlanet && (DataBundle.Instance.GetItem(bp.ProductId).GroupId <> 1042)
         | BlueprintType.Reaction -> x.ExpandReaction
         | _ -> failwithf "未知蓝图类型 %A" bp

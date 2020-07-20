@@ -210,6 +210,7 @@ type EveModule() =
             cfg.InputMe
             cfg.DerivativetMe
         )
+
         tt.AddPreTable(sprintf "展开行星材料：%b 展开反应公式：%b" cfg.ExpandPlanet cfg.ExpandReaction)
 
         let rec loop (bp : EveBlueprint) = 
@@ -255,7 +256,7 @@ type EveModule() =
                 for kv in a do
                     let t = kv.Key
                     let q = kv.Value
-                    if q < 0.0 then failwith "暂不支持负数计算"
+                    if q < 0.0 then failwith "不支持负数计算"
 
                     let bp = (typeToBp t).GetBpByRuns(q).ApplyMaterialEfficiency(cfg.InputMe)
 
@@ -311,8 +312,11 @@ type EveModule() =
                     sum <- sum + price
             sum
 
-        let mutable optCost = finalBp.GetManufacturingFee(cfg)
-        let mutable allCost = finalBp.GetManufacturingFee(cfg)
+        let baseFee = finalBp.GetManufacturingFee(cfg)
+        tt.AddRow("制造费用", 1, baseFee |> HumanReadableFloat |> RightAlignCell, baseFee |> HumanReadableFloat |> RightAlignCell)
+
+        let mutable optCost = baseFee
+        let mutable allCost = baseFee
 
         // 所有材料
         // 材料名称 数量 售价（小计） 制造成本（小计） 最佳成本（小计）
@@ -415,7 +419,6 @@ type EveModule() =
                             || (bp.ProductItem.GroupId = 873) )    // CapitalComponentGroupId
             | Some "#eve种菜" -> fun bp -> 
                 (bp.Type = BlueprintType.Planet) 
-                    && (bp.ProductItem.GroupId <> 1042) // 1042 = P0
             | Some "#eve舰船" -> fun bp ->
                 (bp.Type = BlueprintType.Manufacturing)
                     && (bp.ProductItem.CategoryId = 6) // 6 = 舰船
@@ -432,7 +435,7 @@ type EveModule() =
                 if cfg.CommandLine.Length <> 1 then ret.FailWith("需要一个装备名称关键词")
                 let keyword = cfg.CommandLine.[0]
                 if keyword.Length < 2 then ret.FailWith("至少2个字")
-                if keyword.Contains("I") then ret.FailWith("emmm 还是别想了")
+                if keyword.Contains("I") then ret.FailWith("emmm 想看全部T2还是别想了")
                 (bp.Type = BlueprintType.Manufacturing)
                     && (bp.ProductItem.CategoryId = 7) // 装备
                     && (bp.ProductItem.MetaGroupId = 2) // T2
