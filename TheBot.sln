@@ -9,9 +9,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "FFXIVNetwork", "FFXIVNetwor
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FsCqHttp", "FsCqHttp\FsCqHttp.fsproj", "{3E558F6E-6A04-4912-837F-AF00CC91AFAE}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "LibDmfXivShared", "K:\KPX\Documents\Visual Studio 2017\Projects\FFXIVNetwork\LibXIVServerFable\LibDmfXivShared.fsproj", "{9EE0FE4F-6F4B-4D68-9E2D-832A316D81BF}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "LibDmfXivShared", "..\FFXIVNetwork\LibXIVServerFable\LibDmfXivShared.fsproj", "{9EE0FE4F-6F4B-4D68-9E2D-832A316D81BF}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "LibDmfXivClient", "K:\KPX\Documents\Visual Studio 2017\Projects\FFXIVNetwork\LibDmfXivClient\LibDmfXivClient.fsproj", "{2F324B07-A7C1-47FD-A6BC-2DC078D14DA1}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "LibDmfXivClient", "..\FFXIVNetwork\LibDmfXivClient\LibDmfXivClient.fsproj", "{2F324B07-A7C1-47FD-A6BC-2DC078D14DA1}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "LibFFXIV.GameData.Raw", "..\LibFFXIV\LibFFXIV.GameData.Raw\LibFFXIV.GameData.Raw.fsproj", "{EE879DDD-F086-4496-A802-94347995BC9C}"
 EndProject

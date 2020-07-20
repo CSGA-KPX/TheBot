@@ -51,8 +51,8 @@
     <ProjectReference Include="..\..\LibFFXIV\LibFFXIV.Network\LibFFXIV.Network.fsproj" />
     <ProjectReference Include="..\FsCqHttp\FsCqHttp.fsproj" />
     <ProjectReference Include="..\XivData\BotData.fsproj" />
-    <ProjectReference Include="K:\KPX\Documents\Visual Studio 2017\Projects\FFXIVNetwork\LibDmfXivClient\LibDmfXivClient.fsproj" />
-    <ProjectReference Include="K:\KPX\Documents\Visual Studio 2017\Projects\FFXIVNetwork\LibXIVServerFable\LibDmfXivShared.fsproj" />
+    <ProjectReference Include="..\..\FFXIVNetwork\LibDmfXivClient\LibDmfXivClient.fsproj" />
+    <ProjectReference Include="..\..\FFXIVNetwork\LibXIVServerFable\LibDmfXivShared.fsproj" />
   </ItemGroup>
 
   <ItemGroup>
