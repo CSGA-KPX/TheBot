@@ -1,0 +1,216 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="梅尔托尔海峡北_白天" xml:space="preserve">
+    <value>这条航线很适合冲分
+---钓场一：梅尔托尔海峡南-白天---
+通常海域直感鱼：磷虾[!!]→尸鬼梭鱼 以小钓大[!!]→步兵剑 触发直感，刺螠[!!!]强力提钩→小利维亚桑
+触发幻海流：磷虾[!!!]精准提钩→幻光盘丽鱼
+幻海流中：磷虾，建议耐心，或双提5s以上的[!!](秘银君2*196)或以小钓大略长中杆[!!](巨大枪鱼2*127)
+---钓场二：加拉迪翁湾外海-黄昏---
+通常海域直感鱼：磷虾5-15s[!]加拉迪翁鳀鱼*3(有干扰) 触发直感，磷虾[!!!]强力提钩→醉鱼
+触发幻海流：刺螠[!!!]强力提钩→幻光巨齿鲨
+幻海流中：刺螠，双提[!!!](漏斗鲨4*213)
+---钓场三：梅尔托尔海峡北-夜晚---
+通常海域直感鱼：石沙蚕10s左右的[!]→海投刀 以小钓大[!!]古老恐鱼(有干扰) 触发直感，石沙蚕[!!!]精准提钩→海流星
+触发幻海流：石沙蚕[!!!]精准提钩→幻光海马
+幻海流中：磷虾，双提5s+[!!](幻纱披风4*198)</value>
+    <comment>梅尔托尔海峡北早班船</comment>
+  </data>
+  <data name="梅尔托尔海峡北_黄昏" xml:space="preserve">
+    <value>这条航线能遭遇两条蓝鱼
+---钓场一：梅尔托尔海峡南-黄昏---
+通常海域直感鱼：磷虾[!!]→尸鬼梭鱼 以小钓大[!!]→步兵剑 触发直感，刺螠[!!!]强力提钩→小利维亚桑
+触发幻海流：磷虾[!!!]精准提钩→幻光盘丽鱼
+幻海流中：石沙蚕，双提5s+的[!](海荨麻4*156)或以小钓大[!!!](无赖龙2*345)
+---钓场二：加拉迪翁湾外海-夜晚---
+通常海域直感鱼：磷虾5-15s[!]加拉迪翁鳀鱼*3(有干扰) 触发直感，磷虾[!!!]强力提钩→醉鱼
+触发幻海流：刺螠[!!!]强力提钩→幻光巨齿鲨
+幻海流中：火萤，[!]→天堂之钥*2+海神印*1 触发直感，[!!!]不知道什么提钩→索蒂斯
+---钓场三：梅尔托尔海峡北-白天---
+通常海域直感鱼：石沙蚕10s左右的[!]→海投刀 以小钓大[!!]古老恐鱼(有干扰) 触发直感，石沙蚕[!!!]精准提钩→海流星
+触发幻海流：石沙蚕[!!!]精准提钩→幻光海马
+幻海流中：重铁板钩，[!!!]双重提钩→守领鳍龙*3 触发直感，[!!!]不知道什么提钩→依拉丝莫龙</value>
+    <comment>梅尔托尔海峡北午班船</comment>
+  </data>
+  <data name="梅尔托尔海峡北_黑夜" xml:space="preserve">
+    <value>这条航线冲分还行
+---钓场一：梅尔托尔海峡南-夜晚---
+通常海域直感鱼：磷虾[!!]→尸鬼梭鱼 以小钓大[!!]→步兵剑 触发直感，刺螠[!!!]强力提钩→小利维亚桑
+触发幻海流：磷虾[!!!]精准提钩→幻光盘丽鱼
+幻海流中：小虾肉笼[!]→高级以太药虱 以小钓大[!!]双重提钩→巨大枪鱼*2 触发直感，[!!!]不知道什么提钩→珊瑚蝠鲼
+---钓场二：加拉迪翁湾外海-白天---
+通常海域直感鱼：磷虾5-15s[!]加拉迪翁鳀鱼*3(有干扰) 触发直感，磷虾[!!!]强力提钩→醉鱼
+触发幻海流：刺螠[!!!]强力提钩→幻光巨齿鲨
+幻海流中：石沙蚕，双提5s以上的[!](钉牡蛎2*222/灵敏舞者2*444)/2s以内的[!!](人鱼发4*94)或者开耐心随便钓都差不多
+---钓场三：梅尔托尔海峡北-黄昏---
+通常海域直感鱼：石沙蚕10s左右的[!]→海投刀 以小钓大[!!]古老恐鱼(有干扰) 触发直感，石沙蚕[!!!]精准提钩→海流星
+触发幻海流：石沙蚕[!!!]精准提钩→幻光海马
+幻海流中：石沙蚕，双提5s以上的[!](珊瑚海龙4*189)</value>
+    <comment>梅尔托尔海峡北晚班船</comment>
+  </data>
+  <data name="罗塔诺海海面_白天" xml:space="preserve">
+    <value>这条航线很适合冲分
+---钓场一：加拉迪翁湾外海-白天---
+通常海域直感鱼：磷虾5-15s[!]加拉迪翁鳀鱼*3(有干扰) 触发直感，磷虾[!!!]强力提钩→醉鱼
+触发幻海流：刺螠[!!!]强力提钩→幻光巨齿鲨
+幻海流中：石沙蚕，双提5s以上的[!](钉牡蛎2*222/灵敏舞者2*444)/2s以内的[!!](人鱼发4*94)或者开耐心随便钓都差不多
+---钓场二：梅尔托尔海峡南-黄昏---
+通常海域直感鱼：磷虾[!!]→尸鬼梭鱼 以小钓大[!!]→步兵剑 触发直感，刺螠[!!!]强力提钩→小利维亚桑
+触发幻海流：磷虾[!!!]精准提钩→幻光盘丽鱼
+幻海流中：石沙蚕，双提5s+的[!](海荨麻4*156)或以小钓大[!!!](无赖龙2*345)
+---钓场三：罗塔诺海海面-夜晚---
+通常海域直感鱼：刺螠15s+[!!]深红钓鮟鱇*2(有干扰)触发直感，磷虾[!!!]强力提钩→海铠靴
+触发幻海流：刺螠[!!!]强力提钩→幻光鲈
+幻海流中：磷虾，双提5s+[!](浮游碟鱼4*222)</value>
+    <comment>罗塔诺海海面早班船</comment>
+  </data>
+  <data name="罗塔诺海海面_黄昏" xml:space="preserve">
+    <value>这条航线冲分不错
+---钓场一：加拉迪翁湾外海-黄昏---
+通常海域直感鱼：磷虾5-15s[!]加拉迪翁鳀鱼*3(有干扰) 触发直感，磷虾[!!!]强力提钩→醉鱼
+触发幻海流：刺螠[!!!]强力提钩→幻光巨齿鲨
+幻海流中：刺螠，双提[!!!](漏斗鲨4*213)
+---钓场二：梅尔托尔海峡南-夜晚---
+通常海域直感鱼：磷虾[!!]→尸鬼梭鱼 以小钓大[!!]→步兵剑 触发直感，刺螠[!!!]强力提钩→小利维亚桑
+触发幻海流：磷虾[!!!]精准提钩→幻光盘丽鱼
+幻海流中：小虾肉笼[!]→高级以太药虱 以小钓大[!!]双重提钩→巨大枪鱼*2 触发直感，[!!!]不知道什么提钩→珊瑚蝠鲼
+---钓场三：罗塔诺海海面-白天---
+通常海域直感鱼：刺螠15s+[!!]深红钓鮟鱇*2(有干扰)触发直感，磷虾[!!!]强力提钩→海铠靴
+触发幻海流：刺螠[!!!]强力提钩→幻光鲈
+幻海流中：刺螠，双提[!!!](处刑者4*216)</value>
+    <comment>罗塔诺海海面午班船</comment>
+  </data>
+  <data name="罗塔诺海海面_黑夜" xml:space="preserve">
+    <value>这条航线能遭遇两条蓝鱼
+---钓场一：加拉迪翁湾外海-夜晚---
+通常海域直感鱼：磷虾5-15s[!]加拉迪翁鳀鱼*3(有干扰) 触发直感，磷虾[!!!]强力提钩→醉鱼
+触发幻海流：刺螠[!!!]强力提钩→幻光巨齿鲨
+幻海流中：火萤，[!]→天堂之钥*2+海神印*1 触发直感，[!!!]不知道什么提钩→索蒂斯
+---钓场二：梅尔托尔海峡南-白天---
+通常海域直感鱼：磷虾[!!]→尸鬼梭鱼 以小钓大[!!]→步兵剑 触发直感，刺螠[!!!]强力提钩→小利维亚桑
+触发幻海流：磷虾[!!!]精准提钩→幻光盘丽鱼
+幻海流中：磷虾，建议耐心，或双提5s以上的[!!](秘银君2*196)或以小钓大略长中杆[!!](巨大枪鱼2*127)
+---钓场三：罗塔诺海海面-黄昏---
+通常海域直感鱼：刺螠15s+[!!]深红钓鮟鱇*2(有干扰)触发直感，磷虾[!!!]强力提钩→海铠靴
+触发幻海流：刺螠[!!!]强力提钩→幻光鲈
+幻海流中：沟鼠尾巴，[!]→沉寂者，[!!]→深海鳗 触发直感，[!!!]强力提钩→石骨鱼</value>
+    <comment>罗塔诺海海面晚班船</comment>
+  </data>
+</root>
