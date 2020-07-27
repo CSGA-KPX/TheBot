@@ -204,23 +204,29 @@ type XivModule() =
 
     [<CommandHandlerMethodAttribute("海钓", "FF14海钓攻略", "")>]
     member x.HandleOceanFishing(msgArg : CommandArgs) = 
+        let cfg = TheBot.Utils.UserOption.UserOptionParser()
+        cfg.RegisterOption("next", "0")
+        cfg.Parse(msgArg.Arguments)
+
         use ret = msgArg.OpenResponse(true)
         try
-            ret.WriteLine("数据源：https://bbs.nga.cn/read.php?tid=20553241")
             ret.WriteLine("警告：仅供娱乐测试使用，请自行确认数据准确性")
-            let now = GetCstTime()
+            let mutable now = GetCstTime()
+            let next= cfg.GetValue<int>("next")
+            if next <> 0 then now <- now.AddHours(2.0 * (float next))
             let info = OceanFishing.CalculateCooldown(now)
 
             let date = info.CooldownDate.ToString("yyyy/MM/dd HH:00")
-            if info.IsNextCooldown then
-                ret.WriteLine("已经错过本次CD，下次CD为：{0}", date)
-            else
-                ret.WriteLine("本期CD时间为：{0}", date)
-
-            ret.WriteLine("调试信息:IKDRouteTable:{0}, IKDRoute:{1}", info.RouTableId, info.RouteId)
+            ret.WriteLine("预计CD时间为：{0}", date)
+            ret.WriteEmptyLine()
             ret.WriteLine("攻略文本：")
-        
+            
             for line in info.Message do 
-                ret.WriteLine(line)
+                if String.IsNullOrWhiteSpace(line) then 
+                    ret.WriteEmptyLine() else ret.WriteLine(line)
+
+            ret.WriteEmptyLine()
+            ret.WriteLine("数据源：https://bbs.nga.cn/read.php?tid=20553241")
+            ret.WriteLine("调试信息:IKDRouteTable:{0}, IKDRoute:{1}, isNext:{2}", info.RouTableId, info.RouteId, info.IsNextCooldown)
         with
         | e -> ret.FailWith(e.ToString())
