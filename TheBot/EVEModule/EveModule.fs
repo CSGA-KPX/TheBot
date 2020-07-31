@@ -113,13 +113,13 @@ type EveModule() =
     member x.HandleEveMarket(msgArg : CommandArgs) =
         let mutable argOverride = None
         let priceFunc = 
-            match msgArg.Command with
-            | Some "#em"  -> fun (t : EveType) -> data.GetItemPriceCached(t)
-            | Some "#emr" -> fun (t : EveType) -> data.GetItemPrice(t)
-            | Some "#eve矿物" -> 
+            match msgArg.CommandName with // 注意小写匹配
+            | Some "em"  -> fun (t : EveType) -> data.GetItemPriceCached(t)
+            | Some "emr" -> fun (t : EveType) -> data.GetItemPrice(t)
+            | Some "eve矿物" -> 
                 argOverride <- Some(MineralNames.Replace(',', '+'))
                 fun (t : EveType) -> data.GetItemPriceCached(t)
-            | _ -> failwithf "%A" msgArg.Command
+            | _ -> failwithf "%A" msgArg.CommandName
 
         let t =
             let str =
@@ -412,26 +412,26 @@ type EveModule() =
         use ret = msgArg.OpenResponse(cfg.IsImageOutput)
 
         let filterFunc : (EveBlueprint -> bool) = 
-            match msgArg.Command with
-            | Some "#eve组件"  -> fun bp ->
+            match msgArg.CommandName with // 注意小写匹配
+            | Some "eve组件"  -> fun bp ->
                 (bp.Type = BlueprintType.Manufacturing) 
                     && ( (bp.ProductItem.GroupId = 334) // Tech2ComponentGroupId
                             || (bp.ProductItem.GroupId = 873) )    // CapitalComponentGroupId
-            | Some "#eve种菜" -> fun bp -> 
+            | Some "eve种菜" -> fun bp -> 
                 (bp.Type = BlueprintType.Planet) 
-            | Some "#eve舰船" -> fun bp ->
+            | Some "eve舰船" -> fun bp ->
                 (bp.Type = BlueprintType.Manufacturing)
                     && (bp.ProductItem.CategoryId = 6) // 6 = 舰船
                     && (bp.ProductItem.MetaGroupId <> 2) // T1
                     && (let mg = bp.ProductItem.MarketGroup
                         mg.IsSome && (not <| mg.Value.Name.Contains("特别")) )
-            | Some "#eve舰船ii" -> fun bp ->
+            | Some "eve舰船ii" -> fun bp ->
                 (bp.Type = BlueprintType.Manufacturing)
                     && (bp.ProductItem.CategoryId = 6) // 6 = 舰船
                     && (bp.ProductItem.MetaGroupId = 2) // T2
                     && (let mg = bp.ProductItem.MarketGroup
                         mg.IsSome && (not <| mg.Value.Name.Contains("特别")) )
-            | Some "#eve装备ii" -> fun bp ->
+            | Some "eve装备ii" -> fun bp ->
                 if cfg.CommandLine.Length <> 1 then ret.FailWith("需要一个装备名称关键词")
                 let keyword = cfg.CommandLine.[0]
                 if keyword.Length < 2 then ret.FailWith("至少2个字")
@@ -440,7 +440,7 @@ type EveModule() =
                     && (bp.ProductItem.CategoryId = 7) // 装备
                     && (bp.ProductItem.MetaGroupId = 2) // T2
                     && (bp.ProductItem.Name.Contains(keyword))
-            | _ -> failwithf "%A" msgArg.Command
+            | _ -> failwithf "%A" msgArg.CommandName
 
 
         let pmStr = cfg.MaterialPriceMode.ToString()

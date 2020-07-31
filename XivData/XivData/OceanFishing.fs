@@ -23,6 +23,12 @@ let private RefDateOffset = 10
 
 let rm = GetResourceManager("XivOceanFishing")
 
+let GetWindowMessage (key : string) =    
+    let msg = rm.GetString(key)
+    if isNull msg then
+        failwithf "发生错误：message是null, key是%s" key
+    msg.Split([|"\r\n"; "\r"; "\n"|], StringSplitOptions.None)
+
 let CalculateCooldown (now : DateTimeOffset) =
     // 进位到最近的CD
     let (next, now) = 
@@ -40,12 +46,9 @@ let CalculateCooldown (now : DateTimeOffset) =
     let rid = RouteTable.[idx]
 
     let msgKey = RouteDefine.[rid]
-    let message = rm.GetString(msgKey)
-    if isNull message then
-        failwithf "发生错误：message是null, key是%s" msgKey
 
     {|  IsNextCooldown = next
         CooldownDate = now
         RouTableId = idx
         RouteId = rid
-        Message = message.Split([|"\r\n"; "\r"; "\n"|], StringSplitOptions.None)   |}
+        Message = GetWindowMessage(msgKey)   |}

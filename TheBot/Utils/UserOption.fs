@@ -11,7 +11,9 @@ type UserOptionValue =
 
     member x.IsDefined = match x with | Defined _ -> true | _ -> false
 
-    member x.GetValue<'T when 'T :> IConvertible>() = 
+    member x.Value = match x with | Defined x -> x | Default x -> x
+
+    member x.GetValue<'T when 'T :> IConvertible>() =
         let ret = 
             match x with
             | Defined x -> x 
@@ -57,7 +59,10 @@ type UserOptionParser() =
                         let key   = s.[0]
                         let value = if s.Length >= 2 then s.[1] else ""
                         if options.ContainsKey(key) then
-                            options.[key] <- Defined value
+                            if String.IsNullOrWhiteSpace(value) then
+                                options.[key] <- Defined (options.[key].Value)
+                            else
+                                options.[key] <- Defined value
                         else
                             yield str
                     else

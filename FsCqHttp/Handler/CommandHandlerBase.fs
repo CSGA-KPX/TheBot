@@ -7,9 +7,14 @@ open KPX.FsCqHttp.Handler
 [<AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = true)>]
 type CommandHandlerMethodAttribute(command : string, desc, lh) =
     inherit Attribute()
-    member val Command : string = KPX.FsCqHttp.Config.Command.CommandStart + command.ToLowerInvariant()
+
+    /// 指令名称，不含CommandStart字符串
+    member val Command : string = command.ToLowerInvariant()
+    /// 指令概述
     member x.HelpDesc : string = desc
+    /// 完整帮助文本
     member x.LongHelp : string = lh
+    /// 指示改指令是否在help等指令中隐藏
     member val IsHidden = false with get, set
 
 type CommandArgs(msg : Message.MessageEvent, cqArg : ClientEventArgs) =
@@ -19,16 +24,27 @@ type CommandArgs(msg : Message.MessageEvent, cqArg : ClientEventArgs) =
     let cmdLine = rawMsg.Split([| ' ' |], StringSplitOptions.RemoveEmptyEntries)
     let isCmd = rawMsg.StartsWith(KPX.FsCqHttp.Config.Command.CommandStart)
 
+    let cmdName = 
+        if isCmd then
+            let cmd = cmdLine.[0].ToLowerInvariant()
+            Some (cmd.[1..])
+        else
+            None
+
+    /// 原始消息对象
     member x.MessageEvent = msg
+
+    /// 原始消息文本
     member x.RawMessage = rawMsg
+
+    /// 空格拆分后的所有字符串
     member x.CommandLine = cmdLine
 
-    /// 指令，含有'CommandStart'
-    member val Command : string option = if isCmd then
-                                            Some(cmdLine.[0].ToLowerInvariant())
-                                         else None
+    /// 小写转化后的命令名称，不含CommandStart字符
+    member x.CommandName = cmdName
 
-    member x.IsCommand(str : string) = x.Command.Value = (KPX.FsCqHttp.Config.Command.CommandStart + str.ToLowerInvariant())
+    /// 检查是否是指定指令
+    member x.IsCommand(str : string) = x.CommandName.Value = (str.ToLowerInvariant())
 
     member val Arguments = [| if isCmd then yield! cmdLine.[1..] |]
 
@@ -46,8 +62,8 @@ type CommandHandlerBase(shared : bool) as x =
 
     override x.HandleMessage(args, msgEvent) =
         let msgArg = CommandArgs(msgEvent, args)
-        if msgArg.Command.IsSome then
-            let matched = x.Commands |> Array.filter (fun (a, _) -> msgArg.Command.Value = a.Command)
+        if msgArg.CommandName.IsSome then
+            let matched = x.Commands |> Array.filter (fun (a, _) -> msgArg.IsCommand(a.Command))
             for (_, method) in matched do
                 if KPX.FsCqHttp.Config.Logging.LogCommandCall then
                     x.Logger.Info("Calling handler {0}\r\n Command Context {1}", method.Name, sprintf "%A" msgEvent)

@@ -202,31 +202,44 @@ type XivModule() =
         let cfg = Utils.CommandUtils.XivConfig(msgArg)
         using (msgArg.OpenResponse(cfg.IsImageOutput)) (fun ret -> ret.Write(n.InnerText))
 
-    [<CommandHandlerMethodAttribute("海钓", "FF14海钓攻略", "")>]
+    [<CommandHandlerMethodAttribute("海钓", "FF14海钓攻略", "next:查阅n个CD后的信息，list:查阅n个时间窗的信息")>]
     member x.HandleOceanFishing(msgArg : CommandArgs) = 
         let cfg = TheBot.Utils.UserOption.UserOptionParser()
         cfg.RegisterOption("next", "0")
+        cfg.RegisterOption("list", "12")
         cfg.Parse(msgArg.Arguments)
 
+        let dateFmt = "yyyy/MM/dd HH:00"
+
         use ret = msgArg.OpenResponse(true)
+        ret.WriteLine("警告：时间为中国标准时间，仅供娱乐测试使用，请自行确认数据准确")
+        let mutable now = GetCstTime()
         try
-            ret.WriteLine("警告：仅供娱乐测试使用，请自行确认数据准确性")
-            let mutable now = GetCstTime()
-            let next= cfg.GetValue<int>("next")
-            if next <> 0 then now <- now.AddHours(2.0 * (float next))
-            let info = OceanFishing.CalculateCooldown(now)
+            if cfg.IsDefined("list") then
+                let tt = TextTable.FromHeader([|"CD时间"; "概述"; "tid"; "rid"|])
+                let count = cfg.GetValue<int>("list")
+                if count > 12*3 then failwith "天不过三。"
+                for i = 0 to count - 1 do 
+                    let cd = now.AddHours((float i) * 2.0)
+                    let info = OceanFishing.CalculateCooldown(cd)
+                    tt.AddRow(info.CooldownDate.ToString(dateFmt), info.Message.[0], info.RouTableId, info.RouteId)
+                ret.Write(tt)
+            else
+                let next= cfg.GetValue<int>("next")
+                if next <> 0 then now <- now.AddHours(2.0 * (float next))
+                let info = OceanFishing.CalculateCooldown(now)
 
-            let date = info.CooldownDate.ToString("yyyy/MM/dd HH:00")
-            ret.WriteLine("预计CD时间为：{0}", date)
-            ret.WriteEmptyLine()
-            ret.WriteLine("攻略文本：")
+                let date = info.CooldownDate.ToString(dateFmt)
+                ret.WriteLine("预计CD时间为：{0}", date)
+                ret.WriteEmptyLine()
+                ret.WriteLine("攻略文本：")
             
-            for line in info.Message do 
-                if String.IsNullOrWhiteSpace(line) then 
-                    ret.WriteEmptyLine() else ret.WriteLine(line)
+                for line in info.Message do 
+                    if String.IsNullOrWhiteSpace(line) then 
+                        ret.WriteEmptyLine() else ret.WriteLine(line)
 
-            ret.WriteEmptyLine()
-            ret.WriteLine("数据源：https://bbs.nga.cn/read.php?tid=20553241")
-            ret.WriteLine("调试信息:IKDRouteTable:{0}, IKDRoute:{1}, isNext:{2}", info.RouTableId, info.RouteId, info.IsNextCooldown)
+                ret.WriteEmptyLine()
+                ret.WriteLine("数据源：https://bbs.nga.cn/read.php?tid=20553241")
+                ret.WriteLine("调试信息:IKDRouteTable:{0}, IKDRoute:{1}, isNext:{2}", info.RouTableId, info.RouteId, info.IsNextCooldown)
         with
         | e -> ret.FailWith(e.ToString())
