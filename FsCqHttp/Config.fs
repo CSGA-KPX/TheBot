@@ -3,8 +3,11 @@ module KPX.FsCqHttp.Config
 
 [<RequireQualifiedAccess>]
 module Logging = 
+    /// 是否记录事件上报
     let mutable LogEventPost = false
+    /// 是否记录API调用
     let mutable LogApiCall = true
+    /// 是否记录指令事件
     let mutable LogCommandCall = true
 
 [<RequireQualifiedAccess>]

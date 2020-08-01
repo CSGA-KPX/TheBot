@@ -6,8 +6,12 @@ open KPX.FsCqHttp.Api
 [<AbstractClass>]
 type HandlerModuleBase(shared : bool) as x =
 
+    /// 声明类为共享模块
     new () = HandlerModuleBase(true)
 
+    /// 指示该模块是否可以被多个账户共享，与线程安全等相关
+    ///
+    /// 如果为false，则每个链接会使用自己的实例
     member x.IsSharedModule = shared
 
     member val ApiCaller : IApiCallProvider option = None with get, set

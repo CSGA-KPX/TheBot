@@ -1,7 +1,10 @@
-// Learn more about F# at http://fsharp.org
+module TheBot.Program
+
 open System
+
 open Mono.Unix
 open Mono.Unix.Native
+
 open KPX.FsCqHttp.Instance
 
 let logger = NLog.LogManager.GetCurrentClassLogger()

@@ -52,6 +52,7 @@ type CommandArgs(msg : Message.MessageEvent, cqArg : ClientEventArgs) =
 type CommandHandlerBase(shared : bool) as x =
     inherit HandlerModuleBase(shared)
 
+    /// 声明为共享模块
     new () = CommandHandlerBase(true)
 
     member val Commands = [| for method in x.GetType().GetMethods() do
