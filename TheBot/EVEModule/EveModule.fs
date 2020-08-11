@@ -407,9 +407,11 @@ type EveModule() =
     [<CommandHandlerMethodAttribute("EVE装备II", "EVET2装备利润", "需要关键词")>]
     member x.HandleManufacturingOverview(msgArg : CommandArgs) = 
         let cfg = EveConfigParser()
+        cfg.RegisterOption("by", "")
         cfg.Parse(msgArg.Arguments)
 
         use ret = msgArg.OpenResponse(cfg.IsImageOutput)
+        ret.WriteLine(ToolWarning)
 
         let filterFunc : (EveBlueprint -> bool) = 
             match msgArg.CommandName with // 注意小写匹配
@@ -431,22 +433,39 @@ type EveModule() =
                     && (bp.ProductItem.MetaGroupId = 2) // T2
                     && (let mg = bp.ProductItem.MarketGroup
                         mg.IsSome && (not <| mg.Value.Name.Contains("特别")) )
-            | Some "eve装备ii" -> fun bp ->
-                if cfg.CommandLine.Length <> 1 then ret.FailWith("需要一个装备名称关键词")
-                let keyword = cfg.CommandLine.[0]
+            | Some "eve装备ii" -> 
+                let isGroup = cfg.GetValue("by") = "group"
+
+                if isGroup then
+                    ret.WriteLine("按装备名匹配")
+                else
+                    ret.WriteLine("按名称匹配，按组名匹配请使用by:group")
+
+                let keyword = 
+                    if cfg.CommandLine.Length = 0 then ret.FailWith("需要一个装备名称关键词")
+                    cfg.CommandLine.[0]
+
                 if keyword.Length < 2 then ret.FailWith("至少2个字")
                 if keyword.Contains("I") then ret.FailWith("emmm 想看全部T2还是别想了")
-                (bp.Type = BlueprintType.Manufacturing)
-                    && (bp.ProductItem.CategoryId = 7) // 装备
-                    && (bp.ProductItem.MetaGroupId = 2) // T2
-                    && (bp.ProductItem.Name.Contains(keyword))
+
+                let allowCategoryId = [|7; 18; 8;|] |> Set // 装备，无人机，弹药
+
+                fun bp ->
+                    (bp.Type = BlueprintType.Manufacturing)
+                        && (if isGroup then 
+                                bp.ProductItem.TypeGroup.Name.Contains(keyword)
+                            else
+                                bp.ProductItem.Name.Contains(keyword)   )
+                        && (allowCategoryId.Contains(bp.ProductItem.CategoryId)) // 装备
+                        && (bp.ProductItem.MetaGroupId = 2) // T2
+
             | _ -> failwithf "%A" msgArg.CommandName
 
 
         let pmStr = cfg.MaterialPriceMode.ToString()
 
         
-        ret.WriteLine(ToolWarning)
+        
         data.GetBps()
         |> Seq.filter filterFunc
         |> (fun seq ->

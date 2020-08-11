@@ -218,7 +218,7 @@ type XivModule() =
             if cfg.IsDefined("list") then
                 let tt = TextTable.FromHeader([|"CD时间"; "概述"; "tid"; "rid"|])
                 let count = cfg.GetValue<int>("list")
-                if count > 12*3 then failwith "天不过三。"
+                if count > 12*31 then failwith "那可太长了。"
                 for i = 0 to count - 1 do 
                     let cd = now.AddHours((float i) * 2.0)
                     let info = OceanFishing.CalculateCooldown(cd)

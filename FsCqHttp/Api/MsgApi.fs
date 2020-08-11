@@ -10,10 +10,16 @@ type SendPrivateMsg() =
     do raise <| System.NotImplementedException()
 
 
-type SendGroupMsg() =
+type SendGroupMsg(groupId : uint64, message : Message) =
     inherit ApiRequestBase("send_group_msg")
 
-    do raise <| System.NotImplementedException()
+    override x.WriteParams(w, js) =
+        w.WritePropertyName("group_id")
+        w.WriteValue(groupId)
+        w.WritePropertyName("message")
+        //w.WriteStartObject()
+        js.Serialize(w, message)
+        //w.WriteEndObject()
 
 type SendDiscussMsg() =
     inherit ApiRequestBase("send_discuss_msg")

@@ -73,6 +73,7 @@ type SystemCostIndexCollection private () =
         |> ignore
 
     member x.TryGetBySystem(system : BotData.EveData.SolarSystems.SolarSystem) = 
+        x.CheckUpdate()
         x.TryGetByKey(system.Id)
 
     member x.GetBySystem(system : BotData.EveData.SolarSystems.SolarSystem) =
