@@ -154,7 +154,7 @@ type DiceModule() =
     member x.HandleJrrp(msgArg : CommandArgs) =
         let dicer = Dicer(SeedOption.SeedByUserDay(msgArg.MessageEvent))
         let jrrp = dicer.GetRandom(100u)
-        msgArg.QuickMessageReply(sprintf "%s今日人品值是%i" msgArg.MessageEvent.GetNicknameOrCard jrrp)
+        msgArg.QuickMessageReply(sprintf "%s今日人品值是：%i" msgArg.MessageEvent.GetNicknameOrCard jrrp)
 
     [<CommandHandlerMethodAttribute("cal", "计算器", "")>]
     member x.HandleCalculator(msgArg : CommandArgs) =
