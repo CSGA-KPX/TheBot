@@ -307,3 +307,36 @@ type XivMarketModule() =
                 for info in ia do 
                     att.AddObject(info)
             using (msgArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(att))
+    
+    [<CommandHandlerMethodAttribute("伊修加德重建采集", "计算采集利润", "无参数")>]
+    member x.HandleRebuildGathering(msgArg : CommandArgs) = 
+        let cfg = CommandUtils.XivConfig(msgArg)
+        let world = cfg.GetWorld()
+
+        let items = 
+            itemCol.SearchByName("第二期重建用的")
+            |> Array.filter (fun item -> item.Name.Contains("（检）"))
+
+        if items.Length = 0 then failwith "一个物品都没找到，这不科学，请联系开发者"
+
+        use ret = msgArg.OpenResponse(true)
+        ret.WriteLine("价格有延迟，算法不稳定，市场有风险, 投资需谨慎")
+        ret.WriteLine(sprintf "当前服务器：%s" world.WorldName)
+
+        let tt = TextTable.FromHeader([|"名称"; "平均"; "低"; "更新时间"|])
+
+        for item in items do 
+            match MarketUtils.MarketAnalyzer.FetchOrdersWorld(item, world) with
+            | Error err ->
+                tt.AddRow(item.Name, "--", "--", "数据传输异常")
+            | Ok orders -> 
+                if orders.Data.Length = 0 then
+                    tt.AddRow(item.Name, "--", "--", "无记录")
+                else
+                    let vol = orders.TakeVolume(25)
+                    let avg = vol.StdEvPrice().Average |> int
+                    let low = vol.MinPrice()
+                    let upd = vol.LastUpdateTime()
+                    tt.AddRow(item.Name, avg, low, upd)
+
+        ret.Write(tt)

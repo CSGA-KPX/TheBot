@@ -17,6 +17,7 @@
     <Compile Include="Utils\UserOption.fs" />
     <Compile Include="EatModule\EatUtils.fs" />
     <Compile Include="EatModule\EatModule.fs" />
+    <Compile Include="DicebotWarning.fs" />
     <Compile Include="DiceModule.fs" />
     <Compile Include="SudoModule.fs" />
     <Compile Include="XivModule\XivUtils.fs" />
