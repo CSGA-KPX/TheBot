@@ -90,6 +90,12 @@ and TextResponse(arg : ClientEventArgs) =
     override x.ToString() = 
         String.Join(x.NewLine, buf)
 
+    /// 抛出异常中断输出，但是不记录日志
+    member x.Fail() = 
+        x.WriteLine()
+        buf.Clear()
+        raise <| RuntimeHelpers.IgnoreException
+
     /// 清空已有内容，中断文本输出，抛出异常
     member x.FailWith(msg : string) = 
         x.WriteLine()

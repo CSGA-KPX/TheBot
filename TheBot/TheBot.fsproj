@@ -59,6 +59,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Update="Bot.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
     <EmbeddedResource Update="Eat.resx">
       <Generator>ResXFileCodeGenerator</Generator>
     </EmbeddedResource>

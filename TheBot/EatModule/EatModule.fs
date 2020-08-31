@@ -26,8 +26,14 @@ type EatModule() =
         use ret = msgArg.OpenResponse()
         match at with
         | Some Message.AtUserType.All -> ret.FailWith("DD不可取")
-        | Some (Message.AtUserType.User uid) when uid = msgArg.SelfId ->
-            ret.FailWith("吃了你哦")
+        | Some (Message.AtUserType.User uid) when uid = msgArg.SelfId || uid = msgArg.MessageEvent.UserId ->
+            let rm = TheBot.Utils.EmbeddedResource.GetResourceManager("Bot")
+            let img = rm.GetObject("Funny") :?> System.Drawing.Bitmap
+            let msg = Message.Message()
+            msg.Add(img)
+            msgArg.QuickMessageReply(msg)
+            ret.Fail()
+
         | Some (Message.AtUserType.User uid) ->
             let atUserName = GroupApi.GetGroupMemberInfo(msgArg.MessageEvent.GroupId, uid)
             msgArg.ApiCaller.CallApi(atUserName)

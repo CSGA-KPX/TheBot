@@ -14,8 +14,6 @@ type HandlerModuleBase(shared : bool) as x =
     /// 如果为false，则每个链接会使用自己的实例
     member x.IsSharedModule = shared
 
-    member val ApiCaller : IApiCallProvider option = None with get, set
-
     member val Logger = NLog.LogManager.GetLogger(x.GetType().Name)
 
     abstract HandleMessage : ClientEventArgs * Event.Message.MessageEvent -> unit
@@ -35,4 +33,6 @@ type HandlerModuleBase(shared : bool) as x =
             | Event.EventUnion.Notice y -> x.HandleNotice(args, y)
             | _ -> ()
         with
-        | e -> x.Logger.Fatal(sprintf "HandlerModuleBase捕获异常:%O" e)
+        | e -> 
+            if not (e.InnerException :? KPX.FsCqHttp.Handler.RuntimeHelpers.IgnoreException) then
+                x.Logger.Fatal(sprintf "HandlerModuleBase捕获异常:%O" e)

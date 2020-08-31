@@ -17,8 +17,7 @@ type CqWebSocketClient(url, token) =
     let utf8 = Text.Encoding.UTF8
     let logger = NLog.LogManager.GetCurrentClassLogger()
 
-    let apiPending = Dictionary<string, ManualResetEvent * ApiRequestBase>()
-    let apiLock = new ReaderWriterLockSlim()
+    let apiPending = Collections.Concurrent.ConcurrentDictionary<string, ManualResetEvent * ApiRequestBase>()
 
     let cqHttpEvent = Event<_>()
 
@@ -39,8 +38,8 @@ type CqWebSocketClient(url, token) =
                 let m = Activator.CreateInstance(t) :?> HandlerModuleBase
                 if m.IsSharedModule then
                     moduleCache.Add(t, m)
-                else
-                    m.ApiCaller <- Some(x :> IApiCallProvider)
+                //else
+                //    m.ApiCaller <- Some(x :> IApiCallProvider)
                 m
         x.OnCqHttpEvent.AddHandler(Handler<_>(m.HandleCqHttpEvent))
 
@@ -53,9 +52,7 @@ type CqWebSocketClient(url, token) =
                 let mre = new ManualResetEvent(false)
                 let json = req.GetRequestJson(echo)
 
-                apiLock.EnterWriteLock()
-                apiPending.Add(echo, (mre, req)) |> ignore
-                apiLock.ExitWriteLock()
+                apiPending.TryAdd(echo, (mre, req)) |> ignore
 
                 if KPX.FsCqHttp.Config.Logging.LogApiCall then 
                     logger.Trace("请求API：{0}", json)
@@ -63,9 +60,8 @@ type CqWebSocketClient(url, token) =
                 do! ws.SendAsync(ArraySegment<byte>(data), WebSocketMessageType.Text, true, cts.Token) |> Async.AwaitTask
                 let! ret = Async.AwaitWaitHandle(mre :> WaitHandle)
 
-                apiLock.EnterWriteLock()
-                apiPending.Remove(echo) |> ignore
-                apiLock.ExitWriteLock()
+
+                apiPending.TryRemove(echo) |> ignore
             }
             |> Async.RunSynchronously
 
@@ -97,14 +93,12 @@ type CqWebSocketClient(url, token) =
             if KPX.FsCqHttp.Config.Logging.LogApiCall then
                 logger.Trace("收到API调用结果：{0}", sprintf "%A" json)
             let ret = obj.ToObject<Response.ApiResponse>()
-            apiLock.EnterReadLock()
-            let notEmpty = not <| String.IsNullOrEmpty(ret.Echo)
-            let hasPending = apiPending.ContainsKey(ret.Echo)
-            if notEmpty && hasPending then
-                let (mre, api) = apiPending.[ret.Echo]
+
+            let hasPending, item = apiPending.TryGetValue(ret.Echo)
+            if hasPending then
+                let (mre, api) = item
                 api.HandleResponse(ret)
                 mre.Set() |> ignore
-            apiLock.ExitReadLock()
 
 
     member x.StartListen() =

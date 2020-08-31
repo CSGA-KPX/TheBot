@@ -68,9 +68,4 @@ type CommandHandlerBase(shared : bool) as x =
             for (_, method) in matched do
                 if KPX.FsCqHttp.Config.Logging.LogCommandCall then
                     x.Logger.Info("Calling handler {0}\r\n Command Context {1}", method.Name, sprintf "%A" msgEvent)
-                try
                     method.Invoke(x, [| msgArg |]) |> ignore
-                with
-                | :? Reflection.TargetInvocationException as e -> 
-                    x.Logger.Fatal("Exception caught: {0}", e.ToString())
-                    args.QuickMessageReply(sprintf "发生错误：%s" (e.InnerException.Message))

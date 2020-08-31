@@ -19,10 +19,11 @@
     <Compile Include="Api\MsgApi.fs" />
     <Compile Include="Api\GroupApi.fs" />
     <Compile Include="Api\Request.fs" />
+    <Compile Include="Handler\RuntimeHelpers.fs" />
     <Compile Include="Handler\ClientEventArgs.fs" />
     <Compile Include="Handler\HandlerBase.fs" />
-    <Compile Include="Handler\CommandHandlerBase.fs" />
     <Compile Include="Handler\HandlerUtils.fs" />
+    <Compile Include="Handler\CommandHandlerBase.fs" />
     <Compile Include="Handler\HelpModule.fs" />
     <Compile Include="Instance\WebSocket.fs" />
   </ItemGroup>
