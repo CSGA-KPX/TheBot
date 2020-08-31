@@ -1,6 +1,7 @@
 ﻿module TheBot.Module.EatModule.Instance
 
 open System
+open KPX.FsCqHttp.Api
 open KPX.FsCqHttp.DataType
 open KPX.FsCqHttp.Handler.CommandHandlerBase
 
@@ -14,8 +15,6 @@ type EatModule() =
     [<CommandHandlerMethodAttribute("eat", "吃什么？", "#eat 晚餐")>]
     member x.HandleEat(msgArg : CommandArgs) =
         let at = msgArg.MessageEvent.Message.GetAts() |> Array.tryHead
-        if at.IsSome then
-            invalidOp "你管别人怎么吃啊？"
 
         let str = 
             let v = String.Join(" ", msgArg.Arguments)
@@ -24,9 +23,24 @@ type EatModule() =
         if str = "" then
             invalidOp "预设套餐：早中晚加 火锅 萨莉亚"
 
-        let dicer = new Dicer(SeedOption.SeedByUserDay(msgArg.MessageEvent), AutoRefreshSeed = false)
+        use ret = msgArg.OpenResponse()
+        match at with
+        | Some Message.AtUserType.All -> ret.FailWith("DD不可取")
+        | Some (Message.AtUserType.User uid) when uid = msgArg.SelfId ->
+            ret.FailWith("吃了你哦")
+        | Some (Message.AtUserType.User uid) ->
+            let atUserName = GroupApi.GetGroupMemberInfo(msgArg.MessageEvent.GroupId, uid)
+            msgArg.ApiCaller.CallApi(atUserName)
+            ret.WriteLine("{0} 为 {1} 投掷：", msgArg.MessageEvent.GetNicknameOrCard, atUserName.DisplayName)
+        | None -> ()
+
+        let seed  = if at.IsSome then 
+                        SeedOption.SeedByAtUserDay(msgArg.MessageEvent)
+                    else
+                        SeedOption.SeedByUserDay(msgArg.MessageEvent)
+        let dicer = new Dicer(seed, AutoRefreshSeed = false)
 
         if eatFuncs.ContainsKey(str) then
-            msgArg.QuickMessageReply(eatFuncs.[str](dicer))
+            ret.Write(eatFuncs.[str](dicer))
         else
-            msgArg.QuickMessageReply(whenToEat(dicer, str))
+            ret.Write(whenToEat(dicer, str))

@@ -37,4 +37,4 @@ type TRpgModule() =
             tt.AddRow(name, dp.Eval(expr).Value |> int)
 
         tt.AddPreTable(sprintf "%s的人物作成:" msgArg.MessageEvent.GetNicknameOrCard)
-        using (msgArg.OpenResponse(true)) (fun ret -> ret.Write(tt))
+        using (msgArg.OpenResponse()) (fun ret -> ret.Write(tt))
