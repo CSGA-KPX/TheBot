@@ -25,6 +25,8 @@ type RawMessageSection =
         Values : IReadOnlyDictionary<string, string> }
 
     /// 用于直接获取Values内的数据
+    ///
+    /// 不进行合法检查
     member x.Item str = x.Values.[str]
     static member Create(name, vals : seq<string * string>) = 
         {   Type = name
@@ -38,13 +40,10 @@ type Message(sec : RawMessageSection []) as x =
     static let TYPE_TEXT = "text"
     static let TYPE_IMAGE= "image"
 
-    static let cqStringReplace = 
-        [|
-            "&", "&amp;"
-            "[", "&#91;"
-            "]", "&#93;"
-            ",", "&#44;"
-        |]
+    static let cqStringReplace =  [| "&", "&amp;"
+                                     "[", "&#91;"
+                                     "]", "&#93;"
+                                     ",", "&#44;" |]
 
     do
         x.AddRange(sec)

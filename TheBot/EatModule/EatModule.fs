@@ -27,8 +27,8 @@ type EatModule() =
         match at with
         | Some Message.AtUserType.All -> ret.FailWith("DD不可取")
         | Some (Message.AtUserType.User uid) when uid = msgArg.SelfId || uid = msgArg.MessageEvent.UserId ->
-            let rm = TheBot.Utils.EmbeddedResource.GetResourceManager("Bot")
-            let img = rm.GetObject("Funny") :?> System.Drawing.Bitmap
+            use s = TheBot.Utils.EmbeddedResource.GetResFileStream("Funny.jpg")
+            use img = Drawing.Bitmap.FromStream(s) :?> Drawing.Bitmap
             let msg = Message.Message()
             msg.Add(img)
             msgArg.QuickMessageReply(msg)
