@@ -33,8 +33,12 @@ type TRpgModule() =
 
         let dp = DiceExpression.DiceExpression(dicer)
 
+        let mutable sum = 0
         for (name, expr) in attrs do 
-            tt.AddRow(name, dp.Eval(expr).Value |> int)
+            let d = dp.Eval(expr).Value |> int
+            sum <- sum + d
+            tt.AddRow(name, d)
+        tt.AddRow("总计", sum)
 
         tt.AddPreTable(sprintf "%s的人物作成:" msgArg.MessageEvent.GetNicknameOrCard)
         using (msgArg.OpenResponse()) (fun ret -> ret.Write(tt))
