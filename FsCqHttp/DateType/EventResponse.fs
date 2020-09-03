@@ -19,14 +19,10 @@ and EventResponseConverter() =
     inherit JsonConverter<EventResponse>()
 
     override x.WriteJson(w : JsonWriter, r : EventResponse, js : JsonSerializer) =
-        let sb = StringBuilder()
-        let sw = new StringWriter(sb)
-        //w.WriteStartObject()
         for prop in r.GetType().GetProperties() do
             if Char.IsLower(prop.Name.[0]) then
                 w.WritePropertyName(prop.Name)
                 js.Serialize(w, prop.GetValue(r))
-    //w.WriteEndObject()
 
-    override x.ReadJson(r : JsonReader, objType : Type, existingValue : EventResponse, hasExistingValue : bool,
-                        s : JsonSerializer) = raise<EventResponse> <| NotImplementedException()
+    override x.ReadJson(r : JsonReader, objType : Type, existingValue : EventResponse, hasExistingValue : bool, s : JsonSerializer) =
+        raise <| NotImplementedException()

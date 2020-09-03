@@ -35,8 +35,8 @@ type GetStatus() =
 
     let mutable data = [||] |> readOnlyDict
 
-    member x.Online = data.["online"]
-    member x.Good = data.["good"]
+    member x.Online = data.["online"] |> System.Boolean.Parse
+    member x.Good = data.["good"] |> System.Boolean.Parse
 
     override x.HandleResponse(r) = data <- r.Data
 

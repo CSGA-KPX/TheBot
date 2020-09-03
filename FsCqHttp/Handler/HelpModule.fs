@@ -13,7 +13,7 @@ type HelpModule() =
 
     static let attribs =
         [| 
-            for t in Utils.GetAllDefinedModules() do
+            for t in HandlerModuleBase.AllDefinedModules do
                 for method in t.GetMethods() do
                     let ret = method.GetCustomAttributes(typeof<CommandHandlerMethodAttribute>, true)
                     for attrib in ret do

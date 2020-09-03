@@ -16,10 +16,12 @@ type AtUserType =
         | All -> "all"
         | User x -> x |> string
 
-    static member FromString(str : string) =
+    /// 将CQ码中字符串转换为AtUserType
+    static member internal FromString(str : string) =
         if str = "all" then All
         else User(str |> uint64)
 
+/// 表示一个CQ消息段
 type RawMessageSection = 
     {   Type : string
         Values : IReadOnlyDictionary<string, string> }
@@ -60,7 +62,7 @@ type Message(sec : RawMessageSection []) as x =
 
     member x.Add(img : Drawing.Bitmap) = 
         use ms  = new IO.MemoryStream()
-        img.Save(ms, Drawing.Imaging.ImageFormat.Jpeg)
+        img.Save(ms, Drawing.Imaging.ImageFormat.Gif)
         let b64 = Convert.ToBase64String(ms.ToArray(), Base64FormattingOptions.None)
         let segValue= [ "file", ("base64://" + b64) ]
         x.Add(RawMessageSection.Create(TYPE_IMAGE, segValue))

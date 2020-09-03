@@ -8,6 +8,9 @@ open Newtonsoft.Json
 [<AbstractClass>]
 type ApiRequestBase(action : string) as x =
     let logger = NLog.LogManager.GetLogger(x.GetType().Name)
+    let mutable executed = false
+
+    member x.IsExecuted with get() = executed and internal set(v) = executed <- v
 
     member internal x.Logger = logger
 

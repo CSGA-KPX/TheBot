@@ -8,36 +8,10 @@ open Mono.Unix.Native
 open KPX.FsCqHttp.Instance
 
 let logger = NLog.LogManager.GetCurrentClassLogger()
-let mutable loadModules = true
-
-let StartBot(endPoint : string, token : string) =
-    let client = CqWebSocketClient(Uri(endPoint), token)
-    if loadModules then
-        for m in KPX.FsCqHttp.Handler.Utils.GetAllDefinedModules() do
-            logger.Info("正在注册模块{0}", m.FullName)
-            client.RegisterModule(m)
-    else
-        logger.Info("启动观测者模式")
-
-    client.Connect()
-    client.StartListen()
-
-    if not <| isNull (Type.GetType("Mono.Runtime")) then
-        UnixSignal.WaitAny
-            ([| new UnixSignal(Signum.SIGINT)
-                new UnixSignal(Signum.SIGTERM)
-                new UnixSignal(Signum.SIGQUIT)
-                new UnixSignal(Signum.SIGHUP) |])
-        |> ignore
-    else
-        Console.ReadLine() |> ignore
-
-    client.StopListen()
-    Console.WriteLine("Stopping TheBot")
 
 [<EntryPoint>]
 let main argv =
-    let parser = TheBot.Utils.UserOption.UserOptionParser()
+    let parser = Utils.UserOption.UserOptionParser()
     parser.RegisterOption("rebuilddb", "")
     parser.RegisterOption("debug", "")
     parser.RegisterOption("endpoint", "")
@@ -50,11 +24,32 @@ let main argv =
         BotData.Common.Database.BotDataInitializer.InitializeAllCollections()
         printfn "Rebuilt Completed"
     elif parser.IsDefined("debug") then
-        loadModules <- false
-    
+        KPX.FsCqHttp.Config.Debug.Enable <- true
     if parser.IsDefined("endpoint") && parser.IsDefined("token") then
-        StartBot(parser.GetValue("endpoint"), parser.GetValue("token"))
+        let uri = Uri(parser.GetValue("endpoint"))
+        let token = parser.GetValue("token")
+        let ctx = ActiveWebsocket(uri, token).StartContext()
+        logger.Info(sprintf "已连接:[%i:%s]" ctx.Self.UserId ctx.Self.Nickname)
+        CqWsContextPool.Instance.AddContext(ctx)
     else
         printfn "需要定义endpoint和token"
+
+    if not <| isNull (Type.GetType("Mono.Runtime")) then
+        UnixSignal.WaitAny
+            ([| new UnixSignal(Signum.SIGINT)
+                new UnixSignal(Signum.SIGTERM)
+                new UnixSignal(Signum.SIGQUIT)
+                new UnixSignal(Signum.SIGHUP) |])
+        |> ignore
+    else
         Console.ReadLine() |> ignore
+
+    logger.Info("TheBot已结束。正在关闭WS连接")
+    for ws in CqWsContextPool.Instance do 
+        if ws.CheckOnline() then
+            logger.Info(sprintf "向%s发送停止信号" ws.SelfId)
+            ws.Stop()
+        else    
+            logger.Error(sprintf "%s已经停止" ws.SelfId)
+    Console.ReadLine() |> ignore
     0 // return an integer exit code

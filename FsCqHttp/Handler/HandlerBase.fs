@@ -1,13 +1,21 @@
 ﻿namespace KPX.FsCqHttp.Handler
 
+open System.Reflection
+
 open KPX.FsCqHttp.DataType
 open KPX.FsCqHttp.Api
 
 [<AbstractClass>]
 type HandlerModuleBase(shared : bool) as x =
+    static let allModules = 
+        [| yield! Assembly.GetExecutingAssembly().GetTypes()
+           yield! Assembly.GetEntryAssembly().GetTypes() |]
+        |> Array.filter (fun t -> t.IsSubclassOf(typeof<HandlerModuleBase>) && (not <| t.IsAbstract))
 
     /// 声明类为共享模块
     new () = HandlerModuleBase(true)
+
+    static member AllDefinedModules = allModules
 
     /// 指示该模块是否可以被多个账户共享，与线程安全等相关
     ///
@@ -24,8 +32,8 @@ type HandlerModuleBase(shared : bool) as x =
     default x.HandleRequest(_, _) = ()
     default x.HandleNotice(_, _) = ()
 
-    abstract HandleCqHttpEvent : obj -> ClientEventArgs -> unit
-    default x.HandleCqHttpEvent _ args =
+    abstract HandleCqHttpEvent : ClientEventArgs -> unit
+    default x.HandleCqHttpEvent(args)=
         try
             match args.Event with
             | Event.EventUnion.Message y -> x.HandleMessage(args, y)

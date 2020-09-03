@@ -2,9 +2,13 @@
 module KPX.FsCqHttp.Config
 
 [<RequireQualifiedAccess>]
+module Debug = 
+    let mutable Enable = false
+
+[<RequireQualifiedAccess>]
 module Logging = 
     /// 是否记录事件上报
-    let mutable LogEventPost = false
+    let mutable LogEventPost = true
     /// 是否记录API调用
     let mutable LogApiCall = true
     /// 是否记录指令事件
