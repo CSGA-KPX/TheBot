@@ -3,7 +3,6 @@
 open System.Reflection
 
 open KPX.FsCqHttp.DataType
-open KPX.FsCqHttp.Api
 
 [<AbstractClass>]
 type HandlerModuleBase(shared : bool) as x =
@@ -43,4 +42,5 @@ type HandlerModuleBase(shared : bool) as x =
         with
         | e -> 
             if not (e.InnerException :? KPX.FsCqHttp.Handler.RuntimeHelpers.IgnoreException) then
-                x.Logger.Fatal(sprintf "HandlerModuleBase捕获异常:%O" e)
+                args.QuickMessageReply(sprintf "发生错误：%s" e.InnerException.Message)
+                x.Logger.Fatal(sprintf "HandlerModuleBase捕获异常:%O" e.InnerException)
