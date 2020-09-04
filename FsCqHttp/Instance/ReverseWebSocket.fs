@@ -1,39 +1,38 @@
 ﻿namespace KPX.FsCqHttp.Instance
 
 open System
-open System.Collections.Generic
 open System.Threading
 open System.Net
-open System.Net.WebSockets
-open KPX.FsCqHttp.DataType
-open KPX.FsCqHttp.Api
 open KPX.FsCqHttp.Handler
-open Newtonsoft.Json.Linq
-
 
 /// Reverse Websocket服务端
+/// 
+/// Start()后接受连接并提交给CqWsContextPool，
+/// 尚未完成鉴权
 type CqWebSocketServer(uriPrefix, token) = 
     let logger = NLog.LogManager.GetCurrentClassLogger()
 
     let listener = new HttpListener()
-    let clients  = Collections.Concurrent.ConcurrentDictionary<uint64, (uint64 * WebSocket)>()
 
-    let ctsMsgLoop = new CancellationTokenSource()
-    let ctsListener = new CancellationTokenSource()
+    let mutable ctsListener = new CancellationTokenSource()
+    let mutable isRunning = false
+    do
+        listener.Prefixes.Add(uriPrefix)
 
     member x.Start() =
+        if isRunning then invalidOp "正在运行"
+        ctsListener <- new CancellationTokenSource()
         logger.Info("Starting Reverse Websocket server.")
-        ()
+        listener.Start()
+        x.StartListenConnection()
+        isRunning <- true
 
     member x.Stop() = 
         logger.Info("Stopping Reverse Websocket server.")
-        
-        //暂停连接
+        ctsListener.Cancel()
+        listener.Stop()
+        isRunning <- false
 
-        //关闭所有现有WS
-
-
-        ()
 
     member private x.StartListenConnection() = 
         async {
@@ -45,7 +44,7 @@ type CqWebSocketServer(uriPrefix, token) =
                 ctx.Response.Close()
             else
                 try
-                    let! wsCtx = ctx.AcceptWebSocketAsync("") |> Async.AwaitTask
+                    let! wsCtx = ctx.AcceptWebSocketAsync(null) |> Async.AwaitTask
 
                     let auth = wsCtx.Headers.["Authorization"]
                     if not (auth.Contains(token)) then failwith ""
@@ -53,33 +52,23 @@ type CqWebSocketServer(uriPrefix, token) =
                     let role = wsCtx.Headers.["X-Client-Role"]
                     if not (role.Contains("Universal")) then failwith ""
 
-                    let self = wsCtx.Headers.["X-Self-ID"] |> uint64
-                    clients.TryAdd(self, (self, wsCtx.WebSocket)) |> ignore
+                    let context = new CqWsContext(wsCtx.WebSocket)
+                    
+                    for m in HandlerModuleBase.AllDefinedModules do 
+                        context.RegisterModule(m)
+                    
+                    context.Start()
 
-                    logger.Info(sprintf "[UID: %i] 已连接" self)
-                    x.StartMessageLoop(self, wsCtx.WebSocket)
+                    logger.Info(sprintf "%s 已连接，反向WebSocket" context.SelfId)
+
+                    CqWsContextPool.Instance.AddContext(context)
 
                 with
                 | e ->
+                    logger.Fatal(sprintf "反向WS连接错误：%O" e)
                     ctx.Response.StatusCode <- 500
                     ctx.Response.Close()
-        } |> Async.Start
 
-    member private x.StartMessageLoop(uid, ws) = 
-        async {
-            use ms = new IO.MemoryStream()
-            let buf = WebSocket.CreateServerBuffer(4096)
-
-            logger.Info(sprintf "[UID: %i] 已启动消息循环" uid)
-            try
-                while (ws.State = WebSocketState.Open) && (not ctsMsgLoop.Token.IsCancellationRequested) do
-                    let recv = ws.ReceiveAsync(buf, ctsMsgLoop.Token) 
-                                |> Async.AwaitTask
-                                |> Async.RunSynchronously
-
-                    ()
-            with
-            | e -> ()
         } |> Async.Start
 
     interface IDisposable with

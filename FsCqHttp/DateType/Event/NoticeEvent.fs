@@ -78,13 +78,33 @@ type FriendAddEvent =
     { [<JsonProperty("user_id")>]
       UserId : uint64 }
 
+/// 群消息撤回事件
+type GroupRecallEvent = 
+    {   [<JsonProperty("group_id")>]
+        GroupId : uint64
+        [<JsonProperty("user_id")>]
+        UserId : uint64
+        [<JsonProperty("operator_id")>]
+        OperatorId : uint64
+        [<JsonProperty("message_id")>]
+        MessageId : uint64 }
+
+/// 好友消息撤回事件
+type FriendRecallEvent = 
+    {   [<JsonProperty("user_id")>]
+        UserId : uint64
+        [<JsonProperty("message_id")>]
+        MessageId : uint64 }
+        
 [<JsonConverter(typeof<NoticeEventConverter>)>]
 type NoticeEvent =
     | GroupUpload of GroupUploadEvent
     | GroupAdmin of GroupAdminEvent
     | GroupDecrease of GroupDecreaseEvent
     | GroupIncrease of GroupIncreaseEvent
+    | GroupRecall of GroupRecallEvent
     | FriendAdd of FriendAddEvent
+    | FriendRecall of FriendRecallEvent
 
 and NoticeEventConverter() =
     inherit JsonConverter<NoticeEvent>()
@@ -101,7 +121,9 @@ and NoticeEventConverter() =
         | "group_admin" -> GroupAdmin(obj.ToObject<GroupAdminEvent>())
         | "group_decrease" -> GroupDecrease(obj.ToObject<GroupDecreaseEvent>())
         | "group_increase" -> GroupIncrease(obj.ToObject<GroupIncreaseEvent>())
+        | "group_recall" -> GroupRecall(obj.ToObject<GroupRecallEvent>())
         | "friend_add" -> FriendAdd(obj.ToObject<FriendAddEvent>())
+        | "friend_recall" -> FriendRecall(obj.ToObject<FriendRecallEvent>())
         | other ->
             NLog.LogManager.GetCurrentClassLogger().Fatal("未知通知类型：{0}", other)
             raise<NoticeEvent> <| ArgumentOutOfRangeException()

@@ -33,6 +33,7 @@ type CqWsContext(ws : WebSocket) =
         else
             "[--:--]"
 
+    /// 注册模块
     member x.RegisterModule(t : Type) = 
         if moduleCache.ContainsKey(t) then
             moduleCache.[t]
@@ -48,7 +49,7 @@ type CqWsContext(ws : WebSocket) =
             m
         |> modules.Add
 
-
+    /// 使用API检查是否在线
     member x.CheckOnline() = 
         if ws.State <> WebSocketState.Open then
             false
@@ -59,6 +60,7 @@ type CqWsContext(ws : WebSocket) =
             with
             | _ -> false
 
+    /// 启用消息循环
     member x.Start() = 
         if cts.IsCancellationRequested then
             logger.Fatal("无法启动消息循环：已调用Stop或Ws异常终止")
