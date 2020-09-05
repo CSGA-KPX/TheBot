@@ -10,13 +10,16 @@ open KPX.FsCqHttp.DataType.Response
 open KPX.FsCqHttp.DataType.Event
 open KPX.FsCqHttp.Handler.CommandHandlerBase
 
+open TheBot.Utils.Config
 open TheBot.Utils.TextTable
 open TheBot.Utils.HandlerUtils
+open TheBot.Utils.UserOption
 
 type SudoModule() =
     inherit CommandHandlerBase()
     
-    let mutable allow = false
+    let allowList = Collections.Generic.HashSet<string>()
+
     let mutable isSuUsed = false
 
     [<CommandHandlerMethodAttribute("#selftest", "(管理) 返回系统信息", "", IsHidden = true)>]
@@ -31,15 +34,37 @@ type SudoModule() =
 
     [<CommandHandlerMethodAttribute("#allow", "(管理) 允许好友、加群请求", "", IsHidden = true)>]
     member x.HandleAllow(msgArg : CommandArgs) =
-        failOnNonAdmin(msgArg)
-        msgArg.QuickMessageReply("已允许加群")
-        allow <- true
+        let currentModeKey = sprintf "IsAutoAllow:%i" msgArg.SelfId
+        let isAutoAllow = ConfigManager.SystemConfig.Get(currentModeKey, false)
 
-    [<CommandHandlerMethodAttribute("#disallow", "(管理) 禁止好友、加群请求", "", IsHidden = true)>]
-    member x.HandleDisallow(msgArg : CommandArgs) =
-        failOnNonAdmin(msgArg)
-        msgArg.QuickMessageReply("已关闭加群")
-        allow <- false
+        let cfg = UserOptionParser()
+        cfg.RegisterOption("group", "")
+        cfg.RegisterOption("qq", "")
+        cfg.RegisterOption("autoallow", "")
+        cfg.Parse(msgArg.Arguments)
+
+        if cfg.IsDefined("autoallow") then
+            if not <| isSenderOwner(msgArg) then failwithf "权限不足"
+            let auto = cfg.GetValue<bool>("autoallow")
+            ConfigManager.SystemConfig.Put(currentModeKey, auto)
+            msgArg.QuickMessageReply(sprintf "自动接受模式设置为:%A" auto)
+        elif cfg.IsDefined("group") then
+            failOnNonAdmin(msgArg)
+            let key = sprintf "group:%i" (cfg.GetValue<uint64>("group"))
+            allowList.Add(key) |> ignore
+            msgArg.QuickMessageReply(sprintf "接受来自[%s]的邀请" key)
+        elif cfg.IsDefined("qq") then
+            failOnNonAdmin(msgArg)
+            let key = sprintf "qq:%i" (cfg.GetValue<uint64>("friend"))
+            allowList.Add(key) |> ignore
+            msgArg.QuickMessageReply(sprintf "接受来自[%s]的邀请" key)
+        else
+            let sb = Text.StringBuilder()
+            Printf.bprintf sb "当前机器人自动接受模式为：%A\r\n" isAutoAllow
+            Printf.bprintf sb "设置群白名单： group:群号\r\n"
+            Printf.bprintf sb "设置好友： qq:群号\r\n"
+            Printf.bprintf sb "设置自动接受： autoallow:true/false （需要超管）"
+            msgArg.QuickMessageReply(sb.ToString())
 
     [<CommandHandlerMethodAttribute("#rebuilddatacache", "(管理) 重建数据缓存", "", IsHidden = true)>]
     member x.HandleRebuildXivDb(msgArg : CommandArgs) =
@@ -93,6 +118,13 @@ type SudoModule() =
         msgArg.QuickMessageReply(tt.ToString())
 
     override x.HandleRequest(args, e) =
+        let currentModeKey = sprintf "IsAutoAllow:%i" args.SelfId
+        let isAutoAllow = ConfigManager.SystemConfig.Get(currentModeKey, false)
+
         match e with
-        | Request.FriendRequest req -> args.SendResponse(FriendAddResponse(allow, ""))
-        | Request.GroupRequest req -> args.SendResponse(GroupAddResponse(allow, ""))
+        | Request.FriendRequest req ->
+            let key = sprintf "qq:%i" req.UserId
+            args.SendResponse(FriendAddResponse(allowList.Contains(key) || isAutoAllow, ""))
+        | Request.GroupRequest req ->
+            let key = sprintf "group:%i" req.GroupId
+            args.SendResponse(GroupAddResponse(allowList.Contains(key) || isAutoAllow, ""))

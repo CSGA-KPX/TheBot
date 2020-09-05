@@ -62,7 +62,7 @@ type Message(sec : RawMessageSection []) as x =
 
     member x.Add(img : Drawing.Bitmap) = 
         use ms  = new IO.MemoryStream()
-        img.Save(ms, Drawing.Imaging.ImageFormat.Gif)
+        img.Save(ms, Drawing.Imaging.ImageFormat.Jpeg)
         let b64 = Convert.ToBase64String(ms.ToArray(), Base64FormattingOptions.None)
         let segValue= [ "file", ("base64://" + b64) ]
         x.Add(RawMessageSection.Create(TYPE_IMAGE, segValue))
