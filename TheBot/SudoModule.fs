@@ -117,6 +117,12 @@ type SudoModule() =
             tt.AddObject(g)
         msgArg.QuickMessageReply(tt.ToString())
 
+    [<CommandHandlerMethodAttribute("#abortall", "（超管）断开所有WS连接", "", IsHidden = true)>]
+    member x.HandleShowAbortAll(msgArg : CommandArgs) = 
+        if not <| isSenderOwner(msgArg) then failwithf "权限不足"
+        for ctx in KPX.FsCqHttp.Instance.CqWsContextPool.Instance do 
+            ctx.Stop()
+
     override x.HandleRequest(args, e) =
         let currentModeKey = sprintf "IsAutoAllow:%i" args.SelfId
         let isAutoAllow = ConfigManager.SystemConfig.Get(currentModeKey, false)

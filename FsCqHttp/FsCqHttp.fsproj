@@ -25,7 +25,6 @@
     <Compile Include="Handler\CommandHandlerBase.fs" />
     <Compile Include="Handler\HelpModule.fs" />
     <Compile Include="Instance\CqWsContext.fs" />
-    <Compile Include="Instance\CqWsContextPool.fs" />
     <Compile Include="Instance\ActiveWebsocket.fs" />
     <Compile Include="Instance\ReverseWebSocket.fs" />
   </ItemGroup>

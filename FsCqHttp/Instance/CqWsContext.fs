@@ -23,6 +23,9 @@ type CqWsContext(ws : WebSocket) =
     let modules = List<HandlerModuleBase>()
     let self = SystemApi.GetLoginInfo()
 
+    /// 发生链接错误时重启服务器的函数
+    member val RestartContext : (unit -> CqWsContext) option = None with get, set
+
     /// 获取登录号信息
     member x.Self = self
 
@@ -125,7 +128,11 @@ type CqWsContext(ws : WebSocket) =
             with
             | e ->
                 cts.Cancel()
-                logger.Fatal(sprintf "%sWS读取捕获异常，已关闭链接：%A" x.SelfId e)
+                logger.Fatal(sprintf "%sWS读取捕获异常：%A" x.SelfId e)
+                CqWsContextPool.Instance.RemoveContext(x)
+                if x.RestartContext.IsSome then
+                    logger.Warn(sprintf "%s正在尝试重新连接" x.SelfId)
+                    CqWsContextPool.Instance.RemoveContext(x.RestartContext.Value())
         }
         |> Async.Start
 
@@ -159,3 +166,25 @@ type CqWsContext(ws : WebSocket) =
 
     interface IDisposable with
         member x.Dispose() = x.Stop()
+
+and CqWsContextPool private () = 
+    static let instance = CqWsContextPool()
+    let logger = NLog.LogManager.GetCurrentClassLogger()
+
+    let pool = ConcurrentDictionary<uint64, CqWsContext>()
+
+    member x.AddContext(context : CqWsContext) =
+        pool.TryAdd(context.Self.UserId, context) |> ignore
+        logger.Info(sprintf "已接受连接:%s" context.SelfId)
+
+    member x.RemoveContext(context : CqWsContext) =
+        pool.TryRemove(context.Self.UserId) |> ignore
+        logger.Info(sprintf "已移除连接:%s" context.SelfId)
+
+    interface Collections.IEnumerable with
+        member x.GetEnumerator() = pool.Values.GetEnumerator() :> Collections.IEnumerator
+
+    interface Collections.Generic.IEnumerable<CqWsContext> with
+        member x.GetEnumerator() = pool.Values.GetEnumerator()
+
+    static member Instance : CqWsContextPool = instance
