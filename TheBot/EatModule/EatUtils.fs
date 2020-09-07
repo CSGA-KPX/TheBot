@@ -54,23 +54,22 @@ let ng = readChoice("别吃") |> Array.distinct
 
 let whenToEat (dicer : Dicer, str : string) = 
     let types = [|"早餐"; "午餐"; "晚餐"; "加餐"|]
-    let sb = Text.StringBuilder()
-    for t in types do 
-        let str = sprintf "%s吃%s" t str
-        let d = dicer.GetRandom(100u, str)
-        let ret = 
-            match d with
-            | _ when d  =100 -> "黄连素备好"
-            | _ when d >= 96 -> "上秤看看"
-            | _ when d >= 76 -> "算了吧"
-            | _ when d >= 51 -> "不推荐"
-            | _ when d >= 26 -> "也不是不行"
-            | _ when d >=  6 -> "还好"
-            | _ when d >=  1 -> "好主意"
-            | _ -> 
-                failwith "你说啥来着？"
-        sb.AppendLine(sprintf "%s : %s(%i)" str ret d) |> ignore
-    sb.ToString()
+    let ret = seq { for t in types do 
+                        let str = sprintf "%s吃%s" t str
+                        let d = dicer.GetRandom(100u, str)
+                        let ret = 
+                            match d with
+                            | _ when d  =100 -> "黄连素备好"
+                            | _ when d >= 96 -> "上秤看看"
+                            | _ when d >= 76 -> "算了吧"
+                            | _ when d >= 51 -> "不推荐"
+                            | _ when d >= 26 -> "也不是不行"
+                            | _ when d >=  6 -> "还好"
+                            | _ when d >=  1 -> "好主意"
+                            | _ -> 
+                                failwith "你说啥来着？"
+                        yield sprintf "%s : %s(%i)" str ret d }
+    String.Join("\r\n", ret)
 
 let private mealsFunc prefix array (dicer : Dicer) = 
     let luck = dicer.GetRandom(100u, "吃"+prefix)
@@ -98,6 +97,7 @@ let private mealsFunc prefix array (dicer : Dicer) =
 let private hotpotFunc (dicer : Dicer) = 
     let sw = Text.StringBuilder()
     sw.AppendLine(whenToEat(dicer, "火锅")) |> ignore
+    sw.AppendLine("") |> ignore
     let soup =
         hotpot_soup
         |> Array.map (fun x -> x, dicer.GetRandom(100u, "火锅吃"+x))
@@ -125,7 +125,7 @@ let private hotpotFunc (dicer : Dicer) =
     sw.AppendFormat("锅底：{0}\r\n", String.Join(" ", soup))
         .AppendFormat("蘸料：{0}\r\n", String.Join(" ", sauce))
         .AppendFormat("　宜：{0}\r\n", String.Join(" ", dish_good))
-        .AppendFormat("　忌：{0}\r\n", String.Join(" ", dish_bad))
+        .AppendFormat("　忌：{0}", String.Join(" ", dish_bad))
         .ToString()
 
 let private saizeriya = 
@@ -139,7 +139,8 @@ let private saizeriya =
 
 let private saizeriyaFunc (dicer : Dicer) = 
     let sw = new IO.StringWriter()
-    sw.WriteLine(whenToEat(dicer, "萨莉亚")) |> ignore
+    sw.WriteLine(whenToEat(dicer, "萨莉亚"))
+    sw.WriteLine()
     for (name, c) in saizeriya do
         let mapped = 
             c
@@ -149,7 +150,7 @@ let private saizeriyaFunc (dicer : Dicer) =
             |> Array.truncate 5
             |> Array.map (fun (i,c) -> sprintf "%s(%i)" i c )
         if mapped.Length <> 0 then
-            sw.WriteLine(sprintf "%s：%s" name (String.Join(" ", mapped)))
+            sw.Write(sprintf "%s：%s" name (String.Join(" ", mapped)))
     sw.ToString()
 
 let eatAlias = 

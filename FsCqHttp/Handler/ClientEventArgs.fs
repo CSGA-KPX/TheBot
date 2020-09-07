@@ -111,17 +111,21 @@ and TextResponse(arg : ClientEventArgs) =
 
         let pages = 
             [|
-                let page = StringBuilder()
+                let mutable pageSize = 0
+                let page = List<string>()
 
                 while buf.Count <> 0 do
-                    let peek = buf.Dequeue()
-                    if page.Length + peek.Length > sizeLimit then
-                        yield page.ToString()
-                        page.Clear() |> ignore
-                    page.AppendLine(peek) |> ignore
+                    let line = buf.Dequeue()
+                    page.Add(line)
+                    pageSize <- pageSize + line.Length
 
-                if page.Length <> 0 then
-                    yield page.ToString()
+                    if pageSize > sizeLimit then
+                        yield String.Join("\r\n", page)
+                        page.Clear()
+                        pageSize <- 0
+
+                if page.Count <> 0 then
+                    yield String.Join("\r\n", page)
             |]
         for page in pages do 
             arg.QuickMessageReply(page)

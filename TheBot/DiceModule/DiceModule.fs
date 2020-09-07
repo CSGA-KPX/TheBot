@@ -67,11 +67,11 @@ type DiceModule() =
     member x.HandleCalculator(msgArg : CommandArgs) =
         let sb = Text.StringBuilder()
         let parser = DiceExpression.DiceExpression()
-        for arg in msgArg.Arguments do
-            let ret = parser.TryEval(arg)
-            match ret with
-            | Error e -> sb.AppendLine(sprintf "对%s求值失败：%s" arg e.Message) |> ignore
-            | Ok i -> sb.AppendLine(sprintf "%s = %O" arg i) |> ignore
+        let arg = String.Join(" ", msgArg.Arguments)
+        let ret = parser.TryEval(arg)
+        match ret with
+        | Error e -> sb.Append(sprintf "对%s求值失败：%s" arg e.Message) |> ignore
+        | Ok i -> sb.Append(sprintf "%s = %O" arg i) |> ignore
         msgArg.QuickMessageReply(sb.ToString())
 
     [<CommandHandlerMethodAttribute("gacha", "抽10连 概率3%", "")>]
@@ -100,7 +100,7 @@ type DiceModule() =
         let reply = 
             Text.StringBuilder()
                 .AppendLine(sprintf "概率%i%% 抽数%i" cutoff count)
-                .AppendLine(String.Join(" ", ret))
+                .Append(String.Join(" ", ret))
                 .ToString()
 
         msgArg.QuickMessageReply(reply)

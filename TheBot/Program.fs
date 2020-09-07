@@ -13,7 +13,7 @@ let main argv =
     parser.RegisterOption("debug", "")
     parser.RegisterOption("endpoint", "")
     parser.RegisterOption("token", "")
-    parser.RegisterOption("reverse", "")
+    parser.RegisterOption("reverse", "5004")
     parser.Parse(argv)
 
     if parser.IsDefined("rebuilddb") then
@@ -25,7 +25,8 @@ let main argv =
         KPX.FsCqHttp.Config.Debug.Enable <- true
     
     if parser.IsDefined("reverse") && parser.IsDefined("token") then
-        let wss = new CqWebSocketServer("http://127.0.0.1:5010/", parser.GetValue("token"))
+        let endpoint = sprintf "http://localhost:%i/" (parser.GetValue<int>("reverse"))
+        let wss = new CqWebSocketServer(endpoint, parser.GetValue("token"))
         wss.Start()
     elif parser.IsDefined("endpoint") && parser.IsDefined("token") then
         let uri = Uri(parser.GetValue("endpoint"))

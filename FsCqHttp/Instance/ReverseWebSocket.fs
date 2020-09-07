@@ -22,13 +22,13 @@ type CqWebSocketServer(uriPrefix, token : string ) =
     member x.Start() =
         if isRunning then invalidOp "正在运行"
         ctsListener <- new CancellationTokenSource()
-        logger.Info("Starting Reverse Websocket server.")
+        logger.Info("Starting Reverse Websocket server on " + uriPrefix)
         listener.Start()
         x.StartListenConnection()
         isRunning <- true
 
     member x.Stop() = 
-        logger.Info("Stopping Reverse Websocket server.")
+        logger.Info("Stopping Reverse Websocket server of" + uriPrefix)
         ctsListener.Cancel()
         listener.Stop()
         isRunning <- false
@@ -41,23 +41,7 @@ type CqWebSocketServer(uriPrefix, token : string ) =
             // Async()期间可能会被取消
             if ctsListener.Token.IsCancellationRequested then failwithf "已取消操作"
 
-            let isWebSocketRequest = 
-                if isNull (Type.GetType("Mono.Runtime")) then
-                    ctx.Request.IsWebSocketRequest
-                else
-                    // Mono下IsWebSocketRequest始终返回false
-                    // 只能简略处理
-                    let hdrs = ctx.Request.Headers
-                    hdrs.["Connection"] <> null
-                    && hdrs.["Upgrade"] <> null
-                    && hdrs.["Sec-WebSocket-Key"] <> null
-                    && hdrs.["Sec-WebSocket-Version"] <> null
-                    && hdrs.["Authorization"] <> null
-                    && hdrs.["X-Client-Role"] <> null
-                    && hdrs.["X-Self-ID"] <> null
-                    && hdrs.["User-Agent"] <> null
-
-            if not isWebSocketRequest then
+            if not ctx.Request.IsWebSocketRequest then
                 ctx.Response.StatusCode <- 403
                 ctx.Response.Close()
             else
