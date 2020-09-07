@@ -9,7 +9,7 @@ open KPX.FsCqHttp.Handler
 /// 
 /// Start()后接受连接并提交给CqWsContextPool，
 /// 尚未完成鉴权
-type CqWebSocketServer(uriPrefix, token) = 
+type CqWebSocketServer(uriPrefix, token : string ) = 
     let logger = NLog.LogManager.GetCurrentClassLogger()
 
     let listener = new HttpListener()

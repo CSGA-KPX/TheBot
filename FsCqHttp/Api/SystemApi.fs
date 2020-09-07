@@ -33,7 +33,7 @@ type GetLoginInfo() =
 type GetStatus() =
     inherit ApiRequestBase("get_status")
 
-    let mutable data = [||] |> readOnlyDict
+    let mutable data = [||] |> readOnlyDict<string, string>
 
     member x.Online = data.["online"] |> System.Boolean.Parse
     member x.Good = data.["good"] |> System.Boolean.Parse

@@ -2,9 +2,6 @@ module TheBot.Program
 
 open System
 
-open Mono.Unix
-open Mono.Unix.Native
-
 open KPX.FsCqHttp.Instance
 
 let logger = NLog.LogManager.GetCurrentClassLogger()
@@ -40,15 +37,10 @@ let main argv =
     else
         printfn "需要定义endpoint&token或者reverse&token"
 
-    if not <| isNull (Type.GetType("Mono.Runtime")) then
-        UnixSignal.WaitAny
-            ([| new UnixSignal(Signum.SIGINT)
-                new UnixSignal(Signum.SIGTERM)
-                new UnixSignal(Signum.SIGQUIT)
-                new UnixSignal(Signum.SIGHUP) |])
-        |> ignore
-    else
-        Console.ReadLine() |> ignore
+    use mtx = new Threading.ManualResetEvent(false)
+    AppDomain.CurrentDomain.ProcessExit.Add(fun _ -> mtx.Set() |> ignore)
+
+    mtx.WaitOne() |> ignore
 
     logger.Info("TheBot已结束。正在关闭WS连接")
     for ws in CqWsContextPool.Instance do 
