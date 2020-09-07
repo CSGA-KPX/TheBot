@@ -74,6 +74,26 @@ type DiceModule() =
         | Ok i -> sb.Append(sprintf "%s = %O" arg i) |> ignore
         msgArg.QuickMessageReply(sb.ToString())
 
+    [<CommandHandlerMethodAttribute("选择题", "考试专用", "")>]
+    member x.HandleChoice(msgArg : CommandArgs) = 
+        let mutable count  = 10
+        for arg in msgArg.Arguments do 
+            let (succ, i) = UInt32.TryParse(arg)
+            if succ then
+                let i = int(i)
+                if i > 100 then failwithf "最多100道"
+                else count <- i
+        let dicer = Dicer(SeedOption.SeedRandom)
+        let choices = [|"A"; "B"; "C"; "D"|]
+        let chunks = 
+            dicer.GetRandomArray(choices.Length |> uint32, count)
+            |> Array.map (fun x -> choices.[x-1])
+            |> Array.chunkBySize 5 // 5个一组
+            |> Array.map (fun chk -> String.Join("", chk))
+            |> Array.chunkBySize 4 // 4组一行
+            |> Array.map (fun chk -> String.Join(" ", chk))
+        msgArg.QuickMessageReply(String.Join("\r\n", chunks))
+
     [<CommandHandlerMethodAttribute("gacha", "抽10连 概率3%", "")>]
     member x.HandleGacha(msgArg : CommandArgs) =
         let mutable cutoff = 3
@@ -104,3 +124,4 @@ type DiceModule() =
                 .ToString()
 
         msgArg.QuickMessageReply(reply)
+

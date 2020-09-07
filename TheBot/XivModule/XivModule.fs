@@ -148,7 +148,7 @@ type XivModule() =
 
         let s, a =
             let count = MentorUtils.shouldOrAvoid.Count() |> uint32
-            let idx = dicer.GetRandomArray(count + 1u, 3 * 2)
+            let idx = dicer.GetRandomArrayUnique(count + 1u, 3 * 2)
             let a = idx |> Array.map (fun id -> MentorUtils.shouldOrAvoid.GetByIndex(id).Value)
             a.[0..2], a.[3..]
         sw.WriteLine("宜：{0}", String.concat "/" s)

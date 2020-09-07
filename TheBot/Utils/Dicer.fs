@@ -76,8 +76,12 @@ type Dicer(initSeed : byte []) as x =
         refreshSeed()
         hashToDice (x.GetHash(), faceNum)
 
-    /// 获得一组随机数，不重复
+    /// 获得一组随机数
     member x.GetRandomArray(faceNum, count) =
+        Array.init count (fun _ -> x.GetRandom(faceNum))
+
+    /// 获得一组随机数，不重复
+    member x.GetRandomArrayUnique(faceNum, count) =
         let tmp = Collections.Generic.HashSet<int>()
         while tmp.Count <> count do
             tmp.Add(x.GetRandom(faceNum)) |> ignore
@@ -93,5 +97,5 @@ type Dicer(initSeed : byte []) as x =
     /// 从数组获得一组随机项，不重复
     member x.GetRandomItems(srcArr : 'T [], count) =
         [| let faceNum = srcArr.Length |> uint32
-           for i in x.GetRandomArray(faceNum, count) do
+           for i in x.GetRandomArrayUnique(faceNum, count) do
                yield srcArr.[i - 1] |]
