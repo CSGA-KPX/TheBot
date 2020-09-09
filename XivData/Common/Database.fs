@@ -98,16 +98,19 @@ type TableUpdateTime =
 type CachedTableCollection<'Key, 'Value>() = 
     inherit BotDataCollection<'Key, 'Value>()
 
+    let updateLock = obj()
+
     abstract IsExpired : bool
 
     /// 处理数据并添加到数据库，建议在事务内处理
     abstract InitializeCollection : unit -> unit
 
     member x.CheckUpdate() = 
-        if x.IsExpired then 
-            x.Clear()
-            x.InitializeCollection()
-            x.RegisterCollectionUpdate()
+        lock updateLock (fun () ->
+            if x.IsExpired then 
+                x.Clear()
+                x.InitializeCollection()
+                x.RegisterCollectionUpdate())
 
     member x.RegisterCollectionUpdate() = 
         BotDataInitializer.RegisterCollectionUpdate(x.GetType().Name)
