@@ -1,8 +1,9 @@
-﻿module KPX.FsCqHttp.Handler.HelpModule
+﻿module KPX.FsCqHttp.Utils.HelpModule
 
 open System
 open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Handler.CommandHandlerBase
+open KPX.FsCqHttp.Utils.TextTable
 
 [<Literal>]
 let private helpHelp = "不加选项用来查看所有命令，加命令名查看命令帮助
@@ -24,11 +25,13 @@ type HelpModule() =
     [<CommandHandlerMethodAttribute("help", "显示已知命令或显示命令文档", helpHelp)>]
     member x.HandleHelp(msgArg : CommandArgs) =
         if msgArg.Arguments.Length = 0 then
-            let sw = new IO.StringWriter()
+            let tt = TextTable.FromHeader([|"命令"; "说明"|])
             for (attrib, _) in attribs do
                 if not attrib.IsHidden then
-                    sw.WriteLine("{0}{1} {2}", KPX.FsCqHttp.Config.Command.CommandStart, attrib.Command, attrib.HelpDesc)
-            msgArg.QuickMessageReply(sw.ToString())
+                    let cmd = sprintf "%s%s" KPX.FsCqHttp.Config.Command.CommandStart attrib.Command
+                    let desc = attrib.HelpDesc
+                    tt.AddRow(cmd, desc)
+            using (msgArg.OpenResponse(true)) (fun ret -> ret.Write(tt))
         else
             for arg in msgArg.Arguments do
                 let str = KPX.FsCqHttp.Config.Command.CommandStart + arg.ToLowerInvariant()

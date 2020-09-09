@@ -4,10 +4,10 @@ open System
 open KPX.FsCqHttp.Api
 open KPX.FsCqHttp.DataType
 open KPX.FsCqHttp.Handler.CommandHandlerBase
+open KPX.FsCqHttp.Utils.TextTable
 
 open TheBot.Utils.GenericRPN
 open TheBot.Utils.Dicer
-open TheBot.Utils.TextTable
 
 module ChoiceHelper =
     open System.Text.RegularExpressions

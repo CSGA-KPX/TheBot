@@ -4,12 +4,12 @@ open System
 open System.Text
 
 open KPX.FsCqHttp.Handler.CommandHandlerBase
+open KPX.FsCqHttp.Utils.TextTable
 
 open BotData.XivData
 
 open TheBot.Module.XivModule.Utils
 open TheBot.Utils.Dicer
-open TheBot.Utils.TextTable
 
 type XivModule() =
     inherit CommandHandlerBase()

@@ -3,10 +3,10 @@
 open System
 
 open KPX.FsCqHttp.Handler.CommandHandlerBase
+open KPX.FsCqHttp.Utils.TextTable
 
 open BotData.XivData
 
-open TheBot.Utils.TextTable
 open TheBot.Utils.Config
 open TheBot.Utils.RecipeRPN
 

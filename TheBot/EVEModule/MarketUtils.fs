@@ -1,9 +1,10 @@
 ﻿module TheBot.Module.EveModule.Utils.MarketUtils
 
+open KPX.FsCqHttp.Utils.TextTable
+
 open BotData.EveData.Utils
 open BotData.EveData.EveType
 
-open TheBot.Utils.TextTable
 open TheBot.Module.EveModule.Utils.Helpers
 open TheBot.Module.EveModule.Utils.Extensions
 

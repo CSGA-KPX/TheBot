@@ -20,6 +20,7 @@ module Command =
 
 [<RequireQualifiedAccess>]
 module Output = 
+    open System.Text.RegularExpressions
     /// 文本回复下最长输出字符数
     let mutable TextLengthLimit = 3000
 
@@ -28,3 +29,9 @@ module Output =
     // 目前已知Sarasa Fixed CL字体输出比较稳定，其他不明
     let mutable ImageOutputFont = "Sarasa Fixed CL"
     let mutable ImageOutputSize = 12.0f
+
+    /// 调整字符显示宽度。如果IsMatch=true则认为是1栏宽
+    ///
+    /// 需要设置RegexOptions.Compiled
+    let mutable CharDisplayLengthAdj =
+        Regex(@"\p{IsBasicLatin}|\p{IsGeneralPunctuation}|±", RegexOptions.Compiled)

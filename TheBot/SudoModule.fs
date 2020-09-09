@@ -9,9 +9,9 @@ open KPX.FsCqHttp.Api
 open KPX.FsCqHttp.DataType.Response
 open KPX.FsCqHttp.DataType.Event
 open KPX.FsCqHttp.Handler.CommandHandlerBase
+open KPX.FsCqHttp.Utils.TextTable
 
 open TheBot.Utils.Config
-open TheBot.Utils.TextTable
 open TheBot.Utils.HandlerUtils
 open TheBot.Utils.UserOption
 

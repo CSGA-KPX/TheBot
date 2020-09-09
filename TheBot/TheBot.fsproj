@@ -8,7 +8,6 @@
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Utils\Dicer.fs" />
-    <Compile Include="Utils\TextTable.fs" />
     <Compile Include="Utils\Config.fs" />
     <Compile Include="Utils\GenericRPN.fs" />
     <Compile Include="Utils\EmbeddedResource.fs" />

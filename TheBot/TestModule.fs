@@ -5,8 +5,8 @@ open System.Text
 open System.Drawing
 
 open KPX.FsCqHttp.Handler.CommandHandlerBase
+open KPX.FsCqHttp.Utils.TextTable
 
-open TheBot.Utils.TextTable
 
 type TestModule() =
     inherit CommandHandlerBase()

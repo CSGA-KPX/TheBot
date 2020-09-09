@@ -2,15 +2,14 @@
 
 open System
 
-open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Handler.CommandHandlerBase
+open KPX.FsCqHttp.Utils.TextTable
 
 open BotData.EveData.Utils
 open BotData.EveData.EveType
 open BotData.EveData.EveBlueprint
 
 open TheBot.Utils.HandlerUtils
-open TheBot.Utils.TextTable
 open TheBot.Utils.RecipeRPN
 
 open TheBot.Module.EveModule.Utils.Helpers

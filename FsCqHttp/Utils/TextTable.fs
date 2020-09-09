@@ -1,20 +1,16 @@
-﻿module TheBot.Utils.TextTable
+﻿module KPX.FsCqHttp.Utils.TextTable
 
 open System
 open System.Collections.Generic
 open KPX.FsCqHttp.Handler
 
+[<Literal>]
 let private halfWidthSpace = ' '
 
-let private charLenRegex = 
-    Text.RegularExpressions.Regex(
-        @"\p{IsBasicLatin}|\p{IsGeneralPunctuation}|±", // ±被FF14 StdEv类的ToString()使用
-        Text.RegularExpressions.RegexOptions.Compiled )
+let inline private charLen (c) =
+    if KPX.FsCqHttp.Config.Output.CharDisplayLengthAdj.IsMatch(c.ToString()) then 1 else 2
 
-let private charLen (c) =
-    if charLenRegex.IsMatch(c.ToString()) then 1 else 2
-
-let private strDispLen (str : string) =
+let inline private strDispLen (str : string) =
     str.ToCharArray()
     |> Array.sumBy charLen
 
