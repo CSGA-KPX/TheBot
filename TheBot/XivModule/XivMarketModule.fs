@@ -44,7 +44,7 @@ type XivMarketModule() =
             let cm = ConfigManager(ConfigOwner.User (msgArg.MessageEvent.UserId))
             let world = cfg.GetWorld()
             cm.Put(CommandUtils.defaultServerKey, world)
-            msgArg.QuickMessageReply(sprintf "%s的默认服务器设置为%s" msgArg.MessageEvent.GetNicknameOrCard world.WorldName)
+            msgArg.QuickMessageReply(sprintf "%s的默认服务器设置为%s" msgArg.MessageEvent.DisplayName world.WorldName)
         else
             msgArg.QuickMessageReply("没有指定服务器或服务器名称不正确")
 

@@ -143,7 +143,7 @@ type XivModule() =
             | _ -> MentorUtils.fortune.[4]
 
         let event = dicer.GetRandomItem(events)
-        sw.WriteLine("{0} 今日导随运势为：", msgArg.MessageEvent.GetNicknameOrCard)
+        sw.WriteLine("{0} 今日导随运势为：", msgArg.MessageEvent.DisplayName)
         sw.WriteLine("{0} : {1}", fortune, event)
 
         let s, a =

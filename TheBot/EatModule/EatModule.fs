@@ -37,7 +37,7 @@ type EatModule() =
         | Some (Message.AtUserType.User uid) ->
             let atUserName = GroupApi.GetGroupMemberInfo(msgArg.MessageEvent.GroupId, uid)
             msgArg.ApiCaller.CallApi(atUserName)
-            ret.WriteLine("{0} 为 {1} 投掷：", msgArg.MessageEvent.GetNicknameOrCard, atUserName.DisplayName)
+            ret.WriteLine("{0} 为 {1} 投掷：", msgArg.MessageEvent.DisplayName, atUserName.DisplayName)
         | None -> ()
 
         let seed  = if at.IsSome then 

@@ -4,6 +4,7 @@ open System
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 
+/// 群文件信息
 type GroupFile =
     { [<JsonProperty("id")>]
       Id : string

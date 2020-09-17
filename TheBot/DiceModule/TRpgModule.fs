@@ -40,7 +40,7 @@ type TRpgModule() =
             tt.AddRow(name, d)
         tt.AddRow("总计", sum)
 
-        tt.AddPreTable(sprintf "%s的人物作成:" msgArg.MessageEvent.GetNicknameOrCard)
+        tt.AddPreTable(sprintf "%s的人物作成:" msgArg.MessageEvent.DisplayName)
 
         let jobs = TheBot.Utils.EmbeddedResource
                     .GetResourceManager("TRpg")

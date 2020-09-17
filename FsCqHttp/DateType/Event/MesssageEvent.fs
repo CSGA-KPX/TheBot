@@ -100,8 +100,12 @@ type MessageEvent =
 
     member x.IsDiscuss = x.MessageType = "discuss"
 
-    /// 获取用户名称，如果是群消息则获取群名片
-    member x.GetNicknameOrCard =
+    /// 获取显示的名称
+    ///
+    /// 私聊和讨论组获取昵称。
+    ///
+    /// 群聊获取群名片，如果群名片为空使用昵称。
+    member x.DisplayName =
         match x with
         | x when x.IsPrivate -> x.Sender.NickName
         | x when x.IsDiscuss -> x.Sender.NickName

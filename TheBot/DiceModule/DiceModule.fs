@@ -30,7 +30,7 @@ type DiceModule() =
             | Message.AtUserType.User x ->
                 let atUserName = GroupApi.GetGroupMemberInfo(msgArg.MessageEvent.GroupId, x)
                 msgArg.ApiCaller.CallApi(atUserName)
-                sw.WriteLine("{0} 为 {1} 投掷：", msgArg.MessageEvent.GetNicknameOrCard, atUserName.DisplayName)
+                sw.WriteLine("{0} 为 {1} 投掷：", msgArg.MessageEvent.DisplayName, atUserName.DisplayName)
 
         let tt = TextTable.FromHeader([| "1D100"; "选项" |])
 
@@ -61,7 +61,7 @@ type DiceModule() =
     member x.HandleJrrp(msgArg : CommandArgs) =
         let dicer = Dicer(SeedOption.SeedByUserDay(msgArg.MessageEvent))
         let jrrp = dicer.GetRandom(100u)
-        msgArg.QuickMessageReply(sprintf "%s今日人品值是：%i" msgArg.MessageEvent.GetNicknameOrCard jrrp)
+        msgArg.QuickMessageReply(sprintf "%s今日人品值是：%i" msgArg.MessageEvent.DisplayName jrrp)
 
     [<CommandHandlerMethodAttribute("cal", "计算器", "")>]
     member x.HandleCalculator(msgArg : CommandArgs) =

@@ -35,9 +35,9 @@ type HandlerModuleBase(shared : bool) as x =
     default x.HandleCqHttpEvent(args)=
         try
             match args.Event with
-            | Event.EventUnion.Message y -> x.HandleMessage(args, y)
-            | Event.EventUnion.Request y -> x.HandleRequest(args, y)
-            | Event.EventUnion.Notice y -> x.HandleNotice(args, y)
+            | Event.CqHttpEvent.Message y -> x.HandleMessage(args, y)
+            | Event.CqHttpEvent.Request y -> x.HandleRequest(args, y)
+            | Event.CqHttpEvent.Notice y -> x.HandleNotice(args, y)
             | _ -> ()
         with
         | e -> 
