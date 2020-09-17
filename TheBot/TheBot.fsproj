@@ -64,6 +64,9 @@
     <EmbeddedResource Update="Resources\Eat.resx">
       <Generator>ResXFileCodeGenerator</Generator>
     </EmbeddedResource>
+    <EmbeddedResource Update="Resources\TRpg.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
   </ItemGroup>
 
   <ItemGroup>

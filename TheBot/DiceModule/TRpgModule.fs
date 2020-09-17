@@ -41,4 +41,12 @@ type TRpgModule() =
         tt.AddRow("总计", sum)
 
         tt.AddPreTable(sprintf "%s的人物作成:" msgArg.MessageEvent.GetNicknameOrCard)
+
+        let jobs = TheBot.Utils.EmbeddedResource
+                    .GetResourceManager("TRpg")
+                    .GetString("职业")
+                    .Split("\r\n")
+        let job = dicer.GetRandomItem(jobs)
+        tt.AddPostTable(sprintf "今日推荐职业：%s" job)
+
         using (msgArg.OpenResponse()) (fun ret -> ret.Write(tt))
