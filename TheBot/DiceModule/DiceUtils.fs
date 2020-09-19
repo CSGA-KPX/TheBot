@@ -15,60 +15,7 @@ module ChoiceHelper =
 
     let YesOrNoRegex = Regex("(.*)(.+)([没不]\2)(.*)", RegexOptions.Compiled)
 
-    type MessageParser() = 
-        
-        static let dateTable = 
-            [|
-                "大后天", TimeSpan.FromDays(3.0)
-                "大前天", TimeSpan.FromDays(-2.0)
-                "明天", TimeSpan.FromDays(1.0)
-                "后天", TimeSpan.FromDays(2.0)
-                "昨天", TimeSpan.FromDays(-1.0)
-                "前天", TimeSpan.FromDays(-1.0)
-                "", TimeSpan.Zero
-            |]
-
-        member val AllowAtUser = true with get, set
-
-        member x.Parse(arg : CommandArgs) =
-            let atUser = 
-                arg.MessageEvent.Message.GetAts()
-                |> Array.tryHead
-                |> Option.filter (fun _ -> x.AllowAtUser)
-
-            [
-                for arg in arg.Arguments do 
-                    let seed = List<SeedOption>()
-                    let choices = List<string>()
-
-                    if atUser.IsSome then 
-                        let at = atUser.Value
-                        if at = Message.AtUserType.All then invalidOp "at全体无效"
-                        seed.Add(SeedOption.SeedCustom(atUser.Value.ToString()))
-
-                    //拆分条目
-                    let m = YesOrNoRegex.Match(arg)
-                    if m.Success then
-                        choices.Add(m.Groups.[1].Value + m.Groups.[2].Value + m.Groups.[4].Value)
-                        choices.Add(m.Groups.[1].Value + m.Groups.[3].Value + m.Groups.[4].Value)
-                    else
-                        choices.Add(arg)
-
-
-                    //处理选项
-                    for c in choices do 
-                        let seed = 
-                            [|
-                                yield! seed
-                                let (_, ts) = dateTable |> Array.find (fun x -> c.Contains(fst x))
-                                yield SeedOption.SeedCustom((GetCstTime() + ts).ToString("yyyyMMdd"))
-                            |]
-                        yield seed, c
-            ]
-
 module DiceExpression =
-    open System.Globalization
-
     type DicerOperand(i : float) =
         member x.Value = i
 

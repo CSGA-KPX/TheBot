@@ -1,12 +1,14 @@
 ﻿namespace TheBot.Module.EveModule.Utils.Config
 
+open KPX.FsCqHttp.Utils.UserOption
+
 open BotData.EveData.Utils
 open BotData.EveData.EveBlueprint
 
 open TheBot.Module.EveModule.Utils.Data
 
 type EveConfigParser() as x = 
-    inherit TheBot.Utils.UserOption.UserOptionParser()
+    inherit UserOptionParser()
 
     do
         x.RegisterOption("ime", "10")

@@ -10,10 +10,10 @@ open KPX.FsCqHttp.DataType.Response
 open KPX.FsCqHttp.DataType.Event
 open KPX.FsCqHttp.Handler.CommandHandlerBase
 open KPX.FsCqHttp.Utils.TextTable
+open KPX.FsCqHttp.Utils.UserOption
 
 open TheBot.Utils.Config
 open TheBot.Utils.HandlerUtils
-open TheBot.Utils.UserOption
 
 type SudoModule() =
     inherit CommandHandlerBase()

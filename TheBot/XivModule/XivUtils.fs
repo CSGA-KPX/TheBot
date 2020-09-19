@@ -183,11 +183,12 @@ module MentorUtils =
 
 module CommandUtils =
     open TheBot.Utils.Config
+    open KPX.FsCqHttp.Utils.UserOption
 
     let defaultServerKey = "defaultServerKey"
 
     type XivConfig (args : KPX.FsCqHttp.Handler.CommandHandlerBase.CommandArgs) = 
-        let opts =  TheBot.Utils.UserOption.UserOptionParser()
+        let opts = UserOptionParser()
         let cm = ConfigManager(ConfigOwner.User (args.MessageEvent.UserId))
 
         let defaultServerName = "拉诺西亚"

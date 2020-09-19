@@ -13,7 +13,6 @@
     <Compile Include="Utils\EmbeddedResource.fs" />
     <Compile Include="Utils\HandlerUtils.fs" />
     <Compile Include="Utils\RecipeRPN.fs" />
-    <Compile Include="Utils\UserOption.fs" />
     <Compile Include="EatModule\EatUtils.fs" />
     <Compile Include="EatModule\EatModule.fs" />
     <Compile Include="DiceModule\DiceUtils.fs" />

@@ -5,6 +5,7 @@ open System.Text
 
 open KPX.FsCqHttp.Handler.CommandHandlerBase
 open KPX.FsCqHttp.Utils.TextTable
+open KPX.FsCqHttp.Utils.UserOption
 
 open BotData.XivData
 
@@ -204,7 +205,7 @@ type XivModule() =
 
     [<CommandHandlerMethodAttribute("海钓", "FF14海钓攻略", "next:查阅n个CD后的信息，list:查阅n个时间窗的信息")>]
     member x.HandleOceanFishing(msgArg : CommandArgs) = 
-        let cfg = TheBot.Utils.UserOption.UserOptionParser()
+        let cfg = UserOptionParser()
         cfg.RegisterOption("next", "0")
         cfg.RegisterOption("list", "12")
         cfg.Parse(msgArg.Arguments)

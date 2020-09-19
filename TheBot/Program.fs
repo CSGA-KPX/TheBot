@@ -3,12 +3,13 @@ module TheBot.Program
 open System
 
 open KPX.FsCqHttp.Instance
+open KPX.FsCqHttp.Utils.UserOption
 
 let logger = NLog.LogManager.GetCurrentClassLogger()
 
 [<EntryPoint>]
 let main argv =
-    let parser = Utils.UserOption.UserOptionParser()
+    let parser = UserOptionParser()
     parser.RegisterOption("rebuilddb", "")
     parser.RegisterOption("debug", "")
     parser.RegisterOption("endpoint", "")
