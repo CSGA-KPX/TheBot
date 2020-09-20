@@ -29,7 +29,6 @@ type ItemCollection private () =
 
     override x.InitializeCollection() = 
         let db = x.DbCollection
-        printfn "Building ItemCollection"
         db.EnsureIndex("_id", true) |> ignore
         db.EnsureIndex("Name") |> ignore
 

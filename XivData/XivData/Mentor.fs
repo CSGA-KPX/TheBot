@@ -25,7 +25,6 @@ type ShouldOrAvoidCollection private () =
 
     override x.InitializeCollection() =
         let db = x.DbCollection
-        printfn "Building ShouldOrAvoidCollection"
         let col = BotDataInitializer.GetXivCollectionChs()
         let sht = col.GetSheet("ContentFinderCondition", [| "Name"; "MentorRoulette" |])
         seq {
@@ -34,7 +33,6 @@ type ShouldOrAvoidCollection private () =
                     yield { Id = 0
                             Value = row.As<string>("Name") }
             yield! "中途参战，红色划水，蓝色carry，绿色擦屁股，辱骂毒豆芽，辱骂假火，副职导随".Split('，') |> Array.map (StringRecord.FromString)
-            printfn "end"
         }
         |> db.InsertBulk
         |> ignore

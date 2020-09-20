@@ -211,7 +211,7 @@ and BotDataInitializer private () =
                 t.GetMethod("InitializeCollection").Invoke(o, null) |> ignore
                 GC.Collect()
             )
-        BotDataInitializer.ClearStaticData()
+        printfn "处理完成"
 
     /// 删除所有数据，不释放空间
     static member ClearCache() = 

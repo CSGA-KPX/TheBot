@@ -32,7 +32,6 @@ type GilShopCollection private () =
 
     override x.InitializeCollection() =
         let db = x.DbCollection
-        printfn "Building GilShopCollection"
         db.EnsureIndex("_id", true) |> ignore
         let col = BotDataInitializer.GetXivCollectionChs()
 

@@ -80,7 +80,7 @@ type XivMarketModule() =
         let hdrs = 
             [|
                 LeftAlignCell "名称", fun (ma : MarketUtils.MarketAnalyzer) -> box(ma.ItemRecord |> tryLookupNpcPrice)
-                RightAlignCell "平均", fun ma -> box(ma.StdEvPrice().Average)
+                RightAlignCell "平均", fun ma -> box(ma.StdEvPrice().Round().Average)
                 RightAlignCell "低", fun ma -> box(ma.MinPrice())
                 RightAlignCell "高", fun ma -> box(ma.MaxPrice())
                 RightAlignCell "更新时间", fun ma -> box(ma.LastUpdateTime())
@@ -94,8 +94,8 @@ type XivMarketModule() =
         let hdrs = 
             [|
                 LeftAlignCell "名称", fun (ma : MarketUtils.MarketAnalyzer) -> box(ma.ItemRecord |> tryLookupNpcPrice)
-                RightAlignCell "总体", fun ma -> box(ma.TakeVolume(25).StdEvPrice().Average)
-                RightAlignCell "HQ", fun ma -> box(ma.TakeHQ().TakeVolume(25).StdEvPrice().Average)
+                RightAlignCell "总体", fun ma -> box(ma.TakeVolume(25).StdEvPrice().Round().Average)
+                RightAlignCell "HQ", fun ma -> box(ma.TakeHQ().TakeVolume(25).StdEvPrice().Round().Average)
                 RightAlignCell "更新时间", fun ma -> box(ma.LastUpdateTime())
             |]
 
@@ -136,7 +136,7 @@ type XivMarketModule() =
             [|
                 LeftAlignCell "名称", fun (ma : MarketUtils.MarketAnalyzer) -> box(ma.ItemRecord  |> tryLookupNpcPrice)
                 LeftAlignCell "土豆", fun (ma : MarketUtils.MarketAnalyzer) -> box(ma.World.WorldName)
-                RightAlignCell "平均", fun ma -> box(ma.StdEvPrice().Average)
+                RightAlignCell "平均", fun ma -> box(ma.StdEvPrice().Round().Average)
                 RightAlignCell "低", fun ma -> box(ma.MinPrice())
                 RightAlignCell "高", fun ma -> box(ma.MaxPrice())
                 RightAlignCell "更新时间", fun ma -> box(ma.LastUpdateTime())
@@ -151,8 +151,8 @@ type XivMarketModule() =
             [|
                 LeftAlignCell "名称", fun (ma : MarketUtils.MarketAnalyzer) -> box(ma.ItemRecord |> tryLookupNpcPrice)
                 LeftAlignCell "土豆", fun ma -> box(ma.World.WorldName)
-                RightAlignCell "总体", fun ma -> box(ma.TakeVolume().StdEvPrice().Average)
-                RightAlignCell "HQ", fun ma -> box(ma.TakeHQ().TakeVolume().StdEvPrice().Average)
+                RightAlignCell "总体", fun ma -> box(ma.TakeVolume().StdEvPrice().Round().Average)
+                RightAlignCell "HQ", fun ma -> box(ma.TakeHQ().TakeVolume().StdEvPrice().Round().Average)
                 RightAlignCell "更新时间", fun ma -> box(ma.LastUpdateTime())
             |]
 
@@ -191,7 +191,7 @@ type XivMarketModule() =
                     yield RightAlignCell "价格", fun (item, amount) ->
                             updateCur(item)
                             if cur.Value.IsEmpty then box <| RightAlignCell "--"
-                            else box (cur.Value.StdEvPrice().Average)
+                            else box (cur.Value.StdEvPrice().Round().Average)
 
                 yield RightAlignCell "数量", snd >> box
 
@@ -199,7 +199,7 @@ type XivMarketModule() =
                     yield RightAlignCell "小计", fun (item, amount) ->
                             if cur.Value.IsEmpty then box <| RightAlignCell "--"
                             else
-                                let subtotal = cur.Value.StdEvPrice() * amount
+                                let subtotal = cur.Value.StdEvPrice().Round() * amount
                                 sum <- sum + subtotal
                                 box subtotal.Average
 
@@ -239,7 +239,7 @@ type XivMarketModule() =
                 let ret = MarketUtils.MarketAnalyzer.FetchOrdersWorld(kv.Key, world)
                 match ret with
                 | Error exn -> raise exn
-                | Ok m  -> (if m.IsEmpty then m else m.TakeVolume()).StdEvPrice() * kv.Value)
+                | Ok m  -> (if m.IsEmpty then m else m.TakeVolume()).StdEvPrice().Round() * kv.Value)
             att.AddRowPadding("卖出价格", totalSell.Average )
             att.AddRowPadding("税前利润", (totalSell - sum).Average )
 
@@ -277,7 +277,7 @@ type XivMarketModule() =
                                 if cur.Value.IsEmpty then
                                     box  <| RightAlignCell "--"
                                 else
-                                    box (cur.Value.TakeVolume().StdEvPrice().Average)
+                                    box (cur.Value.TakeVolume().StdEvPrice().Round().Average)
                     RightAlignCell "最低", fun _ ->
                                 if cur.Value.IsEmpty then
                                     box  <| RightAlignCell "--"
@@ -287,7 +287,7 @@ type XivMarketModule() =
                                 if cur.Value.IsEmpty then
                                     box  <| RightAlignCell "--"
                                 else
-                                    box (cur.Value.TakeVolume().StdEvPrice() * (float <|info.ReceiveCount) / (float <|info.CostCount)).Average
+                                    box (cur.Value.TakeVolume().StdEvPrice().Round() * (float <|info.ReceiveCount) / (float <|info.CostCount)).Average
                     RightAlignCell "更新", fun _ ->
                                 if cur.Value.IsEmpty then
                                     box  <| RightAlignCell "--"
@@ -334,7 +334,7 @@ type XivMarketModule() =
                     tt.AddRow(item.Name, "--", "--", "无记录")
                 else
                     let vol = orders.TakeVolume(25)
-                    let avg = vol.StdEvPrice().Average |> int
+                    let avg = vol.StdEvPrice().Round().Average |> int
                     let low = vol.MinPrice()
                     let upd = vol.LastUpdateTime()
                     tt.AddRow(item.Name, avg, low, upd)

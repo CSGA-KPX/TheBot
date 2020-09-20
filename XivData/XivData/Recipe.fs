@@ -43,7 +43,6 @@ type CraftRecipeProvider private () =
         let db = x.DbCollection
         db.EnsureIndex("_id", true) |> ignore
         db.EnsureIndex("ResultItem.Id") |> ignore
-        printfn "Building CraftRecipeProvider"
 
         let lookup id = ItemCollection.Instance.GetByKey(id)
 
@@ -90,7 +89,7 @@ type CompanyCraftRecipeProvider private () =
         let db = x.DbCollection
         db.EnsureIndex("_id", true) |> ignore
         db.EnsureIndex("ResultItem.Id") |> ignore
-        printfn "Building CompanyCraftRecipeProvider"
+
         let lookup id = ItemCollection.Instance.GetByKey(id)
 
         let chs = BotDataInitializer.GetXivCollectionChs().GetSheet("CompanyCraftSequence")

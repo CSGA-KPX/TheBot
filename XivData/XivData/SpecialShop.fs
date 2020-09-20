@@ -38,7 +38,7 @@ type SpecialShopCollection private () =
 
     override x.InitializeCollection() =
         let db = x.DbCollection
-        printfn "Building SpecialShopInfo"
+        
         db.EnsureIndex("_id", true) |> ignore
         db.EnsureIndex("ReceiveItem") |> ignore
         let col = BotDataInitializer.GetXivCollectionChs()

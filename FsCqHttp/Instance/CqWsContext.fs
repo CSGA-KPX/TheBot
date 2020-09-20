@@ -24,6 +24,8 @@ type CqWsContext(ws : WebSocket) =
     let self = SystemApi.GetLoginInfo()
 
     /// 发生链接错误时重启服务器的函数
+    ///
+    /// 值为None时，不再尝试重连
     member val RestartContext : (unit -> CqWsContext) option = None with get, set
 
     /// 获取登录号信息

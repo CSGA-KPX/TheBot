@@ -23,7 +23,6 @@ type ClassJobMappingCollection private () =
 
     override x.InitializeCollection() =
         let db = x.DbCollection
-        printfn "Building ClassJobMappingCollection"
         let col = BotDataInitializer.GetXivCollectionChs()
 
         let sht = col.GetSheet("ClassJob")

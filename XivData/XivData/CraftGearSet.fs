@@ -32,7 +32,6 @@ type CraftableGearCollection private () =
 
     override x.InitializeCollection() =
         let db = x.DbCollection
-        printfn "Building CraftableGearCollection"
         db.EnsureIndex("_id", true) |> ignore
         db.EnsureIndex("ItemLv", false) |> ignore
 

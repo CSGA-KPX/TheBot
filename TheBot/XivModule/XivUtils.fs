@@ -11,6 +11,19 @@ module MarketUtils =
     type StdEv =
         { Average : float
           Deviation : float }
+
+        member x.Ceil() = 
+            { Average = x.Average |> ceil
+              Deviation = x.Deviation |> ceil}
+
+        member x.Floor() =
+            { Average = x.Average |> floor
+              Deviation = x.Deviation |> floor}
+
+        member x.Round() =
+            { Average = x.Average |> round
+              Deviation = x.Deviation |> round}
+
         override x.ToString() = String.Format("{0:n0}±{1:n0}", x.Average, x.Deviation)
 
         static member (*) (x : StdEv, y : float) =
