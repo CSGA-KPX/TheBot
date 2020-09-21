@@ -6,6 +6,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="C:\Users\dmmik\.nuget\packages\nlog.config\4.6.7\contentFiles\any\any\NLog.config" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Utils\Dicer.fs" />
     <Compile Include="Utils\Config.fs" />
@@ -38,8 +42,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="Resources\NLog.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <EmbeddedResource Include="Resources\Funny.jpg" />
   </ItemGroup>
+
+  <ItemGroup />
 
   <ItemGroup>
     <PackageReference Include="Fable.Remoting.DotnetClient" Version="3.7.0" />
