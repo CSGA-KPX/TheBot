@@ -19,23 +19,8 @@ open TheBot.Utils.HandlerUtils
 type DebugModule() =
     inherit CommandHandlerBase()
 
-    static let targetName = "DebugModuleTarget"
-    static let nlogMemoryTarget = new NLog.Targets.MemoryTarget(targetName, MaxLogsCount = 10)
-    static let ruleName = "DebugModuleRule"
-    static let nlogMemoryRule = new NLog.Config.LoggingRule(ruleName)
-    static do 
-        let cfg = NLog.LogManager.Configuration
-        cfg.AddTarget(nlogMemoryTarget)
-        nlogMemoryRule.SetLoggingLevels(NLog.LogLevel.Warn, NLog.LogLevel.Fatal)
-        nlogMemoryRule.Targets.Add(nlogMemoryTarget)
-        cfg.LoggingRules.Add(nlogMemoryRule)
-
-    interface IDisposable with
-        member x.Dispose() =
-            let cfg = NLog.LogManager.Configuration
-            cfg.LoggingRules.Remove(nlogMemoryRule) |> ignore
-            cfg.RemoveTarget(targetName)
-            nlogMemoryTarget.Dispose()
+    //TODO: null检查
+    static let nlogMemoryTarget = NLog.LogManager.Configuration.FindTargetByName("memory") :?> NLog.Targets.MemoryTarget
 
     [<CommandHandlerMethodAttribute("#showconfig", "(超管) 返回配置信息", "", IsHidden = true)>]
     member x.HandleShowConfig(msgArg : CommandArgs) =
@@ -47,7 +32,7 @@ type DebugModule() =
             typeof<KPX.FsCqHttp.Config.ConfigPlaceholder>.Assembly.GetTypes()
             |> Array.filter (fun t -> t.FullName.StartsWith(prefix))
 
-        let tt = TextTable.FromHeader([| "名称"; "值"|])
+        let tt = TextTable.FromHeader([| "名称"; "值" |])
         
         for t in configTypes do 
             let ps = t.GetProperties(BindingFlags.Static ||| BindingFlags.Public)
@@ -70,6 +55,8 @@ type DebugModule() =
         cfg.RegisterOption("api", "false")
         cfg.RegisterOption("command", "false")
 
+        cfg.Parse(msgArg.Arguments)
+
         let e = cfg.GetValue<bool>("event")
         let api = cfg.GetValue<bool>("api")
         let command = cfg.GetValue<bool>("command")
@@ -89,5 +76,9 @@ type DebugModule() =
         failOnNonOwner(msgArg)
         use ret = msgArg.OpenResponse(true)
         
-        for log in nlogMemoryTarget.Logs |> Seq.toArray do 
+        let logs = nlogMemoryTarget.Logs |> Seq.toArray
+        
+        ret.WriteLine("当前日志有记录{0}条", logs.Length)
+
+        for log in logs do 
             ret.WriteLine(log)
