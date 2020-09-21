@@ -93,6 +93,8 @@ and TextTable(cols : int) =
     let preTableLines  = List<DelayedTableItem>()
     let postTableLines = List<DelayedTableItem>()
 
+    let cellPadding = box KPX.FsCqHttp.Config.Output.TextTable.CellPadding
+
     let col = Array.init cols (fun _ -> List<CellType>())
 
     static member FromHeader(header : Object []) =
@@ -115,7 +117,7 @@ and TextTable(cols : int) =
     member x.AddRowPadding([<ParamArray>] fields : Object []) = 
         if fields.Length > col.Length then
             raise <| ArgumentException(sprintf "列数不一致 需求:%i, 提供:%i" col.Length fields.Length)
-        let padding = Array.create (col.Length - fields.Length) (box "--")
+        let padding = Array.create (col.Length - fields.Length) (cellPadding)
         x.AddRow(Array.append fields padding)
 
     member x.AddRow([<ParamArray>] fields : Object []) =

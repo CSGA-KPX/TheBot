@@ -66,9 +66,9 @@ type SudoModule() =
             Printf.bprintf sb "设置自动接受： autoallow:true/false （需要超管）"
             msgArg.QuickMessageReply(sb.ToString())
 
-    [<CommandHandlerMethodAttribute("#rebuilddatacache", "(管理) 重建数据缓存", "", IsHidden = true)>]
+    [<CommandHandlerMethodAttribute("#rebuilddatacache", "(超管) 重建数据缓存", "", IsHidden = true)>]
     member x.HandleRebuildXivDb(msgArg : CommandArgs) =
-        failOnNonAdmin(msgArg)
+        failOnNonOwner(msgArg)
         BotData.Common.Database.BotDataInitializer.ClearCache()
         BotData.Common.Database.BotDataInitializer.ShrinkCache()
         msgArg.QuickMessageReply("清空数据库完成")
@@ -92,7 +92,7 @@ type SudoModule() =
 
     [<CommandHandlerMethodAttribute("#grant", "（超管）添加被@用户为管理员", "", IsHidden = true)>]
     member x.HandleGrant(msgArg : CommandArgs) = 
-        if not <| isSenderOwner(msgArg) then failwithf "权限不足"
+        failOnNonOwner(msgArg)
         let ats = msgArg.MessageEvent.Message.GetAts()
         let sb = Text.StringBuilder()
         for at in ats do
@@ -105,7 +105,7 @@ type SudoModule() =
 
     [<CommandHandlerMethodAttribute("#showgroups", "（超管）检查加群信息", "", IsHidden = true)>]
     member x.HandleShowGroups(msgArg : CommandArgs) = 
-        if not <| isSenderOwner(msgArg) then failwithf "权限不足"
+        failOnNonOwner(msgArg)
         let api = msgArg.ApiCaller.CallApi<SystemApi.GetGroupList>()
 
         let tt = AutoTextTable<SystemApi.GroupInfo>([|
@@ -119,7 +119,7 @@ type SudoModule() =
 
     [<CommandHandlerMethodAttribute("#abortall", "（超管）断开所有WS连接", "", IsHidden = true)>]
     member x.HandleShowAbortAll(msgArg : CommandArgs) = 
-        if not <| isSenderOwner(msgArg) then failwithf "权限不足"
+        failOnNonOwner(msgArg)
         for ctx in KPX.FsCqHttp.Instance.CqWsContextPool.Instance do 
             ctx.Stop()
 

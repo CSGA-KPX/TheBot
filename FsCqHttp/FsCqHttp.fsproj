@@ -29,6 +29,7 @@
     <Compile Include="Instance\CqWsContext.fs" />
     <Compile Include="Instance\ActiveWebsocket.fs" />
     <Compile Include="Instance\ReverseWebSocket.fs" />
+    <Compile Include="Instance\DummyReverseClient.fs" />
   </ItemGroup>
 
   <ItemGroup>

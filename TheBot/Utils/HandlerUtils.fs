@@ -30,7 +30,11 @@ let isSenderAdmin (msgArg : CommandArgs)  =
 /// 如果不是，则抛异常
 let failOnNonAdmin (msgArg : CommandArgs) = 
     if not <| isSenderAdmin(msgArg) then
-        failwith "朋友你不是狗管理"
+        failwith "需要管理员权限"
+
+let failOnNonOwner (msgArg : CommandArgs) = 
+    if not <| isSenderOwner(msgArg) then
+        failwithf "需要超管权限"
 
 /// 检查群消息发送者有没有管理权限（群主/群管理）
 /// 非群消息返回false

@@ -1,9 +1,8 @@
 ﻿[<RequireQualifiedAccess>]
 module KPX.FsCqHttp.Config
 
-[<RequireQualifiedAccess>]
-module Debug = 
-    let mutable Enable = false
+/// 用于指示配置所在命名空间
+type ConfigPlaceholder = class end
 
 [<RequireQualifiedAccess>]
 module Logging = 
@@ -21,6 +20,7 @@ module Command =
 [<RequireQualifiedAccess>]
 module Output = 
     open System.Text.RegularExpressions
+
     /// 文本回复下最长输出字符数
     let mutable TextLengthLimit = 3000
 
@@ -35,3 +35,7 @@ module Output =
     /// 需要设置RegexOptions.Compiled
     let mutable CharDisplayLengthAdj =
         Regex(@"\p{IsBasicLatin}|\p{IsGeneralPunctuation}|±", RegexOptions.Compiled)
+
+    [<RequireQualifiedAccess>]
+    module TextTable = 
+        let mutable CellPadding = "--"

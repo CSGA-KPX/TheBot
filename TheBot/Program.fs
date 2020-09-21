@@ -23,7 +23,7 @@ let main argv =
         BotData.Common.Database.BotDataInitializer.InitializeAllCollections()
         printfn "Rebuilt Completed"
     elif parser.IsDefined("debug") then
-        KPX.FsCqHttp.Config.Debug.Enable <- true
+        ()
     
     if parser.IsDefined("reverse") && parser.IsDefined("token") then
         let endpoint = sprintf "http://localhost:%i/" (parser.GetValue<int>("reverse"))
