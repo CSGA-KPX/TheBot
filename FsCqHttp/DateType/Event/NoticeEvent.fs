@@ -97,6 +97,27 @@ type FriendRecallEvent =
         [<JsonProperty("message_id")>]
         MessageId : uint64 }
         
+/// 群禁言事件
+type GroupBanEvent = 
+    {   [<JsonProperty("sub_type")>]
+        SubType : string
+        [<JsonProperty("group_id")>]
+        GroupId : uint64
+        [<JsonProperty("operator_id")>]
+        OperatorId : uint64
+        [<JsonProperty("user_id")>]
+        /// 被禁言 QQ 号
+        UserId : uint64
+        [<JsonProperty("duration")>]
+        /// 禁言时长，单位秒
+        Duration : uint64   }
+
+    /// 事件为禁言操作
+    member x.IsBan = x.SubType = "ban"
+
+    /// 事件为解除禁言操作
+    member x.IsLiftBan = x.SubType = "lift_ban"
+
 [<JsonConverter(typeof<NoticeEventConverter>)>]
 type NoticeEvent =
     | GroupUpload of GroupUploadEvent
@@ -104,6 +125,7 @@ type NoticeEvent =
     | GroupDecrease of GroupDecreaseEvent
     | GroupIncrease of GroupIncreaseEvent
     | GroupRecall of GroupRecallEvent
+    | GroupBan of GroupBanEvent
     | FriendAdd of FriendAddEvent
     | FriendRecall of FriendRecallEvent
 
@@ -123,6 +145,7 @@ and NoticeEventConverter() =
         | "group_decrease" -> GroupDecrease(obj.ToObject<GroupDecreaseEvent>())
         | "group_increase" -> GroupIncrease(obj.ToObject<GroupIncreaseEvent>())
         | "group_recall" -> GroupRecall(obj.ToObject<GroupRecallEvent>())
+        | "group_ban" -> GroupBan(obj.ToObject<GroupBanEvent>())
         | "friend_add" -> FriendAdd(obj.ToObject<FriendAddEvent>())
         | "friend_recall" -> FriendRecall(obj.ToObject<FriendRecallEvent>())
         | other ->
