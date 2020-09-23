@@ -46,14 +46,14 @@ type DebugModule() =
 
         using (msgArg.OpenResponse(true)) (fun ret -> ret.Write(tt))
 
-    [<CommandHandlerMethodAttribute("#setlogging", "(超管) 设置日志设置", "event, api, command", IsHidden = true)>]
+    [<CommandHandlerMethodAttribute("#setlog", "(超管) 设置日志设置", "event, api, command", IsHidden = true)>]
     member x.HandleSetLogging(msgArg : CommandArgs) = 
         failOnNonOwner(msgArg)
 
         let cfg = UserOptionParser()
-        cfg.RegisterOption("event", "false")
-        cfg.RegisterOption("api", "false")
-        cfg.RegisterOption("command", "false")
+        cfg.RegisterOption("event", Config.Logging.LogEventPost.ToString())
+        cfg.RegisterOption("api", Config.Logging.LogApiCall.ToString())
+        cfg.RegisterOption("command", Config.Logging.LogCommandCall.ToString())
 
         cfg.Parse(msgArg.Arguments)
 
@@ -71,7 +71,7 @@ type DebugModule() =
                     Config.Logging.LogCommandCall
         msgArg.QuickMessageReply(ret)
 
-    [<CommandHandlerMethodAttribute("#showlogging", "(超管) 显示日志", "", IsHidden = true)>]
+    [<CommandHandlerMethodAttribute("#showlog", "(超管) 显示日志", "", IsHidden = true)>]
     member x.HandleShowLogging(msgArg : CommandArgs) = 
         failOnNonOwner(msgArg)
         use ret = msgArg.OpenResponse(true)
