@@ -132,37 +132,7 @@ type XivModule() =
 
     [<CommandHandlerMethodAttribute("mentor", "今日导随运势", "")>]
     member x.HandleMentor(msgArg : CommandArgs) =
-        let sw = new IO.StringWriter()
-        let dicer = Dicer(SeedOption.SeedByUserDay(msgArg.MessageEvent))
-
-        let fortune, events =
-            match dicer.GetRandom(100u) with
-            | x when x <= 5 -> MentorUtils.fortune.[0]
-            | x when x <= 20 -> MentorUtils.fortune.[1]
-            | x when x <= 80 -> MentorUtils.fortune.[2]
-            | x when x <= 95 -> MentorUtils.fortune.[3]
-            | _ -> MentorUtils.fortune.[4]
-
-        let event = dicer.GetRandomItem(events)
-        sw.WriteLine("{0} 今日导随运势为：", msgArg.MessageEvent.DisplayName)
-        sw.WriteLine("{0} : {1}", fortune, event)
-
-        let s, a =
-            let count = MentorUtils.shouldOrAvoid.Count() |> uint32
-            let idx = dicer.GetRandomArrayUnique(count + 1u, 3 * 2)
-            let a = idx |> Array.map (fun id -> MentorUtils.shouldOrAvoid.GetByIndex(id).Value)
-            a.[0..2], a.[3..]
-        sw.WriteLine("宜：{0}", String.concat "/" s)
-        sw.WriteLine("忌：{0}", String.concat "/" a)
-        let c, jobs = dicer.GetRandomItem(MentorUtils.classJob)
-        let job = dicer.GetRandomItem(jobs)
-        sw.WriteLine("推荐职业: {0} {1}", c, job)
-        let location =
-            let count = MentorUtils.location.Count() |> uint32
-            let idx = dicer.GetRandom(count + 1u)
-            MentorUtils.location.GetByIndex(idx).Value
-        sw.WriteLine("推荐排本场所: {0}", location)
-        msgArg.QuickMessageReply(sw.ToString())
+        msgArg.QuickMessageReply("功能已删除。")
 
     [<CommandHandlerMethodAttribute("nuannuan", "暖暖", "")>]
     [<CommandHandlerMethodAttribute("nrnr", "暖暖", "")>]

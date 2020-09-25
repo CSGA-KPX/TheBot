@@ -175,25 +175,6 @@ module MarketUtils =
                 |> Array.groupBy (fun t -> World.WorldFromId.[t.WorldId])
                 |> Array.map (fun (x, y) -> MarketAnalyzer(item, x, y |> Array.map (Trade))))
 
-module MentorUtils =
-    open BotData.XivData.Mentor
-
-    let fortune =
-        [| "大吉", "行会令连送/三导师高铁四人本/假风火土白给".Split('/')
-           "小吉", "豆芽已看攻略/稳定7拖1".Split('/')
-           "平", "听话懂事初见/不急不缓四人本/超越之力25%".Split('/')
-           "小凶", "塔三团灭/遇假火/260T白山堡".Split('/')
-           "大凶", "嘴臭椰新/装会假火/极神小龙虾".Split('/') |]
-
-    let shouldOrAvoid = ShouldOrAvoidCollection.Instance
-
-    let classJob =
-        [| "红", "近战，远敏，复活机，法系".Split('，')
-           "绿", "崩石怪，小仙女，游戏王".Split('，')
-           "蓝", "裂石飞环，神圣领域，暗技人".Split('，') |]
-
-    let location = LocationCollection.Instance
-
 module CommandUtils =
     open TheBot.Utils.Config
     open KPX.FsCqHttp.Utils.UserOption

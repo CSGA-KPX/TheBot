@@ -13,7 +13,6 @@
     <Compile Include="XivData\Item.fs" />
     <Compile Include="XivData\Recipe.fs" />
     <Compile Include="XivData\World.fs" />
-    <Compile Include="XivData\Mentor.fs" />
     <Compile Include="XivData\SpecialShop.fs" />
     <Compile Include="XivData\GilShop.fs" />
     <Compile Include="XivData\ClassJobMapping.fs" />
