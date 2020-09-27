@@ -105,6 +105,8 @@ type CqWsContext(ws : WebSocket) =
                 let (mre, api) = item
                 api.HandleResponse(ret)
                 mre.Set() |> ignore
+            else
+                logger.Warn(sprintf "未注册echo:%s" ret.Echo)
 
     member private x.StartMessageLoop() = 
         async {
@@ -126,7 +128,9 @@ type CqWsContext(ws : WebSocket) =
                 while (not cts.IsCancellationRequested) do
                     ms.SetLength(0L)
                     let json = readMessage (ms)
-                    Tasks.Task.Run((fun () -> x.HandleMessage(json))) |> ignore
+                    Tasks.Task.Run((fun () -> x.HandleMessage(json)))
+                        .ContinueWith(fun t -> 
+                            if t.IsFaulted then logger.Fatal(sprintf "HandleMessage发生异常：\r\n %O" t.Exception)) |> ignore
             with
             | e ->
                 cts.Cancel()
@@ -146,16 +150,21 @@ type CqWsContext(ws : WebSocket) =
                 let mre = new ManualResetEvent(false)
                 let json = req.GetRequestJson(echo)
 
-                apiPending.TryAdd(echo, (mre, req)) |> ignore
+                let ret = apiPending.TryAdd(echo, (mre, req))
 
                 if KPX.FsCqHttp.Config.Logging.LogApiCall then 
+                    logger.Trace(sprintf "添加echo %s : %b" echo ret)
                     logger.Trace(sprintf "%s请求API：%s" x.SelfId json)
 
                 let data = json |> utf8.GetBytes
                 do! ws.SendAsync(ArraySegment<byte>(data), WebSocketMessageType.Text, true, cts.Token) |> Async.AwaitTask
-                let! ret = Async.AwaitWaitHandle(mre :> WaitHandle)
+                let! _ = Async.AwaitWaitHandle(mre :> WaitHandle)
 
                 apiPending.TryRemove(echo) |> ignore
+
+                if KPX.FsCqHttp.Config.Logging.LogApiCall then 
+                    logger.Trace(sprintf "echo:%s 已完成" echo)
+
                 req.IsExecuted <- true
             }
             |> Async.RunSynchronously
@@ -163,7 +172,6 @@ type CqWsContext(ws : WebSocket) =
         member x.CallApi<'T when 'T :> ApiRequestBase and 'T : (new : unit -> 'T)>() =
             let req = Activator.CreateInstance<'T>()
             (x :> IApiCallProvider).CallApi(req)
-            req.IsExecuted <- true
             req
 
     interface IDisposable with

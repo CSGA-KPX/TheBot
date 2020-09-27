@@ -43,4 +43,4 @@ type HandlerModuleBase(shared : bool) as x =
         | e -> 
             if not (e.InnerException :? KPX.FsCqHttp.Handler.RuntimeHelpers.IgnoreException) then
                 args.QuickMessageReply(sprintf "发生错误：%s" e.InnerException.Message)
-                x.Logger.Fatal(sprintf "HandlerModuleBase捕获异常:%O" e.InnerException)
+                x.Logger.Fatal(sprintf "HandlerModuleBase捕获异常:\r\n %O" e.InnerException)

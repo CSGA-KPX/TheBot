@@ -68,7 +68,7 @@ type MessageEvent =
       [<JsonProperty("sub_type")>]
       SubType : string
       [<JsonProperty("message_id")>]
-      MessageId : int32
+      MessageId : int64
       [<JsonProperty("user_id")>]
       UserId : uint64
       [<JsonProperty("message")>]

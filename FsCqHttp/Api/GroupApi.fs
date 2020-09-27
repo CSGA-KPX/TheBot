@@ -65,13 +65,13 @@ type GetGroupMemberInfo(groupId : uint64, userId : uint64, ?noCache : bool) =
     member val Sex = "" with get, set
     member val Age = 0 with get, set
     member val Area = "" with get, set
-    member val JoinTime = 0 with get, set
-    member val LastSentTime = 0 with get, set
+    member val JoinTime = 0UL with get, set
+    member val LastSentTime = 0UL with get, set
     member val Level = "" with get, set
     member val Role = "" with get, set
     member val Unfriendly = false with get, set
     member val Title = "" with get, set
-    member val TitleExpireTime = 0 with get, set
+    member val TitleExpireTime = 0UL with get, set
     member val CardChangeable = false with get, set
 
     member x.DisplayName =
@@ -97,15 +97,15 @@ type GetGroupMemberInfo(groupId : uint64, userId : uint64, ?noCache : bool) =
         x.Age <- r.Data.["age"] |> int32
         x.Area <- r.Data.["area"]
 
-        x.JoinTime <- r.Data.["join_time"] |> int32
-        x.LastSentTime <- r.Data.["last_sent_time"] |> int32
+        x.JoinTime <- r.Data.["join_time"] |> uint64
+        x.LastSentTime <- r.Data.["last_sent_time"] |> uint64
 
         x.Level <- r.Data.["level"]
         x.Role <- r.Data.["role"]
 
         x.Unfriendly <- r.Data.["unfriendly"] = "true"
         x.Title <- r.Data.["title"]
-        x.TitleExpireTime <- r.Data.["title_expire_time"] |> int32
+        x.TitleExpireTime <- r.Data.["title_expire_time"] |> uint64
         x.CardChangeable <- r.Data.["card_changeable"] = "true"
 
 type GetGroupMemberList() =

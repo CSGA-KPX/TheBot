@@ -54,7 +54,7 @@ type DummyReverseClient(server, token) as x =
     let apiResponse = Collections.Generic.Dictionary<string, obj>()
 
     do
-        x.AddApiResponse(".handle_quick_operation", box null)
+        x.AddApiResponse(".handle_quick_operation", obj())
         x.AddApiResponse("get_login_info", {|``user_id`` = 10000; ``nickname`` = "Debug"|})
 
     member x.AddApiResponse<'T when 'T :> Api.ApiRequestBase>(obj : obj) = 
@@ -73,10 +73,10 @@ type DummyReverseClient(server, token) as x =
         me.["message"] <- JArray.FromObject(msg)
         me.["raw_message"] <- JValue(rawMsg)
 
-        let send = me.ToString()
+        let send = me.ToString(Newtonsoft.Json.Formatting.None)
         let mem = ArraySegment<byte>(utf8.GetBytes(send))
 
-        logger.Info(sprintf "Dummy: 发送消息 %s" send)
+        logger.Info(sprintf "事件: 发送消息 %s" send)
         wsClient.SendAsync(mem, WebSockets.WebSocketMessageType.Text, true, cts.Token)
         |> Async.AwaitTask
         |> Async.RunSynchronously
@@ -87,31 +87,34 @@ type DummyReverseClient(server, token) as x =
         x.SendMessage(msg)
 
     member private x.HandleMessage(json : string) = 
-        logger.Info(sprintf "Dummy: 接收到消息 %s" json)
-        let obj = JObject.Parse(json)
-        let echo = obj.["echo"].Value<string>()
-        let action = obj.["action"].Value<string>()
-        let param = obj.["params"]
+        try
+            logger.Info(sprintf "事件: 接收到消息 %s" json)
+            let obj = JObject.Parse(json)
+            let echo = obj.["echo"].Value<string>()
+            let action = obj.["action"].Value<string>()
+            let param = obj.["params"]
 
-        let response = JObject()
+            let response = JObject()
 
-        if apiResponse.ContainsKey(action) then
-            response.["data"] <- JObject.FromObject(apiResponse.[action])
-        else
-            response.["data"] <- JValue(box null)
+            if apiResponse.ContainsKey(action) then
+                response.["data"] <- JObject.FromObject(apiResponse.[action])
+            else
+                response.["data"] <- JValue(box null)
 
-        response.["echo"] <- JValue(echo)
-        response.["retcode"] <- JValue(0)
-        response.["status"] <- JValue("ok")
+            response.["echo"] <- JValue(echo)
+            response.["retcode"] <- JValue(0)
+            response.["status"] <- JValue("ok")
 
-        let ret = response.ToString()
-        let mem = ArraySegment<byte>(utf8.GetBytes(ret))
+            let ret = response.ToString(Newtonsoft.Json.Formatting.None)
+            let mem = ArraySegment<byte>(utf8.GetBytes(ret))
 
-        wsClient.SendAsync(mem, WebSockets.WebSocketMessageType.Text, true, cts.Token)
-        |> Async.AwaitTask
-        |> Async.RunSynchronously
+            wsClient.SendAsync(mem, WebSockets.WebSocketMessageType.Text, true, cts.Token)
+            |> Async.AwaitTask
+            |> Async.RunSynchronously
 
-        logger.Info(sprintf "Dummy: 回复消息 %s" ret)
+            logger.Info(sprintf "事件: 回复消息 %s" ret)
+        with
+        | e -> logger.Fatal(sprintf "发生错误：%O" e)
 
     member private x.ServerMessageLoop() = 
         async {

@@ -88,14 +88,14 @@ type GroupRecallEvent =
         [<JsonProperty("operator_id")>]
         OperatorId : uint64
         [<JsonProperty("message_id")>]
-        MessageId : uint64 }
+        MessageId : int64 }
 
 /// 好友消息撤回事件
 type FriendRecallEvent = 
     {   [<JsonProperty("user_id")>]
         UserId : uint64
         [<JsonProperty("message_id")>]
-        MessageId : uint64 }
+        MessageId : int64 }
         
 /// 群禁言事件
 type GroupBanEvent = 
