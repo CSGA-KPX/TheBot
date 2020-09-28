@@ -9,6 +9,7 @@ open System.Net.WebSockets
 open KPX.FsCqHttp.DataType
 open KPX.FsCqHttp.Api
 open KPX.FsCqHttp.Handler
+open KPX.FsCqHttp.Handler.RuntimeHelpers
 
 open Newtonsoft.Json.Linq
 
@@ -130,7 +131,18 @@ type CqWsContext(ws : WebSocket) =
                     let json = readMessage (ms)
                     Tasks.Task.Run((fun () -> x.HandleMessage(json)))
                         .ContinueWith(fun t -> 
-                            if t.IsFaulted then logger.Fatal(sprintf "HandleMessage发生异常：\r\n %O" t.Exception)) |> ignore
+                            let rec getInner (exn : exn) = 
+                                if isNull exn.InnerException then exn
+                                else getInner exn.InnerException
+                            if t.IsFaulted then
+                                let rootExn = getInner t.Exception
+                                match rootExn with
+                                | :? IgnoreException -> ()
+                                | :? UserErrorException ->
+                                    logger.Warn(sprintf "用户错误：\r\n %O" t.Exception)
+                                | _ ->
+                                    logger.Fatal(sprintf "捕获异常：\r\n %O" t.Exception)
+                        ) |> ignore
             with
             | e ->
                 cts.Cancel()

@@ -33,14 +33,8 @@ type HandlerModuleBase(shared : bool) as x =
 
     abstract HandleCqHttpEvent : ClientEventArgs -> unit
     default x.HandleCqHttpEvent(args)=
-        try
-            match args.Event with
-            | Event.CqHttpEvent.Message y -> x.HandleMessage(args, y)
-            | Event.CqHttpEvent.Request y -> x.HandleRequest(args, y)
-            | Event.CqHttpEvent.Notice y -> x.HandleNotice(args, y)
-            | _ -> ()
-        with
-        | e -> 
-            if not (e.InnerException :? KPX.FsCqHttp.Handler.RuntimeHelpers.IgnoreException) then
-                args.QuickMessageReply(sprintf "发生错误：%s" e.InnerException.Message)
-                x.Logger.Fatal(sprintf "HandlerModuleBase捕获异常:\r\n %O" e.InnerException)
+        match args.Event with
+        | Event.CqHttpEvent.Message y -> x.HandleMessage(args, y)
+        | Event.CqHttpEvent.Request y -> x.HandleRequest(args, y)
+        | Event.CqHttpEvent.Notice y -> x.HandleNotice(args, y)
+        | Event.CqHttpEvent.Meta y -> ()
