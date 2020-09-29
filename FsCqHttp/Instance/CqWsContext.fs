@@ -88,13 +88,29 @@ type CqWsContext(ws : WebSocket) =
     member private x.HandleMessage(json : string) = 
         let obj = JObject.Parse(json)
         let logJson = lazy (obj.ToString(Newtonsoft.Json.Formatting.None))
+        let rec getRootExn (exn : exn) = 
+            if isNull exn.InnerException then exn
+            else getRootExn exn.InnerException
 
         if obj.ContainsKey("post_type") then //消息上报
             if KPX.FsCqHttp.Config.Logging.LogEventPost then
                 logger.Trace(sprintf "%s收到上报：%s" x.SelfId logJson.Value)
 
+
             let args = new ClientEventArgs(x, obj)
-            for m in modules do m.HandleCqHttpEvent(args)
+            try
+                for m in modules do m.HandleCqHttpEvent(args)
+            with
+            | e ->
+                let rootExn = getRootExn e
+                match rootExn with
+                | :? IgnoreException -> ()
+                | :? UserErrorException ->
+                    args.QuickMessageReply(sprintf "内部错误：%s" rootExn.Message)
+                    logger.Warn(sprintf "用户错误：\r\n %O" e)
+                | _ ->
+                    args.QuickMessageReply(sprintf "内部错误：%s" rootExn.Message)
+                    logger.Fatal(sprintf "捕获异常：\r\n %O" e)
 
         elif obj.ContainsKey("retcode") then //API调用结果
             if KPX.FsCqHttp.Config.Logging.LogApiCall then
@@ -131,17 +147,8 @@ type CqWsContext(ws : WebSocket) =
                     let json = readMessage (ms)
                     Tasks.Task.Run((fun () -> x.HandleMessage(json)))
                         .ContinueWith(fun t -> 
-                            let rec getInner (exn : exn) = 
-                                if isNull exn.InnerException then exn
-                                else getInner exn.InnerException
                             if t.IsFaulted then
-                                let rootExn = getInner t.Exception
-                                match rootExn with
-                                | :? IgnoreException -> ()
-                                | :? UserErrorException ->
-                                    logger.Warn(sprintf "用户错误：\r\n %O" t.Exception)
-                                | _ ->
-                                    logger.Fatal(sprintf "捕获异常：\r\n %O" t.Exception)
+                                logger.Fatal(sprintf "捕获异常：\r\n %O" t.Exception)
                         ) |> ignore
             with
             | e ->
