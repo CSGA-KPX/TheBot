@@ -23,7 +23,9 @@
     <Compile Include="DiceModule\DiceUtils.fs" />
     <Compile Include="DiceModule\DiceModule.fs" />
     <Compile Include="DiceModule\TRpgModule.fs" />
-    <Compile Include="XivModule\XivUtils.fs" />
+    <Compile Include="XivModule\MarketUtils.fs" />
+    <Compile Include="XivModule\CommandUtils.fs" />
+    <Compile Include="XivModule\XivExpression.fs" />
     <Compile Include="XivModule\XivMarketModule.fs" />
     <Compile Include="XivModule\XivModule.fs" />
     <Compile Include="EVEModule\Helpers.fs" />
@@ -61,11 +63,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\LibFFXIV\LibFFXIV.GameData.Raw\LibFFXIV.GameData.Raw.fsproj" />
-    <ProjectReference Include="..\..\LibFFXIV\LibFFXIV.Network\LibFFXIV.Network.fsproj" />
     <ProjectReference Include="..\FsCqHttp\FsCqHttp.fsproj" />
     <ProjectReference Include="..\XivData\BotData.fsproj" />
-    <ProjectReference Include="..\..\FFXIVNetwork\LibDmfXivClient\LibDmfXivClient.fsproj" />
     <ProjectReference Include="..\..\FFXIVNetwork\LibXIVServerFable\LibDmfXivShared.fsproj" />
   </ItemGroup>
 

@@ -1,14 +1,8 @@
 ﻿module BotData.EveData.Utils
 
 open System
-open System.Net.Http
 
 let inline pct (i : int) = (float i) / 100.0
-
-let hc = 
-    let hc = new HttpClient()
-    hc.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "https://github.com/CSGA-KPX/TheBot") |> ignore
-    hc
 
 type EveMaterial = 
     {

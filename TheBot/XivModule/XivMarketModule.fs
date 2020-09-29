@@ -20,6 +20,8 @@ type XivMarketModule() =
     let gilShop = GilShop.GilShopCollection.Instance
     let xivExpr = XivExpression.XivExpression()
 
+    let marketInfo = CompundMarketInfo.MarketInfoCollection.Instance
+
     let isNumber (str : string) =
         if str.Length <> 0 then String.forall (Char.IsDigit) str
         else false
@@ -50,7 +52,7 @@ type XivMarketModule() =
 
     member _.GeneralMarketPrinter(msgArg : CommandArgs,
                                   headers : (CellType * (MarketUtils.MarketAnalyzer -> obj)) [],
-                                  fetchFunc : Item.ItemRecord * World.World ->Result<MarketUtils.MarketAnalyzer, exn>) = 
+                                  fetchFunc : Item.ItemRecord * World.World -> MarketUtils.MarketAnalyzer) = 
 
         let att = AutoTextTable<MarketUtils.MarketAnalyzer>(headers)
 
@@ -67,11 +69,8 @@ type XivMarketModule() =
             match ret with
             | Error str -> att.AddPreTable(sprintf "找不到物品%s，请尝试#is %s" str str)
             | Ok ma ->
-                match ma with
-                | Error exn -> raise exn
-                | Ok ma ->
-                    if ma.IsEmpty then att.AddRowPadding(ma.ItemRecord.Name, "无记录")
-                    else att.AddObject(ma)
+                if ma.IsEmpty then att.AddRowPadding(ma.ItemRecord.Name, "无记录")
+                else att.AddObject(ma)
 
         using (msgArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(att))
 
@@ -86,7 +85,9 @@ type XivMarketModule() =
                 RightAlignCell "更新时间", fun ma -> box(ma.LastUpdateTime())
             |]
 
-        let func = fun (i,w) -> MarketUtils.MarketAnalyzer.FetchTradesWorld(i, w)
+        let func = fun (i,w) -> 
+            let data = marketInfo.GetTradeLogs(w, i) |> Array.map (MarketUtils.MarketData.Trade)
+            MarketUtils.MarketAnalyzer(i, w, data)
         x.GeneralMarketPrinter(msgArg, hdrs, func)
 
     [<CommandHandlerMethodAttribute("market", "查询市场订单", "物品Id或全名...")>]
@@ -99,9 +100,12 @@ type XivMarketModule() =
                 RightAlignCell "更新时间", fun ma -> box(ma.LastUpdateTime())
             |]
 
-        let func = fun (i,w) -> MarketUtils.MarketAnalyzer.FetchOrdersWorld(i, w)
+        let func = fun (i,w) -> 
+            let data = marketInfo.GetMarketListings(w, i) |> Array.map (MarketUtils.MarketData.Order)
+            MarketUtils.MarketAnalyzer(i, w, data)
         x.GeneralMarketPrinter(msgArg, hdrs, func)
 
+(*
     member _.GeneralCrossWorldMarketPrinter(msgArg : CommandArgs,
                                   headers : (CellType * (MarketUtils.MarketAnalyzer -> obj)) [],
                                   fetchFunc : Item.ItemRecord ->Result<MarketUtils.MarketAnalyzer[], exn>) = 
@@ -158,7 +162,7 @@ type XivMarketModule() =
 
         let func = fun (i) -> MarketUtils.MarketAnalyzer.FetchOrdersAllWorld(i)
         x.GeneralCrossWorldMarketPrinter(msgArg, hdrs, func)
-
+*)
 
     [<CommandHandlerMethodAttribute("r", "根据表达式汇总多个物品的材料，不查询价格", "")>]
     [<CommandHandlerMethodAttribute("rr", "根据表达式汇总多个物品的基础材料，不查询价格", "")>]
@@ -177,10 +181,9 @@ type XivMarketModule() =
 
         let mutable cur = None
         let updateCur(item : Item.ItemRecord) = 
-            let ret = MarketUtils.MarketAnalyzer.FetchOrdersWorld(item, world)
-            match ret with
-            | Error exn -> raise exn
-            | Ok m  -> cur <- Some (if m.IsEmpty then m else m.TakeVolume())
+            let data = marketInfo.GetMarketListings(world, item) |> Array.map (MarketUtils.MarketData.Order)
+            let m = MarketUtils.MarketAnalyzer(item, world, data)
+            cur <- Some (if m.IsEmpty then m else m.TakeVolume())
             
         let mutable sum = MarketUtils.StdEv.Zero
         let hdrs = 
@@ -236,10 +239,9 @@ type XivMarketModule() =
         if doCalculateCost then
             att.AddRowPadding("成本总计", sum.Average )
             let totalSell = product |> Seq.sumBy (fun kv -> 
-                let ret = MarketUtils.MarketAnalyzer.FetchOrdersWorld(kv.Key, world)
-                match ret with
-                | Error exn -> raise exn
-                | Ok m  -> (if m.IsEmpty then m else m.TakeVolume()).StdEvPrice().Round() * kv.Value)
+                let data = marketInfo.GetMarketListings(world, kv.Key) |> Array.map (MarketUtils.MarketData.Order)
+                let m = MarketUtils.MarketAnalyzer(kv.Key, world, data)
+                (if m.IsEmpty then m else m.TakeVolume()).StdEvPrice().Round() * kv.Value)
             att.AddRowPadding("卖出价格", totalSell.Average )
             att.AddRowPadding("税前利润", (totalSell - sum).Average )
 
@@ -262,10 +264,9 @@ type XivMarketModule() =
             let mutable curItem = None
             let mutable cur = None
             let updateCur(item : Item.ItemRecord) = 
-                let ret = MarketUtils.MarketAnalyzer.FetchOrdersWorld(item, world)
-                match ret with
-                | Error exn -> raise exn
-                | Ok m  -> cur <- Some (if m.IsEmpty then m else m.TakeVolume())
+                let data = marketInfo.GetMarketListings(world, item) |> Array.map (MarketUtils.MarketData.Order)
+                let m = MarketUtils.MarketAnalyzer(item, world, data)
+                cur <- Some (if m.IsEmpty then m else m.TakeVolume())
 
             let hdrs = 
                 [|
@@ -326,17 +327,15 @@ type XivMarketModule() =
         let tt = TextTable.FromHeader([|"名称"; "平均"; "低"; "更新时间"|])
 
         for item in items do 
-            match MarketUtils.MarketAnalyzer.FetchOrdersWorld(item, world) with
-            | Error err ->
-                tt.AddRow(item.Name, "--", "--", "数据传输异常")
-            | Ok orders -> 
-                if orders.Data.Length = 0 then
-                    tt.AddRow(item.Name, "--", "--", "无记录")
-                else
-                    let vol = orders.TakeVolume(25)
-                    let avg = vol.StdEvPrice().Round().Average |> int
-                    let low = vol.MinPrice()
-                    let upd = vol.LastUpdateTime()
-                    tt.AddRow(item.Name, avg, low, upd)
+            let data = marketInfo.GetMarketListings(world, item) |> Array.map (MarketUtils.MarketData.Order)
+            let orders = MarketUtils.MarketAnalyzer(item, world, data)
+            if orders.Data.Length = 0 then
+                tt.AddRow(item.Name, "--", "--", "无记录")
+            else
+                let vol = orders.TakeVolume(25)
+                let avg = vol.StdEvPrice().Round().Average |> int
+                let low = vol.MinPrice()
+                let upd = vol.LastUpdateTime()
+                tt.AddRow(item.Name, avg, low, upd)
 
         ret.Write(tt)

@@ -9,6 +9,7 @@
     <EmbeddedResource Include="EVEData.zip" />
     <Compile Include="Common\Resource.fs" />
     <Compile Include="Common\Database.fs" />
+    <Compile Include="Common\Network.fs" />
     <Compile Include="XivData\Utils.fs" />
     <Compile Include="XivData\Item.fs" />
     <Compile Include="XivData\Recipe.fs" />
@@ -18,6 +19,7 @@
     <Compile Include="XivData\ClassJobMapping.fs" />
     <Compile Include="XivData\CraftGearSet.fs" />
     <Compile Include="XivData\OceanFishing.fs" />
+    <Compile Include="XivData\CompundMarketInfo.fs" />
     <Compile Include="EveData\Utils.fs" />
     <Compile Include="EveData\EveGroup.fs" />
     <Compile Include="EveData\EveMarketGroup.fs" />
@@ -41,7 +43,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\FFXIVNetwork\LibDmfXivClient\LibDmfXivClient.fsproj" />
+    <ProjectReference Include="..\..\FFXIVNetwork\LibXIVServerFable\LibDmfXivShared.fsproj" />
     <ProjectReference Include="..\..\LibFFXIV\LibFFXIV.GameData.Raw\LibFFXIV.GameData.Raw.fsproj" />
+    <ProjectReference Include="..\..\LibFFXIV\LibFFXIV.Network\LibFFXIV.Network.fsproj" />
   </ItemGroup>
 
   <ItemGroup>

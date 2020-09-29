@@ -7,6 +7,8 @@ open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 
 open BotData.Common.Database
+open BotData.Common.Network
+
 open BotData.EveData.Utils
 open BotData.EveData.NpcCorporation
 
