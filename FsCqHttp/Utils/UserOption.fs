@@ -6,19 +6,32 @@ open System.Collections.Generic
 
 [<DefaultAugmentation(false)>]
 type UserOptionValue =
-    | Defined of string
+    | Defined of string list
     | Default of string
+
+    member x.SetOrAppend(value : string) = 
+        let isEmpty = String.IsNullOrWhiteSpace(value)
+        match x, isEmpty with
+        | Defined l, true -> Defined (x.Value :: l) //空的话加现有值
+        | Defined l, false -> Defined (value :: l)
+        | Default v, true -> Defined [v]
+        | Default _, false -> Defined [value]
 
     member x.IsDefined = match x with | Defined _ -> true | _ -> false
 
-    member x.Value = match x with | Defined x -> x | Default x -> x
+    member x.Value = match x with | Defined x -> x.[0] | Default x -> x
+
+    member x.Values = match x with | Defined x -> x |> List.toArray | Default x -> [| x |]
 
     member x.GetValue<'T when 'T :> IConvertible>() =
-        let ret = 
-            match x with
-            | Defined x -> x 
-            | Default x -> x
-        Convert.ChangeType(ret, typeof<'T>) :?> 'T
+        Convert.ChangeType(x.Value, typeof<'T>) :?> 'T
+
+    member x.GetValues<'T when 'T :> IConvertible>() =
+        [|
+            for v in x.Values do 
+                yield Convert.ChangeType(v, typeof<'T>) :?> 'T
+        |]
+
 
 type UserOptionParser() = 
     static let seperator = [|";"; "；"; "："; ":"|]
@@ -43,6 +56,12 @@ type UserOptionParser() =
 
     member x.GetValue(key : string) = x.GetValue<string>(key)
 
+    member x.GetValues<'T when 'T :> IConvertible>(key : string) = 
+        if not parsed then invalidOp "还没解析过"
+        options.[key].GetValues<'T>()
+
+    member x.GetValues(key : string) = x.GetValues<string>(key)
+
     member x.IsDefined(key : string) =
         if not parsed then invalidOp "还没解析过"
         options.[key].IsDefined
@@ -59,10 +78,7 @@ type UserOptionParser() =
                         let key   = s.[0]
                         let value = if s.Length >= 2 then s.[1] else ""
                         if options.ContainsKey(key) then
-                            if String.IsNullOrWhiteSpace(value) then
-                                options.[key] <- Defined (options.[key].Value)
-                            else
-                                options.[key] <- Defined value
+                            options.[key] <- options.[key].SetOrAppend(value)
                         else
                             yield str
                     else

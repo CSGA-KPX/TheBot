@@ -69,7 +69,7 @@ type MarketInfoCollection private () =
                      .GetAwaiter()
                      .GetResult()
         if not resp.IsSuccessStatusCode then
-            x.Logger.Warn(sprintf "Universalis返回错误%s" resp.ReasonPhrase)
+            x.Logger.Warn(sprintf "Universalis返回错误%s:%A/%A" resp.ReasonPhrase info.World info.Item)
             {   Id = info.ToString()
                 LastFetchTime = DateTimeOffset.Now
                 LastUploadTime = DateTimeOffset.Now

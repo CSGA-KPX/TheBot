@@ -90,17 +90,19 @@ type SudoModule() =
             msgArg.QuickMessageReply("完毕")
         isSuUsed <- true
 
-    [<CommandHandlerMethodAttribute("#grant", "（超管）添加被@用户为管理员", "", IsHidden = true)>]
+    [<CommandHandlerMethodAttribute("#grant", "（超管）添加用户为管理员", "", IsHidden = true)>]
     member x.HandleGrant(msgArg : CommandArgs) = 
         failOnNonOwner(msgArg)
-        let ats = msgArg.MessageEvent.Message.GetAts()
+
+        let uo = UserOptionParser()
+        uo.RegisterOption("qq", "")
+        uo.Parse(msgArg.Arguments)
+
+        let uids = uo.GetValues<uint64>("qq")
         let sb = Text.StringBuilder()
-        for at in ats do
-            match at with
-            | KPX.FsCqHttp.DataType.Message.AtUserType.User uid ->
-                addAdmin(uid)
-                sb.AppendLine(sprintf "已添加userId = %i" uid) |> ignore
-            | _ -> failwith ""
+        for uid in uids do
+            addAdmin(uid)
+            sb.AppendLine(sprintf "已添加userId = %i" uid) |> ignore
         msgArg.QuickMessageReply(sb.ToString())
 
     [<CommandHandlerMethodAttribute("#showgroups", "（超管）检查加群信息", "", IsHidden = true)>]

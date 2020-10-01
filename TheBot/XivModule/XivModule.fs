@@ -4,8 +4,10 @@ open System
 open System.Text
 
 open KPX.FsCqHttp.Handler.CommandHandlerBase
+open KPX.FsCqHttp.Handler.RuntimeHelpers
 open KPX.FsCqHttp.Utils.TextTable
 open KPX.FsCqHttp.Utils.UserOption
+
 
 open BotData.XivData
 
@@ -101,6 +103,10 @@ type XivModule() =
                 att.AddObject(ret.Value)
         else
             let ret = itemCol.SearchByName(i) |> Array.sortBy (fun x -> x.Id)
+
+            if ret.Length >= 50 then 
+                raise <| UserErrorException "候选太多，请优化关键词"
+
             if ret.Length = 0 then
                 att.AddRow("无", "无")
             else

@@ -4,4 +4,4 @@
 exception IgnoreException 
 
 /// 用户输入引发的错误，记录为Warn
-exception UserErrorException
+exception UserErrorException of string

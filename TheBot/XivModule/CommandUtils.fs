@@ -5,7 +5,8 @@ open BotData.XivData
 open TheBot.Utils.Config
 open KPX.FsCqHttp.Utils.UserOption
 
-let defaultServerKey = "defaultServerKey"
+[<Literal>]
+let private defaultServerKey = "defaultServerKey"
 
 type XivConfig (args : KPX.FsCqHttp.Handler.CommandHandlerBase.CommandArgs) = 
     let opts = UserOptionParser()
