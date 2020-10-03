@@ -24,7 +24,7 @@ type DebugModule() =
 
     [<CommandHandlerMethodAttribute("#showconfig", "(超管) 返回配置信息", "", IsHidden = true)>]
     member x.HandleShowConfig(msgArg : CommandArgs) =
-        failOnNonOwner(msgArg)
+        msgArg.EnsureSenderOwner()
 
         let cp = typeof<KPX.FsCqHttp.Config.ConfigPlaceholder>
         let prefix = cp.FullName.Replace(cp.Name, "")
@@ -48,7 +48,7 @@ type DebugModule() =
 
     [<CommandHandlerMethodAttribute("#setlog", "(超管) 设置日志设置", "event, api, command", IsHidden = true)>]
     member x.HandleSetLogging(msgArg : CommandArgs) = 
-        failOnNonOwner(msgArg)
+        msgArg.EnsureSenderOwner()
 
         let cfg = UserOptionParser()
         cfg.RegisterOption("event", Config.Logging.LogEventPost.ToString())
@@ -73,7 +73,8 @@ type DebugModule() =
 
     [<CommandHandlerMethodAttribute("#showlog", "(超管) 显示日志", "", IsHidden = true)>]
     member x.HandleShowLogging(msgArg : CommandArgs) = 
-        failOnNonOwner(msgArg)
+        msgArg.EnsureSenderOwner()
+
         use ret = msgArg.OpenResponse(true)
         
         let logs = nlogMemoryTarget.Logs |> Seq.toArray

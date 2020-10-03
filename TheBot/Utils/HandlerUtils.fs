@@ -1,45 +1,52 @@
 ﻿module TheBot.Utils.HandlerUtils
 
+open System.Collections.Generic
+
+open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Handler.CommandHandlerBase
 
 open TheBot.Utils.Config
 
-let setOwner(userId : uint64) =
-    ConfigManager.SystemConfig.Put("BotOwner", userId)
+[<Literal>]
+let private instanceOwnerKey = "InstanceOwner"
 
-let getOwner() =
-    let ret = ConfigManager.SystemConfig.Get("BotOwner", 0UL)
-    if ret = 0UL then None else Some ret
+let private botAdminKey (uid : uint64) = sprintf "BotAdmins:%i" uid
 
-/// 检查发信人是不是管理员
-let isSenderOwner (msgArg : CommandArgs)  = 
-    getOwner()
-    |> Option.map (fun uid -> uid = msgArg.MessageEvent.UserId)
-    |> Option.defaultValue false
+type ClientEventArgs with
 
-let addAdmin(userId : uint64) = 
-    let key = sprintf "IsAdmin:%i"userId
-    ConfigManager.SystemConfig.Put(key, true)
+    member x.SetInstanceOwner(uid : uint64) = 
+        ConfigManager.SystemConfig.Put(instanceOwnerKey, uid)
 
-/// 检查发信人是不是管理员
-let isSenderAdmin (msgArg : CommandArgs)  = 
-    let key = sprintf "IsAdmin:%i" msgArg.MessageEvent.UserId
-    ConfigManager.SystemConfig.Get(key, false)
+    member x.GetBotAdmins() =
+        ConfigManager.SystemConfig.Get(botAdminKey x.SelfId, HashSet<uint64>())
 
-/// 检查发信人是不是管理员
-/// 如果不是，则抛异常
-let failOnNonAdmin (msgArg : CommandArgs) = 
-    if not <| isSenderAdmin(msgArg) then
-        failwith "需要管理员权限"
+    member x.GrantBotAdmin(uid : uint64) = 
+        let current = x.GetBotAdmins()
+        current.Add(uid) |> ignore
+        ConfigManager.SystemConfig.Put(botAdminKey x.SelfId, current)
 
-let failOnNonOwner (msgArg : CommandArgs) = 
-    if not <| isSenderOwner(msgArg) then
-        failwithf "需要超管权限"
+type CommandArgs with
+    
+    /// 检查是否有群管理权限。包含群主或群管理员
+    ///
+    /// None 表示不是群消息事件
+    member x.IsGroupAdmin = 
+        if x.MessageEvent.IsGroup then
+            Some x.MessageEvent.Sender.CanAdmin
+        else
+            None
 
-/// 检查群消息发送者有没有管理权限（群主/群管理）
-/// 非群消息返回false
-let canSenderAdmin (msgArg : CommandArgs) = 
-    if msgArg.MessageEvent.IsGroup then
-        msgArg.MessageEvent.Sender.CanAdmin
-    else
-        false
+    member x.EnsureSenderOwner() = 
+        if not <| x.IsSenderOwner then failwith "需要超管权限"
+
+    member x.IsSenderOwner = 
+        let ret = ConfigManager.SystemConfig.Get(instanceOwnerKey, 0UL)
+        (if ret = 0UL then None else Some ret)
+        |> Option.map (fun uid -> uid = x.MessageEvent.UserId)
+        |> Option.defaultValue false
+
+    member x.EnsureSenderAdmin() = 
+        if not <| x.IsSenderAdmin then failwith "需要管理员权限"
+
+    member x.IsSenderAdmin = 
+        x.GetBotAdmins().Contains(x.MessageEvent.UserId)

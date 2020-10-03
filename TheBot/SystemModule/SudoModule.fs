@@ -19,12 +19,14 @@ type SudoModule() =
     inherit CommandHandlerBase()
     
     let allowList = Collections.Generic.HashSet<string>()
+    let allowQqFmt (self : uint64) (uid : uint64) = sprintf "%i:qq:%i"  self uid
+    let allowGroupFmt (self : uint64) (gid : uint64) = sprintf "%i:group:%i"  self gid
 
     let mutable isSuUsed = false
 
-    [<CommandHandlerMethodAttribute("#selftest", "(管理) 返回系统信息", "", IsHidden = true)>]
+    [<CommandHandlerMethodAttribute("#selftest", "(超管) 返回系统信息", "", IsHidden = true)>]
     member x.HandleSelfTest(msgArg : CommandArgs) =
-        failOnNonAdmin(msgArg)
+        msgArg.EnsureSenderOwner()
         let caller = msgArg.ApiCaller
         let info =
             "\r\n" + caller.CallApi<SystemApi.GetLoginInfo>().ToString() + "\r\n"
@@ -32,43 +34,9 @@ type SudoModule() =
             + caller.CallApi<SystemApi.GetVersionInfo>().ToString()
         msgArg.QuickMessageReply(info)
 
-    [<CommandHandlerMethodAttribute("#allow", "(管理) 允许好友、加群请求", "", IsHidden = true)>]
-    member x.HandleAllow(msgArg : CommandArgs) =
-        let currentModeKey = sprintf "IsAutoAllow:%i" msgArg.SelfId
-        let isAutoAllow = ConfigManager.SystemConfig.Get(currentModeKey, false)
-
-        let cfg = UserOptionParser()
-        cfg.RegisterOption("group", "")
-        cfg.RegisterOption("qq", "")
-        cfg.RegisterOption("autoallow", "")
-        cfg.Parse(msgArg.Arguments)
-
-        if cfg.IsDefined("autoallow") then
-            if not <| isSenderOwner(msgArg) then failwithf "权限不足"
-            let auto = cfg.GetValue<bool>("autoallow")
-            ConfigManager.SystemConfig.Put(currentModeKey, auto)
-            msgArg.QuickMessageReply(sprintf "自动接受模式设置为:%A" auto)
-        elif cfg.IsDefined("group") then
-            failOnNonAdmin(msgArg)
-            let key = sprintf "group:%i" (cfg.GetValue<uint64>("group"))
-            allowList.Add(key) |> ignore
-            msgArg.QuickMessageReply(sprintf "接受来自[%s]的邀请" key)
-        elif cfg.IsDefined("qq") then
-            failOnNonAdmin(msgArg)
-            let key = sprintf "qq:%i" (cfg.GetValue<uint64>("friend"))
-            allowList.Add(key) |> ignore
-            msgArg.QuickMessageReply(sprintf "接受来自[%s]的邀请" key)
-        else
-            let sb = Text.StringBuilder()
-            Printf.bprintf sb "当前机器人自动接受模式为：%A\r\n" isAutoAllow
-            Printf.bprintf sb "设置群白名单： group:群号\r\n"
-            Printf.bprintf sb "设置好友： qq:群号\r\n"
-            Printf.bprintf sb "设置自动接受： autoallow:true/false （需要超管）"
-            msgArg.QuickMessageReply(sb.ToString())
-
     [<CommandHandlerMethodAttribute("#rebuilddatacache", "(超管) 重建数据缓存", "", IsHidden = true)>]
     member x.HandleRebuildXivDb(msgArg : CommandArgs) =
-        failOnNonOwner(msgArg)
+        msgArg.EnsureSenderOwner()
         BotData.Common.Database.BotDataInitializer.ClearCache()
         BotData.Common.Database.BotDataInitializer.ShrinkCache()
         msgArg.QuickMessageReply("清空数据库完成")
@@ -85,14 +53,16 @@ type SudoModule() =
         let hex = BitConverter.ToString(md5.ComputeHash(File.OpenRead(path))).Replace("-", "")
         let isMatch = msgArg.RawMessage.ToUpperInvariant().Contains(hex)
         if isMatch then
-            addAdmin(msgArg.MessageEvent.UserId)
-            setOwner(msgArg.MessageEvent.UserId)
+            let uid = msgArg.MessageEvent.UserId
+            x.Logger.Info("添加超管和管理员权限{0}", uid)
+            msgArg.SetInstanceOwner(uid)
+            msgArg.GrantBotAdmin(uid)
             msgArg.QuickMessageReply("完毕")
         isSuUsed <- true
 
     [<CommandHandlerMethodAttribute("#grant", "（超管）添加用户为管理员", "", IsHidden = true)>]
     member x.HandleGrant(msgArg : CommandArgs) = 
-        failOnNonOwner(msgArg)
+        msgArg.EnsureSenderOwner()
 
         let uo = UserOptionParser()
         uo.RegisterOption("qq", "")
@@ -101,13 +71,20 @@ type SudoModule() =
         let uids = uo.GetValues<uint64>("qq")
         let sb = Text.StringBuilder()
         for uid in uids do
-            addAdmin(uid)
+            msgArg.GrantBotAdmin(uid)
             sb.AppendLine(sprintf "已添加userId = %i" uid) |> ignore
         msgArg.QuickMessageReply(sb.ToString())
 
+    [<CommandHandlerMethodAttribute("#admins", "（超管）显示当前机器人管理账号", "", IsHidden = true)>]
+    member x.HandleShowBotAdmins(msgArg : CommandArgs) = 
+        msgArg.EnsureSenderOwner()
+        let admins = msgArg.GetBotAdmins()
+        let ret = String.Join("\r\n", admins)
+        msgArg.QuickMessageReply(ret)
+
     [<CommandHandlerMethodAttribute("#showgroups", "（超管）检查加群信息", "", IsHidden = true)>]
     member x.HandleShowGroups(msgArg : CommandArgs) = 
-        failOnNonOwner(msgArg)
+        msgArg.EnsureSenderOwner()
         let api = msgArg.ApiCaller.CallApi<SystemApi.GetGroupList>()
 
         let tt = AutoTextTable<SystemApi.GroupInfo>([|
@@ -121,18 +98,39 @@ type SudoModule() =
 
     [<CommandHandlerMethodAttribute("#abortall", "（超管）断开所有WS连接", "", IsHidden = true)>]
     member x.HandleShowAbortAll(msgArg : CommandArgs) = 
-        failOnNonOwner(msgArg)
+        msgArg.EnsureSenderOwner()
         for ctx in KPX.FsCqHttp.Instance.CqWsContextPool.Instance do 
             ctx.Stop()
 
-    override x.HandleRequest(args, e) =
-        let currentModeKey = sprintf "IsAutoAllow:%i" args.SelfId
-        let isAutoAllow = ConfigManager.SystemConfig.Get(currentModeKey, false)
+    [<CommandHandlerMethodAttribute("#allow", "(管理) 允许好友、加群请求", "", IsHidden = true)>]
+    member x.HandleAllow(msgArg : CommandArgs) =
+        let cfg = UserOptionParser()
+        cfg.RegisterOption("group", "")
+        cfg.RegisterOption("qq", "")
+        cfg.Parse(msgArg.Arguments)
 
+        if cfg.IsDefined("group") then
+            msgArg.EnsureSenderAdmin()
+            let key = allowGroupFmt msgArg.SelfId (cfg.GetValue<uint64>("group"))
+            allowList.Add(key) |> ignore
+            msgArg.QuickMessageReply(sprintf "接受来自[%s]的邀请" key)
+        elif cfg.IsDefined("qq") then
+            msgArg.EnsureSenderAdmin()
+            let key = allowQqFmt msgArg.SelfId (cfg.GetValue<uint64>("friend"))
+            allowList.Add(key) |> ignore
+            msgArg.QuickMessageReply(sprintf "接受来自[%s]的邀请" key)
+        else
+            let sb = Text.StringBuilder()
+            Printf.bprintf sb "设置群白名单： group:群号\r\n"
+            Printf.bprintf sb "设置好友： qq:群号\r\n"
+            msgArg.QuickMessageReply(sb.ToString())
+
+    override x.HandleRequest(args, e) =
         match e with
         | Request.FriendRequest req ->
-            let key = sprintf "qq:%i" req.UserId
-            args.SendResponse(FriendAddResponse(allowList.Contains(key) || isAutoAllow, ""))
+            let inList = allowList.Contains(allowQqFmt args.SelfId req.UserId)
+            let isAdmin = args.GetBotAdmins().Contains(req.UserId)
+            args.SendResponse(FriendAddResponse(inList || isAdmin, ""))
         | Request.GroupRequest req ->
-            let key = sprintf "group:%i" req.GroupId
-            args.SendResponse(GroupAddResponse(allowList.Contains(key) || isAutoAllow, ""))
+            let inList = allowList.Contains(allowGroupFmt args.SelfId req.GroupId)
+            args.SendResponse(GroupAddResponse(inList, ""))

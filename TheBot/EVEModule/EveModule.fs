@@ -36,12 +36,6 @@ type EveModule() =
     let ToolWarning = "价格有延迟，算法不稳定，市场有风险, 投资需谨慎"
     let er = EveExpression.EveExpression()
 
-    [<CommandHandlerMethodAttribute("eveTest", "测试用（管理员）", "")>]
-    member x.HandleEveTest(msgArg : CommandArgs) =
-        failOnNonAdmin(msgArg)
-        let cfg = EveConfigParser()
-        cfg.Parse(msgArg.Arguments)
-
     [<CommandHandlerMethodAttribute("eveLp", "EVE LP兑换计算", "#evelp 军团名")>]
     member x.HandleEveLp(msgArg : CommandArgs) =
         let cfg = Utils.LpUtils.LpConfigParser()
@@ -98,9 +92,9 @@ type EveModule() =
 
         using (msgArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))
 
-    [<CommandHandlerMethodAttribute("eveclearcache", "清空价格缓存（管理员）", "")>]
+    [<CommandHandlerMethodAttribute("eveclearcache", "（超管）清空EVE价格缓存", "")>]
     member x.HandleRefreshCache(msgArg : CommandArgs) =
-        failOnNonAdmin(msgArg)
+        msgArg.EnsureSenderOwner()
 
         BotData.EveData.MarketPriceCache.PriceCacheCollection.Instance.Clear()
 
