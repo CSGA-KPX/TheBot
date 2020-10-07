@@ -4,6 +4,7 @@ open System
 open KPX.FsCqHttp.Api
 open KPX.FsCqHttp.DataType
 open KPX.FsCqHttp.Handler.CommandHandlerBase
+open KPX.FsCqHttp.Utils.TextResponse
 
 open TheBot.Module.EatModule.Utils
 
@@ -25,7 +26,7 @@ type EatModule() =
 
         use ret = msgArg.OpenResponse()
         match at with
-        | Some Message.AtUserType.All -> ret.FailWith("DD不可取")
+        | Some Message.AtUserType.All -> ret.FailWith("你要请客吗？")
         | Some (Message.AtUserType.User uid) when uid = msgArg.SelfId || uid = msgArg.MessageEvent.UserId ->
             use s = TheBot.Utils.EmbeddedResource.GetResFileStream("Funny.jpg")
             use img = Drawing.Bitmap.FromStream(s) :?> Drawing.Bitmap

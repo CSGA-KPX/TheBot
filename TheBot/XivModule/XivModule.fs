@@ -5,6 +5,7 @@ open System.Text
 
 open KPX.FsCqHttp.Handler.CommandHandlerBase
 open KPX.FsCqHttp.Handler.RuntimeHelpers
+open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.TextTable
 open KPX.FsCqHttp.Utils.UserOption
 
@@ -188,7 +189,7 @@ type XivModule() =
 
         let dateFmt = "yyyy/MM/dd HH:00"
 
-        use ret = msgArg.OpenResponse(true)
+        use ret = msgArg.OpenResponse(ForceImage)
         ret.WriteLine("警告：时间为中国标准时间，仅供娱乐测试使用，请自行确认数据准确")
         let mutable now = GetCstTime()
         try

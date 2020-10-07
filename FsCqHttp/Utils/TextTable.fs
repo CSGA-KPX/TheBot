@@ -2,7 +2,8 @@
 
 open System
 open System.Collections.Generic
-open KPX.FsCqHttp.Handler
+
+open KPX.FsCqHttp.Utils.TextResponse
 
 [<Literal>]
 let private halfWidthSpace = ' '
@@ -188,6 +189,6 @@ type AutoTextTable<'T>(cfg : (CellType * ('T -> obj)) []) as x =
 
 type TextResponse with
     member x.Write(tt : TextTable) = 
-        if x.PreferImageOutput && x.CanSendImage() then tt.PaddingChar <- ' '
+        if x.DoSendImage then tt.PaddingChar <- ' '
         for line in tt.ToLines() do 
             x.WriteLine(line)

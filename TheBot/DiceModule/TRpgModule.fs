@@ -1,12 +1,10 @@
 ﻿module TheBot.Module.DiceModule.TRpgModule
 
-open System
-open KPX.FsCqHttp.Api
-open KPX.FsCqHttp.DataType
 open KPX.FsCqHttp.Handler.CommandHandlerBase
+
+open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.TextTable
 
-open TheBot.Utils.GenericRPN
 open TheBot.Utils.Dicer
 
 open TheBot.Module.DiceModule.Utils

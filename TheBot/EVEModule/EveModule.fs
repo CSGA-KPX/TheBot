@@ -3,6 +3,7 @@
 open System
 
 open KPX.FsCqHttp.Handler.CommandHandlerBase
+open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.TextTable
 
 open BotData.EveData.Utils
@@ -390,7 +391,7 @@ type EveModule() =
 
             tt.AddRow(eon, eop, ein, eip, emn, emp, etn, etp)
 
-        use ret = msgArg.OpenResponse(true)
+        use ret = msgArg.OpenResponse(ForceImage)
         ret.Write(tt)
     
     [<CommandHandlerMethodAttribute("EVE舰船II", "T2舰船制造总览", "")>]

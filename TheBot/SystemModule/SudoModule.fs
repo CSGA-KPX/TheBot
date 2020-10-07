@@ -65,14 +65,15 @@ type SudoModule() =
         msgArg.EnsureSenderOwner()
 
         let uo = UserOptionParser()
-        uo.RegisterOption("qq", "")
+        uo.RegisterOption("qq", "0")
         uo.Parse(msgArg.Arguments)
 
         let uids = uo.GetValues<uint64>("qq")
         let sb = Text.StringBuilder()
         for uid in uids do
-            msgArg.GrantBotAdmin(uid)
-            sb.AppendLine(sprintf "已添加userId = %i" uid) |> ignore
+            if uid <> 0UL then
+                msgArg.GrantBotAdmin(uid)
+                sb.AppendLine(sprintf "已添加userId = %i" uid) |> ignore
         msgArg.QuickMessageReply(sb.ToString())
 
     [<CommandHandlerMethodAttribute("#admins", "（超管）显示当前机器人管理账号", "", IsHidden = true)>]
@@ -105,8 +106,8 @@ type SudoModule() =
     [<CommandHandlerMethodAttribute("#allow", "(管理) 允许好友、加群请求", "", IsHidden = true)>]
     member x.HandleAllow(msgArg : CommandArgs) =
         let cfg = UserOptionParser()
-        cfg.RegisterOption("group", "")
-        cfg.RegisterOption("qq", "")
+        cfg.RegisterOption("group", "0")
+        cfg.RegisterOption("qq", "0")
         cfg.Parse(msgArg.Arguments)
 
         if cfg.IsDefined("group") then

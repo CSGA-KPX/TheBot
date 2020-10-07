@@ -3,6 +3,8 @@
 open BotData.XivData
 
 open TheBot.Utils.Config
+
+open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.UserOption
 
 [<Literal>]
@@ -40,7 +42,7 @@ type XivConfig (args : KPX.FsCqHttp.Handler.CommandHandlerBase.CommandArgs) =
 
     member x.CommandLine = opts.CommandLine
 
-    member x.IsImageOutput = not <| opts.IsDefined("text")
+    member x.IsImageOutput = if opts.IsDefined("text")  then ForceText else PreferImage
 
 let XivSpecialChars = 
     [|

@@ -3,6 +3,8 @@
 open System
 open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Handler.CommandHandlerBase
+
+open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.TextTable
 
 [<Literal>]
@@ -31,7 +33,7 @@ type HelpModule() =
                     let cmd = sprintf "%s%s" KPX.FsCqHttp.Config.Command.CommandStart attrib.Command
                     let desc = attrib.HelpDesc
                     tt.AddRow(cmd, desc)
-            using (msgArg.OpenResponse(true)) (fun ret -> ret.Write(tt))
+            using (msgArg.OpenResponse(PreferImage)) (fun ret -> ret.Write(tt))
         else
             for arg in msgArg.Arguments do
                 let str = KPX.FsCqHttp.Config.Command.CommandStart + arg.ToLowerInvariant()

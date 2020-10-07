@@ -10,6 +10,7 @@ open KPX.FsCqHttp.Api
 open KPX.FsCqHttp.DataType.Response
 open KPX.FsCqHttp.DataType.Event
 open KPX.FsCqHttp.Handler.CommandHandlerBase
+open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.TextTable
 open KPX.FsCqHttp.Utils.UserOption
 
@@ -44,7 +45,7 @@ type DebugModule() =
                 else
                     tt.AddRow(pname, "{复杂类型}")
 
-        using (msgArg.OpenResponse(true)) (fun ret -> ret.Write(tt))
+        using (msgArg.OpenResponse(PreferImage)) (fun ret -> ret.Write(tt))
 
     [<CommandHandlerMethodAttribute("#setlog", "(超管) 设置日志设置", "event, api, command", IsHidden = true)>]
     member x.HandleSetLogging(msgArg : CommandArgs) = 
@@ -75,7 +76,7 @@ type DebugModule() =
     member x.HandleShowLogging(msgArg : CommandArgs) = 
         msgArg.EnsureSenderOwner()
 
-        use ret = msgArg.OpenResponse(true)
+        use ret = msgArg.OpenResponse(PreferImage)
         
         let logs = nlogMemoryTarget.Logs |> Seq.toArray
         

@@ -3,6 +3,7 @@
 open System
 
 open KPX.FsCqHttp.Handler.CommandHandlerBase
+open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.TextTable
 
 open BotData.XivData
@@ -320,7 +321,7 @@ type XivMarketModule() =
 
         if items.Length = 0 then failwith "一个物品都没找到，这不科学，请联系开发者"
 
-        use ret = msgArg.OpenResponse(true)
+        use ret = msgArg.OpenResponse(ForceImage)
         ret.WriteLine("价格有延迟，算法不稳定，市场有风险, 投资需谨慎")
         ret.WriteLine(sprintf "当前服务器：%s" world.WorldName)
 
