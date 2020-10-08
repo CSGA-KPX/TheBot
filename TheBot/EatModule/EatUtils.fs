@@ -150,7 +150,7 @@ let private saizeriyaFunc (dicer : Dicer) =
             |> Array.truncate 5
             |> Array.map (fun (i,c) -> sprintf "%s(%i)" i c )
         if mapped.Length <> 0 then
-            sw.Write(sprintf "%s：%s" name (String.Join(" ", mapped)))
+            sw.WriteLine(sprintf "%s：%s" name (String.Join(" ", mapped)))
     sw.ToString()
 
 let eatAlias = 

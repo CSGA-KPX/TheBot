@@ -70,11 +70,14 @@ type MarketInfoCollection private () =
                      .GetResult()
         if not resp.IsSuccessStatusCode then
             x.Logger.Warn(sprintf "Universalis返回错误%s:%A/%A" resp.ReasonPhrase info.World info.Item)
-            {   Id = info.ToString()
-                LastFetchTime = DateTimeOffset.Now
-                LastUploadTime = DateTimeOffset.Now
-                Listings = Array.empty
-                TradeLogs = Array.empty   }
+            match resp.StatusCode with
+            | Net.HttpStatusCode.NotFound -> 
+                {   Id = info.ToString()
+                    LastFetchTime = DateTimeOffset.Now
+                    LastUploadTime = DateTimeOffset.Now
+                    Listings = Array.empty
+                    TradeLogs = Array.empty   }
+            | other -> failwithf "Universalis API访问异常，请稍后重试：%O" other
         else
             let json = resp.Content.ReadAsStringAsync()
                         |> Async.AwaitTask
