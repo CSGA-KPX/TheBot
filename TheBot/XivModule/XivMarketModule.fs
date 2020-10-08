@@ -3,6 +3,8 @@
 open System
 
 open KPX.FsCqHttp.Handler.CommandHandlerBase
+
+open KPX.FsCqHttp.Handler.RuntimeHelpers
 open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.TextTable
 
@@ -27,12 +29,9 @@ type XivMarketModule() =
         if str.Length <> 0 then String.forall (Char.IsDigit) str
         else false
 
-    let strToItemResult (str : string) =
-        let ret =
-            if isNumber (str) then itemCol.TryGetByItemId(Convert.ToInt32(str))
-            else itemCol.TryGetByName(str.TrimEnd(CommandUtils.XivSpecialChars))
-        if ret.IsSome then Ok ret.Value
-        else Error str
+    let strToItem (str : string) =
+        if isNumber (str) then itemCol.TryGetByItemId(Convert.ToInt32(str))
+        else itemCol.TryGetByName(str.TrimEnd(CommandUtils.XivSpecialChars))
 
     /// 给物品名备注上NPC价格
     let tryLookupNpcPrice (item : Item.ItemRecord) =
@@ -58,20 +57,19 @@ type XivMarketModule() =
         let att = AutoTextTable<MarketUtils.MarketAnalyzer>(headers)
 
         let cfg = CommandUtils.XivConfig(msgArg)
-        let world = cfg.GetWorld()
-
-        att.AddPreTable(sprintf "服务器：%s" world.WorldName)
+        let worlds = cfg.GetWorlds()
 
         let rets =
             cfg.CommandLine
-            |> Array.map (strToItemResult >> Result.map (fun i -> fetchFunc(i, world)))
+            |> Array.collect (fun str ->
+                let item = strToItem str
+                if item.IsNone then failwithf "找不到物品:%s" str
+                [|  for world in worlds do
+                        fetchFunc(item.Value, world) |] )
 
-        for ret in rets do 
-            match ret with
-            | Error str -> att.AddPreTable(sprintf "找不到物品%s，请尝试#is %s" str str)
-            | Ok ma ->
-                if ma.IsEmpty then att.AddRowPadding(ma.ItemRecord.Name, "无记录")
-                else att.AddObject(ma)
+        for ma in rets do 
+            if ma.IsEmpty then att.AddRowPadding(ma.ItemRecord.Name, ma.World.WorldName,  "无记录")
+            else att.AddObject(ma)
 
         using (msgArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(att))
 
@@ -80,6 +78,7 @@ type XivMarketModule() =
         let hdrs = 
             [|
                 LeftAlignCell "名称", fun (ma : MarketUtils.MarketAnalyzer) -> box(ma.ItemRecord |> tryLookupNpcPrice)
+                RightAlignCell "土豆", fun ma -> box(ma.World.WorldName)
                 RightAlignCell "平均", fun ma -> box(ma.StdEvPrice().Round().Average)
                 RightAlignCell "低", fun ma -> box(ma.MinPrice())
                 RightAlignCell "高", fun ma -> box(ma.MaxPrice())
@@ -96,6 +95,7 @@ type XivMarketModule() =
         let hdrs = 
             [|
                 LeftAlignCell "名称", fun (ma : MarketUtils.MarketAnalyzer) -> box(ma.ItemRecord |> tryLookupNpcPrice)
+                RightAlignCell "土豆", fun ma -> box(ma.World.WorldName)
                 RightAlignCell "总体", fun ma -> box(ma.TakeVolume(25).StdEvPrice().Round().Average)
                 RightAlignCell "HQ", fun ma -> box(ma.TakeHQ().TakeVolume(25).StdEvPrice().Round().Average)
                 RightAlignCell "更新时间", fun ma -> box(ma.LastUpdateTime())
@@ -105,65 +105,6 @@ type XivMarketModule() =
             let data = marketInfo.GetMarketListings(w, i) |> Array.map (MarketUtils.MarketData.Order)
             MarketUtils.MarketAnalyzer(i, w, data)
         x.GeneralMarketPrinter(msgArg, hdrs, func)
-
-(*
-    member _.GeneralCrossWorldMarketPrinter(msgArg : CommandArgs,
-                                  headers : (CellType * (MarketUtils.MarketAnalyzer -> obj)) [],
-                                  fetchFunc : Item.ItemRecord ->Result<MarketUtils.MarketAnalyzer[], exn>) = 
-        let att = AutoTextTable<MarketUtils.MarketAnalyzer>(headers)
-        let cfg = CommandUtils.XivConfig(msgArg)
-        let rets =
-            cfg.CommandLine
-            |> Array.map (strToItemResult >> Result.map (fun i -> fetchFunc(i)))
-
-        for ret in rets do 
-            match ret with
-            | Error str -> att.AddPreTable(sprintf "找不到物品%s，请尝试#is %s" str str)
-            | Ok wma ->
-                match wma with
-                | Error exn -> raise exn
-                | Ok wma ->
-                    let sorted = 
-                        wma
-                        |> Array.groupBy (fun (m) -> World.WorldToDC.[m.World])
-                        |> Array.sortBy fst
-                    for dc, ma in sorted do 
-                        att.AddRowPadding(dc)
-                        for m in ma do 
-                            if m.IsEmpty then att.AddRowPadding(m.ItemRecord.Name, m.World.WorldName, "无记录")
-                            else att.AddObject(m)
-
-        using (msgArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(att))
-
-    [<CommandHandlerMethodAttribute("alltradelog", "查询全服交易记录", "物品Id或全名...")>]
-    member x.HandleTradelogCrossWorld(msgArg : CommandArgs) =
-        let hdrs = 
-            [|
-                LeftAlignCell "名称", fun (ma : MarketUtils.MarketAnalyzer) -> box(ma.ItemRecord  |> tryLookupNpcPrice)
-                LeftAlignCell "土豆", fun (ma : MarketUtils.MarketAnalyzer) -> box(ma.World.WorldName)
-                RightAlignCell "平均", fun ma -> box(ma.StdEvPrice().Round().Average)
-                RightAlignCell "低", fun ma -> box(ma.MinPrice())
-                RightAlignCell "高", fun ma -> box(ma.MaxPrice())
-                RightAlignCell "更新时间", fun ma -> box(ma.LastUpdateTime())
-            |]
-
-        let func = fun (i) -> MarketUtils.MarketAnalyzer.FetchTradesAllWorld(i)
-        x.GeneralCrossWorldMarketPrinter(msgArg, hdrs, func)
-
-    [<CommandHandlerMethodAttribute("allmarket", "查询全服市场订单", "物品Id或全名...")>]
-    member x.HandleMarketCrossWorld(msgArg : CommandArgs) =
-        let hdrs = 
-            [|
-                LeftAlignCell "名称", fun (ma : MarketUtils.MarketAnalyzer) -> box(ma.ItemRecord |> tryLookupNpcPrice)
-                LeftAlignCell "土豆", fun ma -> box(ma.World.WorldName)
-                RightAlignCell "总体", fun ma -> box(ma.TakeVolume().StdEvPrice().Round().Average)
-                RightAlignCell "HQ", fun ma -> box(ma.TakeHQ().TakeVolume().StdEvPrice().Round().Average)
-                RightAlignCell "更新时间", fun ma -> box(ma.LastUpdateTime())
-            |]
-
-        let func = fun (i) -> MarketUtils.MarketAnalyzer.FetchOrdersAllWorld(i)
-        x.GeneralCrossWorldMarketPrinter(msgArg, hdrs, func)
-*)
 
     [<CommandHandlerMethodAttribute("r", "根据表达式汇总多个物品的材料，不查询价格", "")>]
     [<CommandHandlerMethodAttribute("rr", "根据表达式汇总多个物品的基础材料，不查询价格", "")>]
@@ -299,10 +240,10 @@ type XivMarketModule() =
 
             let att = AutoTextTable<SpecialShop.SpecialShopInfo>(hdrs)
 
-            let ret = strToItemResult(cfg.CommandLine.[0])
+            let ret = strToItem(cfg.CommandLine.[0])
             match ret with
-            | Error x -> failwithf "找不到物品 %s" x
-            | Ok item ->
+            | None -> failwithf "找不到物品 %s" (cfg.CommandLine.[0])
+            | Some item ->
                 let ia = sc.SearchByCostItemId(item.Id)
                 if ia.Length = 0 then
                     failwithf "%s 不能兑换道具" item.Name

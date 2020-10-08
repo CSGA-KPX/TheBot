@@ -21,12 +21,20 @@ type XivConfig (args : KPX.FsCqHttp.Handler.CommandHandlerBase.CommandArgs) =
         opts.RegisterOption("text", "")
         opts.RegisterOption("server", defaultServerName)
 
-        args.Arguments
-        |> Array.map (fun str -> 
-            if World.WorldFromName.ContainsKey(str) then
-                "server:"+str
+        [|
+            for arg in args.Arguments do
+            if World.WorldFromName.ContainsKey(arg) then
+                yield "server:" + arg
+            elif World.DataCenterAlias.ContainsKey(arg) then
+                let dc = World.DataCenterAlias.[arg]
+                let ss = 
+                    World.Worlds
+                    |> Array.filter (fun x -> x.DataCenter = dc)
+                    |> Array.map (fun x -> sprintf "server:%s" x.WorldName)
+                yield! ss
             else
-                str)
+                yield arg
+        |]
         |> opts.Parse
 
     member x.IsWorldDefined = opts.IsDefined("server")
@@ -39,6 +47,13 @@ type XivConfig (args : KPX.FsCqHttp.Handler.CommandHandlerBase.CommandArgs) =
             World.WorldFromName.[opts.GetValue("server")]
         else
             cm.Get(defaultServerKey, defaultServer)
+
+    member x.GetWorlds() = 
+        if x.IsWorldDefined then
+            opts.GetValues("server")
+            |> Array.map (fun str -> World.WorldFromName.[str])
+        else
+            Array.singleton (cm.Get(defaultServerKey, defaultServer))
 
     member x.CommandLine = opts.CommandLine
 
