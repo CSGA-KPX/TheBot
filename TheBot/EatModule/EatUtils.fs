@@ -2,6 +2,8 @@
 
 open System
 
+open KPX.FsCqHttp.Utils.TextResponse
+
 open TheBot.Utils.Dicer
 
 
@@ -41,8 +43,8 @@ type EatChoices(array : string [], dicer : Dicer) =
         | EatFormat.YesOrNo -> 
             let g = mapped |> Array.filter (fun (_, s) -> s <= goodCutoff)
             let n = mapped |> Array.filter (fun (_, s) -> s >=   noCutOff) |> Array.sortByDescending (snd)
-            sw.Write(("宜：{0}\r\n", String.Join(" ", g |> Array.map (formatPair))))
-            sw.Write(("忌：{0}\r\n", String.Join(" ", n |> Array.map (formatPair))))
+            sw.WriteLine(("宜：{0}", String.Join(" ", g |> Array.map (formatPair))))
+            sw.WriteLine(("忌：{0}", String.Join(" ", n |> Array.map (formatPair))))
         sw.ToString()
 
 let private breakfast = readChoice("早加餐") |> Array.distinct
@@ -52,24 +54,15 @@ let private hotpot_sauce = readChoice("火锅蘸料") |> Array.distinct
 let private hotpot_dish = readChoice("火锅配菜") |> Array.distinct
 let ng = readChoice("别吃") |> Array.distinct
 
-let whenToEat (dicer : Dicer, str : string) = 
+let whenToEat (dicer : Dicer, strs : string []) = 
     let types = [|"早餐"; "午餐"; "晚餐"; "加餐"|]
-    let ret = seq { for t in types do 
-                        let str = sprintf "%s吃%s" t str
-                        let d = dicer.GetRandom(100u, str)
-                        let ret = 
-                            match d with
-                            | _ when d  =100 -> "黄连素备好"
-                            | _ when d >= 96 -> "上秤看看"
-                            | _ when d >= 76 -> "算了吧"
-                            | _ when d >= 51 -> "不推荐"
-                            | _ when d >= 26 -> "也不是不行"
-                            | _ when d >=  6 -> "还好"
-                            | _ when d >=  1 -> "好主意"
-                            | _ -> 
-                                failwith "你说啥来着？"
-                        yield sprintf "%s : %s(%i)" str ret d }
-    String.Join("\r\n", ret)
+    [|  for t in types do 
+            let cs = strs
+                        |> Array.distinct
+                        |> Array.map (fun x -> x, dicer.GetRandom(100u, sprintf "%s吃%s" t x))
+                        |> Array.sortBy snd
+                        |> Array.map (fun (x, y) -> sprintf "%s(%i)" x y)
+            t + "：" + String.Join(" ", cs)  |]
 
 let private mealsFunc prefix array (dicer : Dicer) = 
     let luck = dicer.GetRandom(100u, "吃"+prefix)
@@ -95,9 +88,9 @@ let private mealsFunc prefix array (dicer : Dicer) =
         sprintf "宜：%s\r\n忌：%s" (String.Join(" ", eat)) (String.Join(" ", notEat))
 
 let private hotpotFunc (dicer : Dicer) = 
-    let sw = Text.StringBuilder()
-    sw.AppendLine(whenToEat(dicer, "火锅")) |> ignore
-    sw.AppendLine("") |> ignore
+    let sw = new IO.StringWriter()
+    for l in whenToEat(dicer, Array.singleton "火锅") do sw.WriteLine(l)
+    sw.WriteLine() |> ignore
     let soup =
         hotpot_soup
         |> Array.map (fun x -> x, dicer.GetRandom(100u, "火锅吃"+x))
@@ -122,11 +115,11 @@ let private hotpotFunc (dicer : Dicer) =
         |> Array.sortByDescending (snd)
         |> Array.map (fun (i,c) -> sprintf "%s(%i)" i c )
 
-    sw.AppendFormat("锅底：{0}\r\n", String.Join(" ", soup))
-        .AppendFormat("蘸料：{0}\r\n", String.Join(" ", sauce))
-        .AppendFormat("　宜：{0}\r\n", String.Join(" ", dish_good))
-        .AppendFormat("　忌：{0}", String.Join(" ", dish_bad))
-        .ToString()
+    sw.WriteLine("锅底：{0}", String.Join(" ", soup))
+    sw.WriteLine("蘸料：{0}", String.Join(" ", sauce))
+    sw.WriteLine("　宜：{0}", String.Join(" ", dish_good))
+    sw.WriteLine("　忌：{0}", String.Join(" ", dish_bad))
+    sw.ToString()
 
 let private saizeriya = 
     [|
@@ -139,8 +132,8 @@ let private saizeriya =
 
 let private saizeriyaFunc (dicer : Dicer) = 
     let sw = new IO.StringWriter()
-    sw.WriteLine(whenToEat(dicer, "萨莉亚"))
-    sw.WriteLine()
+    for l in whenToEat(dicer, Array.singleton "萨莉亚") do sw.WriteLine(l)
+    sw.WriteLine() |> ignore
     for (name, c) in saizeriya do
         let mapped = 
             c

@@ -17,14 +17,8 @@ type EatModule() =
     member x.HandleEat(msgArg : CommandArgs) =
         let at = msgArg.MessageEvent.Message.GetAts() |> Array.tryHead
 
-        let str = 
-            let v = String.Join(" ", msgArg.Arguments)
-            if eatAlias.ContainsKey(v) then eatAlias.[v]
-            else v
-        if str = "" then
-            invalidOp "预设套餐：早中晚加 火锅 萨莉亚"
-
         use ret = msgArg.OpenResponse()
+        
         match at with
         | Some Message.AtUserType.All -> ret.FailWith("你要请客吗？")
         | Some (Message.AtUserType.User uid) when uid = msgArg.SelfId || uid = msgArg.MessageEvent.UserId ->
@@ -45,9 +39,18 @@ type EatModule() =
                         SeedOption.SeedByAtUserDay(msgArg.MessageEvent)
                     else
                         SeedOption.SeedByUserDay(msgArg.MessageEvent)
+
         let dicer = new Dicer(seed, AutoRefreshSeed = false)
 
-        if eatFuncs.ContainsKey(str) then
-            ret.Write(eatFuncs.[str](dicer))
-        else
-            ret.Write(whenToEat(dicer, str))
+        match msgArg.Arguments.Length with
+        | 0 -> ret.FailWith "自选输菜名，预设套餐：早/中/晚/加/火锅/萨莉亚"
+        | 1 -> 
+            // 一个选项时处理套餐
+            let mutable str = msgArg.Arguments.[0]
+            if eatAlias.ContainsKey(str) then str <- eatAlias.[str]
+            if eatFuncs.ContainsKey(str) then
+                ret.Write(eatFuncs.[str](dicer))
+            else
+                for l in whenToEat(dicer, msgArg.Arguments) do ret.WriteLine(l)
+        | _ ->
+            for l in whenToEat(dicer, msgArg.Arguments) do ret.WriteLine(l)
