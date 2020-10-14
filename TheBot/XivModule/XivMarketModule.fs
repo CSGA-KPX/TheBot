@@ -77,11 +77,11 @@ type XivMarketModule() =
         let hdrs = 
             [|
                 LeftAlignCell "名称", fun (ma : MarketUtils.MarketAnalyzer) -> box(ma.ItemRecord |> tryLookupNpcPrice)
-                RightAlignCell "土豆", fun ma -> box(ma.World.WorldName)
+                LeftAlignCell "土豆", fun ma -> box(ma.World.WorldName)
                 RightAlignCell "平均", fun ma -> box(ma.StdEvPrice().Round().Average)
                 RightAlignCell "低", fun ma -> box(ma.MinPrice())
                 RightAlignCell "高", fun ma -> box(ma.MaxPrice())
-                RightAlignCell "更新时间", fun ma -> box(ma.LastUpdateTime())
+                LeftAlignCell "更新时间", fun ma -> box(ma.LastUpdateTime())
             |]
 
         let func = fun (i,w) -> 
@@ -94,10 +94,10 @@ type XivMarketModule() =
         let hdrs = 
             [|
                 LeftAlignCell "名称", fun (ma : MarketUtils.MarketAnalyzer) -> box(ma.ItemRecord |> tryLookupNpcPrice)
-                RightAlignCell "土豆", fun ma -> box(ma.World.WorldName)
+                LeftAlignCell "土豆", fun ma -> box(ma.World.WorldName)
                 RightAlignCell "总体", fun ma -> box(ma.TakeVolume(25).StdEvPrice().Round().Average)
                 RightAlignCell "HQ", fun ma -> box(ma.TakeHQ().TakeVolume(25).StdEvPrice().Round().Average)
-                RightAlignCell "更新时间", fun ma -> box(ma.LastUpdateTime())
+                LeftAlignCell "更新时间", fun ma -> box(ma.LastUpdateTime())
             |]
 
         let func = fun (i,w) -> 
