@@ -42,9 +42,9 @@ let Worlds =
 
 let DataCenterAlias = 
     [|
-        "一区", "一区,鸟区,陆行鸟区"
-        "二区", "二区,猪区,莫古力区"
-        "三区", "三区,猫区,猫小胖区"
+        "一区", "一区,鸟区,陆行鸟区,鸟"
+        "二区", "二区,猪区,莫古力区,猪"
+        "三区", "三区,猫区,猫小胖区,猫"
     |]
     |> Seq.collect (fun (x,y) ->
         seq {for alias in y.Split(',') do yield alias,x })
