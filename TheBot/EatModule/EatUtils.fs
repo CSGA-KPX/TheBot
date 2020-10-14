@@ -2,8 +2,6 @@
 
 open System
 
-open KPX.FsCqHttp.Utils.TextResponse
-
 open TheBot.Utils.Dicer
 
 
@@ -52,17 +50,40 @@ let private dinner = readChoice("中晚餐") |> Array.distinct
 let private hotpot_soup = readChoice("火锅底料") |> Array.distinct
 let private hotpot_sauce = readChoice("火锅蘸料") |> Array.distinct
 let private hotpot_dish = readChoice("火锅配菜") |> Array.distinct
+let private DinnerTypes = [|"早餐"; "午餐"; "晚餐"; "加餐"|]
+
 let ng = readChoice("别吃") |> Array.distinct
 
-let whenToEat (dicer : Dicer, strs : string []) = 
-    let types = [|"早餐"; "午餐"; "晚餐"; "加餐"|]
-    [|  for t in types do 
+let whenToEatSingle (dicer : Dicer, str : string) = 
+    [|  for t in DinnerTypes do 
+            let str = sprintf "%s吃%s" t str
+            let d = dicer.GetRandom(100u, str)
+            let ret = 
+                match d with
+                | _ when d  =100 -> "黄连素备好"
+                | _ when d >= 96 -> "上秤看看"
+                | _ when d >= 76 -> "算了吧"
+                | _ when d >= 51 -> "不推荐"
+                | _ when d >= 26 -> "也不是不行"
+                | _ when d >=  6 -> "还好"
+                | _ when d >=  1 -> "好主意"
+                | _ -> 
+                    failwith "你说啥来着？"
+            yield sprintf "%s : %s(%i)" str ret d |]
+
+let whenToEatMulti (dicer : Dicer, strs : string []) = 
+    [|  for t in DinnerTypes do 
             let cs = strs
                         |> Array.distinct
                         |> Array.map (fun x -> x, dicer.GetRandom(100u, sprintf "%s吃%s" t x))
                         |> Array.sortBy snd
                         |> Array.map (fun (x, y) -> sprintf "%s(%i)" x y)
             t + "：" + String.Join(" ", cs)  |]
+
+let whenToEat (dicer : Dicer, strs : string []) = 
+    match strs.Length with
+    | 1 -> whenToEatSingle(dicer, strs.[0])
+    | _ -> whenToEatMulti(dicer, strs)
 
 let private mealsFunc prefix array (dicer : Dicer) = 
     let luck = dicer.GetRandom(100u, "吃"+prefix)

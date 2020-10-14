@@ -9,7 +9,7 @@ open KPX.FsCqHttp
 open KPX.FsCqHttp.Api
 open KPX.FsCqHttp.DataType.Response
 open KPX.FsCqHttp.DataType.Event
-open KPX.FsCqHttp.Handler.CommandHandlerBase
+open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.TextTable
 open KPX.FsCqHttp.Utils.UserOption

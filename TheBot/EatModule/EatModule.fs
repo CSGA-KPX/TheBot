@@ -3,7 +3,7 @@
 open System
 open KPX.FsCqHttp.Api
 open KPX.FsCqHttp.DataType
-open KPX.FsCqHttp.Handler.CommandHandlerBase
+open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Utils.TextResponse
 
 open TheBot.Module.EatModule.Utils
@@ -20,14 +20,14 @@ type EatModule() =
         use ret = msgArg.OpenResponse()
         
         match at with
-        | Some Message.AtUserType.All -> ret.FailWith("你要请客吗？")
+        | Some Message.AtUserType.All -> ret.AbortExecution(InputError, "你要请客吗？")
         | Some (Message.AtUserType.User uid) when uid = msgArg.SelfId || uid = msgArg.MessageEvent.UserId ->
             use s = TheBot.Utils.EmbeddedResource.GetResFileStream("Funny.jpg")
             use img = Drawing.Bitmap.FromStream(s) :?> Drawing.Bitmap
             let msg = Message.Message()
             msg.Add(img)
             msgArg.QuickMessageReply(msg)
-            ret.Fail()
+            ret.AbortExecution(IgnoreError, "")
 
         | Some (Message.AtUserType.User uid) ->
             let atUserName = GroupApi.GetGroupMemberInfo(msgArg.MessageEvent.GroupId, uid)
@@ -43,7 +43,7 @@ type EatModule() =
         let dicer = new Dicer(seed, AutoRefreshSeed = false)
 
         match msgArg.Arguments.Length with
-        | 0 -> ret.FailWith "自选输菜名，预设套餐：早/中/晚/加/火锅/萨莉亚"
+        | 0 -> ret.AbortExecution(InputError, "自选输菜名，预设套餐：早/中/晚/加/火锅/萨莉亚")
         | 1 -> 
             // 一个选项时处理套餐
             let mutable str = msgArg.Arguments.[0]

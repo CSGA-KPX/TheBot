@@ -9,7 +9,6 @@ open System.Net.WebSockets
 open KPX.FsCqHttp.DataType
 open KPX.FsCqHttp.Api
 open KPX.FsCqHttp.Handler
-open KPX.FsCqHttp.Handler.RuntimeHelpers
 
 open Newtonsoft.Json.Linq
 
@@ -105,12 +104,9 @@ type CqWsContext(ws : WebSocket) =
                 let rootExn = getRootExn e
                 match rootExn with
                 | :? IgnoreException -> ()
-                | :? UserErrorException ->
-                    args.QuickMessageReply(sprintf "内部错误：%s" rootExn.Message)
-                    logger.Warn(sprintf "用户错误：\r\n %O" e)
                 | _ ->
                     args.QuickMessageReply(sprintf "内部错误：%s" rootExn.Message)
-                    logger.Fatal(sprintf "捕获异常：\r\n %O" e)
+                    logger.Error(sprintf "捕获异常：\r\n %O" e)
 
         elif obj.ContainsKey("retcode") then //API调用结果
             if KPX.FsCqHttp.Config.Logging.LogApiCall then

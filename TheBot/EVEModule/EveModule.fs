@@ -2,7 +2,7 @@
 
 open System
 
-open KPX.FsCqHttp.Handler.CommandHandlerBase
+open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.TextTable
 
@@ -436,11 +436,11 @@ type EveModule() =
                     ret.WriteLine("按名称匹配，按组名匹配请使用by:group")
 
                 let keyword = 
-                    if cfg.CommandLine.Length = 0 then ret.FailWith("需要一个装备名称关键词")
+                    if cfg.CommandLine.Length = 0 then ret.AbortExecution(InputError, "需要一个装备名称关键词")
                     cfg.CommandLine.[0]
 
-                if keyword.Length < 2 then ret.FailWith("至少2个字")
-                if keyword.Contains("I") then ret.FailWith("emmm 想看全部T2还是别想了")
+                if keyword.Length < 2 then ret.AbortExecution(InputError, "至少2个字")
+                if keyword.Contains("I") then ret.AbortExecution(InputError, "emmm 想看全部T2还是别想了")
 
                 let allowCategoryId = [|7; 18; 8;|] |> Set // 装备，无人机，弹药
 
@@ -463,7 +463,7 @@ type EveModule() =
         data.GetBps()
         |> Seq.filter filterFunc
         |> (fun seq ->
-            if (Seq.length seq) = 0 then ret.FailWith("无符合要求的蓝图信息")
+            if (Seq.length seq) = 0 then ret.AbortExecution(InputError, "无符合要求的蓝图信息")
             seq )
         |> Seq.map (fun ps ->
             let ps = ps.ApplyMaterialEfficiency(cfg.InputMe)

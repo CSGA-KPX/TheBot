@@ -3,7 +3,6 @@
 open System.Collections.Generic
 
 open KPX.FsCqHttp.Handler
-open KPX.FsCqHttp.Handler.CommandHandlerBase
 
 open TheBot.Utils.Config
 

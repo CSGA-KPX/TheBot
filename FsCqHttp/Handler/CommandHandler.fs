@@ -1,4 +1,4 @@
-namespace KPX.FsCqHttp.Handler.CommandHandlerBase
+namespace KPX.FsCqHttp.Handler
 
 open System
 open KPX.FsCqHttp.DataType.Event

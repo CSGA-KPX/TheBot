@@ -2,7 +2,6 @@
 
 open System
 open KPX.FsCqHttp.Handler
-open KPX.FsCqHttp.Handler.CommandHandlerBase
 
 open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.TextTable

@@ -19,7 +19,6 @@
     <Compile Include="Utils\RecipeRPN.fs" />
     <Compile Include="EatModule\EatUtils.fs" />
     <Compile Include="EatModule\EatModule.fs" />
-    <Compile Include="DiceModule\DicebotWarning.fs" />
     <Compile Include="DiceModule\DiceUtils.fs" />
     <Compile Include="DiceModule\DiceModule.fs" />
     <Compile Include="DiceModule\TRpgModule.fs" />

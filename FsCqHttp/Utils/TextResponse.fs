@@ -58,17 +58,12 @@ type TextResponse(args : ClientEventArgs, respType : ResponseType) =
     override x.ToString() = 
         String.Join(x.NewLine, buf)
 
-    /// 抛出异常中断输出，但是不记录日志
-    member x.Fail() = 
+    /// 中断执行过程，中断文本输出
+    member x.AbortExecution(level : ErrorLevel, fmt : string, [<ParamArray>] fmtargs : obj []) =
         x.WriteLine()
         buf.Clear()
-        raise <| RuntimeHelpers.IgnoreException
-
-    /// 清空已有内容，中断文本输出，抛出异常
-    member x.FailWith(msg : string) = 
-        x.WriteLine()
-        buf.Clear()
-        failwith msg
+        isUsed <- false
+        args.AbortExecution(level, fmt, fmtargs)
 
     member x.WriteEmptyLine() = 
         x.WriteLine("\u3000")

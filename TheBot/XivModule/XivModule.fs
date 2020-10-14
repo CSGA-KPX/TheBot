@@ -3,8 +3,7 @@ namespace TheBot.Module.XivModule
 open System
 open System.Text
 
-open KPX.FsCqHttp.Handler.CommandHandlerBase
-open KPX.FsCqHttp.Handler.RuntimeHelpers
+open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.TextTable
 open KPX.FsCqHttp.Utils.UserOption
@@ -38,16 +37,13 @@ type XivModule() =
             |]
         let atUser = msgArg.MessageEvent.Message.GetAts() |> Array.tryHead
         if atUser.IsSome then
-            let at = atUser.Value
             match atUser.Value with
             | KPX.FsCqHttp.DataType.Message.AtUserType.All ->
-                failwith "全员发洗澡水？给我一瓶谢谢！"
+                msgArg.AbortExecution(InputError, "全员发洗澡水？给我一瓶谢谢！")
             | KPX.FsCqHttp.DataType.Message.AtUserType.User i when i = msgArg.SelfId ->
-                failwith "折算成富婆衣可以吗？"
+                msgArg.AbortExecution(InputError, "请联系开发者")
             | KPX.FsCqHttp.DataType.Message.AtUserType.User i ->
-                let atUserName = KPX.FsCqHttp.Api.GroupApi.GetGroupMemberInfo(msgArg.MessageEvent.GroupId, i)
-                msgArg.ApiCaller.CallApi(atUserName)
-                failwithf "先给%s氪一瓶洗澡水，然后让本人投" atUserName.DisplayName
+                msgArg.AbortExecution(ModuleError, "暂不支持")
 
         let dicer = new Dicer(SeedOption.SeedByUserDay(msgArg.MessageEvent))
         
@@ -73,7 +69,7 @@ type XivModule() =
                 let ret = cjm.TrySearchByName(item.ToUpperInvariant())
                 if ret.IsSome then job <- Some (ret.Value.Value)
         if job.IsNone || iLv.IsNone then
-            failwithf "请提供职业和品级信息。职业可以使用：单字简称/全程/英文简称"
+            msgArg.AbortExecution(InputError, "请提供职业和品级信息。职业可以使用：单字简称/全程/英文简称")
 
         let cgc = CraftGearSet.CraftableGearCollection.Instance
         let ret = 
@@ -90,7 +86,7 @@ type XivModule() =
         else
             msgArg.QuickMessageReply("没找到")
 
-    [<CommandHandlerMethodAttribute("is", "查找名字包含字符的物品", "关键词（大小写敏感）")>]
+    [<CommandHandlerMethodAttribute("is", "（FF14）查找名字包含字符的物品", "关键词（大小写敏感）")>]
     member x.HandleItemSearch(msgArg : CommandArgs) =
         let att = AutoTextTable<Item.ItemRecord>(
                     [|
@@ -106,7 +102,7 @@ type XivModule() =
             let ret = itemCol.SearchByName(i) |> Array.sortBy (fun x -> x.Id)
 
             if ret.Length >= 50 then 
-                raise <| UserErrorException "候选太多，请优化关键词"
+                msgArg.AbortExecution(InputError, "结果太多，请优化关键词")
 
             if ret.Length = 0 then
                 att.AddRow("无", "无")
@@ -196,7 +192,7 @@ type XivModule() =
             if cfg.IsDefined("list") then
                 let tt = TextTable.FromHeader([|"CD时间"; "概述"; "tid"; "rid"|])
                 let count = cfg.GetValue<int>("list")
-                if count > 12*31 then failwith "那可太长了。"
+                if count > 12*31 then msgArg.AbortExecution(InputError,  "那时间可太长了。")
                 for i = 0 to count - 1 do 
                     let cd = now.AddHours((float i) * 2.0)
                     let info = OceanFishing.CalculateCooldown(cd)
@@ -220,4 +216,4 @@ type XivModule() =
                 ret.WriteLine("数据源：https://bbs.nga.cn/read.php?tid=20553241")
                 ret.WriteLine("调试信息:IKDRouteTable:{0}, IKDRoute:{1}, isNext:{2}", info.RouTableId, info.RouteId, info.IsNextCooldown)
         with
-        | e -> ret.FailWith(e.ToString())
+        | e -> ret.AbortExecution(ModuleError, "CD计算错误，请通告管理员：\r\n{0}", e)

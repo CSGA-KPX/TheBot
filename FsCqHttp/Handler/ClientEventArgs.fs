@@ -7,8 +7,29 @@ open KPX.FsCqHttp.Api
 
 open Newtonsoft.Json.Linq
 
+exception IgnoreException
+
+type ErrorLevel = 
+    | IgnoreError
+    | UnknownError
+    | InputError
+    | ModuleError
+    | SystemError
+
+    override x.ToString() = 
+        match x with
+        | IgnoreError -> "无视"
+        | UnknownError -> "未知错误"
+        | InputError -> "输入错误"
+        | ModuleError -> "模块错误"
+        | SystemError -> "系统错误"
+
 type ClientEventArgs(api : IApiCallProvider, obj : JObject) =
     inherit EventArgs()
+
+    static let logger = NLog.LogManager.GetCurrentClassLogger()
+
+    member internal x.Logger = logger
 
     member val SelfId = obj.["self_id"].Value<uint64>()
 
@@ -17,6 +38,17 @@ type ClientEventArgs(api : IApiCallProvider, obj : JObject) =
     member x.RawEvent = obj
 
     member x.ApiCaller = api
+
+    /// 中断执行过程
+    member x.AbortExecution(level : ErrorLevel, fmt : string, [<ParamArray>] args : obj []) = 
+        match level with
+        | IgnoreError -> ()
+        | other ->
+            let msg = String.Format(fmt, args)
+            let lvl = other.ToString()
+            x.Logger.Warn("[{0}] -> {1} : {3} \r\n ctx： {2}", x.SelfId, lvl, sprintf "%A" x.Event, msg)
+            x.QuickMessageReply(sprintf "错误：%s" msg)
+            raise IgnoreException
 
     member x.SendResponse(r : Response.EventResponse) =
         if r <> Response.EmptyResponse then

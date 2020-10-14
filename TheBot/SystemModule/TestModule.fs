@@ -4,7 +4,7 @@ open System
 open System.Text
 open System.Drawing
 
-open KPX.FsCqHttp.Handler.CommandHandlerBase
+open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Utils.TextTable
 
 

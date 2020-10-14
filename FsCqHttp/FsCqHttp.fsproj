@@ -19,10 +19,9 @@
     <Compile Include="Api\MsgApi.fs" />
     <Compile Include="Api\GroupApi.fs" />
     <Compile Include="Api\Request.fs" />
-    <Compile Include="Handler\RuntimeHelpers.fs" />
     <Compile Include="Handler\ClientEventArgs.fs" />
     <Compile Include="Handler\HandlerBase.fs" />
-    <Compile Include="Handler\CommandHandlerBase.fs" />
+    <Compile Include="Handler\CommandHandler.fs" />
     <Compile Include="Utils\TextResponse.fs" />
     <Compile Include="Utils\TextTable.fs" />
     <Compile Include="Utils\UserOption.fs" />

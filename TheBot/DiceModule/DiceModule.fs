@@ -1,12 +1,15 @@
 module TheBot.Module.DiceModule.DiceModule
 
 open System
+
 open KPX.FsCqHttp.Api
 open KPX.FsCqHttp.DataType
-open KPX.FsCqHttp.Handler.CommandHandlerBase
+
+open KPX.FsCqHttp.Handler
+
+open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.TextTable
 
-open TheBot.Utils.GenericRPN
 open TheBot.Utils.Dicer
 
 open TheBot.Module.DiceModule.Utils
@@ -18,12 +21,12 @@ type DiceModule() =
     [<CommandHandlerMethodAttribute("c", "对多个选项1d100", "A B C D")>]
     member x.HandleChoices(msgArg : CommandArgs) =
         let atUser = msgArg.MessageEvent.Message.GetAts() |> Array.tryHead
-        let sw = new IO.StringWriter()
+        let sw = msgArg.OpenResponse(ForceText)
         if atUser.IsSome then
             let loginInfo = msgArg.ApiCaller.CallApi<SystemApi.GetLoginInfo>()
             match atUser.Value with
             | Message.AtUserType.All ->
-                failwithf "公共事件请at bot账号"
+                sw.AbortExecution(InputError, "公共事件请at bot账号")
             | Message.AtUserType.User x when x = msgArg.SelfId
                                           && not <| msgArg.RawMessage.Contains(loginInfo.Nickname) ->
                 sw.WriteLine("公投：")
@@ -81,7 +84,7 @@ type DiceModule() =
             let (succ, i) = UInt32.TryParse(arg)
             if succ then
                 let i = int(i)
-                if i > 100 then failwithf "最多100道"
+                if i > 100 then msgArg.AbortExecution(InputError, "最多100道")
                 else count <- i
         let dicer = Dicer(SeedOption.SeedRandom)
         let choices = [|"A"; "B"; "C"; "D"|]
@@ -104,7 +107,7 @@ type DiceModule() =
             if succ then
                 let i = int(i)
                 if i > 300 then
-                    failwithf "一井还不够你用？"
+                    msgArg.AbortExecution(InputError, "一井还不够你用？")
                 elif i >= 10 then
                     count <- i
                 else

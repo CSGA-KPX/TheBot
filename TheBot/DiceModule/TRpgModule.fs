@@ -1,6 +1,6 @@
 ﻿module TheBot.Module.DiceModule.TRpgModule
 
-open KPX.FsCqHttp.Handler.CommandHandlerBase
+open KPX.FsCqHttp.Handler
 
 open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.TextTable

@@ -2,9 +2,8 @@
 
 open System
 
-open KPX.FsCqHttp.Handler.CommandHandlerBase
+open KPX.FsCqHttp.Handler
 
-open KPX.FsCqHttp.Handler.RuntimeHelpers
 open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.TextTable
 
@@ -63,7 +62,7 @@ type XivMarketModule() =
             cfg.CommandLine
             |> Array.collect (fun str ->
                 let item = strToItem str
-                if item.IsNone then failwithf "找不到物品:%s" str
+                if item.IsNone then msgArg.AbortExecution(ModuleError, "找不到物品:{0}，请尝试#is {0}", str)
                 [|  for world in worlds do
                         fetchFunc(item.Value, world) |] )
 
@@ -242,11 +241,11 @@ type XivMarketModule() =
 
             let ret = strToItem(cfg.CommandLine.[0])
             match ret with
-            | None -> failwithf "找不到物品 %s" (cfg.CommandLine.[0])
+            | None -> msgArg.AbortExecution(ModuleError, "找不到物品{0}", cfg.CommandLine.[0])
             | Some item ->
                 let ia = sc.SearchByCostItemId(item.Id)
                 if ia.Length = 0 then
-                    failwithf "%s 不能兑换道具" item.Name
+                    msgArg.AbortExecution(InputError, "{0} 不能兑换道具", item.Name)
                 for info in ia do 
                     att.AddObject(info)
             using (msgArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(att))
@@ -260,7 +259,7 @@ type XivMarketModule() =
             itemCol.SearchByName("第二期重建用的")
             |> Array.filter (fun item -> item.Name.Contains("（检）"))
 
-        if items.Length = 0 then failwith "一个物品都没找到，这不科学，请联系开发者"
+        if items.Length = 0 then msgArg.AbortExecution(ModuleError, "一个物品都没找到，这不科学，请联系开发者")
 
         use ret = msgArg.OpenResponse(ForceImage)
         ret.WriteLine("价格有延迟，算法不稳定，市场有风险, 投资需谨慎")
