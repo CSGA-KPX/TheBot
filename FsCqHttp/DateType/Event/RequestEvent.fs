@@ -38,11 +38,11 @@ type RequestEvent =
 and RequestEventConverter() =
     inherit JsonConverter<RequestEvent>()
 
-    override x.WriteJson(w : JsonWriter, r : RequestEvent, js : JsonSerializer) =
+    override x.WriteJson(_ : JsonWriter, _ : RequestEvent, _ : JsonSerializer) =
         raise<unit> <| NotImplementedException()
 
-    override x.ReadJson(r : JsonReader, objType : Type, existingValue : RequestEvent, hasExistingValue : bool,
-                        s : JsonSerializer) =
+    override x.ReadJson(r : JsonReader, _ : Type, _ : RequestEvent, _ : bool,
+                        _ : JsonSerializer) =
         let obj = JObject.Load(r)
 
         match obj.["request_type"].Value<string>() with

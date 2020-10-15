@@ -7,6 +7,7 @@ open System.Drawing
 open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Utils.TextTable
 
+#nowarn "1182"
 
 type TestModule() =
     inherit CommandHandlerBase()

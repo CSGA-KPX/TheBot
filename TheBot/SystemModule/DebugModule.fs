@@ -1,20 +1,14 @@
 ﻿module TheBot.Module.DebugModule
 
 open System
-open System.IO
 open System.Reflection
-open System.Security.Cryptography
 
 open KPX.FsCqHttp
-open KPX.FsCqHttp.Api
-open KPX.FsCqHttp.DataType.Response
-open KPX.FsCqHttp.DataType.Event
 open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.TextTable
 open KPX.FsCqHttp.Utils.UserOption
 
-open TheBot.Utils.Config
 open TheBot.Utils.HandlerUtils
 
 type DebugModule() =

@@ -12,7 +12,6 @@ open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Utils.TextTable
 open KPX.FsCqHttp.Utils.UserOption
 
-open TheBot.Utils.Config
 open TheBot.Utils.HandlerUtils
 
 type SudoModule() =
@@ -45,20 +44,21 @@ type SudoModule() =
 
     [<CommandHandlerMethodAttribute("#su", "提交凭据，添加当前用户为超管", "", IsHidden = true)>]
     member x.HandleSu(msgArg : CommandArgs) = 
-        if isSuUsed then failwith "本次认证已被使用"
-        let cb = Assembly.GetExecutingAssembly().CodeBase
-        let uri = new UriBuilder(cb)
-        let path = Uri.UnescapeDataString(uri.Path)
-        let md5 = MD5.Create()
-        let hex = BitConverter.ToString(md5.ComputeHash(File.OpenRead(path))).Replace("-", "")
-        let isMatch = msgArg.RawMessage.ToUpperInvariant().Contains(hex)
-        if isMatch then
-            let uid = msgArg.MessageEvent.UserId
-            x.Logger.Info("添加超管和管理员权限{0}", uid)
-            msgArg.SetInstanceOwner(uid)
-            msgArg.GrantBotAdmin(uid)
-            msgArg.QuickMessageReply("完毕")
-        isSuUsed <- true
+        if isSuUsed then msgArg.QuickMessageReply("本次认证已被使用")
+        else
+            let cb = Assembly.GetExecutingAssembly().CodeBase
+            let uri = new UriBuilder(cb)
+            let path = Uri.UnescapeDataString(uri.Path)
+            let md5 = MD5.Create()
+            let hex = BitConverter.ToString(md5.ComputeHash(File.OpenRead(path))).Replace("-", "")
+            let isMatch = msgArg.RawMessage.ToUpperInvariant().Contains(hex)
+            if isMatch then
+                let uid = msgArg.MessageEvent.UserId
+                x.Logger.Info("添加超管和管理员权限{0}", uid)
+                msgArg.SetInstanceOwner(uid)
+                msgArg.GrantBotAdmin(uid)
+                msgArg.QuickMessageReply("完毕")
+            isSuUsed <- true
 
     [<CommandHandlerMethodAttribute("#grant", "（超管）添加用户为管理员", "", IsHidden = true)>]
     member x.HandleGrant(msgArg : CommandArgs) = 

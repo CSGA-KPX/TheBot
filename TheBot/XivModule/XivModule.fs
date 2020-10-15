@@ -42,7 +42,7 @@ type XivModule() =
                 msgArg.AbortExecution(InputError, "全员发洗澡水？给我一瓶谢谢！")
             | KPX.FsCqHttp.DataType.Message.AtUserType.User i when i = msgArg.SelfId ->
                 msgArg.AbortExecution(InputError, "请联系开发者")
-            | KPX.FsCqHttp.DataType.Message.AtUserType.User i ->
+            | KPX.FsCqHttp.DataType.Message.AtUserType.User _ ->
                 msgArg.AbortExecution(ModuleError, "暂不支持")
 
         let dicer = new Dicer(SeedOption.SeedByUserDay(msgArg.MessageEvent))

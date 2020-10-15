@@ -40,10 +40,10 @@ type ApiResponse =
 and ApiResponseConverter() =
     inherit JsonConverter<ApiResponse>()
 
-    override x.WriteJson(w : JsonWriter, r : ApiResponse, s : JsonSerializer) = raise<unit> <| NotImplementedException()
+    override x.WriteJson(_ : JsonWriter, _ : ApiResponse, _ : JsonSerializer) = raise<unit> <| NotImplementedException()
 
-    override x.ReadJson(r : JsonReader, objType : Type, existingValue : ApiResponse, hasExistingValue : bool,
-                        s : JsonSerializer) =
+    override x.ReadJson(r : JsonReader, _ : Type, _ : ApiResponse, _ : bool,
+                        _ : JsonSerializer) =
         let obj = JObject.Load(r)
         { Status = obj.["status"].Value<string>()
           ReturnCode = enum<ApiRetCode> (obj.["retcode"].Value<int32>())

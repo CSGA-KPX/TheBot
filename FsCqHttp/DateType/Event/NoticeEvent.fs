@@ -139,11 +139,11 @@ type GroupNotifyEvent =
 and GroupNotifyEventConverter() = 
     inherit JsonConverter<GroupNotifyEvent>()
 
-    override x.WriteJson(w : JsonWriter, r : GroupNotifyEvent, js : JsonSerializer) =
+    override x.WriteJson(_ : JsonWriter, _ : GroupNotifyEvent, _ : JsonSerializer) =
         raise<unit> <| NotImplementedException()
 
-    override x.ReadJson(r : JsonReader, objType : Type, existingValue : GroupNotifyEvent, hasExistingValue : bool,
-                        s : JsonSerializer) =
+    override x.ReadJson(r : JsonReader, _ : Type, _ : GroupNotifyEvent, _ : bool,
+                        _ : JsonSerializer) =
         let obj = JObject.Load(r)
         let gid = obj.["group_id"].Value<uint64>()
         let uid = obj.["user_id"].Value<uint64>()
@@ -182,11 +182,11 @@ type NoticeEvent =
 and NoticeEventConverter() =
     inherit JsonConverter<NoticeEvent>()
 
-    override x.WriteJson(w : JsonWriter, r : NoticeEvent, js : JsonSerializer) =
+    override x.WriteJson(_ : JsonWriter, _ : NoticeEvent, _ : JsonSerializer) =
         raise<unit> <| NotImplementedException()
 
-    override x.ReadJson(r : JsonReader, objType : Type, existingValue : NoticeEvent, hasExistingValue : bool,
-                        s : JsonSerializer) =
+    override x.ReadJson(r : JsonReader, _ : Type, _ : NoticeEvent, _ : bool,
+                        _ : JsonSerializer) =
         let obj = JObject.Load(r)
 
         match obj.["notice_type"].Value<string>() with

@@ -12,7 +12,7 @@ type ItemRecord =
 
     override x.ToString() = sprintf "%s(%i)" x.Name x.Id
 
-    static member GetUnknown(lodeId) =
+    static member GetUnknown() =
         { Id = -1
           Name = "Unknown" }
 

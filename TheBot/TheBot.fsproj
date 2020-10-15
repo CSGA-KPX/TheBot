@@ -5,6 +5,10 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <OtherFlags>--warnon:1182</OtherFlags>
+  </PropertyGroup>
+
   <ItemGroup>
     <None Remove="C:\Users\dmmik\.nuget\packages\nlog.config\4.6.7\contentFiles\any\any\NLog.config" />
   </ItemGroup>

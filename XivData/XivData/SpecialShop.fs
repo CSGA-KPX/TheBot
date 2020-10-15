@@ -22,13 +22,6 @@ type SpecialShopInfo =
 type SpecialShopCollection private () =
     inherit CachedTableCollection<int, SpecialShopInfo>()
 
-    static let allowItemUICategory =
-        HashSet<int>([| yield 33
-                        yield 45
-                        yield! [ 47 .. 54 ]
-                        yield 58
-                        yield 59 |])
-
     static let instance = SpecialShopCollection()
     static member Instance = instance
 

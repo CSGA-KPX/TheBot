@@ -65,7 +65,7 @@ type GetStrangerInfo(userid : uint64, ?noCache : bool) =
     member val Sex = "" with get, set
     member val Age = 0 with get, set
 
-    override x.WriteParams(w, js) =
+    override x.WriteParams(w, _) =
         w.WritePropertyName("user_id")
         w.WriteValue(userid)
         w.WritePropertyName("no_cache")

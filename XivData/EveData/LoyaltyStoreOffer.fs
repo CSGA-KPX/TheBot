@@ -37,7 +37,7 @@ type LoyaltyStoreCollection private () =
     static member Instance = instance
 
     /// LoyaltyStoreOffer暂不过期
-    override x.IsExpired (item) = false
+    override x.IsExpired (_) = false
 
     override x.Depends = [| typeof<NpcCorporationoCollection> |]
 

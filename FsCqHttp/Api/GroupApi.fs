@@ -78,7 +78,7 @@ type GetGroupMemberInfo(groupId : uint64, userId : uint64, ?noCache : bool) =
         if System.String.IsNullOrEmpty(x.Card) then x.NickName
         else x.Card
 
-    override x.WriteParams(w, js) =
+    override x.WriteParams(w, _) =
         w.WritePropertyName("group_id")
         w.WriteValue(groupId)
 

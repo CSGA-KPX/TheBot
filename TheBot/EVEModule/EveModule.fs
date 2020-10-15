@@ -27,7 +27,8 @@ type EveModule() =
 
     let typeToBp(item : EveType) = 
         let ret = tryTypeToBp(item)
-        if ret.IsNone then failwithf "找不到蓝图信息: %s" item.Name 
+        if ret.IsNone then 
+            raise <| ModuleException(InputError, "找不到蓝图信息: {0}", item.Name)
         ret.Value
 
     /// 物品名或蓝图名查找蓝图
@@ -106,15 +107,6 @@ type EveModule() =
     [<CommandHandlerMethodAttribute("emr", "价格实时查询（市场中心API）", "")>]
     member x.HandleEveMarket(msgArg : CommandArgs) =
         let mutable argOverride = None
-        let priceFunc = 
-            match msgArg.CommandName with // 注意小写匹配
-            | Some "em"  -> fun (t : EveType) -> data.GetItemPriceCached(t)
-            | Some "emr" -> fun (t : EveType) -> data.GetItemPrice(t)
-            | Some "eve矿物" -> 
-                argOverride <- Some(MineralNames.Replace(',', '+'))
-                fun (t : EveType) -> data.GetItemPriceCached(t)
-            | _ -> failwithf "%A" msgArg.CommandName
-
         let t =
             let str =
                 if argOverride.IsSome then argOverride.Value
@@ -126,7 +118,7 @@ type EveModule() =
         | Accumulator a ->
             for kv in a do 
                 att.AddObject(kv.Key, kv.Value)
-        | _ -> failwithf "求值失败，结果是%A" t
+        | _ -> msgArg.AbortExecution(InputError, sprintf "求值失败，结果是%A" t)
 
         let cfg = EveConfigParser()
         cfg.Parse(msgArg.Arguments)
@@ -166,7 +158,7 @@ type EveModule() =
         tt.AddPreTable(sprintf "输入效率：%i%% "cfg.InputMe)
         match er.Eval(cfg.CmdLineAsString) with
         | Number n ->
-            failwithf "结算结果为数字:%g" n
+            msgArg.AbortExecution(InputError, "结算结果为数字: {0}", n)
         | Accumulator a ->
             for kv in a do 
                 let q  = kv.Value
@@ -185,9 +177,9 @@ type EveModule() =
                 | _ when q < 0.0 -> 
                     // 已有材料需要扣除
                     final.AddOrUpdate(kv.Key, kv.Value)
-                | _ -> failwithf "不知道如何处理：%s * %g" kv.Key.Name kv.Value
+                | _ -> 
+                    msgArg.AbortExecution(ModuleError, "不知道如何处理：{0} * {1}", kv.Key.Name, kv.Value)
 
-            
         for kv in final do 
             tt.AddRow(kv.Key.Name, kv.Value)
 
@@ -218,7 +210,7 @@ type EveModule() =
 
         match er.Eval(cfg.CmdLineAsString) with
         | Number n ->
-            failwithf "结算结果为数字:%g" n
+            msgArg.AbortExecution(InputError, "结算结果为数字: {0}", n)
         | Accumulator a ->
             for kv in a do 
                 let q  = kv.Value
@@ -240,7 +232,7 @@ type EveModule() =
         let finalBp = 
             match er.Eval(cfg.CmdLineAsString) with
             | Number n ->
-                failwithf "结算结果为数字:%g" n
+                msgArg.AbortExecution(InputError, "结算结果为数字: {0}", n)
             | Accumulator a ->
                 /// 生成一个伪蓝图用于下游计算
                 let os = ItemAccumulator<EveType>()
@@ -250,14 +242,14 @@ type EveModule() =
                 for kv in a do
                     let t = kv.Key
                     let q = kv.Value
-                    if q < 0.0 then failwith "不支持负数计算"
+                    if q < 0.0 then msgArg.AbortExecution(InputError, "不支持负数计算")
 
                     let bp = (typeToBp t).GetBpByRuns(q).ApplyMaterialEfficiency(cfg.InputMe)
 
                     if bpTypeCheck.IsNone then bpTypeCheck <- Some bp.Type
                     else
                         if bpTypeCheck.Value <> bp.Type then
-                            invalidOp "蓝图类型不一致，无法计算，请拆分后重试"
+                            msgArg.AbortExecution(InputError, "蓝图类型不一致，无法计算，请拆分后重试")
 
                     os.AddOrUpdate(bp.ProductItem, bp.ProductQuantity)
                     for m in bp.Materials do
@@ -453,7 +445,7 @@ type EveModule() =
                         && (allowCategoryId.Contains(bp.ProductItem.CategoryId)) // 装备
                         && (bp.ProductItem.MetaGroupId = 2) // T2
 
-            | _ -> failwithf "%A" msgArg.CommandName
+            | other -> msgArg.AbortExecution(ModuleError, "不应发生匹配:{0}", other)
 
 
         let pmStr = cfg.MaterialPriceMode.ToString()

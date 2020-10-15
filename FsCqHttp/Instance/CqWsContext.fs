@@ -104,6 +104,10 @@ type CqWsContext(ws : WebSocket) =
                 let rootExn = getRootExn e
                 match rootExn with
                 | :? IgnoreException -> ()
+                | :? ModuleException as me -> 
+                    args.Logger.Warn("[{0}] -> {1} : {2} \r\n ctx： {3}", x.SelfId, me.ErrorLevel, sprintf "%A" args.Event, me.Message)
+                    args.QuickMessageReply(sprintf "错误：%s" me.Message)
+                    args.AbortExecution(me.ErrorLevel, me.Message)
                 | _ ->
                     args.QuickMessageReply(sprintf "内部错误：%s" rootExn.Message)
                     logger.Error(sprintf "捕获异常：\r\n %O" e)
@@ -144,7 +148,8 @@ type CqWsContext(ws : WebSocket) =
                     Tasks.Task.Run((fun () -> x.HandleMessage(json)))
                         .ContinueWith(fun t -> 
                             if t.IsFaulted then
-                                logger.Fatal(sprintf "捕获异常：\r\n %O" t.Exception)
+                                for inner in t.Exception.InnerExceptions do
+                                    logger.Fatal(sprintf "捕获异常%s : %s" (inner.GetType().Name) inner.Message)
                         ) |> ignore
             with
             | e ->

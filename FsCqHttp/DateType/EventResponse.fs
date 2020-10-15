@@ -24,5 +24,5 @@ and EventResponseConverter() =
                 w.WritePropertyName(prop.Name)
                 js.Serialize(w, prop.GetValue(r))
 
-    override x.ReadJson(r : JsonReader, objType : Type, existingValue : EventResponse, hasExistingValue : bool, s : JsonSerializer) =
+    override x.ReadJson(_ : JsonReader, _ : Type, _ : EventResponse, _ : bool, _ : JsonSerializer) =
         raise <| NotImplementedException()

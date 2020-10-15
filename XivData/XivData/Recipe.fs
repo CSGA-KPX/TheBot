@@ -202,12 +202,11 @@ type RecipeManager private () =
                 let materials = recipe.Value.Materials |> Array.map (fun (item, count) -> (item, count * realRuns))
                 let countStr = "*" + String.Format("{0:0.###}", 1.0)
                 acc.Enqueue(level + countStr + "/", materials)
-                for (item, count) in materials do
+                for (item, _) in materials do
                     getMaterialsRec (acc, level + "/" + item.Name, item, 1.0)
         [| let acc = Queue<string * (ItemRecord * float) []>()
            getMaterialsRec (acc, item.Name, item, 1.0)
-           let test = acc.ToArray()
-           yield! acc.ToArray() |> Array.filter (fun (level, arr) -> arr.Length <> 0) |]
+           yield! acc.ToArray() |> Array.filter (fun (_, arr) -> arr.Length <> 0) |]
 
     member x.AddProvider(p : IRecipeProvider) = providers.Add(p) |> ignore
 

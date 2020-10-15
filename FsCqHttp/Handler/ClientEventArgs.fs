@@ -7,8 +7,6 @@ open KPX.FsCqHttp.Api
 
 open Newtonsoft.Json.Linq
 
-exception IgnoreException
-
 type ErrorLevel = 
     | IgnoreError
     | UnknownError
@@ -23,6 +21,17 @@ type ErrorLevel =
         | InputError -> "输入错误"
         | ModuleError -> "模块错误"
         | SystemError -> "系统错误"
+
+exception IgnoreException
+
+/// 当无法使用ClientEventArgs.AbortExecution时使用
+type ModuleException(level : ErrorLevel, msg : string) = 
+    inherit Exception(msg)
+
+    new (level : ErrorLevel, fmt : string, [<ParamArray>] args : obj []) = 
+        ModuleException(level, String.Format(fmt, args))
+
+    member _.ErrorLevel = level
 
 type ClientEventArgs(api : IApiCallProvider, obj : JObject) =
     inherit EventArgs()
@@ -40,15 +49,18 @@ type ClientEventArgs(api : IApiCallProvider, obj : JObject) =
     member x.ApiCaller = api
 
     /// 中断执行过程
-    member x.AbortExecution(level : ErrorLevel, fmt : string, [<ParamArray>] args : obj []) = 
+    member x.AbortExecution(level : ErrorLevel, fmt : string, [<ParamArray>] args : obj []) : 'T = 
         match level with
         | IgnoreError -> ()
         | other ->
             let msg = String.Format(fmt, args)
             let lvl = other.ToString()
-            x.Logger.Warn("[{0}] -> {1} : {3} \r\n ctx： {2}", x.SelfId, lvl, sprintf "%A" x.Event, msg)
+            let stack = Diagnostics.StackTrace().ToString()
+
+            x.Logger.Warn("[{0}] -> {1} : {3} \r\n ctx： {2} \r\n stack : {4}", x.SelfId, lvl, sprintf "%A" x.Event, msg, stack)
             x.QuickMessageReply(sprintf "错误：%s" msg)
             raise IgnoreException
+        Unchecked.defaultof<'T>
 
     member x.SendResponse(r : Response.EventResponse) =
         if r <> Response.EmptyResponse then

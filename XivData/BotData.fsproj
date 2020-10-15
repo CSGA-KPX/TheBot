@@ -5,6 +5,10 @@
     <OutputType>Library</OutputType>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <OtherFlags>--warnon:1182</OtherFlags>
+  </PropertyGroup>
+
   <ItemGroup>
     <EmbeddedResource Include="EVEData.zip" />
     <Compile Include="Common\Resource.fs" />

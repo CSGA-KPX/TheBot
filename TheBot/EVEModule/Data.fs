@@ -9,8 +9,7 @@ open BotData.EveData.NpcCorporation
 
 
 type DataBundle private () = 
-    let logger = NLog.LogManager.GetCurrentClassLogger()
-    
+
     let itemCol = EveTypeCollection.Instance
     let bpCol   = EveBlueprintCollection.Instance
 
@@ -19,8 +18,6 @@ type DataBundle private () =
     let priceCache = MarketPriceCache.PriceCacheCollection.Instance
     let volumeCache = MarketHistoryCache.MarketTradeHistoryCollection.Instance
     let lpStoreCache = LoyaltyStoreOffer.LoyaltyStoreCollection.Instance
-
-    let itemNotFound = failwithf "找不到物品 %s"
 
     static let instance = 
         let i = DataBundle()

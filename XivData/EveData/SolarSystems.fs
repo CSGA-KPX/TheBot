@@ -45,8 +45,6 @@ type SolarSystemCollection private () =
                 if not <| String.IsNullOrWhiteSpace(line) then
                     let a = line.Split('\t')
                     let sid, sname = a.[0] |> int, a.[1]
-                    let cid, cname = a.[0] |> int, a.[1]
-                    let rid, rname = a.[0] |> int, a.[1]
                     yield { Id = sid
                             Name = sname }
         }

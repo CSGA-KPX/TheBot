@@ -33,42 +33,39 @@ type RecipeOperand<'Item when 'Item : equality> =
             match l, r with
             | (Number i1), (Number i2) -> Number(i1 + i2)
             | (Accumulator a1), (Accumulator a2) -> Accumulator(a1.MergeWith(a2))
-            | (Number i), (Accumulator a) -> raise <| InvalidOperationException("不允许材料和数字相加")
-            | (Accumulator a), (Number i) -> (r :> IOperand<RecipeOperand<'Item>>).Add(l)
+            | (Number _), (Accumulator _) -> raise <| InvalidOperationException("不允许材料和数字相加")
+            | (Accumulator _), (Number _) -> (r :> IOperand<RecipeOperand<'Item>>).Add(l)
 
         override l.Sub(r) =
             match l, r with
             | (Number i1), (Number i2) -> Number(i1 - i2)
             | (Accumulator a1), (Accumulator a2) -> Accumulator(a1.MergeWith(a2, false))
-            | (Number i), (Accumulator a) -> raise <| InvalidOperationException("不允许材料和数字相减")
-            | (Accumulator a), (Number i) -> (r :> IOperand<RecipeOperand<'Item>>).Sub(l)
+            | (Number _), (Accumulator _) -> raise <| InvalidOperationException("不允许材料和数字相减")
+            | (Accumulator _), (Number _) -> (r :> IOperand<RecipeOperand<'Item>>).Sub(l)
 
         override l.Mul(r) =
             match l, r with
             | (Number i1), (Number i2) -> Number(i1 * i2)
-            | (Accumulator a1), (Accumulator a2) -> raise <| InvalidOperationException("不允许材料和材料相乘")
+            | (Accumulator _), (Accumulator _) -> raise <| InvalidOperationException("不允许材料和材料相乘")
             | (Number i), (Accumulator a) ->
                 let keys = a.Keys |> Seq.toArray
                 for k in keys do
                     a.[k] <- a.[k] * i
                 Accumulator a
-            | (Accumulator a), (Number i) -> (r :> IOperand<RecipeOperand<'Item>>).Mul(l)
+            | (Accumulator _), (Number _) -> (r :> IOperand<RecipeOperand<'Item>>).Mul(l)
 
         override l.Div(r) =
             match l, r with
             | (Number i1), (Number i2) -> Number(i1 / i2)
-            | (Accumulator a1), (Accumulator a2) -> raise <| InvalidOperationException("不允许材料和材料相减")
+            | (Accumulator _), (Accumulator _) -> raise <| InvalidOperationException("不允许材料和材料相减")
             | (Number i), (Accumulator a) ->
                 let keys = a.Keys |> Seq.toArray
                 for k in keys do
                     a.[k] <- a.[k] / i
                 Accumulator a
-            | (Accumulator a), (Number i) -> (r :> IOperand<RecipeOperand<'Item>>).Div(l)
+            | (Accumulator _), (Number _) -> (r :> IOperand<RecipeOperand<'Item>>).Div(l)
 
 /// 用于计算物品数量的RPN解析器
-/// 
-/// 
-/// 
 [<AbstractClass>]
 type RecipeExpression<'Item when 'Item : equality>() =
     inherit GenericRPNParser<RecipeOperand<'Item>>()

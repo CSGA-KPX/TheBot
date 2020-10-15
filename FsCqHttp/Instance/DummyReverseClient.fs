@@ -92,7 +92,9 @@ type DummyReverseClient(server, token) as x =
             let obj = JObject.Parse(json)
             let echo = obj.["echo"].Value<string>()
             let action = obj.["action"].Value<string>()
+
             let param = obj.["params"]
+            param |> ignore
 
             let response = JObject()
 

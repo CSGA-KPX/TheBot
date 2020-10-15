@@ -7,10 +7,10 @@ open Newtonsoft.Json
 type Int64JsonConverter() = 
     inherit JsonConverter<uint64>()
 
-    override x.WriteJson(writer : JsonWriter, value : uint64, serializer: JsonSerializer) = 
+    override x.WriteJson(writer : JsonWriter, value : uint64, _ : JsonSerializer) = 
         writer.WriteValue(value |> string)
 
-    override x.ReadJson(reader : JsonReader, objType : Type, ext : uint64, hasExt : bool,  serializer : JsonSerializer) =
+    override x.ReadJson(reader : JsonReader, _ : Type, _ : uint64, _ : bool,  _ : JsonSerializer) =
         reader.Value
         |> string
         |> uint64

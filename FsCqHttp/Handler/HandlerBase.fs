@@ -37,4 +37,4 @@ type HandlerModuleBase(shared : bool) as x =
         | Event.CqHttpEvent.Message y -> x.HandleMessage(args, y)
         | Event.CqHttpEvent.Request y -> x.HandleRequest(args, y)
         | Event.CqHttpEvent.Notice y -> x.HandleNotice(args, y)
-        | Event.CqHttpEvent.Meta y -> ()
+        | Event.CqHttpEvent.Meta _ -> ()

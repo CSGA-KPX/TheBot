@@ -131,7 +131,7 @@ type Message(sec : RawMessageSection []) as x =
 and MessageConverter() =
     inherit JsonConverter<Message>()
 
-    override x.WriteJson(w : JsonWriter, r : Message, s : JsonSerializer) =
+    override x.WriteJson(w : JsonWriter, r : Message, _ : JsonSerializer) =
         w.WriteStartArray()
         for sec in r do
             w.WriteStartObject()
@@ -146,8 +146,8 @@ and MessageConverter() =
             w.WriteEndObject()
         w.WriteEndArray()
 
-    override x.ReadJson(r : JsonReader, objType : Type, existingValue : Message, hasExistingValue : bool,
-                        s : JsonSerializer) =
+    override x.ReadJson(r : JsonReader, _ : Type, _ : Message, _ : bool,
+                        _ : JsonSerializer) =
         
         match r.TokenType with
         | JsonToken.StartArray -> 

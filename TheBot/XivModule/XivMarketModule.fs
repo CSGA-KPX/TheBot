@@ -129,10 +129,10 @@ type XivMarketModule() =
         let mutable sum = MarketUtils.StdEv.Zero
         let hdrs = 
             [|
-                yield LeftAlignCell "物品", fun (item : Item.ItemRecord, amount : float) -> box (item |> tryLookupNpcPrice)
+                yield LeftAlignCell "物品", fun (item : Item.ItemRecord, _) -> box (item |> tryLookupNpcPrice)
 
                 if doCalculateCost then
-                    yield RightAlignCell "价格", fun (item, amount) ->
+                    yield RightAlignCell "价格", fun (item, _) ->
                             updateCur(item)
                             if cur.Value.IsEmpty then box <| RightAlignCell "--"
                             else box (cur.Value.StdEvPrice().Round().Average)
@@ -140,14 +140,14 @@ type XivMarketModule() =
                 yield RightAlignCell "数量", snd >> box
 
                 if doCalculateCost then
-                    yield RightAlignCell "小计", fun (item, amount) ->
+                    yield RightAlignCell "小计", fun (_, amount) ->
                             if cur.Value.IsEmpty then box <| RightAlignCell "--"
                             else
                                 let subtotal = cur.Value.StdEvPrice().Round() * amount
                                 sum <- sum + subtotal
                                 box subtotal.Average
 
-                    yield RightAlignCell "更新时间", fun (item, amount) ->
+                    yield RightAlignCell "更新时间", fun (_, _) ->
                             if cur.Value.IsEmpty then box <| RightAlignCell "--"
                             else box <| RightAlignCell (cur.Value.LastUpdateTime())
             |]
