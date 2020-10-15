@@ -21,7 +21,7 @@ type DiceModule() =
     [<CommandHandlerMethodAttribute("c", "对多个选项1d100", "A B C D")>]
     member x.HandleChoices(msgArg : CommandArgs) =
         let atUser = msgArg.MessageEvent.Message.GetAts() |> Array.tryHead
-        let sw = msgArg.OpenResponse(ForceText)
+        use sw = msgArg.OpenResponse(ForceText)
         if atUser.IsSome then
             let loginInfo = msgArg.ApiCaller.CallApi<SystemApi.GetLoginInfo>()
             match atUser.Value with
@@ -57,8 +57,7 @@ type DiceModule() =
         |> Array.sortBy snd
         |> Array.iter (fun (c, n) -> tt.AddRow((sprintf "%03i" n), c))
 
-        sw.Write(tt.ToString())
-        msgArg.QuickMessageReply(sw.ToString())
+        sw.Write(tt)
 
     [<CommandHandlerMethodAttribute("jrrp", "今日人品值", "")>]
     member x.HandleJrrp(msgArg : CommandArgs) =
