@@ -95,7 +95,7 @@ type MarketAnalyzer(item : Item.ItemRecord, world : World.World, data : MarketDa
 
     member x.LastUpdateTime() =
         let dt = (data |> Array.maxBy (fun x -> x.UpdateTime)).UpdateTime
-        (DateTimeOffset.Now - dt) |> Utils.formatTimeSpan
+        (DateTimeOffset.Now - dt)
 
     member x.MinPrice() = (data |> Array.minBy (fun x -> x.Price)).Price
     member x.MaxPrice() = (data |> Array.maxBy (fun x -> x.Price)).Price

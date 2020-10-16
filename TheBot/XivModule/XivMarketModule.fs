@@ -49,61 +49,54 @@ type XivMarketModule() =
         else
             msgArg.QuickMessageReply("没有指定服务器或服务器名称不正确")
 
-    member _.GeneralMarketPrinter(msgArg : CommandArgs,
-                                  headers : (CellType * (MarketUtils.MarketAnalyzer -> obj)) [],
-                                  fetchFunc : Item.ItemRecord * World.World -> MarketUtils.MarketAnalyzer) = 
-
-        let att = AutoTextTable<MarketUtils.MarketAnalyzer>(headers)
-
+    [<CommandHandlerMethodAttribute("fm", "FF14市场查询", "")>]
+    member x.HandleXivMarket(msgArg : CommandArgs) =
         let cfg = CommandUtils.XivConfig(msgArg)
         let worlds = cfg.GetWorlds()
 
-        let rets =
-            cfg.CommandLine
-            |> Array.collect (fun str ->
-                let item = strToItem str
-                if item.IsNone then msgArg.AbortExecution(ModuleError, "找不到物品:{0}，请尝试#is {0}", str)
-                [|  for world in worlds do
-                        fetchFunc(item.Value, world) |] )
+        let tt = TextTable.FromHeader([| "物品"; "土豆"; "总体出售"; "HQ出售"; "总体交易"; "HQ交易"; "更新时间" |])
 
-        for ma in rets do 
-            if ma.IsEmpty then att.AddRowPadding(ma.ItemRecord.Name, ma.World.WorldName,  "无记录")
-            else att.AddObject(ma)
+        for str in cfg.CommandLine do 
+            let item = strToItem str
+            if item.IsNone then msgArg.AbortExecution(ModuleError, "找不到物品:{0}，请尝试#is {0}", str)
+            let i = item.Value
+            for w in worlds do 
+                let tradelog =
+                    let data = marketInfo.GetTradeLogs(w, i) |> Array.map (MarketUtils.MarketData.Trade)
+                    MarketUtils.MarketAnalyzer(i, w, data)
+                let listing =
+                    let data = marketInfo.GetMarketListings(w, i) |> Array.map (MarketUtils.MarketData.Order)
+                    MarketUtils.MarketAnalyzer(i, w, data)
 
-        using (msgArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(att))
+                let name = i.Name
+                let srvName = w.WorldName
 
-    [<CommandHandlerMethodAttribute("tradelog", "查询交易记录", "物品Id或全名...")>]
+                let mutable totalListing = box "--"
+                let mutable hqListing = box "--"
+
+                if not listing.IsEmpty then
+                    totalListing <- box <| listing.TakeVolume(25).StdEvPrice().Round().Average
+                    hqListing <- box <| listing.TakeHQ().TakeVolume(25).StdEvPrice().Round().Average
+
+                let mutable totalTrade = box "--"
+                let mutable hqTotalTrade = box "--"
+
+                if not tradelog.IsEmpty then
+                    totalTrade <- box <| tradelog.StdEvPrice().Round().Average
+                    hqTotalTrade <- box <| tradelog.TakeHQ().StdEvPrice().Round().Average
+
+                let update = min (tradelog.LastUpdateTime()) (listing.LastUpdateTime())
+
+                tt.AddRow(name, srvName, totalListing, hqListing, totalTrade, hqTotalTrade, update)
+        using (msgArg.OpenResponse(cfg.IsImageOutput)) (fun ret -> ret.Write(tt))
+
+    [<CommandHandlerMethodAttribute("tradelog", "已废弃", "")>]
     member x.HandleTradelog(msgArg : CommandArgs) =
-        let hdrs = 
-            [|
-                LeftAlignCell "名称", fun (ma : MarketUtils.MarketAnalyzer) -> box(ma.ItemRecord |> tryLookupNpcPrice)
-                LeftAlignCell "土豆", fun ma -> box(ma.World.WorldName)
-                RightAlignCell "平均", fun ma -> box(ma.StdEvPrice().Round().Average)
-                RightAlignCell "低", fun ma -> box(ma.MinPrice())
-                RightAlignCell "高", fun ma -> box(ma.MaxPrice())
-                LeftAlignCell "更新时间", fun ma -> box(ma.LastUpdateTime())
-            |]
+        msgArg.QuickMessageReply("已废弃，请使用#fm")
 
-        let func = fun (i,w) -> 
-            let data = marketInfo.GetTradeLogs(w, i) |> Array.map (MarketUtils.MarketData.Trade)
-            MarketUtils.MarketAnalyzer(i, w, data)
-        x.GeneralMarketPrinter(msgArg, hdrs, func)
-
-    [<CommandHandlerMethodAttribute("market", "查询市场订单", "物品Id或全名...")>]
+    [<CommandHandlerMethodAttribute("market", "已废弃", ".")>]
     member x.HandleMarket(msgArg : CommandArgs) =
-        let hdrs = 
-            [|
-                LeftAlignCell "名称", fun (ma : MarketUtils.MarketAnalyzer) -> box(ma.ItemRecord |> tryLookupNpcPrice)
-                LeftAlignCell "土豆", fun ma -> box(ma.World.WorldName)
-                RightAlignCell "总体", fun ma -> box(ma.TakeVolume(25).StdEvPrice().Round().Average)
-                RightAlignCell "HQ", fun ma -> box(ma.TakeHQ().TakeVolume(25).StdEvPrice().Round().Average)
-                LeftAlignCell "更新时间", fun ma -> box(ma.LastUpdateTime())
-            |]
-
-        let func = fun (i,w) -> 
-            let data = marketInfo.GetMarketListings(w, i) |> Array.map (MarketUtils.MarketData.Order)
-            MarketUtils.MarketAnalyzer(i, w, data)
-        x.GeneralMarketPrinter(msgArg, hdrs, func)
+        msgArg.QuickMessageReply("已废弃，请使用#fm")
 
     [<CommandHandlerMethodAttribute("r", "根据表达式汇总多个物品的材料，不查询价格", "")>]
     [<CommandHandlerMethodAttribute("rr", "根据表达式汇总多个物品的基础材料，不查询价格", "")>]
@@ -149,7 +142,7 @@ type XivMarketModule() =
 
                     yield RightAlignCell "更新时间", fun (_, _) ->
                             if cur.Value.IsEmpty then box <| RightAlignCell "--"
-                            else box <| RightAlignCell (cur.Value.LastUpdateTime())
+                            else box <| CellType.Create(cur.Value.LastUpdateTime())
             |]
 
         let att = AutoTextTable<Item.ItemRecord * float>(hdrs)
@@ -234,7 +227,7 @@ type XivMarketModule() =
                                 if cur.Value.IsEmpty then
                                     box  <| RightAlignCell "--"
                                 else
-                                    box  <| RightAlignCell (cur.Value.LastUpdateTime())
+                                    box  <| CellType.Create(cur.Value.LastUpdateTime())
                 |]
 
             let att = AutoTextTable<SpecialShop.SpecialShopInfo>(hdrs)
