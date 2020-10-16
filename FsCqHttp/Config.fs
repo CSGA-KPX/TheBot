@@ -15,6 +15,7 @@ module Logging =
 
 [<RequireQualifiedAccess>]
 module Command = 
+    /// 主指令起始符
     let CommandStart = "#"
 
 [<RequireQualifiedAccess>]

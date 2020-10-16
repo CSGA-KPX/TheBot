@@ -55,6 +55,7 @@ type CommandArgs(cqArg : ClientEventArgs, msg : Message.MessageEvent, attr : Com
     /// 小写转化后的命令名称，不含CommandStart字符
     member x.CommandName = cmdName
 
+    /// 不包含指令的部分
     member val Arguments = cmdLine.[1..]
 
 [<AbstractClass>]
@@ -74,6 +75,7 @@ type CommandHandlerBase() as x =
 
     override x.HandleMessage(args, msgEvent) =
         let cmd = 
+            //理论上字典查表更快，但是目前指令数量都不够多，无所谓了
             let msg = msgEvent.Message.ToString().ToLowerInvariant()
             cmdCache
             |> Seq.tryFind (fun kv -> msg.StartsWith(kv.Key, StringComparison.InvariantCultureIgnoreCase))

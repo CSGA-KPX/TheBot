@@ -29,17 +29,17 @@ type HelpModule() =
             let tt = TextTable.FromHeader([|"命令"; "说明"|])
             for (attrib, _) in attribs do
                 if not attrib.IsHidden then
-                    let cmd = sprintf "%s%s" KPX.FsCqHttp.Config.Command.CommandStart attrib.Command
+                    let cmd = sprintf "%s%s" attrib.CommandStart attrib.Command
                     let desc = attrib.HelpDesc
                     tt.AddRow(cmd, desc)
             using (msgArg.OpenResponse(PreferImage)) (fun ret -> ret.Write(tt))
         else
-            for arg in msgArg.Arguments do
-                let str = KPX.FsCqHttp.Config.Command.CommandStart + arg.ToLowerInvariant()
+            for arg in msgArg.Arguments do  
+                let arg = arg.ToLowerInvariant()
                 let ret =
-                    attribs |> Array.tryFind (fun (cmd, _) -> cmd.Command = str || cmd.Command = arg.ToLowerInvariant())
+                    attribs |> Array.tryFind (fun (cmd, _) -> cmd.Command = arg)
                 if ret.IsSome then
                     let (cmd, _) = ret.Value
                     msgArg.QuickMessageReply(cmd.LongHelp)
                 else
-                    msgArg.QuickMessageReply(sprintf "找不到命令%s" str)
+                    msgArg.QuickMessageReply(sprintf "找不到命令%s" arg)

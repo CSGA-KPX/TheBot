@@ -94,7 +94,7 @@ type EveModule() =
 
         using (msgArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))
 
-    [<CommandHandlerMethodAttribute("eveclearcache", "（超管）清空EVE价格缓存", "")>]
+    [<CommandHandlerMethodAttribute("eveclearcache", "（超管）清空EVE价格缓存", "", IsHidden = true)>]
     member x.HandleRefreshCache(msgArg : CommandArgs) =
         msgArg.EnsureSenderOwner()
 

@@ -59,6 +59,7 @@ type DiceModule() =
 
         sw.Write(tt)
 
+    [<CommandHandlerMethodAttribute("jrrp", "（兼容）今日人品值", "", AltCommandStart = ".")>]
     [<CommandHandlerMethodAttribute("jrrp", "今日人品值", "")>]
     member x.HandleJrrp(msgArg : CommandArgs) =
         let dicer = Dicer(SeedOption.SeedByUserDay(msgArg.MessageEvent))
