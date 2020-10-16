@@ -10,26 +10,38 @@ type CommandHandlerMethodAttribute(command : string, desc, lh) =
 
     /// 指令名称，不含CommandStart字符串
     member val Command : string = command.ToLowerInvariant()
+
     /// 指令概述
     member x.HelpDesc : string = desc
+
     /// 完整帮助文本
     member x.LongHelp : string = lh
+
     /// 指示改指令是否在help等指令中隐藏
     member val IsHidden = false with get, set
 
-type CommandArgs(msg : Message.MessageEvent, cqArg : ClientEventArgs) =
+    /// 使用自定义的指令起始符，默认为""
+    member val AltCommandStart = "" with get, set
+
+    /// 获取该指令的指令起始符
+    member x.CommandStart = 
+        if String.IsNullOrWhiteSpace(x.AltCommandStart) then
+            KPX.FsCqHttp.Config.Command.CommandStart
+        else
+            x.AltCommandStart
+
+// TODO: 处理AltCommandStart
+type CommandArgs(cqArg : ClientEventArgs, msg : Message.MessageEvent, attr : CommandHandlerMethodAttribute) =
     inherit ClientEventArgs(cqArg.ApiCaller, cqArg.RawEvent)
 
     let rawMsg = msg.Message.ToString()
     let cmdLine = rawMsg.Split([| ' ' |], StringSplitOptions.RemoveEmptyEntries)
-    let isCmd = rawMsg.StartsWith(KPX.FsCqHttp.Config.Command.CommandStart)
 
     let cmdName = 
-        if isCmd then
-            let cmd = cmdLine.[0].ToLowerInvariant()
-            Some (cmd.[1..])
-        else
-            None
+        let cmd = cmdLine.[0].ToLowerInvariant()
+        let idx = cmd.IndexOf(attr.CommandStart)
+        let len = attr.CommandStart.Length
+        cmd.[idx + len .. ]
 
     /// 原始消息对象
     member x.MessageEvent = msg
@@ -43,29 +55,33 @@ type CommandArgs(msg : Message.MessageEvent, cqArg : ClientEventArgs) =
     /// 小写转化后的命令名称，不含CommandStart字符
     member x.CommandName = cmdName
 
-    /// 检查是否是指定指令
-    member x.IsCommand(str : string) = x.CommandName.Value = (str.ToLowerInvariant())
-
-    member val Arguments = [| if isCmd then yield! cmdLine.[1..] |]
+    member val Arguments = cmdLine.[1..]
 
 [<AbstractClass>]
-type CommandHandlerBase(shared : bool) as x =
-    inherit HandlerModuleBase(shared)
+type CommandHandlerBase() as x =
+    inherit HandlerModuleBase()
 
-    /// 声明为共享模块
-    new () = CommandHandlerBase(true)
+    let cmdCache = Collections.Generic.Dictionary<string, _>()
 
-    member val Commands = [| for method in x.GetType().GetMethods() do
-                                 let ret = method.GetCustomAttributes(typeof<CommandHandlerMethodAttribute>, true)
-                                 for attrib in ret do
-                                     let attrib = attrib :?> CommandHandlerMethodAttribute
-                                     yield attrib, method |]
+    do
+        for method in x.GetType().GetMethods() do
+            let ret = method.GetCustomAttributes(typeof<CommandHandlerMethodAttribute>, true)
+            for attrib in ret do
+                let attr = attrib :?> CommandHandlerMethodAttribute
+                let cs = attr.CommandStart
+                let key = (cs + attr.Command).ToLowerInvariant()
+                cmdCache.Add(key, (attr, method))
 
     override x.HandleMessage(args, msgEvent) =
-        let msgArg = CommandArgs(msgEvent, args)
-        if msgArg.CommandName.IsSome then
-            let matched = x.Commands |> Array.filter (fun (a, _) -> msgArg.IsCommand(a.Command))
-            for (_, method) in matched do
-                if KPX.FsCqHttp.Config.Logging.LogCommandCall then
-                    x.Logger.Info("Calling handler {0}\r\n Command Context {1}", method.Name, sprintf "%A" msgEvent)
-                    method.Invoke(x, [| msgArg |]) |> ignore
+        let cmd = 
+            let msg = msgEvent.Message.ToString()
+            let idx = msg.IndexOf(" ")
+            let key = msg.[0 .. idx - 1].ToLowerInvariant()
+            let succ, obj = cmdCache.TryGetValue(key)
+            if succ then Some obj else None
+        if cmd.IsSome then
+            let (attr, method) = cmd.Value
+            let cmdArg = CommandArgs(args, msgEvent, attr)
+            if KPX.FsCqHttp.Config.Logging.LogCommandCall then
+                x.Logger.Info("Calling handler {0}\r\n Command Context {1}", method.Name, sprintf "%A" msgEvent)
+                method.Invoke(x, [| cmdArg |]) |> ignore

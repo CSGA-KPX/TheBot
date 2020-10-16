@@ -401,25 +401,25 @@ type EveModule() =
 
         let filterFunc : (EveBlueprint -> bool) = 
             match msgArg.CommandName with // 注意小写匹配
-            | Some "eve组件"  -> fun bp ->
+            | "eve组件"  -> fun bp ->
                 (bp.Type = BlueprintType.Manufacturing) 
                     && ( (bp.ProductItem.GroupId = 334) // Tech2ComponentGroupId
                             || (bp.ProductItem.GroupId = 873) )    // CapitalComponentGroupId
-            | Some "eve种菜" -> fun bp -> 
+            | "eve种菜" -> fun bp -> 
                 (bp.Type = BlueprintType.Planet) 
-            | Some "eve舰船" -> fun bp ->
+            | "eve舰船" -> fun bp ->
                 (bp.Type = BlueprintType.Manufacturing)
                     && (bp.ProductItem.CategoryId = 6) // 6 = 舰船
                     && (bp.ProductItem.MetaGroupId <> 2) // T1
                     && (let mg = bp.ProductItem.MarketGroup
                         mg.IsSome && (not <| mg.Value.Name.Contains("特别")) )
-            | Some "eve舰船ii" -> fun bp ->
+            | "eve舰船ii" -> fun bp ->
                 (bp.Type = BlueprintType.Manufacturing)
                     && (bp.ProductItem.CategoryId = 6) // 6 = 舰船
                     && (bp.ProductItem.MetaGroupId = 2) // T2
                     && (let mg = bp.ProductItem.MarketGroup
                         mg.IsSome && (not <| mg.Value.Name.Contains("特别")) )
-            | Some "eve装备ii" -> 
+            | "eve装备ii" -> 
                 let isGroup = cfg.GetValue("by") = "group"
 
                 if isGroup then

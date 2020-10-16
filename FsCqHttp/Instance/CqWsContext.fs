@@ -47,10 +47,7 @@ type CqWsContext(ws : WebSocket) =
             if not isSubClass then
                 invalidArg "t" "必须是HandlerModuleBase子类"
             let m = Activator.CreateInstance(t) :?> HandlerModuleBase
-            if m.IsSharedModule then
-                moduleCache.Add(t, m)
-            //else
-            //    m.ApiCaller <- Some(x :> IApiCallProvider)
+            moduleCache.Add(t, m)
             m
         |> modules.Add
 

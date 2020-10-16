@@ -110,9 +110,9 @@ type XivMarketModule() =
     [<CommandHandlerMethodAttribute("rc", "计算物品基础材料成本", "物品Id或全名...")>]
     [<CommandHandlerMethodAttribute("rrc", "计算物品基础材料成本", "物品Id或全名...")>]
     member _.GeneralRecipeCalculator(msgArg : CommandArgs) = 
-        let doCalculateCost = msgArg.IsCommand("rrc") || msgArg.IsCommand("rc")
+        let doCalculateCost = msgArg.CommandName = "rrc" || msgArg.CommandName = "rc"
         let materialFunc = 
-            if msgArg.IsCommand("rr") || msgArg.IsCommand("rrc") then
+            if msgArg.CommandName = "rr" || msgArg.CommandName = "rrc" then
                 fun (item : Item.ItemRecord) -> rm.GetMaterialsRec(item)
             else
                 fun (item : Item.ItemRecord) -> rm.GetMaterialsOne(item)

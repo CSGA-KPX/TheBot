@@ -5,21 +5,13 @@ open System.Reflection
 open KPX.FsCqHttp.DataType
 
 [<AbstractClass>]
-type HandlerModuleBase(shared : bool) as x =
+type HandlerModuleBase() as x =
     static let allModules = 
         [| yield! Assembly.GetExecutingAssembly().GetTypes()
            yield! Assembly.GetEntryAssembly().GetTypes() |]
         |> Array.filter (fun t -> t.IsSubclassOf(typeof<HandlerModuleBase>) && (not <| t.IsAbstract))
 
-    /// 声明类为共享模块
-    new () = HandlerModuleBase(true)
-
     static member AllDefinedModules = allModules
-
-    /// 指示该模块是否可以被多个账户共享，与线程安全等相关
-    ///
-    /// 如果为false，则每个链接会使用自己的实例
-    member x.IsSharedModule = shared
 
     member val Logger = NLog.LogManager.GetLogger(x.GetType().Name)
 

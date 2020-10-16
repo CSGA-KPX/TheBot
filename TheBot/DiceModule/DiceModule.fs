@@ -48,7 +48,7 @@ type DiceModule() =
         |]
         |> Array.map (fun c -> 
             let seed = 
-                if msgArg.IsCommand("cc") then Array.singleton SeedOption.SeedRandom 
+                if msgArg.CommandName = "cc" then Array.singleton SeedOption.SeedRandom 
                 else
                     if atUser.IsSome then SeedOption.SeedByAtUserDay(msgArg.MessageEvent)
                     else SeedOption.SeedByUserDay(msgArg.MessageEvent)
