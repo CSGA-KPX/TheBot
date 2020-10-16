@@ -75,11 +75,16 @@ type CommandHandlerBase() as x =
 
     override x.HandleMessage(args, msgEvent) =
         let cmd = 
-            //理论上字典查表更快，但是目前指令数量都不够多，无所谓了
-            let msg = msgEvent.Message.ToString().ToLowerInvariant()
-            cmdCache
-            |> Seq.tryFind (fun kv -> msg.StartsWith(kv.Key, StringComparison.InvariantCultureIgnoreCase))
-            |> Option.map (fun x -> x.Value)
+            let msg = msgEvent.Message.ToString()
+            let endIdx =
+                let idx = msg.IndexOf(" ")
+                if idx = -1 then msg.Length
+                else
+                    idx
+            // 空格-1，msg.Length变换为idx也需要-1
+            let key = msg.[0 .. endIdx - 1].ToLowerInvariant()
+            let succ, obj = cmdCache.TryGetValue(key)
+            if succ then Some obj else None
 
         if cmd.IsSome then
             let (attr, method) = cmd.Value
