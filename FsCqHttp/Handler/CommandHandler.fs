@@ -74,11 +74,11 @@ type CommandHandlerBase() as x =
 
     override x.HandleMessage(args, msgEvent) =
         let cmd = 
-            let msg = msgEvent.Message.ToString()
-            let idx = msg.IndexOf(" ")
-            let key = msg.[0 .. idx - 1].ToLowerInvariant()
-            let succ, obj = cmdCache.TryGetValue(key)
-            if succ then Some obj else None
+            let msg = msgEvent.Message.ToString().ToLowerInvariant()
+            cmdCache
+            |> Seq.tryFind (fun kv -> msg.StartsWith(kv.Key, StringComparison.InvariantCultureIgnoreCase))
+            |> Option.map (fun x -> x.Value)
+
         if cmd.IsSome then
             let (attr, method) = cmd.Value
             let cmdArg = CommandArgs(args, msgEvent, attr)
