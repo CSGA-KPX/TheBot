@@ -26,7 +26,8 @@ type CellType =
     /// 文本显示长度
     member x.DisplayLength = strDispLen(x.ToString())
 
-    member x.ToString(i : int) = 
+    /// 对指定列数补齐，第0列不做左侧补齐
+    member internal x.ToString(c : int) = 
         let ret = match x with | LeftAlignCell str -> str | RightAlignCell str -> str
 
         let left, right = 
@@ -35,7 +36,7 @@ type CellType =
                 ((strDispLen(ret) % 2) + 1), 1
             else
                 // 文本：左边补齐，右边补齐
-                (if i = 0 then 0 else 1), ((strDispLen(ret) % 2) + 1)
+                (if c = 0 then 0 else 1), ((strDispLen(ret) % 2) + 1)
 
         String(halfWidthSpace, left) + ret + String(halfWidthSpace, right)
 
@@ -43,20 +44,24 @@ type CellType =
         x.ToString(0)
 
     static member private IsNumericType(o : obj) = 
-        match Type.GetTypeCode(o.GetType()) with
-        | TypeCode.Byte
-        | TypeCode.SByte
-        | TypeCode.UInt16
-        | TypeCode.UInt32
-        | TypeCode.UInt64
-        | TypeCode.Int16
-        | TypeCode.Int32
-        | TypeCode.Int64
-        | TypeCode.Decimal
-        | TypeCode.Double
-        | TypeCode.Single
-            -> true
-        | _ -> false
+        match o with
+        | :? TimeSpan -> true
+        | _ ->
+            match Type.GetTypeCode(o.GetType()) with
+            | TypeCode.Byte
+            | TypeCode.SByte
+            | TypeCode.UInt16
+            | TypeCode.UInt32
+            | TypeCode.UInt64
+            | TypeCode.Int16
+            | TypeCode.Int32
+            | TypeCode.Int64
+            | TypeCode.Decimal
+            | TypeCode.Double
+            | TypeCode.Single
+            | TypeCode.DateTime
+                -> true
+            | _ -> false
 
     static member Create(o : obj) =
         let rec toStr(o : obj) =
@@ -84,6 +89,16 @@ type CellType =
             let isNum = CellType.IsNumericType(o)
 
             if isNum then RightAlignCell str else LeftAlignCell str
+
+    static member CreateLeftAlign(o : obj) = 
+        match CellType.Create(o) with
+        | RightAlignCell x -> LeftAlignCell x
+        | x -> x
+
+    static member CreateRightAlign(o : obj) = 
+        match CellType.Create(o) with
+        | LeftAlignCell x -> RightAlignCell x
+        | x -> x
 
 /// 延迟TextTable的求值时间点，便于在最终输出前对TextTable的参数进行调整
 type private DelayedTableItem =

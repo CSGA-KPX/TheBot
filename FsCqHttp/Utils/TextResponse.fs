@@ -142,7 +142,7 @@ type TextResponse(args : ClientEventArgs, respType : ResponseType) =
             args.QuickMessageReply(message)
 
     override x.Flush() = 
-        if respType.CanSendImage(args) then
+        if x.DoSendImage then
             x.FlushImageMessage()
         else
             x.FlushTextMessage()

@@ -54,8 +54,13 @@ type XivMarketModule() =
         let cfg = CommandUtils.XivConfig(msgArg)
         let worlds = cfg.GetWorlds()
 
-        let tt = TextTable.FromHeader([| "物品"; "土豆"; "总体出售"; "HQ出售"; "总体交易"; "HQ交易"; "更新时间" |])
-
+        let tt = TextTable.FromHeader([|    LeftAlignCell "物品";
+                                            LeftAlignCell "土豆";
+                                            RightAlignCell "总体出售";
+                                            RightAlignCell "HQ出售";
+                                            RightAlignCell "总体交易";
+                                            RightAlignCell "HQ交易";
+                                            RightAlignCell "更新时间"   |])
         for str in cfg.CommandLine do 
             let item = strToItem str
             if item.IsNone then msgArg.AbortExecution(ModuleError, "找不到物品:{0}，请尝试#is {0}", str)
@@ -70,6 +75,7 @@ type XivMarketModule() =
 
                 let name = i.Name
                 let srvName = w.WorldName
+                let mutable update = TimeSpan.MaxValue
 
                 let mutable totalListing = box "--"
                 let mutable hqListing = box "--"
@@ -77,6 +83,7 @@ type XivMarketModule() =
                 if not listing.IsEmpty then
                     totalListing <- box <| listing.TakeVolume(25).StdEvPrice().Round().Average
                     hqListing <- box <| listing.TakeHQ().TakeVolume(25).StdEvPrice().Round().Average
+                    update <- min update (listing.LastUpdateTime())
 
                 let mutable totalTrade = box "--"
                 let mutable hqTotalTrade = box "--"
@@ -84,10 +91,11 @@ type XivMarketModule() =
                 if not tradelog.IsEmpty then
                     totalTrade <- box <| tradelog.StdEvPrice().Round().Average
                     hqTotalTrade <- box <| tradelog.TakeHQ().StdEvPrice().Round().Average
+                    update <- min update (tradelog.LastUpdateTime())
 
-                let update = min (tradelog.LastUpdateTime()) (listing.LastUpdateTime())
+                let updateVal = if update = TimeSpan.MaxValue then box "--" else box update
 
-                tt.AddRow(name, srvName, totalListing, hqListing, totalTrade, hqTotalTrade, update)
+                tt.AddRow(name, srvName, totalListing, hqListing, totalTrade, hqTotalTrade, updateVal)
         using (msgArg.OpenResponse(cfg.IsImageOutput)) (fun ret -> ret.Write(tt))
 
     [<CommandHandlerMethodAttribute("tradelog", "已废弃", "")>]
