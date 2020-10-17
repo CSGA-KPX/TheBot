@@ -77,23 +77,23 @@ type XivMarketModule() =
                 let srvName = w.WorldName
                 let mutable update = TimeSpan.MaxValue
 
-                let mutable totalListing = box "--"
-                let mutable hqListing = box "--"
+                let mutable totalListing = box <| RightAlignCell "--"
+                let mutable hqListing = box  <| RightAlignCell "--"
 
                 if not listing.IsEmpty then
                     totalListing <- box <| listing.TakeVolume(25).StdEvPrice().Round().Average
                     hqListing <- box <| listing.TakeHQ().TakeVolume(25).StdEvPrice().Round().Average
                     update <- min update (listing.LastUpdateTime())
 
-                let mutable totalTrade = box "--"
-                let mutable hqTotalTrade = box "--"
+                let mutable totalTrade = box  <| RightAlignCell "--"
+                let mutable hqTotalTrade = box  <| RightAlignCell "--"
 
                 if not tradelog.IsEmpty then
                     totalTrade <- box <| tradelog.StdEvPrice().Round().Average
                     hqTotalTrade <- box <| tradelog.TakeHQ().StdEvPrice().Round().Average
                     update <- min update (tradelog.LastUpdateTime())
 
-                let updateVal = if update = TimeSpan.MaxValue then box "--" else box update
+                let updateVal = if update = TimeSpan.MaxValue then box  <| RightAlignCell "--" else box update
 
                 tt.AddRow(name, srvName, totalListing, hqListing, totalTrade, hqTotalTrade, updateVal)
         using (msgArg.OpenResponse(cfg.IsImageOutput)) (fun ret -> ret.Write(tt))

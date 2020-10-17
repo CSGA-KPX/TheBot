@@ -36,7 +36,8 @@ type CellType =
                 ((strDispLen(ret) % 2) + 1), 1
             else
                 // 文本：左边补齐，右边补齐
-                (if c = 0 then 0 else 1), ((strDispLen(ret) % 2) + 1)
+                let lmod, rmod = if c = 0 then 0, 1 else 1, 0
+                lmod, ((strDispLen(ret) % 2) + rmod)
 
         String(halfWidthSpace, left) + ret + String(halfWidthSpace, right)
 
