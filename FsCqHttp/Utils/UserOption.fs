@@ -21,7 +21,7 @@ type UserOptionValue =
 
     member x.Value = match x with | Defined x -> x.[0] | Default x -> x
 
-    member x.Values = match x with | Defined x -> x |> List.toArray | Default x -> [| x |]
+    member x.Values = match x with | Defined x -> x |> List.toArray |> Array.rev | Default x -> [| x |]
 
     member x.GetValue<'T when 'T :> IConvertible>() =
         Convert.ChangeType(x.Value, typeof<'T>) :?> 'T
