@@ -75,7 +75,14 @@ type CellType =
                     else "{0:N0}"
                 System.String.Format(fmt, f)
             | :? TimeSpan as ts ->
-                sprintf "%i天%i时%i分前" ts.Days ts.Hours ts.Minutes
+                if ts.TotalDays >= 1.0 then
+                    sprintf "%.0f天前" ts.TotalDays
+                elif ts.TotalHours >= 1.0 then
+                    sprintf "%.0f时前" ts.TotalHours
+                elif ts.TotalMinutes >= 1.0 then
+                    sprintf "%.0f分前" ts.TotalMinutes
+                else
+                    "没多久"
             | :? DateTimeOffset as dto ->
                 toStr(DateTimeOffset.Now - dto)
             | :? DateTime as dt ->
