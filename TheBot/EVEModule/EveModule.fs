@@ -107,6 +107,8 @@ type EveModule() =
     [<CommandHandlerMethodAttribute("emr", "价格实时查询（市场中心API）", "")>]
     member x.HandleEveMarket(msgArg : CommandArgs) =
         let mutable argOverride = None
+        if msgArg.CommandName = "eve矿物" then
+            argOverride <- Some(MineralNames.Replace(',', '+'))
         let t =
             let str =
                 if argOverride.IsSome then argOverride.Value
