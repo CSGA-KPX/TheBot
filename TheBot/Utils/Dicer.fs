@@ -34,6 +34,8 @@ type Dicer(initSeed : byte []) as x =
     static let utf8 = Text.Encoding.UTF8
     static let md5 = System.Security.Cryptography.MD5.Create()
 
+    static let randomDicer = new Dicer(SeedRandom)
+
     let mutable hash = initSeed
 
     let refreshSeed() =
@@ -45,7 +47,7 @@ type Dicer(initSeed : byte []) as x =
         num + 1
 
 
-    new(seed : SeedOption []) =
+    new (seed : SeedOption []) =
         let initSeed =
             seed
             |> SeedOption.GetSeedString
@@ -55,6 +57,8 @@ type Dicer(initSeed : byte []) as x =
 
     new(seed : SeedOption) = Dicer(Array.singleton seed)
 
+    /// 通用的随机骰子
+    static member RandomDicer = randomDicer
 
     member private x.GetHash() =
         refreshSeed()

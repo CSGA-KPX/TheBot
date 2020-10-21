@@ -114,11 +114,10 @@ type XivModule() =
 
     [<CommandHandlerMethodAttribute("gate", "挖宝选门", "")>]
     member x.HandleGate(msgArg : CommandArgs) =
-        let dicer = Dicer(SeedRandom |> Array.singleton)
         let tt = TextTable.FromHeader([|"1D100"; "门"|])
 
         [|"左"; "中"; "右"|]
-        |> Array.map (fun door -> door, dicer.GetRandom(100u, door))
+        |> Array.map (fun door -> door, Dicer.RandomDicer.GetRandom(100u, door))
         |> Array.sortBy (snd)
         |> Array.iter (fun (door, score) -> tt.AddRow((sprintf "%03i" score), door))
 
@@ -126,9 +125,8 @@ type XivModule() =
 
     [<CommandHandlerMethodAttribute("仙人彩", "仙人彩周常", "")>]
     member x.HandleCactpot(msgArg : CommandArgs) =
-        let dicer = Dicer(SeedRandom)
         let nums = 
-            Seq.initInfinite (fun _ -> sprintf "%04i" (dicer.GetRandom(10000u) - 1))
+            Seq.initInfinite (fun _ -> sprintf "%04i" (Dicer.RandomDicer.GetRandom(10000u) - 1))
             |> Seq.distinctBy (fun numStr -> numStr.[3])
             |> Seq.take 3
         msgArg.QuickMessageReply(sprintf "%s" (String.Join(" ", nums)))

@@ -56,7 +56,8 @@ type LoyaltyStoreCollection private () =
                     [|  for item in JArray.Parse(json) do 
                             let item = item :?> JObject
                             // 无视所有分析点兑换
-                            if not <| item.ContainsKey("ak_cost") then
+                            let akCost = item.GetValue("ak_cost").ToObject<int>()
+                            if akCost = 0 then
                                 let isk = item.GetValue("isk_cost").ToObject<float>()
                                 let lp  = item.GetValue("lp_cost").ToObject<float>()
                                 let id  = item.GetValue("offer_id").ToObject<int>()

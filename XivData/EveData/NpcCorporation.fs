@@ -35,14 +35,16 @@ type NpcCorporationoCollection private () =
                     let assembly = Reflection.Assembly.GetExecutingAssembly()
                     let stream = assembly.GetManifestResourceStream(ResName)
                     new IO.Compression.ZipArchive(stream, Compression.ZipArchiveMode.Read)
-            use f = archive.GetEntry("crpnpccorporations.json").Open()
+            use f = archive.GetEntry("npccorporations.json").Open()
             use r = new JsonTextReader(new StreamReader(f))
 
-            for item in JArray.Load(r) do 
-                let item = item :?> JObject
-                let cid = item.GetValue("corporationID").ToObject<int>()
-                let cname = item.GetValue("corporationName").ToObject<string>()
-                yield {Id = cid; CorporationName = cname}
+            while r.Read() do 
+                if r.TokenType = JsonToken.PropertyName then
+                    let cid = r.Value :?> string |> int
+                    r.Read() |> ignore
+                    let o = JObject.Load(r)
+                    let cname = o.GetValue("name").Value<string>()
+                    yield {Id = cid; CorporationName = cname}
         }
         |> x.DbCollection.InsertBulk
         |> ignore

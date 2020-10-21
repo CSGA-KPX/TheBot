@@ -53,8 +53,6 @@
     <EmbeddedResource Include="Resources\Funny.jpg" />
   </ItemGroup>
 
-  <ItemGroup />
-
   <ItemGroup>
     <PackageReference Include="Fable.Remoting.DotnetClient" Version="3.7.0" />
     <PackageReference Include="HtmlAgilityPack" Version="1.11.23" />

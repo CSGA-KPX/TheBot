@@ -66,6 +66,7 @@ type DiceModule() =
         let jrrp = dicer.GetRandom(100u)
         msgArg.QuickMessageReply(sprintf "%s今日人品值是：%i" msgArg.MessageEvent.DisplayName jrrp)
 
+    [<CommandHandlerMethodAttribute("r", "计算器/跑团", "", AltCommandStart = ".")>]
     [<CommandHandlerMethodAttribute("cal", "计算器", "")>]
     member x.HandleCalculator(msgArg : CommandArgs) =
         let sb = Text.StringBuilder()
@@ -74,7 +75,9 @@ type DiceModule() =
         let ret = parser.TryEval(arg)
         match ret with
         | Error e -> sb.Append(sprintf "对%s求值失败：%s" arg e.Message) |> ignore
-        | Ok i -> sb.Append(sprintf "%s = %O" arg i) |> ignore
+        | Ok i -> 
+            let sum = String.Format("{0:N2}", i.Sum).Replace(".00", "")
+            sb.AppendFormat("{0} = {1}", arg, sum) |> ignore
         msgArg.QuickMessageReply(sb.ToString())
 
     [<CommandHandlerMethodAttribute("选择题", "考试专用", "")>]
@@ -86,10 +89,9 @@ type DiceModule() =
                 let i = int(i)
                 if i > 100 then msgArg.AbortExecution(InputError, "最多100道")
                 else count <- i
-        let dicer = Dicer(SeedOption.SeedRandom)
         let choices = [|"A"; "B"; "C"; "D"|]
         let chunks = 
-            dicer.GetRandomArray(choices.Length |> uint32, count)
+            Dicer.RandomDicer.GetRandomArray(choices.Length |> uint32, count)
             |> Array.map (fun x -> choices.[x-1])
             |> Array.chunkBySize 5 // 5个一组
             |> Array.map (fun chk -> String.Join("", chk))
@@ -113,9 +115,8 @@ type DiceModule() =
                 else
                     cutoff <- i
         
-        let dicer = Dicer(SeedOption.SeedRandom |> Array.singleton )
         let ret =
-            Array.init count (fun _ -> dicer.GetRandom(100u))
+            Array.init count (fun _ -> Dicer.RandomDicer.GetRandom(100u))
             |> Array.countBy (fun x -> if x <= cutoff then "红" else "黑")
             |> Array.sortBy (fst)
             |> Array.map (fun (s, c) -> sprintf "%s(%i)" s c)
