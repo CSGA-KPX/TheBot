@@ -80,3 +80,29 @@ type TRpgModule() =
         use ret = msgArg.OpenResponse(ForceText)
         ret.WriteLine("1D100 = {0}：{1}", check, status)
         ret.WriteLine("San值减少{0}点，当前剩余{1}点。", lose, max 0 (currentSan - lose))
+
+    [<CommandHandlerMethodAttribute("r", "计算器/跑团", "", AltCommandStart = ".")>]
+    member x.HandleDice(msgArg : CommandArgs) =
+        let parser = DiceExpression()
+
+        let operators =
+            seq { yield! parser.Operatos |> Seq.map (fun x -> x.Char)
+                  yield! seq {'0' .. '9'} }
+            |> set
+
+        let expr, reason = 
+            match msgArg.Arguments.Length with
+            | 0 -> "1D100", "--"
+            | 1 -> 
+                let arg = msgArg.Arguments.[0]
+                if arg |> String.forall (fun c -> operators.Contains(c)) then
+                    arg, "--"
+                else
+                    "1D100", arg
+            | _ -> msgArg.Arguments.[0], String.Join(" ", msgArg.Arguments.[1..])
+
+        match parser.TryEval(expr) with
+        | Error e -> msgArg.QuickMessageReply(sprintf "对 %s 求值失败：%s" expr e.Message)
+        | Ok i ->
+            let sum = String.Format("{0:N2}", i.Sum).Replace(".00", "")
+            msgArg.QuickMessageReply(sprintf "%s 对 %s 投掷出%s = %s" msgArg.MessageEvent.DisplayName reason expr sum)

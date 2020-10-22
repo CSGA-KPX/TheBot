@@ -66,7 +66,6 @@ type DiceModule() =
         let jrrp = dicer.GetRandom(100u)
         msgArg.QuickMessageReply(sprintf "%s今日人品值是：%i" msgArg.MessageEvent.DisplayName jrrp)
 
-    [<CommandHandlerMethodAttribute("r", "计算器/跑团", "", AltCommandStart = ".")>]
     [<CommandHandlerMethodAttribute("cal", "计算器", "")>]
     member x.HandleCalculator(msgArg : CommandArgs) =
         let sb = Text.StringBuilder()
