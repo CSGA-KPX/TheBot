@@ -8,14 +8,16 @@ open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.TextTable
 
 open TheBot.Utils.Dicer
+open TheBot.Utils.HandlerUtils
 
 open TheBot.Module.DiceModule.Utils.DiceExpression
-
+open TheBot.Module.DiceModule.TRpgUtils
 
 type TRpgModule() =
     inherit CommandHandlerBase()
 
-    [<CommandHandlerMethodAttribute("coc7", "", "")>]
+    [<CommandHandlerMethodAttribute("coc7", "", "", AltCommandStart = ".")>]
+    [<CommandHandlerMethodAttribute("coc7", "", "", IsHidden = true)>]
     member x.HandleCoc7(msgArg : CommandArgs) =
         let attrs = [|  "力量", "3D6*5"
                         "体质", "3D6*5"
@@ -42,11 +44,8 @@ type TRpgModule() =
 
         tt.AddPreTable(sprintf "%s的人物作成:" msgArg.MessageEvent.DisplayName)
 
-        let jobs = TheBot.Utils.EmbeddedResource
-                    .GetResourceManager("TRpg")
-                    .GetString("职业")
-                    .Split("\r\n")
-        let job = dicer.GetRandomItem(jobs)
+        let job = dicer.GetRandomItem(StringData.[DATA_JOBS])
+
         tt.AddPostTable(sprintf "今日推荐职业：%s" job)
 
         using (msgArg.OpenResponse()) (fun ret -> ret.Write(tt))
@@ -106,3 +105,26 @@ type TRpgModule() =
         | Ok i ->
             let sum = String.Format("{0:N2}", i.Sum).Replace(".00", "")
             msgArg.QuickMessageReply(sprintf "%s 对 %s 投掷出%s = %s" msgArg.MessageEvent.DisplayName reason expr sum)
+
+    [<CommandHandlerMethodAttribute("li", "总结疯狂症状", "", AltCommandStart = ".")>]
+    [<CommandHandlerMethodAttribute("ti", "临时疯狂症状", "", AltCommandStart = ".")>]
+    member x.HandleTemporaryInsanity(msgArg : CommandArgs) = 
+        let de = DiceExpression(Dicer.RandomDicer)
+
+        let key = 
+            match msgArg.CommandName with
+            | "li" -> "总结症状"
+            | "ti" -> "即时症状"
+            | unk -> failwithf "不应匹配到的命令名:%s" unk
+
+        let tmpl = de.Dicer.GetRandomItem(StringData.[key])
+        msgArg.QuickMessageReply(ParseTemplate(tmpl, de))
+        
+    [<CommandHandlerMethodAttribute("test", "", "", AltCommandStart = ".")>]
+    member x.HandleDiceTest(msgArg : CommandArgs) =
+        msgArg.EnsureSenderOwner()
+
+        let template = String.Join(" ", msgArg.Arguments)
+        let ret = ParseTemplate(template, DiceExpression(Dicer.RandomDicer))
+        msgArg.QuickMessageReply(ret)
+

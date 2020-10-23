@@ -25,6 +25,7 @@
     <Compile Include="EatModule\EatModule.fs" />
     <Compile Include="DiceModule\DiceUtils.fs" />
     <Compile Include="DiceModule\DiceModule.fs" />
+    <Compile Include="DiceModule\TRpgUtils.fs" />
     <Compile Include="DiceModule\TRpgModule.fs" />
     <Compile Include="XivModule\MarketUtils.fs" />
     <Compile Include="XivModule\CommandUtils.fs" />

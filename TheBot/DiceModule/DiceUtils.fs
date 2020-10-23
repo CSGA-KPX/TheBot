@@ -42,7 +42,7 @@ module DiceExpression =
                 |> DicerOperand
 
         override x.ToString() = 
-            sprintf "%A" x.Value
+            String.Format("{0:N2}", x.Sum).Replace(".00", "")
 
     type DiceExpression(dicer : Dicer) as x =
         inherit GenericRPNParser<DicerOperand>()
@@ -68,6 +68,9 @@ module DiceExpression =
             x.Operatos.Add(GenericOperator<_>('K', 4, kFunc))
 
         new () = DiceExpression(Dicer.RandomDicer)
+
+        /// 获取创建DiceExpression所用的Dicer
+        member x.Dicer = dicer
 
         /// 返回一个新的实例，该实例所有D取最小值
         static member ForceMinDiceing = 
