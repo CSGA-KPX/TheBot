@@ -2,6 +2,7 @@
 
 open System
 
+open KPX.FsCqHttp.DataType
 open KPX.FsCqHttp.Handler
 
 open KPX.FsCqHttp.Utils.TextResponse
@@ -80,7 +81,9 @@ type TRpgModule() =
         ret.WriteLine("1D100 = {0}：{1}", check, status)
         ret.WriteLine("San值减少{0}点，当前剩余{1}点。", lose, max 0 (currentSan - lose))
 
-    [<CommandHandlerMethodAttribute("r", "计算器/跑团", "", AltCommandStart = ".")>]
+    [<CommandHandlerMethodAttribute("rd", ".r 1D100缩写", "", AltCommandStart = ".")>]
+    [<CommandHandlerMethodAttribute("rh", "常规暗骰", "", AltCommandStart = ".")>]
+    [<CommandHandlerMethodAttribute("r", "常规骰点", "", AltCommandStart = ".")>]
     member x.HandleDice(msgArg : CommandArgs) =
         let parser = DiceExpression()
 
@@ -90,21 +93,33 @@ type TRpgModule() =
             |> set
 
         let expr, reason = 
-            match msgArg.Arguments.Length with
-            | 0 -> "1D100", "--"
-            | 1 -> 
+            match msgArg.CommandName, msgArg.Arguments.Length with
+            | "rd", 0 -> "1D100", "--"
+            | "rd", _ -> "1D100", String.Join(" ", msgArg.Arguments)
+
+            | "r", 0 | "rh", 0 ->
+                "1D100", "--"
+            | "r", 1 | "rh", 1 ->
                 let arg = msgArg.Arguments.[0]
                 if arg |> String.forall (fun c -> operators.Contains(c)) then
                     arg, "--"
                 else
                     "1D100", arg
+
             | _ -> msgArg.Arguments.[0], String.Join(" ", msgArg.Arguments.[1..])
 
         match parser.TryEval(expr) with
         | Error e -> msgArg.QuickMessageReply(sprintf "对 %s 求值失败：%s" expr e.Message)
         | Ok i ->
-            let sum = String.Format("{0:N2}", i.Sum).Replace(".00", "")
-            msgArg.QuickMessageReply(sprintf "%s 对 %s 投掷出%s = %s" msgArg.MessageEvent.DisplayName reason expr sum)
+            let msg = sprintf "%s 对 %s 投掷出%s = %O" msgArg.MessageEvent.DisplayName reason expr i
+            if msgArg.CommandName = "rh" then
+                let ret = Message.Message()
+                ret.Add(msg)
+                let api = KPX.FsCqHttp.Api.MsgApi.SendPrivateMsg(msgArg.MessageEvent.UserId, ret)
+                msgArg.ApiCaller.CallApi(api)
+            else
+                msgArg.QuickMessageReply(msg)
+
 
     [<CommandHandlerMethodAttribute("li", "总结疯狂症状", "", AltCommandStart = ".")>]
     [<CommandHandlerMethodAttribute("ti", "临时疯狂症状", "", AltCommandStart = ".")>]

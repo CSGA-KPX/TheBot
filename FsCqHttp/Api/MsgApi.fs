@@ -4,10 +4,14 @@ open KPX.FsCqHttp.DataType.Message
 open KPX.FsCqHttp.DataType.Response
 open KPX.FsCqHttp.Api
 
-type SendPrivateMsg() =
+type SendPrivateMsg(userId : uint64, message : Message) =
     inherit ApiRequestBase("send_private_msg")
 
-    do raise <| System.NotImplementedException()
+    override x.WriteParams(w, js) =
+        w.WritePropertyName("user_id")
+        w.WriteValue(userId)
+        w.WritePropertyName("message")
+        js.Serialize(w, message)
 
 
 type SendGroupMsg(groupId : uint64, message : Message) =
@@ -17,9 +21,7 @@ type SendGroupMsg(groupId : uint64, message : Message) =
         w.WritePropertyName("group_id")
         w.WriteValue(groupId)
         w.WritePropertyName("message")
-        //w.WriteStartObject()
         js.Serialize(w, message)
-        //w.WriteEndObject()
 
 type SendDiscussMsg() =
     inherit ApiRequestBase("send_discuss_msg")
