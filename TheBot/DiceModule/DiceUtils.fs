@@ -51,6 +51,7 @@ module DiceExpression =
             let dFunc (l : DicerOperand) (r : DicerOperand) =
                 let lsum = l.Sum |> int
                 let rsum = r.Sum |> uint32
+                if lsum > 100 then failwithf "投骰次数过多，目前上限为100。"
                 let ret = Array.init (lsum) (fun _ -> dicer.GetRandom(rsum) |> float)
                 DicerOperand(ret)
 
