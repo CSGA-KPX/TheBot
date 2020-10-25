@@ -87,6 +87,8 @@ type Dicer(initSeed : byte []) as x =
     /// 获得一组随机数，不重复
     member x.GetRandomArrayUnique(faceNum, count) =
         let tmp = Collections.Generic.HashSet<int>()
+        if count > (int faceNum) then 
+            raise <| ArgumentOutOfRangeException("不应超过可能数")
         while tmp.Count <> count do
             tmp.Add(x.GetRandom(faceNum)) |> ignore
         let ret = Array.zeroCreate<int> tmp.Count

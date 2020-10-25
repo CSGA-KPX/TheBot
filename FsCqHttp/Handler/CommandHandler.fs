@@ -55,6 +55,9 @@ type CommandArgs(cqArg : ClientEventArgs, msg : Message.MessageEvent, attr : Com
     /// 小写转化后的命令名称，不含CommandStart字符
     member x.CommandName = cmdName
 
+
+    member x.CommandAttrib = attr
+
     /// 不包含指令的部分
     member val Arguments = cmdLine.[1..]
 

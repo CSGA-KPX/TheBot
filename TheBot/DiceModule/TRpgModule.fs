@@ -17,8 +17,8 @@ open TheBot.Module.DiceModule.TRpgUtils
 type TRpgModule() =
     inherit CommandHandlerBase()
 
-    [<CommandHandlerMethodAttribute("coc7", "", "", AltCommandStart = ".")>]
-    [<CommandHandlerMethodAttribute("coc7", "", "", IsHidden = true)>]
+    [<CommandHandlerMethodAttribute("coc7", "coc第七版", "", AltCommandStart = ".")>]
+    [<CommandHandlerMethodAttribute("coc7", "coc第七版", "", IsHidden = true)>]
     member x.HandleCoc7(msgArg : CommandArgs) =
         let attrs = [|  "力量", "3D6*5"
                         "体质", "3D6*5"
@@ -32,20 +32,24 @@ type TRpgModule() =
 
         let tt = TextTable.FromHeader([|"属性"; "值"|])
 
-        let dicer = Dicer(SeedOption.SeedByUserDay(msgArg.MessageEvent))
+        let seed = 
+            if msgArg.CommandAttrib.CommandStart = "." then
+                Array.singleton SeedOption.SeedRandom
+            else
+                SeedOption.SeedByUserDay(msgArg.MessageEvent)
 
-        let dp = DiceExpression(dicer)
+        let de = DiceExpression(Dicer(seed))
 
         let mutable sum = 0
         for (name, expr) in attrs do 
-            let d = dp.Eval(expr).Sum |> int
+            let d = de.Eval(expr).Sum |> int
             sum <- sum + d
             tt.AddRow(name, d)
         tt.AddRow("总计", sum)
 
         tt.AddPreTable(sprintf "%s的人物作成:" msgArg.MessageEvent.DisplayName)
 
-        let job = dicer.GetRandomItem(StringData.[DATA_JOBS])
+        let job = de.Dicer.GetRandomItem(StringData.ChrJobs)
 
         tt.AddPostTable(sprintf "今日推荐职业：%s" job)
 
@@ -128,14 +132,21 @@ type TRpgModule() =
 
         let key = 
             match msgArg.CommandName with
-            | "li" -> "总结症状"
-            | "ti" -> "即时症状"
+            | "li" -> StringData.Key_LI
+            | "ti" -> StringData.Key_TI
             | unk -> failwithf "不应匹配到的命令名:%s" unk
 
-        let tmpl = de.Dicer.GetRandomItem(StringData.[key])
+        let tmpl = de.Dicer.GetRandomItem(StringData.GetLines(key))
         msgArg.QuickMessageReply(ParseTemplate(tmpl, de))
         
-    [<CommandHandlerMethodAttribute("test", "", "", AltCommandStart = ".")>]
+    [<CommandHandlerMethodAttribute("bg", "", "", AltCommandStart = ".")>]
+    member x.HandleChrBackground(msgArg : CommandArgs) =
+        let template = StringData.GetString(StringData.Key_ChrBackground)
+        let ret = ParseTemplate(template, DiceExpression(Dicer.RandomDicer))
+        msgArg.QuickMessageReply(ret)
+
+
+    [<CommandHandlerMethodAttribute("test", "", "", AltCommandStart = ".", IsHidden = true)>]
     member x.HandleDiceTest(msgArg : CommandArgs) =
         msgArg.EnsureSenderOwner()
 
