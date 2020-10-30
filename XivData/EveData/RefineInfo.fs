@@ -11,6 +11,7 @@ open BotData.Common.Database
 open BotData.EveData.Utils
 open BotData.EveData.EveType
 
+[<CLIMutable>]
 type RefineInfo = 
     {
         [<LiteDB.BsonId(false)>]

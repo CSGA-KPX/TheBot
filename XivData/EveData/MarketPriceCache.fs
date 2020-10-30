@@ -12,6 +12,7 @@ open BotData.Common.Network
 open BotData.EveData.Utils
 open BotData.EveData.EveType
 
+[<CLIMutable>]
 type PriceCache = 
     {
         [<LiteDB.BsonId(false)>]

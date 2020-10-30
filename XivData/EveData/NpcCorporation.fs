@@ -8,6 +8,7 @@ open Newtonsoft.Json.Linq
 
 open BotData.Common.Database
 
+[<CLIMutable>]
 type NpcCorporation =
     {
         [<LiteDB.BsonId(false)>]

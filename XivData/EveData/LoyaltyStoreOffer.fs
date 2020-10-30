@@ -12,6 +12,7 @@ open BotData.Common.Network
 open BotData.EveData.Utils
 open BotData.EveData.NpcCorporation
 
+[<CLIMutable>]
 type LoyaltyStoreOffer = 
     {
         OfferId : int

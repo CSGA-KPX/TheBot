@@ -4,6 +4,7 @@ open System
 
 open BotData.Common.Database
 
+[<CLIMutable>]
 type Mapping = 
     {
         [<LiteDB.BsonIdAttribute(false)>]

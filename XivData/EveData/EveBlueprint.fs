@@ -20,6 +20,7 @@ type BlueprintType =
     | Planet = 2
     | Reaction = 3
 
+[<CLIMutable>]
 type EveBlueprint = 
     {
         [<LiteDB.BsonId(false)>]

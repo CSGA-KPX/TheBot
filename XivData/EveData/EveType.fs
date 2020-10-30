@@ -10,6 +10,7 @@ open Newtonsoft.Json.Linq
 open BotData.Common.Database
 open BotData.EveData.Group
 
+[<CLIMutable>]
 type EveType = 
     {
         [<LiteDB.BsonId(false)>]

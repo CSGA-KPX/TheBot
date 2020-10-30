@@ -12,6 +12,7 @@ open BotData.Common.Network
 open BotData.EveData.Utils
 open BotData.EveData.EveType
 
+[<CLIMutable>]
 type GameInternalPrice = 
     {
         [<LiteDB.BsonId(false)>]

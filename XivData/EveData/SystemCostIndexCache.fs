@@ -11,6 +11,7 @@ open BotData.Common.Network
 
 open BotData.EveData.Utils
 
+[<CLIMutable>]
 type SystemCostIndex = 
     {
         Id : int
