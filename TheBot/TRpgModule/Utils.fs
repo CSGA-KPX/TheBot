@@ -1,4 +1,4 @@
-﻿module TheBot.Module.DiceModule.TRpgUtils
+﻿module TheBot.Module.TRpgModule.TRpgUtils
 
 open System
 open System.Collections.Generic
@@ -6,6 +6,10 @@ open System.Text.RegularExpressions
 
 open TheBot.Module.DiceModule.Utils.DiceExpression
 
+let TRpgDb =
+    let FsMapper = LiteDB.FSharp.FSharpBsonMapper()
+    let dbFile = @"../static/trpg.db"
+    new LiteDB.LiteDatabase(dbFile, FsMapper)
 
 [<RequireQualifiedAccess>]
 module StringData = 
@@ -28,6 +32,8 @@ module StringData =
     let Key_ChrBackground = "人物背景"
     let Key_TI = "即时症状"
     let Key_LI = "总结症状"
+    let Key_SkillAlias = "技能别名"
+    let Key_DefaultSkillValues = "默认技能数值"
 
 // \n \r
 // \{eval expr [noexpr]}
@@ -64,3 +70,11 @@ let ParseTemplate (str : string, de : DiceExpression) =
             ret
 
     regex.Replace(str, MatchEvaluator evalFunc)
+
+type Difficulty = 
+    | Critical
+    | Extreme
+    | Hard
+    | Regular
+    | Fail
+    | Fumble

@@ -1,4 +1,4 @@
-﻿module TheBot.Module.DiceModule.TRpgModule
+﻿module TheBot.Module.TRpgModule.TRpgModule
 
 open System
 
@@ -12,7 +12,8 @@ open TheBot.Utils.Dicer
 open TheBot.Utils.HandlerUtils
 
 open TheBot.Module.DiceModule.Utils.DiceExpression
-open TheBot.Module.DiceModule.TRpgUtils
+open TheBot.Module.TRpgModule.TRpgUtils
+open TheBot.Module.TRpgModule.TRpgCharacterCard
 
 type TRpgModule() =
     inherit CommandHandlerBase()
@@ -146,11 +147,24 @@ type TRpgModule() =
         msgArg.QuickMessageReply(ret)
 
 
-    [<CommandHandlerMethodAttribute("test", "", "", AltCommandStart = ".", IsHidden = true)>]
+    [<CommandHandlerMethodAttribute("st", "设置人物卡", "", AltCommandStart = ".", IsHidden = true)>]
     member x.HandleDiceTest(msgArg : CommandArgs) =
         msgArg.EnsureSenderOwner()
+        
+        let rx = Text.RegularExpressions.Regex(@"([^\s\|0-9]+)([0-9]+)")
+        let input = String.Join("", msgArg.Arguments)
+        let chr = { CharacterCard.UserId = msgArg.MessageEvent.UserId
+                    CharacterCard.ChrName = "测试"
+                    CharacterCard.Props = Collections.Generic.Dictionary<string, int>()}
 
-        let template = String.Join(" ", msgArg.Arguments)
-        let ret = ParseTemplate(template, DiceExpression(Dicer.RandomDicer))
-        msgArg.QuickMessageReply(ret)
+        // 两种可能：完整字段或者基础9维+变动字段
+        for kv in Coc7.DefaultSkillValues do 
+            chr.[kv.Key] <- kv.Value
+
+        for m in rx.Matches(input) do
+            let name = m.Groups.[1].Value
+            let prop = name |> Coc7.MapCoc7SkillName
+            chr.[prop] <- m.Groups.[2].Value |> int
+
+        using (msgArg.OpenResponse(ForceImage)) (fun ret -> ret.Write(chr.ToTextTable()))
 

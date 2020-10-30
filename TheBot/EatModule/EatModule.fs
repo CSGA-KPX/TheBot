@@ -40,7 +40,7 @@ type EatModule() =
                     else
                         SeedOption.SeedByUserDay(msgArg.MessageEvent)
 
-        let dicer = new Dicer(seed, AutoRefreshSeed = false)
+        let dicer = Dicer(seed).Freeze()
 
         match msgArg.Arguments.Length with
         | 0 -> ret.AbortExecution(InputError, "自选输菜名，预设套餐：早/中/晚/加/火锅/萨莉亚")

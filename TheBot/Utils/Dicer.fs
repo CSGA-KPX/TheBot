@@ -30,29 +30,64 @@ type SeedOption =
                 if at.Length = 0 then raise <| InvalidOperationException("没有用户被At！")
                 else at.[0].ToString()) |]
 
-type Dicer(initSeed : byte []) as x =
+[<AbstractClass>]
+/// 确定性随机数生成器
+type private DRng(seed : byte []) = 
     static let utf8 = Text.Encoding.UTF8
-    static let md5 = System.Security.Cryptography.MD5.Create()
 
+    let hash = Security.Cryptography.MD5.Create()
+                :> Security.Cryptography.HashAlgorithm
+
+    /// 用于计算hash的算法
+    /// 此类型不能跨线程使用
+    member x.HashAlgorithm = hash
+
+    /// 获取随机字节，不小于8字节
+    abstract GetBytes : unit -> byte []
+
+    /// 初始种子值
+    member x.InitialSeed = seed
+
+    member x.NextInt32() = BitConverter.ToInt32(x.GetBytes(), 0)
+    member x.NextUInt32() = BitConverter.ToUInt32(x.GetBytes(), 0)
+
+    member x.NextInt64() = BitConverter.ToInt64(x.GetBytes(), 0)
+    member x.NextUInt64() = BitConverter.ToUInt64(x.GetBytes(), 0)
+
+    member x.StringToUInt32(str : string) =
+        let hash = 
+            Array.append (x.GetBytes()) (utf8.GetBytes(str))
+            |> x.HashAlgorithm.ComputeHash
+        BitConverter.ToUInt32(hash, 0)
+
+type private ConstantDRng(seed) = 
+    inherit DRng(seed)
+
+    override x.GetBytes() = x.InitialSeed
+
+type private HashBasedDRng(seed) = 
+    inherit DRng(seed)
+
+    let mutable hash = seed
+
+    let sync = obj()
+
+    override x.GetBytes() = 
+        lock sync (fun () ->
+            hash <- x.HashAlgorithm.ComputeHash(hash)
+            hash )
+
+
+type Dicer private (rng : DRng) =
+    static let utf8 = Text.Encoding.UTF8
     static let randomDicer = new Dicer(SeedRandom)
-
-    let mutable hash = initSeed
-
-    let refreshSeed() =
-        if x.AutoRefreshSeed then hash <- md5.ComputeHash(hash)
-
-
-    let hashToDice (hash, faceNum) =
-        let num = BitConverter.ToUInt32(hash, 0) % faceNum |> int32
-        num + 1
-
 
     new (seed : SeedOption []) =
         let initSeed =
             seed
             |> SeedOption.GetSeedString
             |> utf8.GetBytes
-            |> md5.ComputeHash
+            |> HashBasedDRng
         Dicer(initSeed)
 
     new(seed : SeedOption) = Dicer(Array.singleton seed)
@@ -60,31 +95,28 @@ type Dicer(initSeed : byte []) as x =
     /// 通用的随机骰子
     static member RandomDicer = randomDicer
 
-    member private x.GetHash() =
-        refreshSeed()
-        hash
+    /// 生成一个新的骰子，其种子值不变
+    member x.Freeze() = 
+        rng.GetBytes()
+        |> ConstantDRng
+        |> Dicer
 
-    member val AutoRefreshSeed = true with get, set
+    /// 获得一个[1, faceNum]内的随机数
+    member x.GetRandom(faceNum : uint32) = 
+        rng.NextUInt32() % faceNum + 1u
+        |> int32
 
-    /// 返回Base64编码后的初始种子
-    member x.InitialSeed = Convert.ToBase64String(initSeed)
+    /// 将字符串str转换为[1, faceNum]内的随机数
+    member x.GetRandom(faceNum : uint32, str : string) = 
+        let ret = rng.StringToUInt32(str)
+        ret % faceNum + 1u
+        |> int32
 
-    member x.GetRandom(faceNum, str : string) = 
-        refreshSeed()
-        let seed = Array.append (x.GetHash()) (utf8.GetBytes(str))
-        let hash = md5.ComputeHash(seed)
-        hashToDice (hash, faceNum)
-
-    /// 获得一个随机数
-    member x.GetRandom(faceNum) =
-        refreshSeed()
-        hashToDice (x.GetHash(), faceNum)
-
-    /// 获得一组随机数
+    /// 获得一组[1, faceNum]内的随机数，可能重复
     member x.GetRandomArray(faceNum, count) =
         Array.init count (fun _ -> x.GetRandom(faceNum))
 
-    /// 获得一组随机数，不重复
+    /// 获得一组[1, faceNum]内的随机数，不重复
     member x.GetRandomArrayUnique(faceNum, count) =
         let tmp = Collections.Generic.HashSet<int>()
         if count > (int faceNum) then 
@@ -95,12 +127,12 @@ type Dicer(initSeed : byte []) as x =
         tmp.CopyTo(ret)
         ret
 
-    /// 从数组获得随机项
+    /// 根据索引从数组获得随机项
     member x.GetRandomItem(srcArr : 'T []) =
         let idx = x.GetRandom(srcArr.Length |> uint32) - 1
         srcArr.[idx]
 
-    /// 从数组获得一组随机项，不重复
+    /// 根据索引从数组获得随机项，不重复
     member x.GetRandomItems(srcArr : 'T [], count) =
         [| let faceNum = srcArr.Length |> uint32
            for i in x.GetRandomArrayUnique(faceNum, count) do
