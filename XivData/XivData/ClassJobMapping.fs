@@ -38,6 +38,7 @@ type ClassJobMappingCollection private () =
                 "诗人", "BRD"
             |]
         }
+        |> Seq.filter (fun (a,_) -> not <| String.IsNullOrWhiteSpace(a))
         |> Seq.map (fun (a,b) -> {Id = a; Value = b})
         |> db.InsertBulk
         |> ignore

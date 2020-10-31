@@ -37,7 +37,7 @@ type EveTypeCollection private () =
     override x.Depends = [| typeof<EveGroupCollection> |]
 
     override x.InitializeCollection() =
-        x.DbCollection.EnsureIndex("Name") |> ignore
+        x.DbCollection.EnsureIndex(LiteDB.BsonExpression.Create("Name")) |> ignore
         seq {
             use archive = 
                     let ResName = "BotData.EVEData.zip"

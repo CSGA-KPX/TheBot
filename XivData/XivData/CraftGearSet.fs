@@ -32,8 +32,8 @@ type CraftableGearCollection private () =
 
     override x.InitializeCollection() =
         let db = x.DbCollection
-        db.EnsureIndex("_id", true) |> ignore
-        db.EnsureIndex("ItemLv", false) |> ignore
+        db.EnsureIndex(LiteDB.BsonExpression.Create("_id"), true) |> ignore
+        db.EnsureIndex(LiteDB.BsonExpression.Create("ItemLv"), false) |> ignore
 
         let fields = [|"EquipSlotCategory"; "Level{Equip}"; "Name"; "ClassJobCategory"; "Level{Item}"|]
         let chs = BotDataInitializer.GetXivCollectionChs().GetSheet("Item", fields)

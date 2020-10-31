@@ -28,7 +28,7 @@ type NpcCorporationoCollection private () =
     override x.Depends = Array.empty
 
     override x.InitializeCollection() =
-        x.DbCollection.EnsureIndex("CorporationName") |> ignore
+        x.DbCollection.EnsureIndex(LiteDB.BsonExpression.Create("CorporationName")) |> ignore
 
         seq {
             use archive = 

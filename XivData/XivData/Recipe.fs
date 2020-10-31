@@ -41,8 +41,8 @@ type CraftRecipeProvider private () =
 
     override x.InitializeCollection() = 
         let db = x.DbCollection
-        db.EnsureIndex("_id", true) |> ignore
-        db.EnsureIndex("ResultItem.Id") |> ignore
+        db.EnsureIndex(LiteDB.BsonExpression.Create("_id"), true) |> ignore
+        db.EnsureIndex(LiteDB.BsonExpression.Create("ResultItem.Id")) |> ignore
 
         let lookup id = ItemCollection.Instance.GetByKey(id)
 
@@ -87,8 +87,8 @@ type CompanyCraftRecipeProvider private () =
 
     override x.InitializeCollection() =
         let db = x.DbCollection
-        db.EnsureIndex("_id", true) |> ignore
-        db.EnsureIndex("ResultItem.Id") |> ignore
+        db.EnsureIndex(LiteDB.BsonExpression.Create("_id"), true) |> ignore
+        db.EnsureIndex(LiteDB.BsonExpression.Create("ResultItem.Id")) |> ignore
 
         let lookup id = ItemCollection.Instance.GetByKey(id)
 

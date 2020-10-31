@@ -29,8 +29,8 @@ type ItemCollection private () =
 
     override x.InitializeCollection() = 
         let db = x.DbCollection
-        db.EnsureIndex("_id", true) |> ignore
-        db.EnsureIndex("Name") |> ignore
+        db.EnsureIndex(LiteDB.BsonExpression.Create("_id"), true) |> ignore
+        db.EnsureIndex(LiteDB.BsonExpression.Create("Name")) |> ignore
 
         let chs = BotDataInitializer.GetXivCollectionChs().GetSheet("Item", [| "Name" |])
 

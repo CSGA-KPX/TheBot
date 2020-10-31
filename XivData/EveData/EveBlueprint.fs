@@ -112,7 +112,8 @@ type EveBlueprintCollection private () =
 
     override x.InitializeCollection() =
         // 产物索引
-        x.DbCollection.EnsureIndex("ProductId", "$.Products[0].TypeId") |> ignore
+        let expr = BsonExpression.Create("$.Products[0].TypeId")
+        x.DbCollection.EnsureIndex("ProductId", expr) |> ignore
         //x.DbCollection.EnsureIndex("ProductType", "$.Type") |> ignore
         seq {
             yield! x.InitPlanetSchematics()

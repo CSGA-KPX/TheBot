@@ -31,7 +31,7 @@ type SolarSystemCollection private () =
     override x.Depends = Array.empty
 
     override x.InitializeCollection() =
-        x.DbCollection.EnsureIndex("Name") |> ignore
+        x.DbCollection.EnsureIndex(LiteDB.BsonExpression.Create("Name")) |> ignore
 
         seq {
             use archive = 

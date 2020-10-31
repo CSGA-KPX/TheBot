@@ -14,12 +14,9 @@ type IInitializationInfo =
 module private DataBase =
     // 警告：不要把数据库作为static let放入泛型类
     // static let不在每种泛型中共享
-    let logger = NLog.LogManager.GetLogger("LiteDB")
-    let FsMapper = LiteDB.FSharp.FSharpBsonMapper()
     let Db =
-        let dbFile = @"Filename=../static/BotDataCache.db; Journal=true; Mode=Exclusive;"
-        let db = new LiteDB.LiteDatabase(dbFile, FsMapper)
-        db.Log.add_Logging(fun str -> logger.Trace(str))
+        let dbFile = @"Filename=../static/BotDataCache.db; Upgrade=true"
+        let db = new LiteDB.LiteDatabase(dbFile)
         db
 
 [<AbstractClass>]
@@ -34,7 +31,7 @@ type BotDataCollection<'Key, 'Value>() as x =
     member internal x.Logger = logger
 
     /// 清空当前集合，不释放空间
-    member x.Clear() = col.Delete(LiteDB.Query.All()) |> ignore
+    member x.Clear() = col.DeleteAll () |> ignore
 
     member x.Count() = col.Count()
 
@@ -220,4 +217,4 @@ and BotDataInitializer private () =
 
     /// 整理数据库文件，释放多余空间
     static member ShrinkCache() = 
-        Db.Shrink() |> ignore
+        Db.Rebuild() |> ignore

@@ -7,9 +7,8 @@ open System.Text.RegularExpressions
 open TheBot.Module.DiceModule.Utils.DiceExpression
 
 let TRpgDb =
-    let FsMapper = LiteDB.FSharp.FSharpBsonMapper()
-    let dbFile = @"../static/trpg.db"
-    new LiteDB.LiteDatabase(dbFile, FsMapper)
+    let dbFile = @"Filename=../static/trpg.db; Upgrade=true;"
+    new LiteDB.LiteDatabase(dbFile)
 
 [<RequireQualifiedAccess>]
 module StringData = 

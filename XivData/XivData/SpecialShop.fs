@@ -32,8 +32,8 @@ type SpecialShopCollection private () =
     override x.InitializeCollection() =
         let db = x.DbCollection
         
-        db.EnsureIndex("_id", true) |> ignore
-        db.EnsureIndex("ReceiveItem") |> ignore
+        db.EnsureIndex(LiteDB.BsonExpression.Create("_id"), true) |> ignore
+        db.EnsureIndex(LiteDB.BsonExpression.Create("ReceiveItem")) |> ignore
         let col = BotDataInitializer.GetXivCollectionChs()
         let sht = col.GetSheet("SpecialShop")
         seq {

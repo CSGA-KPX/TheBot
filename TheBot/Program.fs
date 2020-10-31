@@ -5,6 +5,7 @@ open System
 open KPX.FsCqHttp.Instance
 open KPX.FsCqHttp.Utils.UserOption
 
+
 let logger = NLog.LogManager.GetCurrentClassLogger()
 
 [<EntryPoint>]

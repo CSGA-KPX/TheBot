@@ -4,7 +4,6 @@ module TheBot.Module.TRpgModule.CardManager
 open System
 
 open LiteDB
-open LiteDB.FSharp.Extensions
 
 open KPX.FsCqHttp.Handler
 
@@ -14,8 +13,8 @@ open TheBot.Module.TRpgModule.TRpgCharacterCard
 
 let private cardCol = 
     let col = TRpgDb.GetCollection<CharacterCard>()
-    col.EnsureIndex("UserId", false) |> ignore
-    col.EnsureIndex("ChrName", false) |> ignore
+    col.EnsureIndex(BsonExpression.Create("UserId"), false) |> ignore
+    col.EnsureIndex(BsonExpression.Create("ChrName"), false) |> ignore
     col
 
 type private CurrentCard = 

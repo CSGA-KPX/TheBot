@@ -1,7 +1,6 @@
 ﻿module TheBot.Utils.Config
 open System
 open LiteDB
-open LiteDB.FSharp.Extensions
 open Newtonsoft.Json
 
 type Int64JsonConverter() = 
@@ -16,10 +15,8 @@ type Int64JsonConverter() =
         |> uint64
 
 let private Db =
-    FSharp.FSharpBsonMapper.UseCustomJsonConverters([|Int64JsonConverter(); FSharp.FSharpJsonConverter();|])
-    let FsMapper = FSharp.FSharpBsonMapper()
-    let dbFile = @"../static/thebot_config.db"
-    new LiteDatabase(dbFile, FsMapper)
+    let dbFile = @"Filename=../static/thebot_config.db; Upgrade=true"
+    new LiteDatabase(dbFile)
 
 [<RequireQualifiedAccess>]
 type ConfigOwner = 
@@ -42,9 +39,12 @@ type ConfigManager (owner : ConfigOwner) =
 
     member x.Get<'T>(name : string, defVal : 'T) = 
         let id = sprintf "%s:%O" name owner
-        col.TryFindById(BsonValue(id))
-        |> Option.map (fun item -> JsonConvert.DeserializeObject<'T>(item.Value))
-        |> Option.defaultValue defVal
+        let ret = col.FindById(BsonValue(id))
+
+        if isNull (box ret) then
+            defVal
+        else
+            JsonConvert.DeserializeObject<'T>(ret.Value)
 
     member x.Put(name : string, value : 'T) = 
         let id = sprintf "%s:%O" name owner
