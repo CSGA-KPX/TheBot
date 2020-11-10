@@ -7,13 +7,12 @@ open KPX.FsCqHttp.Utils.TextTable
 
 open TheBot.Module.TRpgModule.TRpgUtils
 
-
+[<CLIMutable>]
 type CharacterCard = 
-    {   UserId : uint64
+    {   Id : int64
+        UserId : uint64
         ChrName : string
         Props : Dictionary<string, int>}
-
-    member x.Id = sprintf "%i:%s" x.UserId x.ChrName
 
     member x.Item with get pn = x.Props.[pn]
                   and set pn v= x.Props.[pn] <- v

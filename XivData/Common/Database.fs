@@ -5,7 +5,10 @@ open System
 open System.Collections.Generic
 open System.Reflection
 
+open BotData.Common.LiteDBHelpers
+
 open LibFFXIV.GameData.Raw
+
 
 type IInitializationInfo = 
     abstract Depends : Type []
@@ -45,9 +48,7 @@ type BotDataCollection<'Key, 'Value>() as x =
         x.PassOrRaise(x.TryGetByKey(key), "BotDataCollection内部错误：找不到键{0}", key)
 
     member internal x.TryGetByKey(key : 'Key) = 
-        let ret = col.FindById(LiteDB.BsonValue(key))
-        if isNull (box ret) then None
-        else Some ret
+        col.TryFindById(LiteDB.BsonValue(key))
 
     /// 获取数据库集合供复杂操作
     member internal x.DbCollection = col

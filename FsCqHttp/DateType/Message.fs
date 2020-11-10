@@ -6,42 +6,11 @@ open System.Collections.Generic
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 
-[<RequireQualifiedAccess>]
-type AtUserType =
-    | All
-    | User of uint64
-
-    override x.ToString() =
-        match x with
-        | All -> "all"
-        | User x -> x |> string
-
-    /// 将CQ码中字符串转换为AtUserType
-    static member internal FromString(str : string) =
-        if str = "all" then All
-        else User(str |> uint64)
-
-/// 表示一个CQ消息段
-type RawMessageSection = 
-    {   Type : string
-        Values : IReadOnlyDictionary<string, string> }
-
-    /// 用于直接获取Values内的数据
-    ///
-    /// 不进行合法检查
-    member x.Item str = x.Values.[str]
-    static member Create(name, vals : seq<string * string>) = 
-        {   Type = name
-            Values = vals |> readOnlyDict }
 
 [<JsonConverter(typeof<MessageConverter>)>]
-type Message(sec : RawMessageSection []) as x = 
-    inherit ResizeArray<RawMessageSection>()
+type Message(sec : MessageSection []) as x = 
+    inherit ResizeArray<MessageSection>()
     
-    static let TYPE_AT   = "at"
-    static let TYPE_TEXT = "text"
-    static let TYPE_IMAGE= "image"
-
     static let cqStringReplace =  [| "&", "&amp;"
                                      "[", "&#91;"
                                      "]", "&#93;"
@@ -52,42 +21,36 @@ type Message(sec : RawMessageSection []) as x =
 
     new () = Message(Array.empty)
 
-    new (sec : RawMessageSection) = Message(Array.singleton sec)
+    new (sec : MessageSection) = Message(Array.singleton sec)
 
-    member x.Add(at : AtUserType) = 
-        x.Add(RawMessageSection.Create(TYPE_AT, ["qq", at.ToString()]))
+    member x.Add(at : AtUserType) = x.Add(AtSection.Create(at))
 
-    member x.Add(msg : string) = 
-        x.Add(RawMessageSection.Create(TYPE_TEXT, ["text", msg]))
+    member x.Add(msg : string) = x.Add(TextSection.Create(msg))
 
-    member x.Add(img : Drawing.Bitmap) = 
-        use ms  = new IO.MemoryStream()
-        img.Save(ms, Drawing.Imaging.ImageFormat.Jpeg)
-        let b64 = Convert.ToBase64String(ms.ToArray(), Base64FormattingOptions.None)
-        let segValue= [ "file", ("base64://" + b64) ]
-        x.Add(RawMessageSection.Create(TYPE_IMAGE, segValue))
+    member x.Add(img : Drawing.Bitmap) = x.Add(ImageSection.Create(img))
 
+    member x.GetSections<'T when 'T :> MessageSection>() = 
+        [|  for item in x do
+                match item with
+                | :? 'T as t -> yield t
+                | _ -> ()   |]
 
     /// 获取At
     /// 默认忽略at全体成员
     member x.GetAts(?allowAll : bool) =
         let allowAll = defaultArg allowAll false
         [|
-            for item in x do 
-                if item.Type = TYPE_AT then
-                    let at = AtUserType.FromString(item.["qq"])
-                    match at with
-                    | AtUserType.All -> if allowAll then yield at
-                    | AtUserType.User _ -> yield at
+            for sec in x.GetSections<AtSection>() do 
+                match sec.At with
+                | AtUserType.All -> if allowAll then yield sec.At
+                | AtUserType.User _ -> yield sec.At
         |]
 
     /// 提取所有文本段为字符串
     override x.ToString() =
-        let sb =
-            x
-            |> Seq.fold (fun (sb : Text.StringBuilder) item ->
-                if item.Type = TYPE_TEXT then sb.Append(item.["text"]) |> ignore
-                sb) (Text.StringBuilder())
+        let sb = Text.StringBuilder()
+        for item in x.GetSections<TextSection>() do
+            sb.Append(item.Text) |> ignore
         sb.ToString()
 
     member x.ToCqString() = 
@@ -99,13 +62,14 @@ type Message(sec : RawMessageSection []) as x =
 
         let sb = Text.StringBuilder()
         for sec in x do
-            if sec.Type = TYPE_TEXT then
-                sb.Append(escape (sec.["text"])) |> ignore
-            else
+            match sec with
+            | :? TextSection ->
+                sb.Append(escape (sec.Values.["text"])) |> ignore
+            | _ ->
                 let args = 
                     sec.Values
                     |> Seq.map (fun kv -> sprintf "%s=%s" kv.Key (escape (kv.Value)))
-                sb.AppendFormat("[CQ:{0},", sec.Type)
+                sb.AppendFormat("[CQ:{0},", sec.TypeName)
                     .Append(String.Join(",", args))
                     .Append("]") |> ignore
         sb.ToString()
@@ -122,9 +86,9 @@ type Message(sec : RawMessageSection []) as x =
                             [|  for arg in segv.[1..] do 
                                     let argv = arg.Split('=')
                                     yield argv.[0], decode(argv.[1])  |]
-                        yield RawMessageSection.Create(name, args)
+                        yield MessageSection.CreateFrom(name, args)
                     else
-                        yield RawMessageSection.Create(TYPE_TEXT, ["text", decode(seg)])
+                        yield TextSection.Create(decode(seg))
             |]
         new Message(segs)
 
@@ -136,7 +100,7 @@ and MessageConverter() =
         for sec in r do
             w.WriteStartObject()
             w.WritePropertyName("type")
-            w.WriteValue(sec.Type)
+            w.WriteValue(sec.TypeName)
             w.WritePropertyName("data")
             w.WriteStartObject()
             for item in sec.Values do
@@ -160,7 +124,7 @@ and MessageConverter() =
                             let child = sec.["data"].Value<JObject>()
                             for p in child.Properties() do
                                 yield (p.Name, p.Value.ToString()) }
-                msg.Add(RawMessageSection.Create(t, d))
+                msg.Add(MessageSection.CreateFrom(t, d))
             msg
         | JsonToken.String ->
             Message.FromCqString(r.ReadAsString())

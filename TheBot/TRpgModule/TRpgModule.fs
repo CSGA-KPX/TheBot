@@ -12,8 +12,10 @@ open TheBot.Utils.Dicer
 open TheBot.Utils.HandlerUtils
 
 open TheBot.Module.DiceModule.Utils.DiceExpression
+
 open TheBot.Module.TRpgModule.TRpgUtils
 open TheBot.Module.TRpgModule.TRpgCharacterCard
+open TheBot.Module.TRpgModule.CardManager
 
 type TRpgModule() =
     inherit CommandHandlerBase()
@@ -148,13 +150,14 @@ type TRpgModule() =
 
 
     [<CommandHandlerMethodAttribute("st", "设置人物卡", "", AltCommandStart = ".", IsHidden = true)>]
-    member x.HandleDiceTest(msgArg : CommandArgs) =
+    member x.HandleDiceST(msgArg : CommandArgs) =
         msgArg.EnsureSenderOwner()
         
         let rx = Text.RegularExpressions.Regex(@"([^\s\|0-9]+)([0-9]+)")
         let input = String.Join("", msgArg.Arguments)
-        let chr = { CharacterCard.UserId = msgArg.MessageEvent.UserId
-                    CharacterCard.ChrName = "测试"
+        let chr = { CharacterCard.Id = 0L
+                    CharacterCard.UserId = msgArg.MessageEvent.UserId
+                    CharacterCard.ChrName = "无名氏"
                     CharacterCard.Props = Collections.Generic.Dictionary<string, int>()}
 
         // 两种可能：完整字段或者基础9维+变动字段
@@ -165,6 +168,74 @@ type TRpgModule() =
             let name = m.Groups.[1].Value
             let prop = name |> Coc7.MapCoc7SkillName
             chr.[prop] <- m.Groups.[2].Value |> int
+        
+        let cardCount = CountUserCard(msgArg.MessageEvent.UserId)
+        if cardCount > MAX_USER_CARDS then
+            msgArg.AbortExecution(InputError, "人物卡数量上限，你已经有{0}张，上限为{1}张。", cardCount, MAX_USER_CARDS)
 
-        using (msgArg.OpenResponse(ForceImage)) (fun ret -> ret.Write(chr.ToTextTable()))
+        if CardExists(chr) then
+            msgArg.AbortExecution(InputError, "存在尚未命名的人物卡，请命名后再创建")
 
+        InsertCard(chr)
+
+        using (msgArg.OpenResponse(ForceImage)) (fun ret -> 
+            let tt = chr.ToTextTable()
+            tt.AddPreTable("已保存人物卡：")
+            ret.Write(tt) )
+
+    [<CommandHandlerMethodAttribute("pc", "人物卡管理", "", AltCommandStart = ".", IsHidden = true)>]
+    member x.HandlePC(msgArg : CommandArgs) = 
+        match msgArg.Arguments |> Array.tryItem 0 with
+        | None -> msgArg.QuickMessageReply("list/use/rename")
+        | Some(cmd) ->
+            match cmd.ToLowerInvariant() with
+
+            | "list" ->
+                let cards = msgArg.GetChrCards()
+                use ret = new IO.StringWriter()
+                if cards.Length = 0 then
+                    ret.WriteLine("没有已录入的角色卡")
+                else
+                    ret.WriteLine("{0} 当前角色卡有：", msgArg.MessageEvent.DisplayName)
+                    for card in cards do ret.WriteLine(card.ChrName)
+                msgArg.QuickMessageReply(ret.ToString())
+
+            | "use" ->
+                let cardName = msgArg.Arguments |> Array.tryItem 1
+                if cardName.IsNone then msgArg.AbortExecution(InputError, "缺少参数：角色卡")
+                let card = msgArg.GetChrCards() |> Array.tryFind (fun c -> c.ChrName = cardName.Value)
+                if card.IsNone then msgArg.AbortExecution(InputError, "没有找到名字为{0}的角色卡", cardName.Value)
+                SetCurrentCard(msgArg.MessageEvent.UserId, card.Value)
+                msgArg.QuickMessageReply("已设置")
+
+            | "rename" ->
+                let cardName = msgArg.Arguments |> Array.tryItem 1
+                let current  = msgArg.GetChrCard()
+                UpsertCard({current with ChrName = cardName.Value})
+                msgArg.QuickMessageReply("已保存")
+
+            | "copy" ->
+                let cardName =
+                    msgArg.Arguments
+                    |> Array.tryItem 1
+                    |> Option.defaultValue "新建人物卡"
+                let current  = msgArg.GetChrCard()
+                InsertCard({current with Id = 0L; ChrName = cardName})
+                msgArg.QuickMessageReply(sprintf "已将%s复制到%s" current.ChrName cardName)
+
+            | "show" ->
+                let current  = msgArg.GetChrCard()
+                using (msgArg.OpenResponse(ForceImage)) (fun ret -> ret.Write(current.ToTextTable()))
+
+            | "clr" -> // 删除当前角色卡
+                let current  = msgArg.GetChrCard()
+                RemoveCard(current)
+                msgArg.QuickMessageReply("已删除")
+
+            | "nuke" -> //删除所有角色卡
+                for card in msgArg.GetChrCards() do
+                    RemoveCard(card)
+                msgArg.QuickMessageReply("Booom!")
+
+            | _ -> 
+                msgArg.QuickMessageReply("未知子命令")

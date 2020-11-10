@@ -12,6 +12,7 @@
   <ItemGroup>
     <EmbeddedResource Include="EVEData.zip" />
     <Compile Include="Common\Resource.fs" />
+    <Compile Include="Common\LiteDBHelpers.fs" />
     <Compile Include="Common\Database.fs" />
     <Compile Include="Common\Network.fs" />
     <Compile Include="XivData\Utils.fs" />

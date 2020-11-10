@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <Compile Include="Config.fs" />
+    <Compile Include="DateType\MessageSection.fs" />
     <Compile Include="DateType\Message.fs" />
     <Compile Include="DateType\EventResponse.fs" />
     <Compile Include="DateType\ApiResponse.fs" />
