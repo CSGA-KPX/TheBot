@@ -18,7 +18,7 @@ module private DataBase =
     // 警告：不要把数据库作为static let放入泛型类
     // static let不在每种泛型中共享
     let Db =
-        let dbFile = @"Filename=../static/BotDataCache.db; Upgrade=true"
+        let dbFile = @"Filename=../static/BotDataCache.db;"
         let db = new LiteDB.LiteDatabase(dbFile)
         db
 

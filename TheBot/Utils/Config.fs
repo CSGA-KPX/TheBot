@@ -15,7 +15,7 @@ type Int64JsonConverter() =
         |> uint64
 
 let private Db =
-    let dbFile = @"Filename=../static/thebot_config.db; Upgrade=true"
+    let dbFile = @"Filename=../static/thebot_config.db;"
     new LiteDatabase(dbFile)
 
 [<RequireQualifiedAccess>]

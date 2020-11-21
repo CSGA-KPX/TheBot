@@ -167,6 +167,22 @@ and GroupNotifyEventConverter() =
             NLog.LogManager.GetCurrentClassLogger().Fatal("未知群通知事件类型：{0}", other)
             raise<GroupNotifyEvent> <| ArgumentOutOfRangeException()
 
+
+/// 群名片更改时间
+type GroupCardEvent = 
+    {   [<JsonProperty("sub_type")>]
+        SubType : string
+        [<JsonProperty("group_id")>]
+        GroupId : uint64
+        [<JsonProperty("user_id")>]
+        UserId : uint64
+        /// 新名片
+        [<JsonProperty("card_new")>]
+        CardNew : string
+        /// 旧名片
+        [<JsonProperty("card_old")>]
+        CardOld : string    }
+
 [<JsonConverter(typeof<NoticeEventConverter>)>]
 type NoticeEvent =
     | GroupUpload of GroupUploadEvent
@@ -178,6 +194,7 @@ type NoticeEvent =
     | FriendAdd of FriendAddEvent
     | FriendRecall of FriendRecallEvent
     | GroupNotify of GroupNotifyEvent
+    | GroupCardUpdate of GroupCardEvent
 
 and NoticeEventConverter() =
     inherit JsonConverter<NoticeEvent>()
@@ -199,6 +216,7 @@ and NoticeEventConverter() =
         | "friend_add" -> FriendAdd(obj.ToObject<FriendAddEvent>())
         | "friend_recall" -> FriendRecall(obj.ToObject<FriendRecallEvent>())
         | "notify" -> GroupNotify(obj.ToObject<GroupNotifyEvent>())
+        | "group_card" -> GroupCardUpdate(obj.ToObject<GroupCardEvent>())
         | other ->
             NLog.LogManager.GetCurrentClassLogger().Fatal("未知通知类型：{0}", other)
             raise<NoticeEvent> <| ArgumentOutOfRangeException()

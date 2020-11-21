@@ -88,7 +88,8 @@ let whenToEat (dicer : Dicer, strs : string []) =
 let private mealsFunc prefix array (dicer : Dicer) = 
     let luck = dicer.GetRandom(100u, "吃"+prefix)
 
-    if luck >= 96 then
+    // TODO: 以后换成大成功事件
+    if luck >= Int32.MaxValue then
         dicer.GetRandomItem(ng)
     else
         let mapped = 

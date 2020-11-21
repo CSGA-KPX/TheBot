@@ -113,7 +113,7 @@ type ImageSection() =
         use ms  = new IO.MemoryStream()
         img.Save(ms, Drawing.Imaging.ImageFormat.Jpeg)
         let b64 = Convert.ToBase64String(ms.ToArray(), Base64FormattingOptions.None)
-        MessageSection.CreateFrom("file", [ "file", ("base64://" + b64) ])
+        MessageSection.CreateFrom("image", [ "file", ("base64://" + b64) ])
 
 type RecordSection() = 
     inherit MessageSection("record")
