@@ -6,6 +6,12 @@ open System.Collections.Generic
 open BotData.Common.Database
 open BotData.XivData.Item
 
+[<CLIMutable>]
+type XivMaterial = 
+    {
+        Item : ItemRecord
+        Quantity : float
+    }
 
 [<CLIMutable>]
 type RecipeRecord =
@@ -13,7 +19,7 @@ type RecipeRecord =
       Id : int
       ResultItem : ItemRecord
       ProductCount : float
-      Materials : (ItemRecord * float) [] }
+      Materials : XivMaterial [] }
 
 type FinalMaterials() =
     let m = Dictionary<ItemRecord, float>()
@@ -42,7 +48,7 @@ type CraftRecipeProvider private () =
     override x.InitializeCollection() = 
         let db = x.DbCollection
         db.EnsureIndex(LiteDB.BsonExpression.Create("_id"), true) |> ignore
-        db.EnsureIndex(LiteDB.BsonExpression.Create("ResultItem.Id")) |> ignore
+        db.EnsureIndex(LiteDB.BsonExpression.Create("ResultItem._id")) |> ignore
 
         let lookup id = ItemCollection.Instance.GetByKey(id)
 
@@ -56,7 +62,7 @@ type CraftRecipeProvider private () =
                 let materials =
                     Array.zip itemsKeys amounts
                     |> Array.filter (fun (id, _) -> id > 0)
-                    |> Array.map (fun (id, runs) -> (lookup id, runs))
+                    |> Array.map (fun (id, runs) -> {Item = lookup id; Quantity = runs})
                 yield { Id = row.Key.Main
                         ResultItem = row.As<int>("Item{Result}") |> lookup
                         ProductCount = row.As<byte>("Amount{Result}") |> float
@@ -69,7 +75,7 @@ type CraftRecipeProvider private () =
     interface IRecipeProvider with
         override x.TryGetRecipe(item) =
             let id = new LiteDB.BsonValue(item.Id)
-            let ret = x.DbCollection.FindOne(LiteDB.Query.EQ("ResultItem.Id", id))
+            let ret = x.DbCollection.FindOne(LiteDB.Query.EQ("ResultItem._id", id))
             if isNull (box ret) then
                 None
             else
@@ -88,7 +94,7 @@ type CompanyCraftRecipeProvider private () =
     override x.InitializeCollection() =
         let db = x.DbCollection
         db.EnsureIndex(LiteDB.BsonExpression.Create("_id"), true) |> ignore
-        db.EnsureIndex(LiteDB.BsonExpression.Create("ResultItem.Id")) |> ignore
+        db.EnsureIndex(LiteDB.BsonExpression.Create("ResultItem._id")) |> ignore
 
         let lookup id = ItemCollection.Instance.GetByKey(id)
 
@@ -111,7 +117,7 @@ type CompanyCraftRecipeProvider private () =
                             let materials =
                                 Array.zip itemsKeys amounts
                                 |> Array.filter (fun (id, _) -> id > 0)
-                                |> Array.map (fun (id, runs) -> (lookup id, runs))
+                                |> Array.map (fun (id, runs) -> {Item = lookup id; Quantity = runs})
 
                             yield! materials |]
                 yield { Id = ccs.Key.Main
@@ -125,7 +131,7 @@ type CompanyCraftRecipeProvider private () =
     interface IRecipeProvider with
         override x.TryGetRecipe(item) =
             let id = new LiteDB.BsonValue(item.Id)
-            let ret = x.DbCollection.FindOne(LiteDB.Query.EQ("ResultItem.Id", id))
+            let ret = x.DbCollection.FindOne(LiteDB.Query.EQ("ResultItem._id", id))
             if isNull (box ret) then
                 None
             else
@@ -163,26 +169,29 @@ type RecipeManager private () =
         let recipe = (x :> IRecipeProvider).TryGetRecipe(item)
         [| if recipe.IsSome then
             let recipeYield = recipe.Value.ProductCount
-            let final = recipe.Value.Materials |> Array.map (fun (item, count) -> (item, count / recipeYield))
+            let final =
+                recipe.Value.Materials
+                |> Array.map (fun material -> {material with Quantity = material.Quantity / recipeYield})
             yield! final |]
 
 
     /// 生产一个成品的基础材料
     member x.GetMaterialsRec(item : ItemRecord) =
-        let rec getMaterialsRec (acc : Dictionary<ItemRecord, ItemRecord * float>, item : ItemRecord, runs : float) =
+        let rec getMaterialsRec (acc : Dictionary<ItemRecord, XivMaterial>, item : ItemRecord, runs : float) =
             let recipe = (x :> IRecipeProvider).TryGetRecipe(item)
             if recipe.IsNone then
                 if acc.ContainsKey(item) then
-                    let (item, count) = acc.[item]
-                    acc.[item] <- (item, count + runs)
+                    let m = acc.[item]
+                    acc.[item] <- {m with Quantity = m.Quantity + runs}
                 else
-                    acc.Add(item, (item, runs))
+                    acc.Add(item, {Item = item; Quantity = runs})
             else
                 let realRuns = runs / recipe.Value.ProductCount
-                let materials = recipe.Value.Materials |> Array.map (fun (item, count) -> (item, count * realRuns))
-                for (item, count) in materials do
-                    getMaterialsRec (acc, item, count)
-        [| let dict = Dictionary<ItemRecord, ItemRecord * float>()
+                for material in recipe.Value.Materials  do
+                    let item = material.Item
+                    let q    = material.Quantity * realRuns
+                    getMaterialsRec (acc, item, q)
+        [| let dict = Dictionary<ItemRecord, XivMaterial>()
            getMaterialsRec (dict, item, 1.0)
            let ma = dict.Values |> Seq.toArray
            yield! ma |]
@@ -190,21 +199,23 @@ type RecipeManager private () =
 
     /// 生产一个成品的基础材料，按物品分组
     member x.GetMaterialsRecGroup(item : ItemRecord) =
-        let rec getMaterialsRec (acc : Queue<string * (ItemRecord * float) []>, level : string, item : ItemRecord,
+        let rec getMaterialsRec (acc : Queue<string * XivMaterial []>, level : string, item : ItemRecord,
                                  runs : float) =
             let recipe = (x :> IRecipeProvider).TryGetRecipe(item)
             if recipe.IsNone then
                 ()
             else
                 let realRuns = runs / recipe.Value.ProductCount
-                let self = level + "*" + String.Format("{0:0.###}", 1.0), [| (item, 1.0) |]
+                let self = level + "*" + String.Format("{0:0.###}", 1.0), Array.singleton {Item = item; Quantity = 1.0}
                 acc.Enqueue(self)
-                let materials = recipe.Value.Materials |> Array.map (fun (item, count) -> (item, count * realRuns))
+                let materials = 
+                    recipe.Value.Materials
+                    |> Array.map (fun material -> {material with Quantity = material.Quantity * realRuns})
                 let countStr = "*" + String.Format("{0:0.###}", 1.0)
                 acc.Enqueue(level + countStr + "/", materials)
-                for (item, _) in materials do
-                    getMaterialsRec (acc, level + "/" + item.Name, item, 1.0)
-        [| let acc = Queue<string * (ItemRecord * float) []>()
+                for m in materials do
+                    getMaterialsRec (acc, level + "/" + m.Item.Name, m.Item, 1.0)
+        [| let acc = Queue<string * XivMaterial []>()
            getMaterialsRec (acc, item.Name, item, 1.0)
            yield! acc.ToArray() |> Array.filter (fun (_, arr) -> arr.Length <> 0) |]
 

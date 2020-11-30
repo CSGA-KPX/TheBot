@@ -172,8 +172,8 @@ type XivMarketModule() =
                     if recipe.Length = 0 then
                         att.AddPreTable(sprintf "%s 没有生产配方" item.Name)
                     else
-                        for (i, r) in recipe do
-                            acc.AddOrUpdate(i, r * runs)
+                        for m in recipe do
+                            acc.AddOrUpdate(m.Item, m.Quantity * runs)
 
         for kv in acc |> Seq.sortBy (fun kv -> kv.Key.Id) do 
             att.AddObject(kv.Key, kv.Value)
