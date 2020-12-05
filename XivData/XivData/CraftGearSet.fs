@@ -1,7 +1,6 @@
 ﻿namespace BotData.XivData.CraftGearSet
 
 open System
-open System.Collections.Generic
 
 open LiteDB
 
@@ -26,7 +25,7 @@ type CraftableGearCollection private () =
     static let instance = CraftableGearCollection()
     static member Instance = instance
 
-    override x.Depends = [| typeof<CraftRecipeProvider> |]
+    override x.Depends = [| typeof<CraftRecipeProvider> ; typeof<CompanyCraftRecipeProvider>|]
 
     override x.IsExpired = false
 
@@ -37,7 +36,7 @@ type CraftableGearCollection private () =
 
         let fields = [|"EquipSlotCategory"; "Level{Equip}"; "Name"; "ClassJobCategory"; "Level{Item}"|]
         let chs = BotDataInitializer.GetXivCollectionChs().GetSheet("Item", fields)
-
+        
         let ClassJobCategory = 
             [|
                 let sheet = BotDataInitializer.GetXivCollectionChs().GetSheet("ClassJobCategory")
@@ -49,21 +48,25 @@ type CraftableGearCollection private () =
                         jobs |> Array.filter (fun job -> row.As<bool>(job))
                     yield row.Key.Main, String.Join(" ", j)
             |] |> readOnlyDict
+        
+        let rm = XivRecipeManager.Instance
+        let ic = ItemCollection.Instance
         seq {
-            let rm = RecipeManager.GetInstance()
             for item in chs do 
                 let eq = item.As<int>("EquipSlotCategory") <> 0
                 let le = (item.As<int>("Level{Equip}") % 10) = 0
-                let cf = 
-                    let item = ItemCollection.Instance.GetByKey(item.Key.Main)
-                    rm.GetMaterials(item).Length <> 0
-                if eq && le && cf then
-                    yield {
-                        Id = item.Key.Main
-                        ItemLv = item.As<int>("Level{Item}")
-                        EquipSlotCategory = item.As<int>("EquipSlotCategory")
-                        ClassJobCategory = ClassJobCategory.[item.As<int>("ClassJobCategory")]
-                    }
+                if eq && le then
+                    let cf = 
+                        let item = ic.GetByKey(item.Key.Main)
+                        let recipe = rm.TryGetRecipe(item)
+                        recipe.IsSome && recipe.Value.Input.Length > 0
+                    if cf then
+                        yield {
+                            Id = item.Key.Main
+                            ItemLv = item.As<int>("Level{Item}")
+                            EquipSlotCategory = item.As<int>("EquipSlotCategory")
+                            ClassJobCategory = ClassJobCategory.[item.As<int>("ClassJobCategory")]
+                        }
         }
         |> db.InsertBulk
         |> ignore

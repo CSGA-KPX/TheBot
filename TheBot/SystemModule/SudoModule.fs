@@ -46,9 +46,7 @@ type SudoModule() =
     member x.HandleSu(msgArg : CommandArgs) = 
         if isSuUsed then msgArg.QuickMessageReply("本次认证已被使用")
         else
-            let cb = Assembly.GetExecutingAssembly().CodeBase
-            let uri = new UriBuilder(cb)
-            let path = Uri.UnescapeDataString(uri.Path)
+            let path = Assembly.GetExecutingAssembly().Location
             let md5 = MD5.Create()
             let hex = BitConverter.ToString(md5.ComputeHash(File.OpenRead(path))).Replace("-", "")
             let isMatch = msgArg.RawMessage.ToUpperInvariant().Contains(hex)

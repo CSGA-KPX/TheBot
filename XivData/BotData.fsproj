@@ -15,9 +15,15 @@
     <Compile Include="Common\LiteDBHelpers.fs" />
     <Compile Include="Common\Database.fs" />
     <Compile Include="Common\Network.fs" />
+    <Compile Include="CommonModule\RecipeProvider.fs" />
+    <Compile Include="CommonModule\RecipeManager.fs" />
     <Compile Include="XivData\Utils.fs" />
     <Compile Include="XivData\Item.fs" />
     <Compile Include="XivData\Recipe.fs" />
+    <Compile Include="XivData\Recipe\XivRecipe.fs" />
+    <Compile Include="XivData\Recipe\CraftRecipeProvider.fs" />
+    <Compile Include="XivData\Recipe\CompanyCraftRecipeProvider.fs" />
+    <Compile Include="XivData\Recipe\XivRecipeProvider.fs" />
     <Compile Include="XivData\World.fs" />
     <Compile Include="XivData\SpecialShop.fs" />
     <Compile Include="XivData\GilShop.fs" />
@@ -61,7 +67,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Update="FSharp.Core" Version="4.7.2" />
+    <PackageReference Update="FSharp.Core" Version="5.0.0" />
   </ItemGroup>
 
 </Project>

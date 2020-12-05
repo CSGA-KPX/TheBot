@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
     <RootNamespace>TheBot_Test</RootNamespace>
 
     <IsPackable>false</IsPackable>
@@ -15,7 +15,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="DataTest.fs" />
+    <Compile Include="InitCollection.fs" />
+    <Compile Include="XivItemTest.fs" />
+    <Compile Include="XivRecipeTest.fs" />
+    <Compile Include="XivRecipeV2Test.fs" />
+    <Compile Include="EveItemTest.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
@@ -24,7 +28,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Update="FSharp.Core" Version="4.7.2" />
+    <PackageReference Update="FSharp.Core" Version="5.0.0" />
   </ItemGroup>
 
 </Project>

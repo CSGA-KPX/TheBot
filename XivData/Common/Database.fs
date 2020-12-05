@@ -28,7 +28,7 @@ type BotDataCollection<'Key, 'Value>() as x =
     let col = Db.GetCollection<'Value>(x.GetType().Name)
     let logger = NLog.LogManager.GetLogger(x.GetType().Name)
 
-    /// 声明依赖项
+    /// 调用InitializeCollection时的依赖项
     abstract Depends : Type []
 
     member internal x.Logger = logger
@@ -133,7 +133,7 @@ and BotDataInitializer private () =
             col.ClearCache()
             col
         else
-            let col = EmbeddedXivCollection(XivLanguage.ChineseSimplified) :> IXivCollection
+            let col = EmbeddedXivCollection(XivLanguage.None) :> IXivCollection
             StaticData.Add("XIV_COL_CHS", col)
             col
 
@@ -198,18 +198,20 @@ and BotDataInitializer private () =
         |> Array.filter (fun t -> (typeof<IInitializationInfo>.IsAssignableFrom(t) && (not (t.IsAbstract))))
         |> Array.map (fun t -> 
             let p = t.GetProperty("Instance", BindingFlags.Public ||| BindingFlags.Static)
+            if isNull p then failwithf "%O.Instance is Null!" t
             p.GetValue(null) :?> IInitializationInfo)
         |> BotDataInitializer.SolveDependency
         |> Array.iter (fun o ->
             let t = o.GetType()
             let gt = typeof<CachedTableCollection<_, _>>
             let isCollection = BotDataInitializer.IsSubclassOfRawGeneric(gt, t)
-            printfn "正在处理：%s  -->  %A" t.Name isCollection
+            printfn "正在处理：%s" t.FullName 
             if isCollection then
                 t.GetMethod("InitializeCollection").Invoke(o, null) |> ignore
                 GC.Collect()
             )
         printfn "处理完成"
+        BotDataInitializer.ClearStaticData()
 
     /// 删除所有数据，不释放空间
     static member ClearCache() = 

@@ -56,6 +56,7 @@ type DummyReverseClient(server, token) as x =
     do
         x.AddApiResponse(".handle_quick_operation", obj())
         x.AddApiResponse("get_login_info", {|``user_id`` = 10000; ``nickname`` = "Debug"|})
+        x.AddApiResponse("can_send_image", {|``yes`` = true|})
 
     member x.AddApiResponse<'T when 'T :> Api.ApiRequestBase>(obj : obj) = 
         let api = Activator.CreateInstance(typeof<'T>) :?> Api.ApiRequestBase

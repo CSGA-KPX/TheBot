@@ -131,10 +131,6 @@ type XivModule() =
             |> Seq.take 3
         msgArg.QuickMessageReply(sprintf "%s" (String.Join(" ", nums)))
 
-    [<CommandHandlerMethodAttribute("mentor", "今日导随运势", "")>]
-    member x.HandleMentor(msgArg : CommandArgs) =
-        msgArg.QuickMessageReply("功能已删除。")
-
     [<CommandHandlerMethodAttribute("nuannuan", "暖暖", "")>]
     [<CommandHandlerMethodAttribute("nrnr", "暖暖", "")>]
     member x.HandleNrnr(msgArg : CommandArgs) = 
@@ -184,7 +180,7 @@ type XivModule() =
         let dateFmt = "yyyy/MM/dd HH:00"
 
         use ret = msgArg.OpenResponse(ForceImage)
-        ret.WriteLine("警告：时间为中国标准时间，仅供娱乐测试使用，请自行确认数据准确")
+        ret.WriteLine("警告：国服数据，世界服不一定适用。时间为中国标准时间。")
         let mutable now = GetCstTime()
         try
             if cfg.IsDefined("list") then

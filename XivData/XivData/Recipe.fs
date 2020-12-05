@@ -1,5 +1,5 @@
 ﻿namespace BotData.XivData.Recipe
-
+(*
 open System
 open System.Collections.Generic
 
@@ -137,6 +137,7 @@ type CompanyCraftRecipeProvider private () =
             else
                 Some ret
 
+[<ObsoleteAttribute>]
 type RecipeManager private () =
     let providers = HashSet<IRecipeProvider>()
 
@@ -223,3 +224,5 @@ type RecipeManager private () =
 
     interface IRecipeProvider with
         member x.TryGetRecipe(item : ItemRecord) = findRecipe (providers |> Seq.toList, item)
+
+*)

@@ -17,7 +17,7 @@ open TheBot.Module.XivModule.Utils
 type XivMarketModule() =
     inherit CommandHandlerBase()
 
-    let rm = Recipe.RecipeManager.GetInstance()
+    let rm = Recipe.XivRecipeManager.Instance
     let itemCol = Item.ItemCollection.Instance
     let gilShop = GilShop.GilShopCollection.Instance
     let xivExpr = XivExpression.XivExpression()
@@ -114,9 +114,9 @@ type XivMarketModule() =
         let doCalculateCost = msgArg.CommandName = "rrc" || msgArg.CommandName = "rc"
         let materialFunc = 
             if msgArg.CommandName = "rr" || msgArg.CommandName = "rrc" then
-                fun (item : Item.ItemRecord) -> rm.GetMaterialsRec(item)
+                fun (item : Item.ItemRecord) -> rm.TryGetRecipeRec(item, 1.0)
             else
-                fun (item : Item.ItemRecord) -> rm.GetMaterialsOne(item)
+                fun (item : Item.ItemRecord) -> rm.TryGetRecipe(item)
 
         let cfg = CommandUtils.XivConfig(msgArg)
         let world = cfg.GetWorld()
@@ -169,10 +169,10 @@ type XivMarketModule() =
                     product.AddOrUpdate(kv.Key, kv.Value)
                     let (item, runs) = kv.Key, kv.Value
                     let recipe = materialFunc(item)
-                    if recipe.Length = 0 then
+                    if recipe.IsNone then
                         att.AddPreTable(sprintf "%s 没有生产配方" item.Name)
                     else
-                        for m in recipe do
+                        for m in recipe.Value.Input do
                             acc.AddOrUpdate(m.Item, m.Quantity * runs)
 
         for kv in acc |> Seq.sortBy (fun kv -> kv.Key.Id) do 
@@ -239,7 +239,6 @@ type XivMarketModule() =
                 |]
 
             let att = AutoTextTable<SpecialShop.SpecialShopInfo>(hdrs)
-
             let ret = strToItem(cfg.CommandLine.[0])
             match ret with
             | None -> msgArg.AbortExecution(ModuleError, "找不到物品{0}", cfg.CommandLine.[0])
@@ -247,6 +246,7 @@ type XivMarketModule() =
                 let ia = sc.SearchByCostItemId(item.Id)
                 if ia.Length = 0 then
                     msgArg.AbortExecution(InputError, "{0} 不能兑换道具", item.Name)
+                att.AddPreTable(sprintf "兑换道具:%s 土豆：%s/%s" item.Name world.DataCenter world.WorldName )
                 for info in ia do 
                     att.AddObject(info)
             using (msgArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(att))
