@@ -19,7 +19,6 @@
     <Compile Include="CommonModule\RecipeManager.fs" />
     <Compile Include="XivData\Utils.fs" />
     <Compile Include="XivData\Item.fs" />
-    <Compile Include="XivData\Recipe.fs" />
     <Compile Include="XivData\Recipe\XivRecipe.fs" />
     <Compile Include="XivData\Recipe\CraftRecipeProvider.fs" />
     <Compile Include="XivData\Recipe\CompanyCraftRecipeProvider.fs" />

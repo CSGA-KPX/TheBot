@@ -83,7 +83,7 @@ type CellType =
                 elif ts.TotalMinutes >= 1.0 then
                     sprintf "%.0f分前" ts.TotalMinutes
                 else
-                    "没多久"
+                    "刚刚"
             | :? DateTimeOffset as dto ->
                 toStr(DateTimeOffset.Now - dto)
             | :? DateTime as dt ->

@@ -9,7 +9,7 @@
 
 运行环境
 =======
-Windows .NET FW 4.7.2 / Linux Mono
+.NET 5.0
 
 项目说明
 =======
