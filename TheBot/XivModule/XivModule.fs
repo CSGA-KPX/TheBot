@@ -11,7 +11,6 @@ open KPX.FsCqHttp.Utils.UserOption
 
 open BotData.XivData
 
-open TheBot.Module.XivModule.Utils
 open TheBot.Utils.Dicer
 
 type XivModule() =
@@ -22,6 +21,26 @@ type XivModule() =
     let isNumber (str : string) =
         if str.Length <> 0 then String.forall (Char.IsDigit) str
         else false
+
+    let mutable dfcRoulettes = None
+
+    [<CommandHandlerMethodAttribute("纷争前线", "今日轮转查询", "")>]
+    member x.HandleDailyFrontlineChallenge(msgArg : CommandArgs) = 
+        if dfcRoulettes.IsNone then 
+            dfcRoulettes <- ContentFinderCondition.XivContentCollection.Instance.GetAll()
+                            |> Seq.filter (fun i -> i.IsDailyFrontlineChallengeRoulette)
+                            |> Seq.toArray
+                            |> Array.sortBy (fun i -> i.Id)
+                            |> Some
+        if dfcRoulettes.Value.Length = 0 then // 如果还空的话
+            msgArg.AbortExecution(ModuleError, "模块错误：副本表为空")
+        
+        // 每天23点更新，切换到日本时间
+        let utc = DateTimeOffset.UnixEpoch.ToOffset(TimeSpan.FromHours(9.0))
+        let now  = DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(9.0))
+        let index= ((now-utc).Days + 2) % dfcRoulettes.Value.Length
+        
+        msgArg.QuickMessageReply(sprintf "我猜现在是：%s" dfcRoulettes.Value.[index].Name)
 
     [<CommandHandlerMethodAttribute("幻想药", "洗个啥？", "")>]
     member x.HandleFantasia(msgArg : CommandArgs) = 
@@ -55,7 +74,6 @@ type XivModule() =
 
         msgArg.QuickMessageReply(tt.ToString())
         
-
     [<CommandHandlerMethodAttribute("cgss", "查找指定职业和品级的套装", "职业 品级")>]
     member x.HandleCGSS(msgArg : CommandArgs) =
         let mutable job = None
