@@ -13,8 +13,8 @@ open BotData.XivData.Item
 type GilShopInfo =
     { [<BsonId(true)>]
       Id : int
-      Ask : uint32
-      Bid : uint32 }
+      Ask : int32
+      Bid : int32 }
 
 
 type GilShopCollection private () =
@@ -42,8 +42,8 @@ type GilShopCollection private () =
             for record in col.GetSheet("GilShopItem") do
                 let item = record.AsRow("Item")
                 yield { Id = item.Key.Main
-                        Ask = item.As<uint32>(AskKey)
-                        Bid = item.As<uint32>(BidKey) }
+                        Ask = item.As<int32>(AskKey)
+                        Bid = item.As<int32>(BidKey) }
         }
         |> Seq.distinctBy (fun x -> x.Id)
         |> db.InsertBulk
