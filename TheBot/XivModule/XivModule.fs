@@ -22,25 +22,51 @@ type XivModule() =
         if str.Length <> 0 then String.forall (Char.IsDigit) str
         else false
 
-    let mutable dfcRoulettes = None
+    let buildDfc() = 
+        ContentFinderCondition.XivContentCollection.Instance.GetAll()
+        |> Seq.filter (fun i -> i.IsDailyFrontlineChallengeRoulette)
+        |> Seq.toArray
+        |> Array.sortBy (fun i -> i.Id)
+
+    let mutable dfcRoulettes = buildDfc()
 
     [<CommandHandlerMethodAttribute("纷争前线", "今日轮转查询", "")>]
     member x.HandleDailyFrontlineChallenge(msgArg : CommandArgs) = 
-        if dfcRoulettes.IsNone then 
-            dfcRoulettes <- ContentFinderCondition.XivContentCollection.Instance.GetAll()
-                            |> Seq.filter (fun i -> i.IsDailyFrontlineChallengeRoulette)
-                            |> Seq.toArray
-                            |> Array.sortBy (fun i -> i.Id)
-                            |> Some
-        if dfcRoulettes.Value.Length = 0 then // 如果还空的话
-            msgArg.AbortExecution(ModuleError, "模块错误：副本表为空")
-        
-        // 每天23点更新，切换到日本时间
-        let utc = DateTimeOffset.UnixEpoch.ToOffset(TimeSpan.FromHours(9.0))
-        let now  = DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(9.0))
-        let index= ((now-utc).Days + 2) % dfcRoulettes.Value.Length
-        
-        msgArg.QuickMessageReply(sprintf "我猜现在是：%s" dfcRoulettes.Value.[index].Name)
+        let uo = UserOptionParser()
+        uo.RegisterOption("list", "7")
+        uo.RegisterOption("rebuild", "")
+        uo.Parse(msgArg.Arguments)
+        if uo.IsDefined("rebuild") then
+           dfcRoulettes <- buildDfc()
+           msgArg.QuickMessageReply(sprintf "重建完成，当前有%i个副本" dfcRoulettes.Length)
+        else
+            if dfcRoulettes.Length = 0 then
+                    msgArg.AbortExecution(ModuleError, "模块错误：副本表为空。请使用rebuild")
+
+            let dateFmt = "yyyy/MM/dd HH:00"
+            let JSTOffset= TimeSpan.FromHours(9.0)
+            let getString (dt : DateTimeOffset) = 
+                let dt  = dt.ToOffset(JSTOffset)
+                let utc = DateTimeOffset.UnixEpoch.ToOffset(JSTOffset)
+                let index= ((dt-utc).Days + 2) % dfcRoulettes.Length
+                dfcRoulettes.[index].Name
+
+            let tt = TextTable.FromHeader([|"日期（中国标准时间）"; "副本"|])
+            tt.AddPreTable(sprintf "当前为：%s" (getString(DateTimeOffset.Now)))
+
+            let startDate = 
+                let jst = DateTimeOffset.Now.ToOffset(JSTOffset)
+                (jst - jst.TimeOfDay).ToOffset(TimeSpan.FromHours(8.0))
+
+            let list = uo.GetValue<int>("list")
+            if list > 31 then msgArg.AbortExecution(InputError, "一个月还不够嘛？")
+            for i = 0 to uo.GetValue<int>("list") do 
+                let date = startDate.AddDays(float i)
+                let dateStr = startDate.AddDays(float i).ToString(dateFmt)
+                let contentStr = getString(date)
+                tt.AddRow(dateStr, contentStr)
+
+            using (msgArg.OpenResponse(ForceImage)) (fun ret -> ret.Write(tt))
 
     [<CommandHandlerMethodAttribute("幻想药", "洗个啥？", "")>]
     member x.HandleFantasia(msgArg : CommandArgs) = 

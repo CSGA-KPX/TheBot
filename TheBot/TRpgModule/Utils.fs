@@ -6,9 +6,7 @@ open System.Text.RegularExpressions
 
 open TheBot.Module.DiceModule.Utils.DiceExpression
 
-let TRpgDb =
-    let dbFile = @"Filename=../static/trpg.db; Upgrade=true;"
-    new LiteDB.LiteDatabase(dbFile)
+let TRpgDb = BotData.Common.Database.DataBase.getLiteDB("trpg.db")
 
 [<RequireQualifiedAccess>]
 module StringData = 

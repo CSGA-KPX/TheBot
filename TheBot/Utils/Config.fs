@@ -1,7 +1,11 @@
 ﻿module TheBot.Utils.Config
+
 open System
+
 open LiteDB
+
 open Newtonsoft.Json
+
 
 type Int64JsonConverter() = 
     inherit JsonConverter<uint64>()
@@ -14,9 +18,7 @@ type Int64JsonConverter() =
         |> string
         |> uint64
 
-let private Db =
-    let dbFile = @"Filename=../static/thebot_config.db;"
-    new LiteDatabase(dbFile)
+let private Db = BotData.Common.Database.DataBase.getLiteDB("thebot_config.db")
 
 [<RequireQualifiedAccess>]
 type ConfigOwner = 

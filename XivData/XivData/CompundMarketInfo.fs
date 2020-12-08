@@ -50,7 +50,7 @@ type UniversalisRecord =
 type MarketInfoCollection private () = 
     inherit CachedItemCollection<string, UniversalisRecord>()
 
-    static let threshold = TimeSpan.FromHours(12.0)
+    static let threshold = TimeSpan.FromHours(2.0)
 
     static let instance = MarketInfoCollection()
 

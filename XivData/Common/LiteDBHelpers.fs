@@ -9,3 +9,6 @@ type ILiteCollection<'T> with
             None
         else
             Some ret
+
+do 
+    LiteDB.BsonMapper.Global.EmptyStringToNull <- false

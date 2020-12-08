@@ -1,6 +1,7 @@
 ﻿namespace BotData.Common.Database
 // 此命名空间提供一个统一的数据库接口供数据缓存使用
 
+
 open System
 open System.Collections.Generic
 open System.Reflection
@@ -9,23 +10,28 @@ open BotData.Common.LiteDBHelpers
 
 open LibFFXIV.GameData.Raw
 
-
 type IInitializationInfo = 
     abstract Depends : Type []
 
 [<AutoOpen>]
-module private DataBase =
+module DataBase =
+    let getLiteDB(filename : string ) = 
+        let path = IO.Path.Combine([| ".."; "static"; filename|])
+        let dbFile = sprintf "Filename=%s;" path
+        new LiteDB.LiteDatabase(dbFile)
+
     // 警告：不要把数据库作为static let放入泛型类
     // static let不在每种泛型中共享
-    let Db =
-        let dbFile = @"Filename=../static/BotDataCache.db;"
-        let db = new LiteDB.LiteDatabase(dbFile)
-        db
+    let internal BotDataCacheDb = getLiteDB("BotDataCache.db")
+
+    do
+        LiteDB.BsonMapper.Global.EmptyStringToNull <- false
+        LiteDB.BsonMapper.Global.EnumAsInteger <- true
 
 [<AbstractClass>]
 type BotDataCollection<'Key, 'Value>() as x = 
 
-    let col = Db.GetCollection<'Value>(x.GetType().Name)
+    let col = BotDataCacheDb.GetCollection<'Value>(x.GetType().Name)
     let logger = NLog.LogManager.GetLogger(x.GetType().Name)
 
     /// 调用InitializeCollection时的依赖项
@@ -119,7 +125,7 @@ type CachedTableCollection<'Key, 'Value>() =
 and BotDataInitializer private () = 
     static let StaticData = Dictionary<string, obj>()
 
-    static let updateCol = Db.GetCollection<TableUpdateTime>()
+    static let updateCol = BotDataCacheDb.GetCollection<TableUpdateTime>()
 
     static member ClearStaticData() = StaticData.Clear()
 
@@ -215,9 +221,9 @@ and BotDataInitializer private () =
 
     /// 删除所有数据，不释放空间
     static member ClearCache() = 
-        for name in Db.GetCollectionNames() |> Seq.toArray do
-            Db.DropCollection(name) |> ignore
+        for name in BotDataCacheDb.GetCollectionNames() |> Seq.toArray do
+            BotDataCacheDb.DropCollection(name) |> ignore
 
     /// 整理数据库文件，释放多余空间
     static member ShrinkCache() = 
-        Db.Rebuild() |> ignore
+        BotDataCacheDb.Rebuild() |> ignore

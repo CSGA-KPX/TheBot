@@ -35,7 +35,7 @@ type MarketTradeHistory =
 type MarketTradeHistoryCollection private () = 
     inherit CachedItemCollection<int, MarketTradeHistory>()
 
-    static let threshold = TimeSpan.FromDays(1.0)
+    static let threshold = TimeSpan.FromDays(2.0)
 
     static let instance = MarketTradeHistoryCollection()
 
