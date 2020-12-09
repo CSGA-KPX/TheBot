@@ -54,13 +54,13 @@ type XivMarketModule() =
         let cfg = CommandUtils.XivConfig(msgArg)
         let worlds = cfg.GetWorlds()
 
-        let tt = TextTable.FromHeader([|    LeftAlignCell "物品";
-                                            LeftAlignCell "土豆";
-                                            RightAlignCell "总体出售";
-                                            RightAlignCell "HQ出售";
-                                            RightAlignCell "总体交易";
-                                            RightAlignCell "HQ交易";
-                                            RightAlignCell "更新时间"   |])
+        let tt = TextTable( LeftAlignCell "物品",
+                            LeftAlignCell "土豆",
+                            RightAlignCell "总体出售",
+                            RightAlignCell "HQ出售",
+                            RightAlignCell "总体交易",
+                            RightAlignCell "HQ交易",
+                            RightAlignCell "更新时间" )
         for str in cfg.CommandLine do 
             let item = strToItem str
             if item.IsNone then msgArg.AbortExecution(ModuleError, "找不到物品:{0}，请尝试#is {0}", str)
@@ -98,14 +98,6 @@ type XivMarketModule() =
                 tt.AddRow(name, srvName, totalListing, hqListing, totalTrade, hqTotalTrade, updateVal)
         using (msgArg.OpenResponse(cfg.IsImageOutput)) (fun ret -> ret.Write(tt))
 
-    [<CommandHandlerMethodAttribute("tradelog", "已废弃", "")>]
-    member x.HandleTradelog(msgArg : CommandArgs) =
-        msgArg.QuickMessageReply("已废弃，请使用#fm")
-
-    [<CommandHandlerMethodAttribute("market", "已废弃", ".")>]
-    member x.HandleMarket(msgArg : CommandArgs) =
-        msgArg.QuickMessageReply("已废弃，请使用#fm")
-
     [<CommandHandlerMethodAttribute("r", "根据表达式汇总多个物品的材料，不查询价格", "")>]
     [<CommandHandlerMethodAttribute("rr", "根据表达式汇总多个物品的基础材料，不查询价格", "")>]
     [<CommandHandlerMethodAttribute("rc", "计算物品基础材料成本", "物品Id或全名...")>]
@@ -121,73 +113,72 @@ type XivMarketModule() =
         let cfg = CommandUtils.XivConfig(msgArg)
         let world = cfg.GetWorld()
 
-        let mutable cur = None
-        let updateCur(item : Item.ItemRecord) = 
-            let data = marketInfo.GetMarketListings(world, item) |> Array.map (MarketUtils.MarketData.Order)
-            let m = MarketUtils.MarketAnalyzer(item, world, data)
-            cur <- Some (if m.IsEmpty then m else m.TakeVolume())
-            
-        let mutable sum = MarketUtils.StdEv.Zero
-        let hdrs = 
-            [|
-                yield LeftAlignCell "物品", fun (item : Item.ItemRecord, _) -> box (item |> tryLookupNpcPrice)
-
-                if doCalculateCost then
-                    yield RightAlignCell "价格", fun (item, _) ->
-                            updateCur(item)
-                            if cur.Value.IsEmpty then box <| RightAlignCell "--"
-                            else box (cur.Value.StdEvPrice().Round().Average)
-
-                yield RightAlignCell "数量", snd >> box
-
-                if doCalculateCost then
-                    yield RightAlignCell "小计", fun (_, amount) ->
-                            if cur.Value.IsEmpty then box <| RightAlignCell "--"
-                            else
-                                let subtotal = cur.Value.StdEvPrice().Round() * amount
-                                sum <- sum + subtotal
-                                box subtotal.Average
-
-                    yield RightAlignCell "更新时间", fun (_, _) ->
-                            if cur.Value.IsEmpty then box <| RightAlignCell "--"
-                            else box <| CellType.Create(cur.Value.LastUpdateTime())
-            |]
-
-        let att = AutoTextTable<Item.ItemRecord * float>(hdrs)
+        let tt = 
+            if doCalculateCost then
+                TextTable("物品", "价格", "数量", "小计", "更新时间")
+            else
+                TextTable("物品", "数量", "更新时间")
 
         if doCalculateCost then
-            att.AddPreTable(sprintf "服务器：%s" world.WorldName)
+            tt.AddPreTable(sprintf "服务器：%s" world.WorldName)
 
         let product = XivExpression.ItemAccumulator()
         let acc = XivExpression.ItemAccumulator()
         for str in cfg.CommandLine do
             match xivExpr.TryEval(str) with
             | Error err -> raise err
-            | Ok(Number i) -> att.AddPreTable(sprintf "计算结果为数字%f，物品Id请加#" i)
+            | Ok(Number i) -> tt.AddPreTable(sprintf "计算结果为数字%f，物品Id请加#" i)
             | Ok(Accumulator a) ->
                 for kv in a do
                     product.AddOrUpdate(kv.Key, kv.Value)
                     let (item, runs) = kv.Key, kv.Value
                     let recipe = materialFunc(item)
                     if recipe.IsNone then
-                        att.AddPreTable(sprintf "%s 没有生产配方" item.Name)
+                        tt.AddPreTable(sprintf "%s 没有生产配方" item.Name)
                     else
                         for m in recipe.Value.Input do
                             acc.AddOrUpdate(m.Item, m.Quantity * runs)
 
+        let mutable sum = MarketUtils.StdEv.Zero
         for kv in acc |> Seq.sortBy (fun kv -> kv.Key.Id) do 
-            att.AddObject(kv.Key, kv.Value)
+            let item = kv.Key
+            let quantity = kv.Value
+            let market = 
+                if doCalculateCost then 
+                    let data = marketInfo.GetMarketListings(world, item) |> Array.map (MarketUtils.MarketData.Order)
+                    let m = MarketUtils.MarketAnalyzer(item, world, data)
+                    Some (if m.IsEmpty then m else m.TakeVolume())
+                else
+                    None
+            RowBuilder()
+                .Add(item |> tryLookupNpcPrice)
+                .AddCond(doCalculateCost, if market.Value.IsEmpty then
+                                            box <| RightAlignCell "--"
+                                          else
+                                            box <| market.Value.StdEvPrice().Round().Average)
+                .Add(quantity)
+                .AddCond(doCalculateCost, if market.Value.IsEmpty then
+                                            box <| RightAlignCell "--"
+                                          else
+                                            let subtotal = market.Value.StdEvPrice().Round() * quantity
+                                            sum <- sum + subtotal
+                                            box subtotal.Average)
+                .AddCond(doCalculateCost, if market.Value.IsEmpty then
+                                            box <| RightAlignCell "--"
+                                          else
+                                            box <| market.Value.LastUpdateTime())
+            |> tt.AddRow
 
         if doCalculateCost then
-            att.AddRowPadding("成本总计", sum.Average )
+            tt.AddRowFill("成本总计", sum.Average )
             let totalSell = product |> Seq.sumBy (fun kv -> 
                 let data = marketInfo.GetMarketListings(world, kv.Key) |> Array.map (MarketUtils.MarketData.Order)
                 let m = MarketUtils.MarketAnalyzer(kv.Key, world, data)
                 (if m.IsEmpty then m else m.TakeVolume()).StdEvPrice().Round() * kv.Value)
-            att.AddRowPadding("卖出价格", totalSell.Average )
-            att.AddRowPadding("税前利润", (totalSell - sum).Average )
+            tt.AddRowFill("卖出价格", totalSell.Average )
+            tt.AddRowFill("税前利润", (totalSell - sum).Average )
 
-        using (msgArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(att))
+        using (msgArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))
 
     [<CommandHandlerMethodAttribute("ssc", "计算部分道具兑换的价格", "兑换所需道具的名称或ID，只处理1个")>]
     member x.HandleSSS(msgArg : CommandArgs) =
@@ -197,59 +188,48 @@ type XivMarketModule() =
 
         if cfg.CommandLine.Length = 0 then
             //回复所有可交易道具
-            let tt = TextTable.FromHeader([|"名称"; "id"|])
+            let tt = TextTable("名称", "id")
             tt.AddPreTable("可交换道具：")
             for item in sc.AllCostItems() do 
                 tt.AddRow(item.Name, item.Id.ToString())
             using (msgArg.OpenResponse()) (fun x -> x.Write(tt))
         else
-            let mutable curItem = None
-            let mutable cur = None
-            let updateCur(item : Item.ItemRecord) = 
-                let data = marketInfo.GetMarketListings(world, item) |> Array.map (MarketUtils.MarketData.Order)
-                let m = MarketUtils.MarketAnalyzer(item, world, data)
-                cur <- Some (if m.IsEmpty then m else m.TakeVolume())
-
-            let hdrs = 
-                [|
-                    LeftAlignCell "兑换", fun (info : SpecialShop.SpecialShopInfo) ->
-                                curItem <- Some (itemCol.GetByItemId(info.ReceiveItem))
-                                updateCur(curItem.Value)
-                                box (curItem.Value.Name)
-                    RightAlignCell "价格", fun _ -> 
-                                if cur.Value.IsEmpty then
-                                    box  <| RightAlignCell "--"
-                                else
-                                    box (cur.Value.TakeVolume().StdEvPrice().Round().Average)
-                    RightAlignCell "最低", fun _ ->
-                                if cur.Value.IsEmpty then
-                                    box  <| RightAlignCell "--"
-                                else
-                                box (cur.Value.MinPrice())
-                    RightAlignCell "价值", fun info ->
-                                if cur.Value.IsEmpty then
-                                    box  <| RightAlignCell "--"
-                                else
-                                    box (cur.Value.TakeVolume().StdEvPrice().Round() * (float <|info.ReceiveCount) / (float <|info.CostCount)).Average
-                    RightAlignCell "更新", fun _ ->
-                                if cur.Value.IsEmpty then
-                                    box  <| RightAlignCell "--"
-                                else
-                                    box  <| CellType.Create(cur.Value.LastUpdateTime())
-                |]
-
-            let att = AutoTextTable<SpecialShop.SpecialShopInfo>(hdrs)
             let ret = strToItem(cfg.CommandLine.[0])
             match ret with
             | None -> msgArg.AbortExecution(ModuleError, "找不到物品{0}", cfg.CommandLine.[0])
-            | Some item ->
-                let ia = sc.SearchByCostItemId(item.Id)
+            | Some reqi ->
+                let ia = sc.SearchByCostItemId(reqi.Id)
                 if ia.Length = 0 then
-                    msgArg.AbortExecution(InputError, "{0} 不能兑换道具", item.Name)
-                att.AddPreTable(sprintf "兑换道具:%s 土豆：%s/%s" item.Name world.DataCenter world.WorldName )
-                for info in ia do 
-                    att.AddObject(info)
-            using (msgArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(att))
+                    msgArg.AbortExecution(InputError, "{0} 不能兑换道具", reqi.Name)
+                let tt= TextTable("兑换物品", 
+                                    RightAlignCell "价格", 
+                                    RightAlignCell "最低", 
+                                    RightAlignCell "兑换价值", 
+                                    RightAlignCell "更新时间")
+                tt.AddPreTable(sprintf "兑换道具:%s 土豆：%s/%s" reqi.Name world.DataCenter world.WorldName )
+                for info in ia do
+                    let recv = itemCol.GetByItemId(info.ReceiveItem)
+                    let market = 
+                        let data = marketInfo.GetMarketListings(world, recv) |> Array.map (MarketUtils.MarketData.Order)
+                        let m = MarketUtils.MarketAnalyzer(recv, world, data)
+                        if m.IsEmpty then m else m.TakeVolume()
+                    let isEmpty = market.IsEmpty
+                    let notEmpty = not isEmpty
+
+                    let def = RightAlignCell "--"
+
+                    RowBuilder()
+                        .Add(recv.Name)
+                        .AddIf(notEmpty, market.StdEvPrice().Round().Average
+                                       , def)
+                        .AddIf(notEmpty, market.MinPrice()
+                                       , def)
+                        .AddIf(notEmpty, (market.StdEvPrice().Round() * (float <| info.ReceiveCount) / (float <| info.CostCount)).Average
+                                       , def)
+                        .AddIf(notEmpty, market.LastUpdateTime()
+                                       , def)
+                    |> tt.AddRow
+                using (msgArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))
     
     [<CommandHandlerMethodAttribute("伊修加德重建采集", "计算采集利润", "无参数")>]
     member x.HandleRebuildGathering(msgArg : CommandArgs) = 
@@ -266,7 +246,7 @@ type XivMarketModule() =
         ret.WriteLine("价格有延迟，算法不稳定，市场有风险, 投资需谨慎")
         ret.WriteLine(sprintf "当前服务器：%s" world.WorldName)
 
-        let tt = TextTable.FromHeader([|"名称"; "平均"; "低"; "更新时间"|])
+        let tt = TextTable("名称", RightAlignCell "平均", RightAlignCell "低", RightAlignCell "更新时间")
 
         for item in items do 
             let data = marketInfo.GetMarketListings(world, item) |> Array.map (MarketUtils.MarketData.Order)

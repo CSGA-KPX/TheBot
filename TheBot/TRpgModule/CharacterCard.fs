@@ -26,12 +26,12 @@ type CharacterCard =
         let hdrItem = [|LeftAlignCell "属性" |> box ; RightAlignCell "值" |> box |]
         let hdr = [| for _ = 0 to colCount - 1 do yield! hdrItem |]
 
-        let tt = TextTable.FromHeader(hdr)
+        let tt = TextTable(hdr)
         tt.AddPreTable(sprintf "所有者:%i" x.UserId)
         tt.AddPreTable(sprintf "角色名:%s" x.ChrName)
 
         for row in Seq.chunkBySize colCount x.Props do
-            tt.AddRowPadding([|
+            tt.AddRowFill([|
                 for item in row do
                 yield box <| item.Key
                 yield box <| item.Value

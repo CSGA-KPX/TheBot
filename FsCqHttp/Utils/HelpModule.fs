@@ -26,7 +26,7 @@ type HelpModule() =
     [<CommandHandlerMethodAttribute("help", "显示已知命令或显示命令文档", helpHelp)>]
     member x.HandleHelp(msgArg : CommandArgs) =
         if msgArg.Arguments.Length = 0 then
-            let tt = TextTable.FromHeader([|"命令"; "说明"|])
+            let tt = TextTable("命令", "说明")
             for (attrib, _) in attribs do
                 if not attrib.IsHidden then
                     let cmd = sprintf "%s%s" attrib.CommandStart attrib.Command

@@ -35,7 +35,7 @@ type DiceModule() =
                 msgArg.ApiCaller.CallApi(atUserName)
                 sw.WriteLine("{0} 为 {1} 投掷：", msgArg.MessageEvent.DisplayName, atUserName.DisplayName)
 
-        let tt = TextTable.FromHeader([| "1D100"; "选项" |])
+        let tt = TextTable("1D100", "选项")
 
         [|
             for arg in msgArg.Arguments do 

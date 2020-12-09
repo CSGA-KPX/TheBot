@@ -3,48 +3,26 @@
 open System
 open System.Collections.Generic
 
-open KPX.FsCqHttp.Utils.TextResponse
-
-[<Literal>]
-let private halfWidthSpace = ' '
-
-let inline private charLen (c) =
-    if KPX.FsCqHttp.Config.Output.CharDisplayLengthAdj.IsMatch(c.ToString()) then 1 else 2
-
-let inline private strDispLen (str : string) =
-    str.ToCharArray()
-    |> Array.sumBy charLen
 
 /// 用于区分显示细节
 [<DefaultAugmentation(false)>]
 type CellType = 
+    /// 左对齐单元格，用于文本类型
     | LeftAlignCell of string
+    /// 右对齐单元格，用于数字类型
     | RightAlignCell of string
 
-    member x.IsNumeric = match x with | RightAlignCell _ -> true | _ -> false
+    member x.IsRightAlign = match x with | RightAlignCell _ -> true | _ -> false
+    member x.IsLeftAlign = match x with | RightAlignCell _ -> false | _ -> true
+
+    /// 获取单元格的原始内容
+    member x.Value = match x with | RightAlignCell v -> v | LeftAlignCell v -> v
 
     /// 文本显示长度
-    member x.DisplayLength = strDispLen(x.ToString())
+    member x.DisplayWidth = 
+        KPX.FsCqHttp.Config.Output.TextTable.StrDispLen(x.ToString())
 
-    /// 对指定列数补齐，第0列不做左侧补齐
-    member internal x.ToString(c : int) = 
-        let ret = match x with | LeftAlignCell str -> str | RightAlignCell str -> str
-
-        let left, right = 
-            if x.IsNumeric then
-                // 数字：左边补齐，右边一个
-                ((strDispLen(ret) % 2) + 1), 1
-            else
-                // 文本：左边补齐，右边补齐
-                let lmod, rmod = if c = 0 then 0, 1 else 1, 0
-                lmod, ((strDispLen(ret) % 2) + rmod)
-
-        String(halfWidthSpace, left) + ret + String(halfWidthSpace, right)
-
-    override x.ToString() = 
-        x.ToString(0)
-
-    static member private IsNumericType(o : obj) = 
+    static member private IsObjectNumeric(o : obj) = 
         match o with
         | :? TimeSpan -> true
         | _ ->
@@ -64,8 +42,7 @@ type CellType =
                 -> true
             | _ -> false
 
-    static member Create(o : obj) =
-        let rec toStr(o : obj) =
+    static member private ConvertToString(o : obj) = 
             match o with
             | :? string as str -> str
             | :? int32 as i -> System.String.Format("{0:N0}", i)
@@ -85,133 +62,204 @@ type CellType =
                 else
                     "刚刚"
             | :? DateTimeOffset as dto ->
-                toStr(DateTimeOffset.Now - dto)
+                CellType.ConvertToString(DateTimeOffset.Now - dto)
             | :? DateTime as dt ->
-                toStr(DateTime.Now - dt)
+                CellType.ConvertToString(DateTime.Now - dt)
             | _ -> o.ToString()
 
+    /// 根据对象类型，创建适合的单元格
+    static member CreateFrom(o : obj) =
         if o :? CellType then
             o :?> CellType
         else
-            let str = toStr(o)
-            let isNum = CellType.IsNumericType(o)
+            let str = CellType.ConvertToString(o)
+            let isNum = CellType.IsObjectNumeric(o)
 
             if isNum then RightAlignCell str else LeftAlignCell str
 
+    /// 强制为左对齐
     static member CreateLeftAlign(o : obj) = 
-        match CellType.Create(o) with
+        match CellType.CreateFrom(o) with
         | RightAlignCell x -> LeftAlignCell x
         | x -> x
 
+    /// 强制为右对齐
     static member CreateRightAlign(o : obj) = 
-        match CellType.Create(o) with
+        match CellType.CreateFrom(o) with
         | LeftAlignCell x -> RightAlignCell x
         | x -> x
+
+type internal TextColumn() = 
+    inherit List<CellType>()
+
+    let mutable defaultLeftAlignment = true
+
+    /// 设置默认为左对齐
+    member x.SetLeftAlignment() = defaultLeftAlignment <- true
+
+    /// 设置默认为右对齐
+    member x.SetRightAlignment() = defaultLeftAlignment <- false
+
+    /// 添加为默认对齐方式
+    member x.AddDefaultAlignment(o : obj) = 
+        let add =   if defaultLeftAlignment then
+                        CellType.CreateLeftAlign(o)
+                    else
+                        CellType.CreateRightAlign(o)
+        x.Add(add)
+
+    /// 将列内所有单元格重置为左对齐
+    member x.ForceLeftAlign() = 
+        x.SetLeftAlignment()
+        for i = 0 to x.Count - 1 do
+            x.[i] <- LeftAlignCell x.[i].Value
+
+    /// 将列内所有单元格重置为右对齐
+    member x.ForceRightAlign() = 
+        x.SetRightAlignment()
+        for i = 0 to x.Count - 1 do
+            x.[i] <- RightAlignCell x.[i].Value
+
+    member x.GetMaxDisplayWidth() = 
+        x
+        |> Seq.map (fun cell -> cell.DisplayWidth)
+        |> Seq.max
+
+    /// 对齐到指定大小
+    member x.DoAlignment(padChar : char) =
+        let max = x.GetMaxDisplayWidth()
+        let padCharLen = 
+            KPX.FsCqHttp.Config.Output.TextTable.CharLen(padChar)
+        for i = 0 to x.Count - 1 do 
+            let cell = x.[i]
+            let width = cell.DisplayWidth
+            let padLen = (max - width) / padCharLen // 整数部分用padChar补齐
+            let rstLen = (max - width) % padCharLen // 非整数部分用空格补齐
+            if padLen <> 0 || rstLen <> 0 then
+                let padding = String(padChar, padLen) + String(' ', rstLen)
+                x.[i] <- if cell.IsLeftAlign then
+                            LeftAlignCell (cell.Value + padding)
+                         else
+                            RightAlignCell (padding + cell.Value)
+
+/// 对于太长或者逻辑复杂不方便使用TextTable.AddRow()时使用
+type RowBuilder() = 
+    let fields = List<CellType>()
+
+    member x.Add(o : obj) = 
+        fields.Add(CellType.CreateFrom(o))
+        x
+
+    member x.AddCond(cond : bool, o) = 
+        if cond then x.Add(o) else x
+
+    member x.AddIf(cond : bool, ifTrue, ifFalse) = 
+        if cond then x.Add(ifTrue) else x.Add(ifFalse)
+
+    member x.AddLeftAlign(o : obj) = 
+        fields.Add(CellType.CreateLeftAlign(o))
+        x
+
+    member x.AddLeftAlignCond(cond : bool, o) = 
+        if cond then x.AddLeftAlign(o) else x
+
+    member x.AddRightAlign(o : obj) = 
+        fields.Add(CellType.CreateRightAlign(o))
+        x
+        
+    member x.AddRightAlignCond(cond : bool, o) = 
+        if cond then x.AddRightAlign(o) else x
+    
+    member internal x.GetFields() = fields
 
 /// 延迟TextTable的求值时间点，便于在最终输出前对TextTable的参数进行调整
 type private DelayedTableItem =
     | StringItem of string
     | TableItem of TextTable
 
-and TextTable(cols : int) =
+and TextTable([<ParamArray>] header : Object [])= 
     let preTableLines  = List<DelayedTableItem>()
     let postTableLines = List<DelayedTableItem>()
 
-    let cellPadding = box KPX.FsCqHttp.Config.Output.TextTable.CellPadding
+    let colCount = header.Length
+    let cols = List<TextColumn>(colCount)
 
-    let col = Array.init cols (fun _ -> List<CellType>())
+    do
+        for _ = 0 to colCount - 1 do cols.Add(TextColumn())
+        header
+        |> Array.iteri (fun i o -> 
+            let cell = CellType.CreateFrom(o)
+            cols.[i].Add(cell)
+            // 根据表头设置默认的对齐类型
+            if cell.IsLeftAlign then
+                cols.[i].SetLeftAlignment()
+            else
+                cols.[i].SetRightAlignment() )
 
-    static member FromHeader(header : Object []) =
-        let x = TextTable(header.Length)
-        x.AddRow(header)
-        x
-
-    /// 获取或设置用于制表的字符，默认为全角空格
-    member val PaddingChar = '　' with get, set
+    member val ColumnPaddingChar = KPX.FsCqHttp.Config.Output.TextTable.FullWidthSpace with get, set
 
     member x.AddPreTable(str : string) = preTableLines.Add(StringItem str)
-
     member x.AddPreTable(tt : TextTable) = preTableLines.Add(TableItem tt)
 
     member x.AddPostTable(str : string) = postTableLines.Add(StringItem str)
-
     member x.AddPostTable(tt : TextTable) = postTableLines.Add(TableItem tt)
 
-    /// 添加一行，用"--"补齐不足行数
-    member x.AddRowPadding([<ParamArray>] fields : Object []) = 
-        if fields.Length > col.Length then
-            raise <| ArgumentException(sprintf "列数不一致 需求:%i, 提供:%i" col.Length fields.Length)
-        let padding = Array.create (col.Length - fields.Length) (cellPadding)
-        x.AddRow(Array.append fields padding)
+    member x.AddRow(builder : RowBuilder) = 
+        let fields = builder.GetFields()
+        if fields.Count <> colCount then
+            invalidArg (nameof builder) (sprintf "数量不足：需求%i 提供%i" colCount fields.Count)
+        fields |> Seq.iteri (fun i c -> cols.[i].Add(c))
 
-    member x.AddRow([<ParamArray>] fields : Object []) =
-        if fields.Length <> col.Length then
-            raise <| ArgumentException(sprintf "列数不一致 需求:%i, 提供:%i" col.Length fields.Length)
-        fields
-        |> Array.iteri (fun i o -> col.[i].Add(CellType.Create(o)))
+    member x.AddRow([<ParamArray>] objs : Object []) =
+        if objs.Length <> colCount then
+            invalidArg (nameof objs) (sprintf "数量不足：需求%i 提供%i" colCount objs.Length)
+        objs |> Array.iteri (fun i o -> cols.[i].Add(CellType.CreateFrom(o)))
 
-    member private x.ExpandItems(l : List<DelayedTableItem>) = 
-        seq {
-            for item in l do 
-                match item with
-                | StringItem str -> yield str
-                | TableItem tt ->
-                    tt.PaddingChar <- x.PaddingChar
-                    yield! tt.ToLines()
-        }
+    /// 使用指定字符串填充未使用的单元格
+    member x.AddRowFill([<ParamArray>] objs : Object []) = 
+        if objs.Length > colCount then
+            invalidArg (nameof objs) (sprintf "输入过多：需求%i 提供%i" colCount objs.Length)
+        
+        for i = 0 to objs.Length - 1 do 
+            cols.[i].Add(CellType.CreateFrom(objs.[i]))
+
+        let def = box KPX.FsCqHttp.Config.Output.TextTable.CellPadding
+        for i = objs.Length to colCount - 1 do 
+            cols.[i].AddDefaultAlignment(def)
+
+    member x.ToLines() =
+        [|
+            let expand (l : List<DelayedTableItem>) = 
+                seq {
+                    for item in l do 
+                        match item with
+                        | StringItem str -> yield str
+                        | TableItem tt ->
+                            tt.ColumnPaddingChar <- x.ColumnPaddingChar
+                            yield! tt.ToLines()
+                }
+
+            yield! expand preTableLines
+
+            for col in cols do col.DoAlignment(x.ColumnPaddingChar)
+
+            let interColumnPadding = sprintf " %c " x.ColumnPaddingChar
+            let sb = Text.StringBuilder()
+            for row = 0 to cols.[0].Count - 1 do 
+                sb.Clear().Append(cols.[0].[row].Value) |> ignore
+                for col = 1 to colCount - 1 do 
+                    sb.Append(interColumnPadding)
+                      .Append(cols.[col].[row].Value) |> ignore
+                yield sb.ToString()
+
+            yield! expand postTableLines
+        |]
         
 
-    member x.ToLines() = 
-        [|
-            yield! x.ExpandItems(preTableLines)
-            if col.[0].Count <> 0 then // 至少得有一行
-                let maxLens =          // 每一列里最长的一格有多长
-                    col
-                    |> Array.map (fun l ->
-                        l
-                        |> Seq.map (fun item -> item.DisplayLength)
-                        |> Seq.max )
-                let sb = Text.StringBuilder()
-                let padLen = strDispLen(x.PaddingChar |> string)
-                for i = 0 to col.[0].Count - 1 do
-                    sb.Clear() |> ignore
-                    for c = 0 to col.Length - 1 do
-                        let item = col.[c].[i]
-                        let str  = item.ToString(c)
-                        let padLength = (maxLens.[c] - item.DisplayLength) / padLen
-                        let padding = String(x.PaddingChar, padLength)
-                        if item.IsNumeric then
-                            sb.Append(padding).Append(str) |> ignore
-                        else
-                            sb.Append(str).Append(padding) |> ignore
+    override x.ToString() = String.Join("\r\n", x.ToLines())
 
-                    yield sb.ToString()
-            yield! x.ExpandItems(postTableLines)
-        |]
-
-    override x.ToString() =
-        String.Join("\r\n", x.ToLines())
-
-
-type AutoTextTable<'T>(cfg : (CellType * ('T -> obj)) []) as x = 
-    inherit TextTable(cfg.Length)
-    do
-        x.AddRow(cfg |> Array.map (fst >> box))
-
-    new(cfg : (string * ('T -> obj)) []) = 
-        let cfg = 
-            cfg
-            |> Array.map (fun (a, b) -> LeftAlignCell a, b)
-        AutoTextTable<'T>(cfg)
-
-    member x.AddObject(obj : 'T) = 
-        let objs = 
-            cfg
-            |> Array.map (fun (_, func) -> func obj)
-        x.AddRow(objs)
-
-type TextResponse with
+type KPX.FsCqHttp.Utils.TextResponse.TextResponse with
     member x.Write(tt : TextTable) = 
-        if x.DoSendImage then tt.PaddingChar <- ' '
+        if x.DoSendImage then tt.ColumnPaddingChar <- ' '
         for line in tt.ToLines() do 
             x.WriteLine(line)

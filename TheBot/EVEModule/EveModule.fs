@@ -43,7 +43,7 @@ type EveModule() =
         let cfg = Utils.LpUtils.LpConfigParser()
         cfg.Parse(msgArg.Arguments)
 
-        let tt = TextTable.FromHeader([|"兑换"; RightAlignCell "利润"; RightAlignCell "利润/LP"; RightAlignCell "日均交易"; |])
+        let tt = TextTable("兑换", RightAlignCell "利润", RightAlignCell "利润/LP", RightAlignCell "日均交易")
         
         let minVol = cfg.MinimalVolume
         let minVal = cfg.MinimalValue
@@ -115,7 +115,7 @@ type EveModule() =
                 else String.Join(" ", msgArg.Arguments)
             er.Eval(str)
 
-        let att = Utils.MarketUtils.GetPriceTable()
+        let att = Utils.MarketUtils.EveMarketPriceTable()
         match t with
         | Accumulator a ->
             for kv in a do 
@@ -134,21 +134,15 @@ type EveModule() =
         let bp = typeNameToBp(cfg.CmdLineAsString)
         let me0Price = bp.ApplyMaterialEfficiency(0).GetTotalMaterialPrice(PriceFetchMode.Sell)
 
-        let att = AutoTextTable<int>(
-                    [|
-                        RightAlignCell "材料等级", fun me -> box(me)
-                        RightAlignCell "节省", fun me -> 
-                                        bp.ApplyMaterialEfficiency(me).GetTotalMaterialPrice(PriceFetchMode.Sell)
-                                        |> (fun x -> (me0Price - x))
-                                        |> box
-                    |]
-        )
-        att.AddPreTable("直接材料总价：" + System.String.Format("{0:N0}", me0Price))
+        let tt = TextTable(RightAlignCell "材料等级", RightAlignCell "节省")
+        tt.AddPreTable("直接材料总价：" + System.String.Format("{0:N0}", me0Price))
 
-        for i = 0 to 10 do
-            att.AddObject(i)
+        for me = 0 to 10 do
+            let cost = bp.ApplyMaterialEfficiency(me).GetTotalMaterialPrice(PriceFetchMode.Sell)
+            let save = me0Price - cost
+            tt.AddRow(me, save)
 
-        using (msgArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(att))
+        using (msgArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))
 
     [<CommandHandlerMethodAttribute("er", "EVE蓝图材料计算（可用表达式）", "")>]
     member x.HandleR(msgArg : CommandArgs) =
@@ -156,7 +150,7 @@ type EveModule() =
         cfg.Parse(msgArg.Arguments)
 
         let final = ItemAccumulator()
-        let tt = TextTable.FromHeader([|"名称"; "数量";|])
+        let tt = TextTable("名称", "数量")
         tt.AddPreTable(sprintf "输入效率：%i%% "cfg.InputMe)
         match er.Eval(cfg.CmdLineAsString) with
         | Number n ->
@@ -193,7 +187,7 @@ type EveModule() =
         cfg.Parse(msgArg.Arguments)
 
         let final = ItemAccumulator()
-        let tt = TextTable.FromHeader([|"名称"; "数量";|])
+        let tt = TextTable("名称", "数量")
         tt.AddPreTable(sprintf "输入效率：%i%% 默认效率：%i%%"
             cfg.InputMe
             cfg.DerivativetMe
@@ -267,7 +261,7 @@ type EveModule() =
                     EveBlueprint.Id = Int32.MinValue
                     EveBlueprint.Type = bpTypeCheck.Value}
 
-        let tt = TextTable.FromHeader([|"材料"; RightAlignCell "数量"; RightAlignCell <| cfg.MaterialPriceMode.ToString() ; RightAlignCell "生产"|])
+        let tt = TextTable("材料", RightAlignCell "数量", RightAlignCell <| cfg.MaterialPriceMode.ToString(), RightAlignCell "生产")
         
         tt.AddPreTable(ToolWarning)
         tt.AddPreTable(sprintf "输入效率：%i%% 默认效率：%i%% 成本指数：%i%% 设施税率%i%%"
@@ -278,7 +272,7 @@ type EveModule() =
         tt.AddPreTable(sprintf "展开行星材料：%b 展开反应公式：%b" cfg.ExpandPlanet cfg.ExpandReaction)
 
         tt.AddPreTable("产品：")
-        let outTt = Utils.MarketUtils.GetPriceTable()
+        let outTt = Utils.MarketUtils.EveMarketPriceTable()
         for p in finalBp.Products do 
             outTt.AddObject(p.MaterialItem, p.Quantity)
         tt.AddPreTable(outTt)
@@ -328,9 +322,9 @@ type EveModule() =
         let sell = finalBp.GetTotalProductPrice(PriceFetchMode.Sell)
         let sellt= finalBp.GetTotalProductPrice(PriceFetchMode.SellWithTax)
 
-        tt.AddRowPadding("卖出/税后", RightAlignCell "--", sell |> HumanReadableFloat |> RightAlignCell, sellt |> HumanReadableFloat |> RightAlignCell)
-        tt.AddRowPadding("材料/最佳", RightAlignCell "--", allCost |> HumanReadableFloat |> RightAlignCell, optCost |> HumanReadableFloat |> RightAlignCell)
-        tt.AddRowPadding("税后利润", RightAlignCell "--", sellt - allCost |> HumanReadableFloat |> RightAlignCell, sellt - optCost |> HumanReadableFloat |> RightAlignCell)
+        tt.AddRowFill("卖出/税后", RightAlignCell "--", sell |> HumanReadableFloat |> RightAlignCell, sellt |> HumanReadableFloat |> RightAlignCell)
+        tt.AddRowFill("材料/最佳", RightAlignCell "--", allCost |> HumanReadableFloat |> RightAlignCell, optCost |> HumanReadableFloat |> RightAlignCell)
+        tt.AddRowFill("税后利润", RightAlignCell "--", sellt - allCost |> HumanReadableFloat |> RightAlignCell, sellt - optCost |> HumanReadableFloat |> RightAlignCell)
 
         using (msgArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))
 
@@ -340,10 +334,10 @@ type EveModule() =
         let mineSpeed = 10.0 // m^3/s
         let refineYield = 0.70
 
-        let tt = TextTable.FromHeader([| "矿石"; RightAlignCell "秒利润"; 
-                                         "冰矿"; RightAlignCell "秒利润";
-                                         "月矿"; RightAlignCell "秒利润";
-                                         "导管"; RightAlignCell "秒利润"; |])
+        let tt = TextTable( "矿石", RightAlignCell "秒利润",
+                            "冰矿", RightAlignCell "秒利润",
+                            "月矿", RightAlignCell "秒利润",
+                            "导管", RightAlignCell "秒利润" )
 
         tt.AddPreTable(ToolWarning)
         tt.AddPreTable(sprintf "采集能力：%g m3/s 精炼效率:%g"
@@ -478,11 +472,11 @@ type EveModule() =
         |> Seq.groupBy (fun x -> x.TypeGroup)
         |> Seq.iter (fun (group, data) -> 
             ret.WriteLine(">>{0}<<", group.Name)
-            let tt = TextTable.FromHeader([|"方案"
-                                            RightAlignCell "出售价格/无税卖出"
-                                            RightAlignCell ("生产成本/" + pmStr)
-                                            RightAlignCell "含税利润"
-                                            RightAlignCell "日均交易"|])
+            let tt = TextTable( "方案",
+                                RightAlignCell "出售价格/无税卖出",
+                                RightAlignCell ("生产成本/" + pmStr),
+                                RightAlignCell "含税利润",
+                                RightAlignCell "日均交易" )
             for x in data do 
                 tt.AddRow(x.Name,
                           x.Sell |> HumanReadableFloat |> RightAlignCell,
@@ -501,7 +495,7 @@ type EveModule() =
         let cfg = EveConfigParser()
         cfg.Parse(msgArg.Arguments)
 
-        let tt = TextTable.FromHeader([|"星系"; "制造%"; "材料%"; "时间%"; "拷贝%"; "发明%"; "反应%";|])
+        let tt = TextTable("星系", "制造%", "材料%", "时间%", "拷贝%", "发明%", "反应%")
 
         for arg in cfg.CommandLine do 
             let sys = sc.TryGetBySolarSystem(arg)

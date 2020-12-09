@@ -31,6 +31,11 @@ module Output =
     let mutable ImageOutputFont = "Sarasa Fixed CL"
     let mutable ImageOutputSize = 12.0f
 
+    let mutable ImageBackgroundColor = System.Drawing.Color.White
+    let mutable ImageTextColor = System.Drawing.Color.Black
+    let mutable RowBackgroundColorA = System.Drawing.Color.White
+    let mutable RowBackgroundColorB = System.Drawing.Color.LightGray
+
     /// 调整字符显示宽度。如果IsMatch=true则认为是1栏宽
     ///
     /// 需要设置RegexOptions.Compiled
@@ -40,3 +45,17 @@ module Output =
     [<RequireQualifiedAccess>]
     module TextTable = 
         let mutable CellPadding = "--"
+        
+        /// 计算字符宽度
+        let inline CharLen (c) =
+            if CharDisplayLengthAdj.IsMatch(c.ToString()) then 1 else 2
+
+        /// 计算字符串宽度
+        let inline StrDispLen (str : string) =
+            str.ToCharArray() |> Array.sumBy CharLen
+
+        [<Literal>]
+        let HalfWidthSpace = ' '
+
+        [<Literal>]
+        let FullWidthSpace = '　'

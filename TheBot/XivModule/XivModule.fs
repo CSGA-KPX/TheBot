@@ -51,7 +51,7 @@ type XivModule() =
                 let index= ((dt-utc).Days + 2) % dfcRoulettes.Length
                 dfcRoulettes.[index].Name
 
-            let tt = TextTable.FromHeader([|"日期（中国标准时间）"; "副本"|])
+            let tt = TextTable(RightAlignCell "日期（中国标准时间）", "副本")
             tt.AddPreTable(sprintf "当前为：%s" (getString(DateTimeOffset.Now)))
 
             let startDate = 
@@ -92,7 +92,7 @@ type XivModule() =
 
         let dicer = new Dicer(SeedOption.SeedByUserDay(msgArg.MessageEvent))
         
-        let tt = TextTable.FromHeader([|"1D100"; "选项"|])
+        let tt = TextTable("1D100", "选项")
         choices
         |> Array.map (fun str -> str, dicer.GetRandom(100u, str))
         |> Array.sortBy (snd)
@@ -132,33 +132,25 @@ type XivModule() =
 
     [<CommandHandlerMethodAttribute("is", "（FF14）查找名字包含字符的物品", "关键词（大小写敏感）")>]
     member x.HandleItemSearch(msgArg : CommandArgs) =
-        let att = AutoTextTable<Item.ItemRecord>(
-                    [|
-                        "Id", fun (item : Item.ItemRecord) -> box(item.Id.ToString())
-                        "物品", fun item -> box(item.Name)
-                    |])
+        let tt = TextTable(RightAlignCell "Id", "物品名")
         let i = String.Join(" ", msgArg.Arguments)
         if isNumber (i) then
             let ret = itemCol.TryGetByItemId(i |> int32)
             if ret.IsSome then 
-                att.AddObject(ret.Value)
+                tt.AddRow(ret.Value.Id, ret.Value.Name)
         else
             let ret = itemCol.SearchByName(i) |> Array.sortBy (fun x -> x.Id)
 
-            if ret.Length >= 50 then 
-                msgArg.AbortExecution(InputError, "结果太多，请优化关键词")
+            if ret.Length >= 50 then msgArg.AbortExecution(InputError, "结果太多，请优化关键词")
+            if ret.Length = 0 then msgArg.AbortExecution(InputError, "无结果")
 
-            if ret.Length = 0 then
-                att.AddRow("无", "无")
-            else
-                for item in ret do
-                    att.AddObject(item)
+            for item in ret do tt.AddRow(item.Id, item.Name)
 
-        using (msgArg.OpenResponse()) (fun r -> r.Write(att))
+        using (msgArg.OpenResponse()) (fun r -> r.Write(tt))
 
     [<CommandHandlerMethodAttribute("gate", "挖宝选门", "")>]
     member x.HandleGate(msgArg : CommandArgs) =
-        let tt = TextTable.FromHeader([|"1D100"; "门"|])
+        let tt = TextTable("1D100", "门")
 
         [|"左"; "中"; "右"|]
         |> Array.map (fun door -> door, Dicer.RandomDicer.GetRandom(100u, door))
@@ -228,7 +220,7 @@ type XivModule() =
         let mutable now = GetCstTime()
         try
             if cfg.IsDefined("list") then
-                let tt = TextTable.FromHeader([|"CD时间"; "概述"; "tid"; "rid"|])
+                let tt = TextTable("CD时间", "概述", "tid", "rid")
                 let count = cfg.GetValue<int>("list")
                 if count > 12*31 then msgArg.AbortExecution(InputError,  "那时间可太长了。")
                 for i = 0 to count - 1 do 

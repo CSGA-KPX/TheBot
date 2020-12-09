@@ -41,7 +41,6 @@
     <Compile Include="EveData\LoyaltyStoreOffer.fs" />
     <Compile Include="EveData\MarketPriceCache.fs" />
     <Compile Include="EveData\MarketHistoryCache.fs" />
-    <Compile Include="EveData\MarketOrdersCache.fs" />
     <Compile Include="EveData\GameInternalPriceCache.fs" />
     <Compile Include="EveData\SolarSystems.fs" />
     <Compile Include="EveData\SystemCostIndexCache.fs" />

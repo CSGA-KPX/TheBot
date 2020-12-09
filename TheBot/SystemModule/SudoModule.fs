@@ -86,13 +86,9 @@ type SudoModule() =
         msgArg.EnsureSenderOwner()
         let api = msgArg.ApiCaller.CallApi<SystemApi.GetGroupList>()
 
-        let tt = AutoTextTable<SystemApi.GroupInfo>([|
-            "群号", fun (i : SystemApi.GroupInfo) -> box (i.GroupId)
-            "名称", fun i -> box (i.GroupName)
-            |])
-
+        let tt = TextTable("群号", "名称")
         for g in api.Groups do 
-            tt.AddObject(g)
+            tt.AddRow(g.GroupId.ToString(), g.GroupName)
         msgArg.QuickMessageReply(tt.ToString())
 
     [<CommandHandlerMethodAttribute("#abortall", "（超管）断开所有WS连接", "", IsHidden = true)>]

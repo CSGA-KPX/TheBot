@@ -27,7 +27,7 @@ type DebugModule() =
             typeof<KPX.FsCqHttp.Config.ConfigPlaceholder>.Assembly.GetTypes()
             |> Array.filter (fun t -> t.FullName.StartsWith(prefix))
 
-        let tt = TextTable.FromHeader([| "名称"; "值" |])
+        let tt = TextTable("名称", "值")
         
         for t in configTypes do 
             let ps = t.GetProperties(BindingFlags.Static ||| BindingFlags.Public)

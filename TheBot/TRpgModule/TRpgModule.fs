@@ -33,7 +33,7 @@ type TRpgModule() =
                         "教育", "(2D6+6)*5"
                         "幸运", "3D6*5"   |]
 
-        let tt = TextTable.FromHeader([|"属性"; "值"|])
+        let tt = TextTable("属性", "值")
 
         let seed = 
             if msgArg.CommandAttrib.CommandStart = "." then
