@@ -18,7 +18,9 @@
     <Compile Include="InitCollection.fs" />
     <Compile Include="XivItemTest.fs" />
     <Compile Include="XivRecipeTest.fs" />
+    <Compile Include="XivMiscText.fs" />
     <Compile Include="EveItemTest.fs" />
+    <Compile Include="EveProcessTest.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 

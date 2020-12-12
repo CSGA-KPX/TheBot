@@ -4,23 +4,22 @@ open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.UserOption
 
 open BotData.EveData.Utils
-open BotData.EveData.EveBlueprint
-
-open TheBot.Module.EveModule.Utils.Data
 
 type EveConfigParser() as x = 
     inherit UserOptionParser()
 
     do
-        x.RegisterOption("ime", "10")
+        x.RegisterOption("ime", "2")
         x.RegisterOption("dme", "10")
-        x.RegisterOption("sci", "5")
+        x.RegisterOption("sci", "3")
         x.RegisterOption("tax", "10")
         x.RegisterOption("p", "false")
         x.RegisterOption("r", "false")
         x.RegisterOption("buy", "")
         x.RegisterOption("debug", "")
         x.RegisterOption("text", "")
+        x.RegisterOption("selltax", "6")
+        x.RegisterOption("buytax", "4")
 
     /// 是否强制文本输出。具体输出方式取决于酷Q
     member x.IsImageOutput = 
@@ -46,12 +45,8 @@ type EveConfigParser() as x =
         else
             PriceFetchMode.Sell
 
-    /// 测试蓝图能否继续展开
-    member x.BpCanExpand(bp : EveBlueprint) = 
-        match bp.Type with
-        | BlueprintType.Manufacturing -> true
-        | BlueprintType.Planet -> 
-            // 1042 = P1，屏蔽P0 -> P1生产过程
-            x.ExpandPlanet && (DataBundle.Instance.GetItem(bp.ProductId).GroupId <> 1042)
-        | BlueprintType.Reaction -> x.ExpandReaction
-        | _ -> failwithf "未知蓝图类型 %A" bp
+    interface BotData.EveData.Process.IEveCalculatorConfig with
+        member x.InputME = x.InputMe
+        member x.DerivedME = x.DerivativetMe
+        member x.ExpandPlanet = x.ExpandPlanet
+        member x.ExpandReaction = x.ExpandReaction

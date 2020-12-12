@@ -31,11 +31,7 @@ type NpcCorporationoCollection private () =
         x.DbCollection.EnsureIndex(LiteDB.BsonExpression.Create("CorporationName")) |> ignore
 
         seq {
-            use archive = 
-                    let ResName = "BotData.EVEData.zip"
-                    let assembly = Reflection.Assembly.GetExecutingAssembly()
-                    let stream = assembly.GetManifestResourceStream(ResName)
-                    new IO.Compression.ZipArchive(stream, Compression.ZipArchiveMode.Read)
+            use archive = BotData.EveData.Utils.GetEveDataArchive()
             use f = archive.GetEntry("npccorporations.json").Open()
             use r = new JsonTextReader(new StreamReader(f))
 

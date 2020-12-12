@@ -2,6 +2,8 @@
 
 open BotData.Common.Database
 
+open NUnit.Framework
+
 let mutable private initCollection = true
 
 let Setup () =
@@ -12,4 +14,5 @@ let Setup () =
             BotDataInitializer.InitializeAllCollections()
             initCollection <- false
     with
-    | e -> printfn "%O" e; reraise()
+    | e -> 
+        failwithf "%O" e

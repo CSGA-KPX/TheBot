@@ -1,20 +1,14 @@
 ﻿namespace TheBot.Module.EveModule.Utils.Data
 
-open System.Collections.Generic
-
 open BotData.EveData
 open BotData.EveData.EveType
-open BotData.EveData.EveBlueprint
 open BotData.EveData.NpcCorporation
 
 
 type DataBundle private () = 
 
     let itemCol = EveTypeCollection.Instance
-    let bpCol   = EveBlueprintCollection.Instance
-
     let npcCorpNames = NpcCorporationoCollection.Instance
-    let refineInfo = RefineInfo.RefineInfoCollection.Instance
     let priceCache = MarketPriceCache.PriceCacheCollection.Instance
     let volumeCache = MarketHistoryCache.MarketTradeHistoryCollection.Instance
     let lpStoreCache = LoyaltyStoreOffer.LoyaltyStoreCollection.Instance
@@ -34,26 +28,6 @@ type DataBundle private () =
 
     member x.GetItem(id : int) = itemCol.GetById(id)
 
-    member x.TryTypeToBp(t : EveType) = 
-        let ret = bpCol.TryGetByBp(t)
-        if ret.IsNone then
-            x.TryGetBpByProduct(t)
-        else
-            ret
-
-    member x.TryGetBp(id : int) = 
-        bpCol.TryGetByBp(id)
-
-    member x.GetBps() = bpCol :> IEnumerable<EveBlueprint>
-
-    member x.GetBp(id : int) = bpCol.GetByBp(id)
-
-    member x.GetBpByProduct(id : int) = bpCol.GetByProduct(id)
-
-    member x.GetBpByProduct(t : EveType) = x.GetBpByProduct(t.Id)
-
-    member x.TryGetBpByProduct(t : EveType) = bpCol.TryGetByProduct(t)
-
     member x.GetItemPrice(t : EveType)  = x.GetItemPrice(t.Id)
     member x.GetItemPrice(id : int) = priceCache.Force(id)
     member x.GetItemPriceCached(t : EveType) = x.GetItemPriceCached(t.Id)
@@ -69,7 +43,5 @@ type DataBundle private () =
             0.0
 
     member x.GetLpStoreOffersByCorp(c : NpcCorporation) = lpStoreCache.[c.Id].Offers
-
-    member x.GetRefineInfo(t : EveType) = refineInfo.GetByItem(t)
 
     static member val Instance = instance

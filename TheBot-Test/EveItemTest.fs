@@ -6,7 +6,6 @@ open NUnit.Framework
 [<OneTimeSetUp>]
 let Setup () = InitCollection.Setup()
 
-
 [<Test>]
 let ``EVE : Type.getById`` () = 
     let tc = EveData.EveType.EveTypeCollection.Instance

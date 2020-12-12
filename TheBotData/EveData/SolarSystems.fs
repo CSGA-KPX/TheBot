@@ -34,11 +34,7 @@ type SolarSystemCollection private () =
         x.DbCollection.EnsureIndex(LiteDB.BsonExpression.Create("Name")) |> ignore
 
         seq {
-            use archive = 
-                    let ResName = "BotData.EVEData.zip"
-                    let assembly = Reflection.Assembly.GetExecutingAssembly()
-                    let stream = assembly.GetManifestResourceStream(ResName)
-                    new Compression.ZipArchive(stream, Compression.ZipArchiveMode.Read)
+            use archive = BotData.EveData.Utils.GetEveDataArchive()
             use f = archive.GetEntry("SolarSystem.tsv").Open()
             use r = new StreamReader(f)
             while r.Peek() <> -1 do

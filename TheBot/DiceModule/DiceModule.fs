@@ -25,12 +25,12 @@ type DiceModule() =
         if atUser.IsSome then
             let loginInfo = msgArg.ApiCaller.CallApi<SystemApi.GetLoginInfo>()
             match atUser.Value with
-            | Message.AtUserType.All ->
+            | Message.Sections.AtUserType.All ->
                 sw.AbortExecution(InputError, "公共事件请at bot账号")
-            | Message.AtUserType.User x when x = msgArg.SelfId
+            | Message.Sections.AtUserType.User x when x = msgArg.SelfId
                                           && not <| msgArg.RawMessage.Contains(loginInfo.Nickname) ->
                 sw.WriteLine("公投：")
-            | Message.AtUserType.User x ->
+            | Message.Sections.AtUserType.User x ->
                 let atUserName = GroupApi.GetGroupMemberInfo(msgArg.MessageEvent.GroupId, x)
                 msgArg.ApiCaller.CallApi(atUserName)
                 sw.WriteLine("{0} 为 {1} 投掷：", msgArg.MessageEvent.DisplayName, atUserName.DisplayName)

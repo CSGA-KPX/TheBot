@@ -51,7 +51,7 @@ type CompanyCraftRecipeProvider private () =
         |> db.InsertBulk
         |> ignore
 
-    interface IRecipeProvider<ItemRecord> with
+    interface IRecipeProvider<ItemRecord, RecipeProcess<ItemRecord>> with
         override x.TryGetRecipe(item) =
             let id = new LiteDB.BsonValue(item.Id)
             let ret = x.DbCollection.FindOne(LiteDB.Query.EQ("Process.Output[0].Item", id))

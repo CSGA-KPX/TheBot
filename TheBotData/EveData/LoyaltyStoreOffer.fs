@@ -1,15 +1,12 @@
 ﻿namespace BotData.EveData.LoyaltyStoreOffer
 
-open System
-open System.IO
-
-open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 
 open BotData.Common.Database
 open BotData.Common.Network
+open BotData.CommonModule.Recipe
 
-open BotData.EveData.Utils
+open BotData.EveData.Process
 open BotData.EveData.NpcCorporation
 
 [<CLIMutable>]
@@ -18,9 +15,13 @@ type LoyaltyStoreOffer =
         OfferId : int
         IskCost : float
         LpCost  : float
-        Offer   : EveMaterial
-        Required: EveMaterial []
+        Process : RecipeProcess<int>
     }
+    
+    member x.CastProcess() = 
+        let ec = BotData.EveData.EveType.EveTypeCollection.Instance
+        { Input = x.Process.Input |> Array.map (fun mr -> {Item = ec.GetById(mr.Item); Quantity = mr.Quantity})
+          Output = x.Process.Output |> Array.map (fun mr -> {Item = ec.GetById(mr.Item); Quantity = mr.Quantity}) }
 
 type LpStore = 
     {
@@ -65,18 +66,18 @@ type LoyaltyStoreCollection private () =
                                 let offers = 
                                     let q   = item.GetValue("quantity").ToObject<float>()
                                     let t   = item.GetValue("type_id").ToObject<int>()
-                                    {EveMaterial.TypeId = t; Quantity = q}
+                                    {EveDbMaterial.Item = t; EveDbMaterial.Quantity = q}
 
                                 let requires = 
                                     [| for ii in item.GetValue("required_items") :?> JArray do 
                                             let i = ii :?> JObject
                                             let iq = i.GetValue("quantity").ToObject<float>()
                                             let it = i.GetValue("type_id").ToObject<int>()
-                                            yield {EveMaterial.TypeId = it; Quantity = iq} |]
+                                            yield {EveDbMaterial.Item = it; EveDbMaterial.Quantity = iq} |]
 
                                 yield { IskCost = isk
                                         LpCost  = lp
                                         OfferId = id
-                                        Offer = offers
-                                        Required = requires } |]
+                                        Process = { Input = requires
+                                                    Output = Array.singleton offers}} |]
         }

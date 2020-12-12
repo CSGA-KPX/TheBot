@@ -2,7 +2,7 @@
 
 open BotData
 
-open BotData.XivData.RecipeV2
+open BotData.XivData.Recipe
 
 open NUnit.Framework
 

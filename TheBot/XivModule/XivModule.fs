@@ -83,11 +83,11 @@ type XivModule() =
         let atUser = msgArg.MessageEvent.Message.GetAts() |> Array.tryHead
         if atUser.IsSome then
             match atUser.Value with
-            | KPX.FsCqHttp.DataType.Message.AtUserType.All ->
+            | KPX.FsCqHttp.DataType.Message.Sections.AtUserType.All ->
                 msgArg.AbortExecution(InputError, "全员发洗澡水？给我一瓶谢谢！")
-            | KPX.FsCqHttp.DataType.Message.AtUserType.User i when i = msgArg.SelfId ->
+            | KPX.FsCqHttp.DataType.Message.Sections.AtUserType.User i when i = msgArg.SelfId ->
                 msgArg.AbortExecution(InputError, "请联系开发者")
-            | KPX.FsCqHttp.DataType.Message.AtUserType.User _ ->
+            | KPX.FsCqHttp.DataType.Message.Sections.AtUserType.User _ ->
                 msgArg.AbortExecution(ModuleError, "暂不支持")
 
         let dicer = new Dicer(SeedOption.SeedByUserDay(msgArg.MessageEvent))
@@ -188,23 +188,23 @@ type XivModule() =
         let item = data
                    |> Seq.find (fun x -> x.Value<string>("title").Contains("满分攻略"))
         let bvid = item.Value<string>("bvid")
-
+        let title = item.Value<string>("title")
         let url = sprintf "https://www.bilibili.com/video/%s" bvid
 
-        let html = hc
-                    .GetStreamAsync(url)
-                    .ConfigureAwait(false)
-                    .GetAwaiter()
-                    .GetResult()
-
-
+        let html = hc.GetStreamAsync(url)
+                     .ConfigureAwait(false)
+                     .GetAwaiter()
+                     .GetResult()
         let doc = HtmlAgilityPack.HtmlDocument()
 
         doc.Load(html, Encoding.GetEncoding("UTF-8"))
         let n = doc.DocumentNode.SelectSingleNode("//div[@id = \"v_desc\"]")
 
         let cfg = Utils.CommandUtils.XivConfig(msgArg)
-        using (msgArg.OpenResponse(cfg.IsImageOutput)) (fun ret -> ret.Write(n.InnerText))
+        using (msgArg.OpenResponse(cfg.IsImageOutput)) (fun ret -> 
+            ret.Write(title)
+            ret.Write("\r\n")
+            ret.Write(n.InnerText))
 
     [<CommandHandlerMethodAttribute("海钓", "FF14海钓攻略", "next:查阅n个CD后的信息，list:查阅n个时间窗的信息")>]
     member x.HandleOceanFishing(msgArg : CommandArgs) = 

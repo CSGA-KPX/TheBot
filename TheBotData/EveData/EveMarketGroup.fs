@@ -32,11 +32,7 @@ type MarketGroupCollection private () =
     override x.InitializeCollection() =
         x.DbCollection.EnsureIndex(LiteDB.BsonExpression.Create("Name")) |> ignore
         seq {
-            use archive = 
-                    let ResName = "BotData.EVEData.zip"
-                    let assembly = Reflection.Assembly.GetExecutingAssembly()
-                    let stream = assembly.GetManifestResourceStream(ResName)
-                    new Compression.ZipArchive(stream, Compression.ZipArchiveMode.Read)
+            use archive = BotData.EveData.Utils.GetEveDataArchive()
             use f = archive.GetEntry("marketgroups.json").Open()
             use r = new JsonTextReader(new StreamReader(f))
 

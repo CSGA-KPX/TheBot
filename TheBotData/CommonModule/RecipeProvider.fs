@@ -53,31 +53,15 @@ type RecipeProcessAccumulator<'Item when 'Item : equality>() =
         { Input = x.Input.AsMaterials()
           Output = x.Output.AsMaterials() }
 
-    static member (*) (acc : RecipeProcessAccumulator<'Item>, q : float) = 
-        for m in acc.Input do acc.Input.Set(m.Item, m.Quantity * q)
-        for m in acc.Output do acc.Output.Set(m.Item, m.Quantity * q)
-        acc
-
 and [<CLIMutable>] RecipeProcess<'Item when 'Item : equality> = 
-    {
-        Input : RecipeMaterial<'Item> []
-        Output : RecipeMaterial<'Item> []
-    }
+    { Input : RecipeMaterial<'Item> []
+      Output : RecipeMaterial<'Item> [] }
 
     /// 获得第一个Output(一般游戏只有一个输出)
-    member x.GetOneProduct() = 
+    /// 如果有多个则抛出异常
+    member x.GetFirstProduct() = 
+        if x.Output.Length <> 1 then invalidOp (sprintf "该过程不止一个产物：%A" x)
         x.Output |> Array.head
 
-    /// 根据Input字段，创建一个用于配方计算的累加器
-    member x.GetAccumulator() = 
-        let acc = RecipeProcessAccumulator<'Item>()
-        for i in x.Input do acc.Input.Update(i)
-        for o in x.Output do acc.Output.Update(o)
-        acc
-
-    static member (*) (acc : RecipeProcess<'Item>, q : float) = 
-        { Input = acc.Input |> Array.map (fun m -> {m with Quantity = m.Quantity * q})
-          Output = acc.Output |> Array.map (fun m -> {m with Quantity = m.Quantity * q}) }
-
-type IRecipeProvider<'Item when 'Item : equality> =
-    abstract TryGetRecipe : 'Item -> RecipeProcess<'Item> option
+type IRecipeProvider<'Item, 'Recipe when 'Item : equality> =
+    abstract TryGetRecipe : 'Item -> 'Recipe option

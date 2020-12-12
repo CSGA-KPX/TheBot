@@ -7,6 +7,7 @@ open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.TextTable
 
+open BotData.CommonModule.Recipe
 open BotData.XivData
 
 open TheBot.Utils.Config
@@ -106,7 +107,7 @@ type XivMarketModule() =
         let doCalculateCost = msgArg.CommandName = "rrc" || msgArg.CommandName = "rc"
         let materialFunc = 
             if msgArg.CommandName = "rr" || msgArg.CommandName = "rrc" then
-                fun (item : Item.ItemRecord) -> rm.TryGetRecipeRec(item, 1.0)
+                fun (item : Item.ItemRecord) -> rm.TryGetRecipeRec(item, ByItem 1.0)
             else
                 fun (item : Item.ItemRecord) -> rm.TryGetRecipe(item)
 

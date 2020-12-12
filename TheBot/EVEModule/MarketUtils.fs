@@ -2,6 +2,7 @@
 
 open KPX.FsCqHttp.Utils.TextTable
 
+open BotData.CommonModule.Recipe
 open BotData.EveData.Utils
 open BotData.EveData.EveType
 
@@ -31,5 +32,5 @@ type EveMarketPriceTable() =
             .Add(t.GetPriceInfo().Updated)
         |> x.AddRow
 
-    member x.AddObject(m : EveMaterial) = 
-        x.AddObject(m.MaterialItem, m.Quantity)
+    member x.AddObject(m : RecipeMaterial<EveType>) = 
+        x.AddObject(m.Item, m.Quantity)

@@ -2,13 +2,13 @@
 
 open System
 
-let inline pct (i : int) = (float i) / 100.0
+let internal GetEveDataArchive () = 
+    let ResName = "TheBotData.EVEData.zip"
+    let assembly = Reflection.Assembly.GetExecutingAssembly()
+    let stream = assembly.GetManifestResourceStream(ResName)
+    new IO.Compression.ZipArchive(stream, IO.Compression.ZipArchiveMode.Read)
 
-type EveMaterial = 
-    {
-        Quantity : float
-        TypeId   : int
-    }
+let inline pct (i : int) = (float i) / 100.0
 
 [<RequireQualifiedAccess>]
 type PriceFetchMode = 

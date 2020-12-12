@@ -29,11 +29,7 @@ type EveGroupCollection private () =
     override x.Depends = Array.empty
 
     override x.InitializeCollection() = 
-        use archive = 
-                let ResName = "BotData.EVEData.zip"
-                let assembly = Reflection.Assembly.GetExecutingAssembly()
-                let stream = assembly.GetManifestResourceStream(ResName)
-                new Compression.ZipArchive(stream, IO.Compression.ZipArchiveMode.Read)
+        use archive = BotData.EveData.Utils.GetEveDataArchive()
         use f = archive.GetEntry("evegroups.json").Open()
         use r = new JsonTextReader(new StreamReader(f))
 

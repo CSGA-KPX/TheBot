@@ -20,8 +20,8 @@ type EatModule() =
         use ret = msgArg.OpenResponse()
         
         match at with
-        | Some Message.AtUserType.All -> ret.AbortExecution(InputError, "你要请客吗？")
-        | Some (Message.AtUserType.User uid) when uid = msgArg.SelfId || uid = msgArg.MessageEvent.UserId ->
+        | Some Message.Sections.AtUserType.All -> ret.AbortExecution(InputError, "你要请客吗？")
+        | Some (Message.Sections.AtUserType.User uid) when uid = msgArg.SelfId || uid = msgArg.MessageEvent.UserId ->
             use s = TheBot.Utils.EmbeddedResource.GetResFileStream("Funny.jpg")
             use img = Drawing.Bitmap.FromStream(s) :?> Drawing.Bitmap
             let msg = Message.Message()
@@ -29,7 +29,7 @@ type EatModule() =
             msgArg.QuickMessageReply(msg)
             ret.AbortExecution(IgnoreError, "")
 
-        | Some (Message.AtUserType.User uid) ->
+        | Some (Message.Sections.AtUserType.User uid) ->
             let atUserName = GroupApi.GetGroupMemberInfo(msgArg.MessageEvent.GroupId, uid)
             msgArg.ApiCaller.CallApi(atUserName)
             ret.WriteLine("{0} 为 {1} 投掷：", msgArg.MessageEvent.DisplayName, atUserName.DisplayName)

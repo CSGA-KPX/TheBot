@@ -6,6 +6,8 @@ open System.Collections.Generic
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 
+open KPX.FsCqHttp.DataType.Message.Sections
+
 
 [<JsonConverter(typeof<MessageConverter>)>]
 type Message(sec : MessageSection []) as x = 

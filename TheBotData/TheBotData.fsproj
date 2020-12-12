@@ -35,8 +35,11 @@
     <Compile Include="EveData\EveGroup.fs" />
     <Compile Include="EveData\EveMarketGroup.fs" />
     <Compile Include="EveData\EveType.fs" />
-    <Compile Include="EveData\EveBlueprint.fs" />
-    <Compile Include="EveData\RefineInfo.fs" />
+    <Compile Include="EveData\EveProcess\Base.fs" />
+    <Compile Include="EveData\EveProcess\BlueprintProcess.fs" />
+    <Compile Include="EveData\EveProcess\PlanetProcess.fs" />
+    <Compile Include="EveData\EveProcess\RefineProcess.fs" />
+    <Compile Include="EveData\EveProcess\ProcessManager.fs" />
     <Compile Include="EveData\NpcCorporation.fs" />
     <Compile Include="EveData\LoyaltyStoreOffer.fs" />
     <Compile Include="EveData\MarketPriceCache.fs" />

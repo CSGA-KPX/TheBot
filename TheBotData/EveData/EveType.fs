@@ -39,18 +39,14 @@ type EveTypeCollection private () =
     override x.InitializeCollection() =
         x.DbCollection.EnsureIndex(LiteDB.BsonExpression.Create("Name")) |> ignore
         seq {
-            use archive = 
-                    let ResName = "BotData.EVEData.zip"
-                    let assembly = Reflection.Assembly.GetExecutingAssembly()
-                    let stream = assembly.GetManifestResourceStream(ResName)
-                    new Compression.ZipArchive(stream, Compression.ZipArchiveMode.Read)
+            use archive = BotData.EveData.Utils.GetEveDataArchive()
             use f = archive.GetEntry("evetypes.json").Open()
             use r = new JsonTextReader(new StreamReader(f))
 
             let groupCollection = EveGroupCollection.Instance
 
             let disallowCat = 
-                [| 0; 1; 2; 11; 91;|]
+                [| 0; 1; 11; 91;|]
                 |> HashSet
 
             while r.Read() do 
@@ -63,7 +59,7 @@ type EveTypeCollection private () =
                     let allow = disallowCat.Contains(cat) |> not
 
                     let tid = o.GetValue("typeID").ToObject<int>()
-                    let mutable name = o.GetValue("typeName").ToObject<string>()
+                    let name = o.GetValue("typeName").ToObject<string>()
 
                     let vol = 
                         if o.ContainsKey("volume") then
