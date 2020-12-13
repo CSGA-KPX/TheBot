@@ -117,7 +117,7 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="梅尔托尔海峡北_白天" xml:space="preserve">
+  <data name="梅尔托尔海峡北航线_白天" xml:space="preserve">
     <value>还不错的冲分航线，同时适合钓章鱼成就
 ---钓场一：梅尔托尔海峡南-白天---
 通常海域直感鱼：磷虾[!!]→尸鬼梭鱼 以小钓大[!!]→步兵剑 触发直感，刺螠[!!!]强力提钩→小利维亚桑
@@ -144,7 +144,7 @@
 推荐连招：双重提钩-专一垂钓-双重提钩</value>
     <comment>梅尔托尔海峡北早班船</comment>
   </data>
-  <data name="梅尔托尔海峡北_黄昏" xml:space="preserve">
+  <data name="梅尔托尔海峡北航线_黄昏" xml:space="preserve">
     <value>航线上有两条蓝鱼，没起蓝鱼的话冲分有些困难
 ---钓场一：梅尔托尔海峡南-黄昏---
 通常海域直感鱼：磷虾[!!]→尸鬼梭鱼 以小钓大[!!]→步兵剑 触发直感，刺螠[!!!]强力提钩→小利维亚桑
@@ -160,7 +160,7 @@
 幻海流中：重铁板钩，[!!!]双重提钩→守领鳍龙*3 触发直感，[!!!]不知道什么提钩→依拉丝莫龙</value>
     <comment>梅尔托尔海峡北午班船</comment>
   </data>
-  <data name="梅尔托尔海峡北_黑夜" xml:space="preserve">
+  <data name="梅尔托尔海峡北航线_黑夜" xml:space="preserve">
     <value>比较一般的航线，同时适合钓海马成就
 ---钓场一：梅尔托尔海峡南-夜晚---
 通常海域直感鱼：磷虾[!!]→尸鬼梭鱼 以小钓大[!!]→步兵剑 触发直感，刺螠[!!!]强力提钩→小利维亚桑
@@ -187,7 +187,7 @@
 推荐连招：双重提钩-专一垂钓-双重提钩</value>
     <comment>梅尔托尔海峡北晚班船</comment>
   </data>
-  <data name="罗塔诺海海面_白天" xml:space="preserve">
+  <data name="罗塔诺海航线_白天" xml:space="preserve">
     <value>不钓蓝鱼的最佳冲分路线，同时适合钓水母成就
 ---钓场一：加拉迪翁湾外海-白天---
 通常海域直感鱼：磷虾5-15s[!]加拉迪翁鳀鱼*3(有干扰) 触发直感，磷虾[!!!]强力提钩→醉鱼
@@ -213,7 +213,7 @@
 幻海流：磷虾，稀有鱼，长轻杆[!]双提4条</value>
     <comment>罗塔诺海海面早班船</comment>
   </data>
-  <data name="罗塔诺海海面_黄昏" xml:space="preserve">
+  <data name="罗塔诺海航线_黄昏" xml:space="preserve">
     <value>还不错的冲分航线，同时适合钓鲨鱼成就
 ---钓场一：加拉迪翁湾外海-黄昏---
 通常海域直感鱼：磷虾5-15s[!]加拉迪翁鳀鱼*3(有干扰) 触发直感，磷虾[!!!]强力提钩→醉鱼
@@ -241,7 +241,7 @@
 推荐连招：双重提钩-专一垂钓-双重提钩</value>
     <comment>罗塔诺海海面午班船</comment>
   </data>
-  <data name="罗塔诺海海面_黑夜" xml:space="preserve">
+  <data name="罗塔诺海航线_黑夜" xml:space="preserve">
     <value>航线上有两条蓝鱼，除非欧皇小队起3条蓝鱼否则冲分会很困难
 ---钓场一：加拉迪翁湾外海-夜晚---
 通常海域直感鱼：磷虾5-15s[!]加拉迪翁鳀鱼*3(有干扰) 触发直感，磷虾[!!!]强力提钩→醉鱼

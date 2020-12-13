@@ -1,22 +1,30 @@
 ﻿module BotData.XivData.OceanFishing
+
 open System
 
+open BotData.Common.Database
 open BotData.Common.Resource
 
+
 let private RouteTable = 
-    [| 1; 4; 2; 5; 3; 6; 1; 4; 2; 5; 3; 6; 4; 1; 5; 2; 6; 3; 4; 1; 5; 2; 6; 3;
-       2; 5; 3; 6; 1; 4; 2; 5; 3; 6; 1; 4; 5; 2; 6; 3; 4; 1; 5; 2; 6; 3; 4; 1;
-       3; 6; 1; 4; 2; 5; 3; 6; 1; 4; 2; 5; 6; 3; 4; 1; 5; 2; 6; 3; 4; 1; 5; 2|]
+    use col = BotDataInitializer.XivCollectionChs
+    col.GetSheet("IKDRouteTable")
+    |> Seq.map (fun row -> row.As<int>("Route"))
+    |> Seq.toArray
 
 let private RouteDefine = 
-    [|
-        1, "梅尔托尔海峡北_白天"
-        2, "梅尔托尔海峡北_黄昏"
-        3, "梅尔托尔海峡北_黑夜"
-        4, "罗塔诺海海面_白天"
-        5, "罗塔诺海海面_黄昏"
-        6, "罗塔诺海海面_黑夜"
-    |] |> readOnlyDict
+    use col = BotDataInitializer.XivCollectionChs
+    col.GetSheet("IKDRoute")
+    |> Seq.map (fun row ->
+        let routeName = row.As<string>("Name")
+        let timeStr = match row.As<int>("TimeDefine") with
+                        | 0 -> "占位" // 0是第一行，为了保证.[rid]操作，保留这一行了
+                        | 1 -> "黄昏"
+                        | 2 -> "黑夜"
+                        | 3 -> "白天"
+                        | o -> failwithf "未知海钓时间：%i" o
+        sprintf "%s_%s" routeName timeStr)
+    |> Seq.toArray
 
 let private RefDate = DateTimeOffset.Parse("2020/2/21 20:00 +08:00")
 let private RefDateOffset = 10

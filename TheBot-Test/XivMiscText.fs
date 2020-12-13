@@ -9,8 +9,9 @@ open NUnit.Framework
 
 [<Test>]
 let ``FFXIV : OceanFishing function`` () = 
-    OceanFishing.CalculateCooldown(DateTimeOffset.Now)
-    |> ignore
+    for i = 0 to 72 do 
+        OceanFishing.CalculateCooldown(DateTimeOffset.Now.AddHours((float i) * 2.0))
+        |> ignore
 
 [<Test>]
 let ``FFXIV : World function`` () = 
