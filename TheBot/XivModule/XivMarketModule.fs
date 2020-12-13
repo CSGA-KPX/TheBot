@@ -118,7 +118,7 @@ type XivMarketModule() =
             if doCalculateCost then
                 TextTable("物品", "价格", "数量", "小计", "更新时间")
             else
-                TextTable("物品", "数量", "更新时间")
+                TextTable("物品", "数量")
 
         if doCalculateCost then
             tt.AddPreTable(sprintf "服务器：%s" world.WorldName)
@@ -153,21 +153,21 @@ type XivMarketModule() =
                     None
             RowBuilder()
                 .Add(item |> tryLookupNpcPrice)
-                .AddCond(doCalculateCost, if market.Value.IsEmpty then
-                                            box <| RightAlignCell "--"
-                                          else
-                                            box <| market.Value.StdEvPrice().Round().Average)
+                .AddCond(doCalculateCost, lazy (if market.Value.IsEmpty then
+                                                    box <| RightAlignCell "--"
+                                                else
+                                                    box <| market.Value.StdEvPrice().Round().Average))
                 .Add(quantity)
-                .AddCond(doCalculateCost, if market.Value.IsEmpty then
-                                            box <| RightAlignCell "--"
-                                          else
-                                            let subtotal = market.Value.StdEvPrice().Round() * quantity
-                                            sum <- sum + subtotal
-                                            box subtotal.Average)
-                .AddCond(doCalculateCost, if market.Value.IsEmpty then
-                                            box <| RightAlignCell "--"
-                                          else
-                                            box <| market.Value.LastUpdateTime())
+                .AddCond(doCalculateCost, lazy (if market.Value.IsEmpty then
+                                                    box <| RightAlignCell "--"
+                                                else
+                                                    let subtotal = market.Value.StdEvPrice().Round() * quantity
+                                                    sum <- sum + subtotal
+                                                    box subtotal.Average))
+                .AddCond(doCalculateCost, lazy (if market.Value.IsEmpty then
+                                                    box <| RightAlignCell "--"
+                                                else
+                                                    box <| market.Value.LastUpdateTime()))
             |> tt.AddRow
 
         if doCalculateCost then
@@ -217,17 +217,17 @@ type XivMarketModule() =
                     let isEmpty = market.IsEmpty
                     let notEmpty = not isEmpty
 
-                    let def = RightAlignCell "--"
+                    let def = lazy (RightAlignCell "--")
 
                     RowBuilder()
                         .Add(recv.Name)
-                        .AddIf(notEmpty, market.StdEvPrice().Round().Average
+                        .AddIf(notEmpty, lazy (market.StdEvPrice().Round().Average)
                                        , def)
-                        .AddIf(notEmpty, market.MinPrice()
+                        .AddIf(notEmpty, lazy (market.MinPrice())
                                        , def)
-                        .AddIf(notEmpty, (market.StdEvPrice().Round() * (float <| info.ReceiveCount) / (float <| info.CostCount)).Average
+                        .AddIf(notEmpty, lazy ((market.StdEvPrice().Round() * (float <| info.ReceiveCount) / (float <| info.CostCount)).Average)
                                        , def)
-                        .AddIf(notEmpty, market.LastUpdateTime()
+                        .AddIf(notEmpty, lazy (market.LastUpdateTime())
                                        , def)
                     |> tt.AddRow
                 using (msgArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))

@@ -150,11 +150,11 @@ type RowBuilder() =
         fields.Add(CellType.CreateFrom(o))
         x
 
-    member x.AddCond(cond : bool, o) = 
-        if cond then x.Add(o) else x
+    member x.AddCond(cond : bool, o : Lazy<_>) = 
+        if cond then x.Add(o.Value) else x
 
-    member x.AddIf(cond : bool, ifTrue, ifFalse) = 
-        if cond then x.Add(ifTrue) else x.Add(ifFalse)
+    member x.AddIf(cond : bool, ifTrue : Lazy<_>, ifFalse : Lazy<_>) = 
+        if cond then x.Add(ifTrue.Value) else x.Add(ifFalse.Value)
 
     member x.AddLeftAlign(o : obj) = 
         fields.Add(CellType.CreateLeftAlign(o))
