@@ -35,11 +35,12 @@ type CraftableGearCollection private () =
         db.EnsureIndex(LiteDB.BsonExpression.Create("ItemLv"), false) |> ignore
 
         let fields = [|"EquipSlotCategory"; "Level{Equip}"; "Name"; "ClassJobCategory"; "Level{Item}"|]
-        let chs = BotDataInitializer.GetXivCollectionChs().GetSheet("Item", fields)
+        use col = BotDataInitializer.XivCollectionChs
+        let chs = col.GetSheet("Item", fields)
         
         let ClassJobCategory = 
             [|
-                let sheet = BotDataInitializer.GetXivCollectionChs().GetSheet("ClassJobCategory")
+                let sheet = col.GetSheet("ClassJobCategory")
                 let jobs = 
                     sheet.Header.Headers.[2..]
                     |> Array.map (fun x -> x.ColumnName)

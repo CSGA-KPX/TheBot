@@ -32,7 +32,8 @@ type ItemCollection private () =
         db.EnsureIndex(LiteDB.BsonExpression.Create("_id"), true) |> ignore
         db.EnsureIndex(LiteDB.BsonExpression.Create("Name")) |> ignore
 
-        let chs = BotDataInitializer.GetXivCollectionChs().GetSheet("Item", [| "Name" |])
+        use col = BotDataInitializer.XivCollectionChs
+        let chs = col.GetSheet("Item", [| "Name" |])
 
         seq {
             for row in chs do

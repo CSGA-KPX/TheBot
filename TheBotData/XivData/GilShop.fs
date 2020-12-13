@@ -33,9 +33,8 @@ type GilShopCollection private () =
     override x.InitializeCollection() =
         let db = x.DbCollection
         db.EnsureIndex(LiteDB.BsonExpression.Create("_id"), true) |> ignore
-        let col = BotDataInitializer.GetXivCollectionChs()
 
-        //用于缓存
+        use col = BotDataInitializer.XivCollectionChs
         col.GetSheet("Item", [| AskKey; BidKey |])
         |> ignore
         seq {

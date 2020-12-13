@@ -4,7 +4,7 @@ open BotData.Common.Database
 
 open NUnit.Framework
 
-let mutable private initCollection = true
+let mutable private initCollection = false
 
 let Setup () =
     try

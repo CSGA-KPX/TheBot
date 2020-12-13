@@ -1,45 +1,65 @@
 ﻿module BotData.XivData.World
 
+[<AutoOpen>]
+module private WorldConstant = 
+    let WorldsStr = 
+        [| "一区", "晨曦王座,沃仙曦染,宇宙和音,红玉海,萌芽池,神意之地,幻影群岛,拉诺西亚"
+           "二区", "拂晓之间,龙巢神殿,旅人栈桥,白金幻象,白银乡,神拳痕,潮风亭"
+           "三区", "琥珀原,柔风海湾,海猫茶屋,延夏,静语庄园,摩杜纳,紫水栈桥" |]
+
+    let WorldNamePinyin = 
+        [|  "拉诺西亚", "LaNuoXiYa"
+            "紫水栈桥", "ZiShuiZhanQiao"
+            "幻影群岛", "HuanYingQunDao"
+            "摩杜纳", "MoDuNa"
+            "萌芽池", "MengYaChi"
+            "白金幻象", "BaiJinHuanXiang"
+            "神意之地", "ShenYiZhiDi"
+            "静语庄园", "JingYuZhuangYuan"
+            "旅人栈桥", "LvRenZhanQiao"
+            "拂晓之间", "FuXiaoZhiJian"
+            "龙巢神殿", "Longchaoshendian"
+            "红玉海", "HongYuHai"
+            "延夏", "YanXia"
+            "潮风亭", "ChaoFengTing"
+            "神拳痕", "ShenQuanHen"
+            "白银乡", "BaiYinXiang"
+            "宇宙和音", "YuZhouHeYin"
+            "沃仙曦染", "WoXianXiRan"
+            "晨曦王座", "ChenXiWangZuo"
+            "海猫茶屋", "HaiMaoChaWu"
+            "柔风海湾", "RouFengHaiWan"
+            "琥珀原", "HuPoYuan" |]
+
 type World =
     { WorldId : uint16
       WorldName : string
       DataCenter: string}
 
-let Worlds =
-    // 一区 晨曦王座,沃仙曦染,宇宙和音,红玉海,萌芽池,神意之地,幻影群岛,拉诺西亚
-    // 二区 拂晓之间,龙巢神殿,旅人栈桥,白金幻象,白银乡,神拳痕,潮风亭
-    // 三区 琥珀原,柔风海湾,海猫茶屋,延夏,静语庄园,摩杜纳,紫水栈桥
-    [|
-        1175us, "晨曦王座", "一区"
-        1174us, "沃仙曦染", "一区"
-        1173us, "宇宙和音", "一区"
-        1167us, "红玉海", "一区"
-        1060us, "萌芽池", "一区"
-        1081us, "神意之地", "一区"
-        1044us, "幻影群岛", "一区"
-        1042us, "拉诺西亚", "一区"
+let Worlds = 
+    let pyMapping = WorldNamePinyin |> readOnlyDict
+    use col = BotData.Common.Database.BotDataInitializer.XivCollectionChs
+    let worlds = col.GetSheet("World")
+                 |> Seq.map (fun row -> row.As<string>("Name"), uint16 row.Key.Main)
+                 |> readOnlyDict
 
-        1121us, "拂晓之间", "二区"
-        1166us, "龙巢神殿", "二区"
-        1113us, "旅人栈桥", "二区"
-        1076us, "白金幻象", "二区"
-        1172us, "白银乡", "二区"
-        1171us, "神拳痕", "二区"
-        1070us, "潮风亭", "二区"
+    let output = System.Collections.Generic.List<World>()
 
-        1179us, "琥珀原", "三区"
-        1178us, "柔风海湾", "三区"
-        1177us, "海猫茶屋", "三区"
-        1169us, "延夏", "三区"
-        1106us, "静语庄园", "三区"
-        1045us, "摩杜纳", "三区"
-        1043us, "紫水栈桥", "三区"
-    |]
-    |> Array.map (fun (id, n, dc) ->
-        { WorldId = id
-          WorldName = n 
-          DataCenter = dc })
+    for dc, servers in WorldsStr do 
+        for server in servers.Split(",") do 
+            let id = worlds.[pyMapping.[server]]
+            output.Add({ WorldId = id
+                         WorldName = server
+                         DataCenter = dc })
+    output.ToArray()
 
+let WorldFromId = Worlds
+                  |> Array.map (fun x -> x.WorldId, x)
+                  |> readOnlyDict
+
+let WorldFromName = Worlds
+                    |> Array.map (fun x -> x.WorldName, x)
+                    |> readOnlyDict
 let DataCenterAlias = 
     [|
         "一区", "一区,鸟区,陆行鸟区,鸟"
@@ -50,12 +70,3 @@ let DataCenterAlias =
         seq {for alias in y.Split(',') do yield alias,x })
     |> readOnlyDict
     
-let WorldFromId =
-    Worlds
-    |> Array.map (fun x -> x.WorldId, x)
-    |> readOnlyDict
-
-let WorldFromName =
-    Worlds
-    |> Array.map (fun x -> x.WorldName, x)
-    |> readOnlyDict

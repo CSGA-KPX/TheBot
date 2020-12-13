@@ -20,7 +20,8 @@ type CompanyCraftRecipeProvider private () =
         db.EnsureIndex(LiteDB.BsonExpression.Create("_id"), true) |> ignore
         db.EnsureIndex(LiteDB.BsonExpression.Create("Process.Output[0].Item")) |> ignore
 
-        let chs = BotDataInitializer.GetXivCollectionChs().GetSheet("CompanyCraftSequence")
+        use col = BotDataInitializer.XivCollectionChs
+        let chs = col.GetSheet("CompanyCraftSequence")
 
         seq {
             for ccs in chs do

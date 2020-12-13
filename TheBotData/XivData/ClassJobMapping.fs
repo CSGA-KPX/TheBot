@@ -24,8 +24,7 @@ type ClassJobMappingCollection private () =
 
     override x.InitializeCollection() =
         let db = x.DbCollection
-        let col = BotDataInitializer.GetXivCollectionChs()
-
+        use col = BotDataInitializer.XivCollectionChs
         let sht = col.GetSheet("ClassJob")
         seq {
             for row in sht do

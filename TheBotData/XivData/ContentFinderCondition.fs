@@ -35,8 +35,7 @@ type XivContentCollection private () =
     override x.IsExpired = false
 
     override x.InitializeCollection() =
-        let col = BotDataInitializer.GetXivCollectionChs()
-
+        use col = BotDataInitializer.XivCollectionChs
         let sht = col.GetSheet("ContentFinderCondition")
         seq {
             for row in sht do

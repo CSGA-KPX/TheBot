@@ -9,7 +9,9 @@ open NUnit.Framework
 
 [<Test>]
 let ``FFXIV : OceanFishing function`` () = 
-    Assert.DoesNotThrow(fun () ->
-        OceanFishing.CalculateCooldown(DateTimeOffset.Now)
-        |> ignore
-    )
+    OceanFishing.CalculateCooldown(DateTimeOffset.Now)
+    |> ignore
+
+[<Test>]
+let ``FFXIV : World function`` () = 
+    World.WorldFromName.["拉诺西亚"] |> ignore

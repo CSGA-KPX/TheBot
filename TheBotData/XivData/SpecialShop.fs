@@ -34,7 +34,7 @@ type SpecialShopCollection private () =
         
         db.EnsureIndex(LiteDB.BsonExpression.Create("_id"), true) |> ignore
         db.EnsureIndex(LiteDB.BsonExpression.Create("ReceiveItem")) |> ignore
-        let col = BotDataInitializer.GetXivCollectionChs()
+        use col = BotDataInitializer.XivCollectionChs
         let sht = col.GetSheet("SpecialShop")
         seq {
             for row in sht do

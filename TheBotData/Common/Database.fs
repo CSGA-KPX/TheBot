@@ -123,25 +123,13 @@ type CachedTableCollection<'Key, 'Value>() =
         BotDataInitializer.GetCollectionUpdateTime(x.GetType().Name)
 
 and BotDataInitializer private () = 
-    static let StaticData = Dictionary<string, obj>()
-
+    
     static let updateCol = BotDataCacheDb.GetCollection<TableUpdateTime>()
 
-    static member ClearStaticData() = StaticData.Clear()
+    static let xivCollection = new EmbeddedXivCollection(XivLanguage.None) :> IXivCollection
 
     /// 获得一个全局的中文FF14数据库
-    /// 
-    /// 会载入加载器缓存，在InitializeCollection外使用时需要调用ClearStaticData清除缓存
-    static member GetXivCollectionChs() = 
-        let succ, col = StaticData.TryGetValue("XIV_COL_CHS")
-        if succ then
-            let col = col :?> IXivCollection
-            col.ClearCache()
-            col
-        else
-            let col = EmbeddedXivCollection(XivLanguage.None) :> IXivCollection
-            StaticData.Add("XIV_COL_CHS", col)
-            col
+    static member internal XivCollectionChs = xivCollection
 
     /// 记录CachedTableCollection<>的更新时间
     static member RegisterCollectionUpdate(name : string) = 
@@ -188,7 +176,6 @@ and BotDataInitializer private () =
 
         output.ToArray()
     
-    // NOT TESTED
     static member private IsSubclassOfRawGeneric(generic : Type, toCheck : Type) = 
         let rec check (t : Type) = 
             if t = typeof<Object> then false
@@ -199,7 +186,6 @@ and BotDataInitializer private () =
         
     /// 初始化该Assembly定义的所有数据集
     static member InitializeAllCollections() = 
-        BotDataInitializer.ClearStaticData()
         Assembly.GetExecutingAssembly().GetTypes()
         |> Array.filter (fun t -> (typeof<IInitializationInfo>.IsAssignableFrom(t) && (not (t.IsAbstract))))
         |> Array.map (fun t -> 
@@ -217,7 +203,6 @@ and BotDataInitializer private () =
                 GC.Collect()
             )
         printfn "处理完成"
-        BotDataInitializer.ClearStaticData()
 
     /// 删除所有数据，不释放空间
     static member ClearCache() = 

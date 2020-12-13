@@ -52,11 +52,12 @@ type XivModule() =
                 dfcRoulettes.[index].Name
 
             let tt = TextTable(RightAlignCell "日期（中国标准时间）", "副本")
-            tt.AddPreTable(sprintf "当前为：%s" (getString(DateTimeOffset.Now)))
-
+            
             let startDate = 
                 let jst = DateTimeOffset.Now.ToOffset(JSTOffset)
                 (jst - jst.TimeOfDay).ToOffset(TimeSpan.FromHours(8.0))
+
+            tt.AddPreTable(sprintf "当前为：%s" (getString(startDate)))
 
             let list = uo.GetValue<int>("list")
             if list > 31 then msgArg.AbortExecution(InputError, "一个月还不够嘛？")
