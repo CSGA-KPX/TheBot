@@ -43,7 +43,10 @@ type EveTypeCollection private () =
             use f = archive.GetEntry("evetypes.json").Open()
             use r = new JsonTextReader(new StreamReader(f))
 
-            let groupCollection = EveGroupCollection.Instance
+            let groupCollection = 
+                EveGroupCollection.Instance.DbCollection.FindAll()
+                |> Seq.map (fun x -> x.Id, x)
+                |> readOnlyDict
 
             let disallowCat = 
                 [| 0; 1; 11; 91;|]

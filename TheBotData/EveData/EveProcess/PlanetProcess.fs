@@ -10,7 +10,6 @@ open Newtonsoft.Json.Linq
 open BotData.CommonModule.Recipe
 open BotData.EveData.EveType
 
-
 /// 行星材料配方
 type PlanetProcessCollection private () = 
     inherit EveProcessCollection()
@@ -24,40 +23,37 @@ type PlanetProcessCollection private () =
         x.DbCollection.EnsureIndex("ProductId", expr) |> ignore
 
         use archive = BotData.EveData.Utils.GetEveDataArchive()
-        use f = archive.GetEntry("planetschematicstypemap.json").Open()
+        use f = archive.GetEntry("schematics.json").Open()
         use r = new JsonTextReader(new StreamReader(f))
 
-        // reactionTypeID * EveBlueprint
-        let dict = Dictionary<int, {| Id : int
-                                      In : List<EveDbMaterial>
-                                      Out : List<EveDbMaterial> |}>()
-
-        for item in JArray.Load(r) do 
-            let item = item  :?> JObject
-            let sid     = (item.GetValue("schematicID").ToObject<int>())
-            if not <| dict.ContainsKey(sid) then
-                dict.[sid] <- {|Id = sid; In = List<EveDbMaterial>(); Out = List<EveDbMaterial>()|}
-
-            let q       = item.GetValue("quantity").ToObject<float>()
-            let tid     = item.GetValue("typeID").ToObject<int>()
-            let em = {Item = tid; Quantity = q}
-
-            if item.GetValue("isInput").ToObject<int>() = 1 then
-                dict.[sid].In.Add(em)
-            else
-                dict.[sid].Out.Add(em)
-
         let ec = EveTypeCollection.Instance
-        dict.Values
-        |> Seq.filter (fun temp ->
-            // 屏蔽P0->P1生产过程
-            // 1042 = P1
-            let gid = ec.GetById(temp.Out.[0].Item).GroupId
-            gid <> 1042)
-        |> Seq.map (fun temp -> { Id = temp.Id
-                                  Process = {Input = temp.In.ToArray()
-                                             Output = temp.Out.ToArray()}
-                                  Type = ProcessType.Planet})
+
+        let input = List<EveDbMaterial>()
+        let output = List<EveDbMaterial>()
+        seq {
+            while r.Read() do 
+                if r.TokenType = JsonToken.PropertyName then
+                    input.Clear()
+                    output.Clear()
+                    let sid = r.Value :?> string |> int
+                    r.Read() |> ignore
+                    let o = JObject.Load(r)
+                    let types = o.GetValue("types") :?> JObject
+                    for p in types.Properties() do 
+                        let id = p.Name |> int
+                        let quantity = p.Value.Value<float>("quantity")
+                        let m = {Item = id; Quantity = quantity}
+                        let isInput = p.Value.Value<bool>("isInput")
+                        if isInput then input.Add(m) else output.Add(m)
+                    let pid = output.[0].Item
+                    let gid = ec.GetById(pid).GroupId
+                    let notP0ToP1 = gid <> 1042
+                    if notP0ToP1 then
+                        yield { Id = sid
+                                Process = { Input = input.ToArray()
+                                            Output = output.ToArray() }
+                                Type = ProcessType.Planet }
+        }
         |> x.DbCollection.InsertBulk
         |> ignore
 
