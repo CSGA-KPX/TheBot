@@ -99,8 +99,8 @@ type EveModule() =
         let att = Utils.MarketUtils.EveMarketPriceTable()
         match t with
         | Accumulator a ->
-            for kv in a do 
-                att.AddObject(kv.Key, kv.Value)
+            for mr in a do 
+                att.AddObject(mr.Item, mr.Quantity)
         | _ -> msgArg.AbortExecution(InputError, sprintf "求值失败，结果是%A" t)
 
         let cfg = EveConfigParser()
@@ -136,7 +136,7 @@ type EveModule() =
         let cfg = EveConfigParser()
         cfg.Parse(msgArg.Arguments)
 
-        let final = ItemAccumulator()
+        let final = ItemAccumulator<EveType>()
         let tt = TextTable("名称", "数量")
         tt.AddPreTable(sprintf "输入效率：%i%% "cfg.InputMe)
         match er.Eval(cfg.CmdLineAsString) with
@@ -144,24 +144,23 @@ type EveModule() =
             msgArg.AbortExecution(InputError, "结算结果为数字: {0}", n)
         | Accumulator a ->
             let pm = EveProcessManager(cfg)
-            for kv in a do 
-                let proc = pm.TryGetRecipeMe(kv.Key, ByRun kv.Value)
+            for mr in a do 
+                let proc = pm.TryGetRecipeMe(mr.Item, ByRun mr.Quantity)
                 match proc with
-                | _ when proc.IsSome && kv.Value > 0.0 -> 
+                | _ when proc.IsSome && mr.Quantity > 0.0 -> 
                     let product = proc.Value.Process.GetFirstProduct()
                     tt.AddRow("产出："+product.Item.Name, product.Quantity)
 
                     for m in proc.Value.Process.Input do
-                        final.AddOrUpdate(m.Item, m.Quantity)
-
-                | _ when kv.Value < 0.0 -> 
+                        final.Update(m)
+                | _ when mr.Quantity < 0.0 -> 
                     // 已有材料需要扣除
-                    final.AddOrUpdate(kv.Key, kv.Value)
+                    final.Update(mr)
                 | _ -> 
-                    msgArg.AbortExecution(ModuleError, "不知道如何处理：{0} * {1}", kv.Key.Name, kv.Value)
+                    msgArg.AbortExecution(ModuleError, "不知道如何处理：{0} * {1}", mr.Item.Name, mr.Quantity)
 
-        for kv in final do 
-            tt.AddRow(kv.Key.Name, kv.Value)
+        for mr in final do 
+            tt.AddRow(mr.Item.Name, mr.Quantity)
 
         using (msgArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))
 
@@ -170,7 +169,7 @@ type EveModule() =
         let cfg = EveConfigParser()
         cfg.Parse(msgArg.Arguments)
 
-        let final = ItemAccumulator()
+        let final = ItemAccumulator<EveType>()
         let tt = TextTable("名称", "数量")
         tt.AddPreTable(sprintf "输入效率：%i%% 默认效率：%i%%"
             cfg.InputMe
@@ -184,20 +183,20 @@ type EveModule() =
             msgArg.AbortExecution(InputError, "结算结果为数字: {0}", n)
         | Accumulator a ->
             let pm = EveProcessManager(cfg)
-            for kv in a do 
-                let proc = pm.TryGetRecipeRecMe(kv.Key, ByRun kv.Value)
+            for mr in a do 
+                let proc = pm.TryGetRecipeRecMe(mr.Item, ByRun mr.Quantity)
                 if proc.IsNone then
-                    msgArg.AbortExecution(InputError, "找不到配方：{0}", kv.Key.Name)
+                    msgArg.AbortExecution(InputError, "找不到配方：{0}", mr.Item.Name)
                 let finalProc = proc.Value.FinalProcess
                 let product = finalProc.Process.GetFirstProduct()
 
                 tt.AddRow("产出："+ product.Item.Name, product.Quantity)
 
                 for m in finalProc.Process.Input do
-                    final.AddOrUpdate(m.Item, m.Quantity)
+                    final.Update(m)
             
-        for kv in final do 
-            tt.AddRow(kv.Key.Name, kv.Value)
+        for mr in final do 
+            tt.AddRow(mr.Item.Name, mr.Quantity)
 
         using (msgArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))
 
@@ -210,13 +209,13 @@ type EveModule() =
         | Number n ->
             msgArg.AbortExecution(InputError, "结算结果为数字: {0}", n)
         | Accumulator a ->
-            let kvv = a |> Seq.tryHead
-            if kvv.IsNone then
+            let mr = a |> Seq.tryHead
+            if mr.IsNone then
                 msgArg.AbortExecution(InputError, "没有可供计算的物品")
             let pm = EveProcessManager(cfg)
-            let proc = pm.TryGetRecipeMe(kvv.Value.Key, ByRun kvv.Value.Value)
+            let proc = pm.TryGetRecipeMe(mr.Value.Item, ByRun mr.Value.Quantity)
             if proc.IsNone then
-                msgArg.AbortExecution(InputError, "找不到配方:{0}", kvv.Value.Key.Name)
+                msgArg.AbortExecution(InputError, "找不到配方:{0}", mr.Value.Item.Name)
 
             let tt = TextTable(LeftAlignCell "材料",
                                RightAlignCell "数量",

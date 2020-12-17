@@ -36,7 +36,7 @@ type CraftableGearCollection private () =
 
         let fields = [| "EquipSlotCategory"; "IsUntradable";
                         "Level{Equip}"; "ClassJobCategory";
-                        "Level{Item}"; "CanBeHq";|]
+                        "Level{Item}"; "CanBeHq"; "IsAdvancedMeldingPermitted"|]
         use col = BotDataInitializer.XivCollectionChs
         let chs = col.GetSheet("Item", fields)
         
@@ -59,7 +59,8 @@ type CraftableGearCollection private () =
                     && ((elv % 10) = 0)
                     && (not <| item.As<bool>("IsUntradable"))
                     && (item.As<int>("Level{Item}") >= 340 )
-                    && (item.As<bool>("CanBeHq")) then
+                    && (item.As<bool>("CanBeHq")) 
+                    && (item.As<bool>("IsAdvancedMeldingPermitted")) then // 部分装备天书能给个5孔的华美型，此时会禁用禁断
                     yield {
                         Id = item.Key.Main
                         ItemLv = item.As<int>("Level{Item}")

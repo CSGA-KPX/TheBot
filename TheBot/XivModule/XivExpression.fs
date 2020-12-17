@@ -7,6 +7,7 @@ open BotData.XivData
 open TheBot.Utils.GenericRPN
 open TheBot.Utils.RecipeRPN
 
+
 type ItemAccumulator = ItemAccumulator<Item.ItemRecord>
 
 type XivExpression() as x = 
@@ -17,7 +18,7 @@ type XivExpression() as x =
             match l with
             | Number f ->
                 let item = Item.ItemCollection.Instance.GetByItemId(int f)
-                let acu = ItemAccumulator.Singleton item
+                let acu = ItemAccumulator.SingleItemOf item
                 Accumulator acu
             | Accumulator _ -> failwithf "#符号仅对数字使用")
 

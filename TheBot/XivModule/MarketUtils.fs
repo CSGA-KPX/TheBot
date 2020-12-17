@@ -94,19 +94,30 @@ type MarketAnalyzer(item : Item.ItemRecord, world : World.World, data : MarketDa
     member x.Data = data
 
     member x.LastUpdateTime() =
-        let dt = (data |> Array.maxBy (fun x -> x.UpdateTime)).UpdateTime
-        (DateTimeOffset.Now - dt)
+        if data.Length = 0 then TimeSpan.MaxValue
+        else
+            let dt = (data |> Array.maxBy (fun x -> x.UpdateTime)).UpdateTime
+            (DateTimeOffset.Now - dt)
 
-    member x.MinPrice() = (data |> Array.minBy (fun x -> x.Price)).Price
-    member x.MaxPrice() = (data |> Array.maxBy (fun x -> x.Price)).Price
+    member x.MinPrice() = 
+        if data.Length = 0 then nan
+        else (data |> Array.minBy (fun x -> x.Price)).Price |> float
+
+    member x.MaxPrice() = 
+        if data.Length = 0 then nan
+        else (data |> Array.maxBy (fun x -> x.Price)).Price |> float
 
     member x.StdEvPrice() =
         data
         |> Array.map (fun x -> x.Price |> float)
         |> StdEv.FromData
 
-    member x.MinCount() = (data |> Array.minBy (fun x -> x.Count)).Count
-    member x.MaxCount() = (data |> Array.maxBy (fun x -> x.Count)).Count
+    member x.MinCount() = 
+        if data.Length = 0 then 0u
+        else (data |> Array.minBy (fun x -> x.Count)).Count
+    member x.MaxCount() = 
+        if data.Length = 0 then 0u
+        else (data |> Array.maxBy (fun x -> x.Count)).Count
 
     member x.StdEvCount() =
         data
@@ -136,3 +147,13 @@ type MarketAnalyzer(item : Item.ItemRecord, world : World.World, data : MarketDa
                                       if takeCount <> 0 then
                                           rest <- rest - takeCount
                                           yield record |])
+
+    static member GetTradeLog(world : World.World, item : Item.ItemRecord) = 
+        let data = CompundMarketInfo.MarketInfoCollection.Instance
+                    .GetTradeLogs(world, item) |> Array.map (MarketData.Trade)
+        MarketAnalyzer(item, world, data)
+
+    static member GetMarketListing(world : World.World, item : Item.ItemRecord) = 
+        let data = CompundMarketInfo.MarketInfoCollection.Instance
+                    .GetMarketListings(world, item) |> Array.map (MarketData.Order)
+        MarketAnalyzer(item, world, data)

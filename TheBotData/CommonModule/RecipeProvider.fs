@@ -14,6 +14,8 @@ type RecipeMaterial<'Item> =
 type ItemAccumulator<'Item when 'Item : equality>() =
     let data = Dictionary<'Item, RecipeMaterial<'Item>>()
 
+    member x.Count = data.Count
+
     member x.IsEmpty = data.Count = 0
 
     member x.Update(material : RecipeMaterial<'Item>) = x.Update(material.Item, material.Quantity)
@@ -34,6 +36,16 @@ type ItemAccumulator<'Item when 'Item : equality>() =
     member x.MergeFrom(y : ItemAccumulator<'Item>) = 
         for v in y do
             x.Update(v)
+
+    member x.SubtractFrom(y : ItemAccumulator<'Item>) = 
+        for v in y do
+            x.Update(v.Item, -v.Quantity)
+
+    static member SingleItemOf (i: 'Item) = 
+        let ret = ItemAccumulator<'Item>()
+        ret.Update(i)
+        ret
+
 
     interface IEnumerable<RecipeMaterial<'Item>> with
         member x.GetEnumerator() = data.Values.GetEnumerator() :> IEnumerator<RecipeMaterial<'Item>>

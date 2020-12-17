@@ -1,27 +1,14 @@
 ﻿module TheBot.Utils.RecipeRPN
+
 open System
-open System.Text
-open System.Collections.Generic
+
 open TheBot.Utils.GenericRPN
 
-type ItemAccumulator<'Item when 'Item : equality>() =
-    inherit Dictionary<'Item, float>()
+open BotData.CommonModule.Recipe
 
-    member x.AddOrUpdate(item, runs) =
-        if x.ContainsKey(item) then x.[item] <- x.[item] + runs
-        else x.Add(item, runs)
 
-    member x.MergeWith(a : ItemAccumulator<'Item>, ?isAdd : bool) =
-        let add = defaultArg isAdd true
-        for kv in a do
-            if add then x.AddOrUpdate(kv.Key, kv.Value)
-            else x.AddOrUpdate(kv.Key, -(kv.Value))
-        x
-
-    static member Singleton(item : 'Item) =
-        let a = ItemAccumulator()
-        a.Add(item, 1.0)
-        a
+type ItemAccumulator<'Item when 'Item : equality> =
+    BotData.CommonModule.Recipe.ItemAccumulator<'Item>
 
 type RecipeOperand<'Item when 'Item : equality> =
     | Number of float
@@ -32,14 +19,14 @@ type RecipeOperand<'Item when 'Item : equality> =
         override l.Add(r) =
             match l, r with
             | (Number i1), (Number i2) -> Number(i1 + i2)
-            | (Accumulator a1), (Accumulator a2) -> Accumulator(a1.MergeWith(a2))
+            | (Accumulator a1), (Accumulator a2) -> a1.MergeFrom(a2); Accumulator a1
             | (Number _), (Accumulator _) -> raise <| InvalidOperationException("不允许材料和数字相加")
             | (Accumulator _), (Number _) -> (r :> IOperand<RecipeOperand<'Item>>).Add(l)
 
         override l.Sub(r) =
             match l, r with
             | (Number i1), (Number i2) -> Number(i1 - i2)
-            | (Accumulator a1), (Accumulator a2) -> Accumulator(a1.MergeWith(a2, false))
+            | (Accumulator a1), (Accumulator a2) -> a1.SubtractFrom(a2); Accumulator(a1)
             | (Number _), (Accumulator _) -> raise <| InvalidOperationException("不允许材料和数字相减")
             | (Accumulator _), (Number _) -> (r :> IOperand<RecipeOperand<'Item>>).Sub(l)
 
@@ -48,9 +35,8 @@ type RecipeOperand<'Item when 'Item : equality> =
             | (Number i1), (Number i2) -> Number(i1 * i2)
             | (Accumulator _), (Accumulator _) -> raise <| InvalidOperationException("不允许材料和材料相乘")
             | (Number i), (Accumulator a) ->
-                let keys = a.Keys |> Seq.toArray
-                for k in keys do
-                    a.[k] <- a.[k] * i
+                for mr in a do
+                    a.Set(mr.Item, mr.Quantity * i)
                 Accumulator a
             | (Accumulator _), (Number _) -> (r :> IOperand<RecipeOperand<'Item>>).Mul(l)
 
@@ -59,9 +45,8 @@ type RecipeOperand<'Item when 'Item : equality> =
             | (Number i1), (Number i2) -> Number(i1 / i2)
             | (Accumulator _), (Accumulator _) -> raise <| InvalidOperationException("不允许材料和材料相减")
             | (Number i), (Accumulator a) ->
-                let keys = a.Keys |> Seq.toArray
-                for k in keys do
-                    a.[k] <- a.[k] / i
+                for mr in a do
+                    a.Set(mr.Item, mr.Quantity / i)
                 Accumulator a
             | (Accumulator _), (Number _) -> (r :> IOperand<RecipeOperand<'Item>>).Div(l)
 
@@ -82,4 +67,4 @@ type RecipeExpression<'Item when 'Item : equality>() =
         | _ ->
             let item = x.TryGetItemByName(token)
             if item.IsNone then failwithf "找不到物品 %s" token
-            Operand(Accumulator(ItemAccumulator.Singleton(item.Value)))
+            Operand(Accumulator(ItemAccumulator.SingleItemOf(item.Value)))
