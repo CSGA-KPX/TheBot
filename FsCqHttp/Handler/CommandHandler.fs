@@ -32,7 +32,7 @@ type CommandHandlerMethodAttribute(command : string, desc, lh) =
 
 // TODO: 处理AltCommandStart
 type CommandArgs(cqArg : ClientEventArgs, msg : Message.MessageEvent, attr : CommandHandlerMethodAttribute) =
-    inherit ClientEventArgs(cqArg.ApiCaller, cqArg.RawEvent)
+    inherit ClientEventArgs(cqArg)
 
     let rawMsg = msg.Message.ToString()
     let cmdLine = rawMsg.Split([| ' ' |], StringSplitOptions.RemoveEmptyEntries)
@@ -54,7 +54,6 @@ type CommandArgs(cqArg : ClientEventArgs, msg : Message.MessageEvent, attr : Com
 
     /// 小写转化后的命令名称，不含CommandStart字符
     member x.CommandName = cmdName
-
 
     member x.CommandAttrib = attr
 
@@ -78,12 +77,12 @@ type CommandHandlerBase() as x =
 
     override x.HandleMessage(args, msgEvent) =
         let cmd = 
+            // 理论上应该优化掉，实际上常见消息也无非就几个文本段，无所谓了
             let msg = msgEvent.Message.ToString()
             let endIdx =
                 let idx = msg.IndexOf(" ")
                 if idx = -1 then msg.Length
-                else
-                    idx
+                else idx
             // 空格-1，msg.Length变换为idx也需要-1
             let key = msg.[0 .. endIdx - 1].ToLowerInvariant()
             let succ, obj = cmdCache.TryGetValue(key)

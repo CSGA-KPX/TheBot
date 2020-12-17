@@ -33,18 +33,26 @@ type ModuleException(level : ErrorLevel, msg : string) =
 
     member _.ErrorLevel = level
 
-type ClientEventArgs(api : IApiCallProvider, obj : JObject) =
+type ClientEventArgs private (api : IApiCallProvider, ctx : JObject, selfId, event) =
     inherit EventArgs()
 
     static let logger = NLog.LogManager.GetCurrentClassLogger()
 
+    new (api : IApiCallProvider, ctx : JObject) = 
+        let sid = ctx.["self_id"].Value<uint64>()
+        let event = Event.CqHttpEvent.FromJObject(ctx)
+        ClientEventArgs(api, ctx, sid, event)
+
+    new (arg : ClientEventArgs) = 
+        ClientEventArgs(arg.ApiCaller, arg.RawEvent, arg.SelfId, arg.Event)
+
     member internal x.Logger = logger
 
-    member val SelfId = obj.["self_id"].Value<uint64>()
+    member val SelfId : uint64 = selfId
 
-    member val Event = Event.CqHttpEvent.FromJObject(obj)
+    member val Event : Event.CqHttpEvent = event
 
-    member x.RawEvent = obj
+    member private x.RawEvent = ctx
 
     member x.ApiCaller = api
 
@@ -64,7 +72,7 @@ type ClientEventArgs(api : IApiCallProvider, obj : JObject) =
 
     member x.SendResponse(r : Response.EventResponse) =
         if r <> Response.EmptyResponse then
-            let rep = SystemApi.QuickOperation(obj.ToString(Newtonsoft.Json.Formatting.None))
+            let rep = SystemApi.QuickOperation(ctx.ToString(Newtonsoft.Json.Formatting.None))
             rep.Reply <- r
             api.CallApi(rep) |> ignore
 
