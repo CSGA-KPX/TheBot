@@ -3,6 +3,7 @@ namespace KPX.FsCqHttp.DataType.Event
 open System
 open Newtonsoft.Json.Linq
 
+
 type CqHttpEvent =
     | Notice of Notice.NoticeEvent
     | Message of Message.MessageEvent

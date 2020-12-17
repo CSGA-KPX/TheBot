@@ -8,8 +8,11 @@ open KPX.FsCqHttp.Handler
 type CommandHandlerMethodAttribute(command : string, desc, lh) =
     inherit Attribute()
 
-    /// 指令名称，不含CommandStart字符串
-    member val Command : string = command.ToLowerInvariant()
+    /// 指令名称（转化为小写），不含CommandStart字符串
+    member x.Command : string = command.ToLowerInvariant()
+
+    /// 指令名称（转化为小写），含CommandStart字符串
+    member x.FullCommand = x.CommandStart + x.Command
 
     /// 指令概述
     member x.HelpDesc : string = desc
@@ -20,7 +23,7 @@ type CommandHandlerMethodAttribute(command : string, desc, lh) =
     /// 指示改指令是否在help等指令中隐藏
     member val IsHidden = false with get, set
 
-    /// 使用自定义的指令起始符，默认为""
+    /// 使用自定义的指令起始符，默认为""，使用配置文件
     member val AltCommandStart = "" with get, set
 
     /// 获取该指令的指令起始符
@@ -64,7 +67,7 @@ type CommandArgs(cqArg : ClientEventArgs, msg : Message.MessageEvent, attr : Com
 type CommandHandlerBase() as x =
     inherit HandlerModuleBase()
 
-    let cmdCache = Collections.Generic.Dictionary<string, _>()
+    let commands = Collections.Generic.List<_>()
 
     do
         for method in x.GetType().GetMethods() do
@@ -73,24 +76,6 @@ type CommandHandlerBase() as x =
                 let attr = attrib :?> CommandHandlerMethodAttribute
                 let cs = attr.CommandStart
                 let key = (cs + attr.Command).ToLowerInvariant()
-                cmdCache.Add(key, (attr, method))
+                commands.Add(key, attr, method)
 
-    override x.HandleMessage(args, msgEvent) =
-        let cmd = 
-            // 理论上应该优化掉，实际上常见消息也无非就几个文本段，无所谓了
-            let msg = msgEvent.Message.ToString()
-            let endIdx =
-                let idx = msg.IndexOf(" ")
-                if idx = -1 then msg.Length
-                else idx
-            // 空格-1，msg.Length变换为idx也需要-1
-            let key = msg.[0 .. endIdx - 1].ToLowerInvariant()
-            let succ, obj = cmdCache.TryGetValue(key)
-            if succ then Some obj else None
-
-        if cmd.IsSome then
-            let (attr, method) = cmd.Value
-            let cmdArg = CommandArgs(args, msgEvent, attr)
-            if KPX.FsCqHttp.Config.Logging.LogCommandCall then
-                x.Logger.Info("Calling handler {0}\r\n Command Context {1}", method.Name, sprintf "%A" msgEvent)
-                method.Invoke(x, [| cmdArg |]) |> ignore
+    member x.Commands = commands

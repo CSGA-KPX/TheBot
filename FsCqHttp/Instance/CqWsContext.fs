@@ -21,7 +21,12 @@ type CqWsContext(ws : WebSocket) =
     let apiPending = ConcurrentDictionary<string, ManualResetEvent * ApiRequestBase>()
     let started = new ManualResetEvent(false)
     let modules = List<HandlerModuleBase>()
+    let cmdCache = Dictionary<string, _>()
     let self = SystemApi.GetLoginInfo()
+
+    let rec getRootExn (exn : exn) = 
+        if isNull exn.InnerException then exn
+        else getRootExn exn.InnerException
 
     /// 发生链接错误时重启服务器的函数
     ///
@@ -40,16 +45,22 @@ type CqWsContext(ws : WebSocket) =
 
     /// 注册模块
     member x.RegisterModule(t : Type) = 
-        if moduleCache.ContainsKey(t) then
-            moduleCache.[t]
-        else
-            let isSubClass = t.IsSubclassOf(typeof<HandlerModuleBase>) && (not <| t.IsAbstract)
-            if not isSubClass then
-                invalidArg "t" "必须是HandlerModuleBase子类"
-            let m = Activator.CreateInstance(t) :?> HandlerModuleBase
-            moduleCache.Add(t, m)
-            m
-        |> modules.Add
+        let toAdd = 
+            if moduleCache.ContainsKey(t) then
+                moduleCache.[t]
+            else
+                let isSubClass = t.IsSubclassOf(typeof<HandlerModuleBase>) && (not <| t.IsAbstract)
+                if not isSubClass then
+                    invalidArg "t" "必须是HandlerModuleBase子类"
+                let m = Activator.CreateInstance(t) :?> HandlerModuleBase
+                moduleCache.Add(t, m)
+                m
+
+        modules.Add(toAdd)
+        if toAdd :? CommandHandlerBase then
+            let cmdBase = toAdd :?> CommandHandlerBase
+            for (str, attr, method) in cmdBase.Commands do
+                cmdCache.Add(str, (toAdd, attr, method))
 
     /// 使用API检查是否在线
     member x.CheckOnline() = 
@@ -81,46 +92,63 @@ type CqWsContext(ws : WebSocket) =
 
     member x.Stop() = cts.Cancel()
 
+    member private x.HandleEventPost(args : ClientEventArgs) = 
+        try
+            match args.Event with
+            | Event.Message msgEvent ->
+                let str = msgEvent.Message.ToString()
+                let endIdx = let idx = str.IndexOf(" ")
+                             if idx = -1 then str.Length else idx
+                // 空格-1，msg.Length变换为idx也需要-1
+                let key = str.[0 .. endIdx - 1].ToLowerInvariant()
+                // 如果和指令有匹配就直接走模块
+                // 没匹配再轮询
+                if cmdCache.ContainsKey(key) then
+                    let (cmdModule, attr, method) = cmdCache.[key]
+                    let cmdArg = CommandArgs(args, msgEvent, attr)
+                    if KPX.FsCqHttp.Config.Logging.LogCommandCall then
+                        logger.Info("Calling handler {0}\r\n Command Context {1}", method.Name, sprintf "%A" msgEvent)
+                        method.Invoke(cmdModule, [| cmdArg |]) |> ignore
+                else
+                    for m in modules do m.HandleCqHttpEvent(args)
+            | _ ->
+                // 非消息事件全部for m in modules do m.HandleCqHttpEvent(args)
+                for m in modules do m.HandleCqHttpEvent(args)
+        with
+        | e ->
+            let rootExn = getRootExn e
+            match rootExn with
+            | :? IgnoreException -> ()
+            | :? ModuleException as me -> 
+                args.Logger.Warn("[{0}] -> {1} : {2} \r\n ctx： {3}", x.SelfId, me.ErrorLevel, sprintf "%A" args.Event, me.Message)
+                args.QuickMessageReply(sprintf "错误：%s" me.Message)
+                args.AbortExecution(me.ErrorLevel, me.Message)
+            | _ ->
+                args.QuickMessageReply(sprintf "内部错误：%s" rootExn.Message)
+                logger.Error(sprintf "捕获异常：\r\n %O" e)
+
+    member private x.HandleApiResponse(ret : Response.ApiResponse) = 
+        let hasPending, item = apiPending.TryGetValue(ret.Echo)
+        if hasPending then
+            let (mre, api) = item
+            api.HandleResponse(ret)
+            mre.Set() |> ignore
+        else
+            logger.Warn(sprintf "未注册echo:%s" ret.Echo)
+
     member private x.HandleMessage(json : string) = 
         let obj = JObject.Parse(json)
         let logJson = lazy (obj.ToString(Newtonsoft.Json.Formatting.None))
-        let rec getRootExn (exn : exn) = 
-            if isNull exn.InnerException then exn
-            else getRootExn exn.InnerException
 
         if obj.ContainsKey("post_type") then //消息上报
             if KPX.FsCqHttp.Config.Logging.LogEventPost then
                 logger.Trace(sprintf "%s收到上报：%s" x.SelfId logJson.Value)
-
-
-            let args = new ClientEventArgs(x, obj)
-            try
-                for m in modules do m.HandleCqHttpEvent(args)
-            with
-            | e ->
-                let rootExn = getRootExn e
-                match rootExn with
-                | :? IgnoreException -> ()
-                | :? ModuleException as me -> 
-                    args.Logger.Warn("[{0}] -> {1} : {2} \r\n ctx： {3}", x.SelfId, me.ErrorLevel, sprintf "%A" args.Event, me.Message)
-                    args.QuickMessageReply(sprintf "错误：%s" me.Message)
-                    args.AbortExecution(me.ErrorLevel, me.Message)
-                | _ ->
-                    args.QuickMessageReply(sprintf "内部错误：%s" rootExn.Message)
-                    logger.Error(sprintf "捕获异常：\r\n %O" e)
+            x.HandleEventPost(ClientEventArgs(x, obj))
 
         elif obj.ContainsKey("retcode") then //API调用结果
             if KPX.FsCqHttp.Config.Logging.LogApiCall then
                 logger.Trace(sprintf "%s收到API调用结果： %s" x.SelfId logJson.Value)
-
-            let ret = obj.ToObject<Response.ApiResponse>()
-            let hasPending, item = apiPending.TryGetValue(ret.Echo)
-            if hasPending then
-                let (mre, api) = item
-                api.HandleResponse(ret)
-                mre.Set() |> ignore
-            else
-                logger.Warn(sprintf "未注册echo:%s" ret.Echo)
+            x.HandleApiResponse(obj.ToObject<Response.ApiResponse>())
 
     member private x.StartMessageLoop() = 
         async {
