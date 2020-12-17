@@ -121,12 +121,12 @@ type EveModule() =
         let me0Price = proc0.Value.GetTotalMaterialPrice(PriceFetchMode.Sell)
 
         let tt = TextTable(RightAlignCell "材料等级", RightAlignCell "节省")
-        tt.AddPreTable("直接材料总价：" + System.String.Format("{0:N0}", me0Price))
+        tt.AddPreTable("直接材料总价：" + System.String.Format("{0:N0}", ceil me0Price))
 
         for me = 0 to 10 do
             let cost = pm.TryGetRecipeMe(item.Value, ByRun 1.0, me)
                          .Value.GetTotalMaterialPrice(PriceFetchMode.Sell)
-            let save = me0Price - cost
+            let save = me0Price - cost |> ceil
             tt.AddRow(me, save)
 
         using (msgArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))

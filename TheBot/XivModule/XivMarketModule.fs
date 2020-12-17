@@ -208,14 +208,25 @@ type XivMarketModule() =
         let sc = SpecialShop.SpecialShopCollection.Instance
         let cfg = CommandUtils.XivConfig(msgArg)
         let world = cfg.GetWorld()
-
         if cfg.CommandLine.Length = 0 then
             //回复所有可交易道具
-            let tt = TextTable("名称", "id")
+            let headerSet = [|box <| RightAlignCell  "ID"; box <| LeftAlignCell "名称"|]
+            let headerCol = 3
+            let header = [|for _ = 0 to headerCol - 1 do yield! headerSet |]
+
+            let tt = TextTable(header)
             tt.AddPreTable("可交换道具：")
-            for item in sc.AllCostItems() do 
-                tt.AddRow(item.Name, item.Id.ToString())
-            using (msgArg.OpenResponse()) (fun x -> x.Write(tt))
+            let chunks = sc.AllCostItems() |> Seq.chunkBySize headerCol
+            for chunk in chunks do
+                let rb = RowBuilder()
+                for item in chunk do 
+                    rb.Add(item.Id)
+                      .Add(item.Name) |> ignore
+                for i = 0 to headerCol - chunk.Length - 1 do 
+                    rb.AddRightAlign("--")
+                      .AddLeftAlign("--") |> ignore
+                tt.AddRow(rb)
+            using (msgArg.OpenResponse(ForceImage)) (fun x -> x.Write(tt))
         else
             let ret = strToItem(cfg.CommandLine.[0])
             match ret with

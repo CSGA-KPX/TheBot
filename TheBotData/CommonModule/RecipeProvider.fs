@@ -5,6 +5,7 @@ open System.Collections.Generic
 
 
 [<CLIMutable>]
+[<Struct>]
 type RecipeMaterial<'Item> =
     {
         Item : 'Item

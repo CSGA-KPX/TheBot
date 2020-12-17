@@ -42,16 +42,17 @@ type SpecialShopCollection private () =
                 for page = 0 to 1 do //不知道2是干嘛的，信息不全
                     for col = 0 to 59 do
                         let rItem = row.AsRow(index "Item{Receive}" col page)
+                        let cItem = row.As<int>(index "Item{Cost}" col page)
 
                         let r =
                             { Id = 0
                               ReceiveItem = rItem.Key.Main
                               ReceiveCount = row.As<int32>(index "Count{Receive}" col page)
                               ReceiveHQ = row.As<bool>(index "HQ{Receive}" col page)
-                              CostItem = row.As<int>(index "Item{Cost}" col page)
+                              CostItem = cItem
                               CostCount = row.As<int32>(index "Count{Cost}" col page) }
 
-                        if rItem.Key.Main > 0 && r.ReceiveCount > 0 && r.ReceiveHQ = false
+                        if rItem.Key.Main > 0 && r.ReceiveCount > 0 && cItem > 0 && r.ReceiveHQ = false
                            && rItem.As<bool>("IsUntradable") = false && rItem.As<string>("Name") <> "" then yield r
         }
         |> Seq.distinctBy (fun x -> sprintf "%i%i" x.ReceiveItem x.CostItem)
