@@ -1,15 +1,11 @@
 ﻿namespace KPX.FsCqHttp.Instance
 
 open System
-open System.Collections.Generic
 open System.Threading
 open System.Net.WebSockets
 
-open KPX.FsCqHttp.DataType
-open KPX.FsCqHttp.Api
 open KPX.FsCqHttp.Handler
 
-open Newtonsoft.Json.Linq
 
 type ActiveWebsocket(url, token) = 
     let mutable lastRestart = DateTimeOffset.Now

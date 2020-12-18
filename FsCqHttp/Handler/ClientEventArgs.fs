@@ -2,8 +2,11 @@
 
 open System
 
-open KPX.FsCqHttp.DataType
+open KPX.FsCqHttp.Message
+open KPX.FsCqHttp.Event
+
 open KPX.FsCqHttp.Api
+open KPX.FsCqHttp.Api.System
 
 open Newtonsoft.Json.Linq
 
@@ -33,24 +36,24 @@ type ModuleException(level : ErrorLevel, msg : string) =
 
     member _.ErrorLevel = level
 
-type ClientEventArgs private (api : IApiCallProvider, ctx : JObject, selfId, event) =
+type CqEventArgs private (api : IApiCallProvider, ctx : JObject, selfId, event) =
     inherit EventArgs()
 
     static let logger = NLog.LogManager.GetCurrentClassLogger()
 
     new (api : IApiCallProvider, ctx : JObject) = 
         let sid = ctx.["self_id"].Value<uint64>()
-        let event = Event.CqHttpEvent.FromJObject(ctx)
-        ClientEventArgs(api, ctx, sid, event)
+        let event = CqHttpEvent.FromJObject(ctx)
+        CqEventArgs(api, ctx, sid, event)
 
-    new (arg : ClientEventArgs) = 
-        ClientEventArgs(arg.ApiCaller, arg.RawEvent, arg.SelfId, arg.Event)
+    new (arg : CqEventArgs) = 
+        CqEventArgs(arg.ApiCaller, arg.RawEvent, arg.SelfId, arg.Event)
 
     member internal x.Logger = logger
 
     member val SelfId : uint64 = selfId
 
-    member val Event : Event.CqHttpEvent = event
+    member val Event : CqHttpEvent = event
 
     member private x.RawEvent = ctx
 
@@ -70,26 +73,26 @@ type ClientEventArgs private (api : IApiCallProvider, ctx : JObject, selfId, eve
             raise IgnoreException
         Unchecked.defaultof<'T>
 
-    member x.SendResponse(r : Response.EventResponse) =
-        if r <> Response.EmptyResponse then
-            let rep = SystemApi.QuickOperation(ctx.ToString(Newtonsoft.Json.Formatting.None))
+    member x.SendResponse(r : EventResponse) =
+        if r <> EmptyResponse then
+            let rep = QuickOperation(ctx.ToString(Newtonsoft.Json.Formatting.None))
             rep.Reply <- r
             api.CallApi(rep) |> ignore
 
-    member x.QuickMessageReply(msg : Message.Message, ?atUser : bool) = 
+    member x.QuickMessageReply(msg : Message, ?atUser : bool) = 
         let atUser = defaultArg atUser false
         if msg.ToString().Length > KPX.FsCqHttp.Config.Output.TextLengthLimit then
             invalidOp "回复字数超过上限。"
         match x.Event with
-        | Event.CqHttpEvent.Message ctx ->
+        | MessageEvent ctx ->
             match ctx with
-            | _ when ctx.IsDiscuss -> x.SendResponse(Response.DiscusMessageResponse(msg, atUser))
-            | _ when ctx.IsGroup -> x.SendResponse(Response.GroupMessageResponse(msg, atUser, false, false, false, 0))
-            | _ when ctx.IsPrivate -> x.SendResponse(Response.PrivateMessageResponse(msg))
+            | _ when ctx.IsDiscuss -> x.SendResponse(DiscusMessageResponse(msg, atUser))
+            | _ when ctx.IsGroup -> x.SendResponse(GroupMessageResponse(msg, atUser, false, false, false, 0))
+            | _ when ctx.IsPrivate -> x.SendResponse(PrivateMessageResponse(msg))
             | _ -> raise <| InvalidOperationException("")
         | _ -> raise <| InvalidOperationException("")
 
     member x.QuickMessageReply(str : string, ?atUser : bool) =
-        let msg = new Message.Message()
+        let msg = new Message()
         msg.Add(str)
         x.QuickMessageReply(msg, defaultArg atUser false)

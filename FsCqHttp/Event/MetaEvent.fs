@@ -1,7 +1,8 @@
-﻿namespace KPX.FsCqHttp.DataType.Event.Meta
+﻿namespace KPX.FsCqHttp.Event
 
 open System
 open Newtonsoft.Json.Linq
+
 
 type MetaEvent = 
     /// WebSocket模式下不存在

@@ -12,7 +12,7 @@ open KPX.FsCqHttp.Utils.UserOption
 [<Literal>]
 let defaultServerKey = "defaultServerKey"
 
-type XivConfig (args : CommandArgs) = 
+type XivConfig (args : CommandEventArgs) = 
     let opts = UserOptionParser()
     let cm = ConfigManager(ConfigOwner.User (args.MessageEvent.UserId))
 

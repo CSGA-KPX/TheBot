@@ -6,8 +6,9 @@ open System.Drawing
 open System.IO
 open System.Text
 
-open KPX.FsCqHttp.DataType
+open KPX.FsCqHttp.Message
 open KPX.FsCqHttp.Api
+open KPX.FsCqHttp.Api.System
 
 open KPX.FsCqHttp.Handler
 
@@ -16,8 +17,8 @@ type ResponseType =
     | PreferImage
     | ForceText
 
-    member internal x.CanSendImage(args : ClientEventArgs) = 
-        let canSendImage = lazy (args.ApiCaller.CallApi<SystemApi.CanSendImage>().Can)
+    member internal x.CanSendImage(args : CqEventArgs) = 
+        let canSendImage = lazy (args.ApiCaller.CallApi<CanSendImage>().Can)
         match x with
         | ForceImage -> 
             if not canSendImage.Value then raise <| InvalidOperationException("")
@@ -25,7 +26,7 @@ type ResponseType =
         | ForceText -> false
         | PreferImage -> canSendImage.Value
 
-type TextResponse(args : ClientEventArgs, respType : ResponseType) = 
+type TextResponse(args : CqEventArgs, respType : ResponseType) = 
     inherit TextWriter()
 
     let mutable isUsed = false
@@ -137,7 +138,7 @@ type TextResponse(args : ClientEventArgs, respType : ResponseType) =
 
         if lines.Length <> 0 then
             use img = DrawLines(lines)
-            let message = Message.Message()
+            let message = Message()
             message.Add(img)
             args.QuickMessageReply(message)
 
@@ -153,7 +154,7 @@ type TextResponse(args : ClientEventArgs, respType : ResponseType) =
             if isUsed then
                 x.Flush()
             
-type ClientEventArgs with
+type CqEventArgs with
 
     /// 生成一个强制文本输出的TextResponse
     member x.OpenResponse() = new TextResponse(x, ForceText)

@@ -6,8 +6,9 @@ open System.Collections.Concurrent
 open System.Threading
 open System.Net.WebSockets
 
-open KPX.FsCqHttp.DataType
+open KPX.FsCqHttp.Event
 open KPX.FsCqHttp.Api
+open KPX.FsCqHttp.Api.System
 open KPX.FsCqHttp.Handler
 
 open Newtonsoft.Json.Linq
@@ -22,7 +23,7 @@ type CqWsContext(ws : WebSocket) =
     let started = new ManualResetEvent(false)
     let modules = List<HandlerModuleBase>()
     let cmdCache = Dictionary<string, _>()
-    let self = SystemApi.GetLoginInfo()
+    let self = GetLoginInfo()
 
     let rec getRootExn (exn : exn) = 
         if isNull exn.InnerException then exn
@@ -68,7 +69,7 @@ type CqWsContext(ws : WebSocket) =
             false
         else
             try
-                let ret = (x :> IApiCallProvider).CallApi<SystemApi.GetStatus>()
+                let ret = (x :> IApiCallProvider).CallApi<GetStatus>()
                 ret.Online && ret.Good
             with
             | _ -> false
@@ -92,10 +93,10 @@ type CqWsContext(ws : WebSocket) =
 
     member x.Stop() = cts.Cancel()
 
-    member private x.HandleEventPost(args : ClientEventArgs) = 
+    member private x.HandleEventPost(args : CqEventArgs) = 
         try
             match args.Event with
-            | Event.Message msgEvent ->
+            | MessageEvent msgEvent ->
                 let str = msgEvent.Message.ToString()
                 let endIdx = let idx = str.IndexOf(" ")
                              if idx = -1 then str.Length else idx
@@ -105,7 +106,7 @@ type CqWsContext(ws : WebSocket) =
                 // 没匹配再轮询
                 if cmdCache.ContainsKey(key) then
                     let (cmdModule, attr, method) = cmdCache.[key]
-                    let cmdArg = CommandArgs(args, msgEvent, attr)
+                    let cmdArg = CommandEventArgs(args, msgEvent, attr)
                     if KPX.FsCqHttp.Config.Logging.LogCommandCall then
                         logger.Info("Calling handler {0}\r\n Command Context {1}", method.Name, sprintf "%A" msgEvent)
                         method.Invoke(cmdModule, [| cmdArg |]) |> ignore
@@ -127,7 +128,7 @@ type CqWsContext(ws : WebSocket) =
                 args.QuickMessageReply(sprintf "内部错误：%s" rootExn.Message)
                 logger.Error(sprintf "捕获异常：\r\n %O" e)
 
-    member private x.HandleApiResponse(ret : Response.ApiResponse) = 
+    member private x.HandleApiResponse(ret : ApiResponse) = 
         let hasPending, item = apiPending.TryGetValue(ret.Echo)
         if hasPending then
             let (mre, api) = item
@@ -143,12 +144,12 @@ type CqWsContext(ws : WebSocket) =
         if obj.ContainsKey("post_type") then //消息上报
             if KPX.FsCqHttp.Config.Logging.LogEventPost then
                 logger.Trace(sprintf "%s收到上报：%s" x.SelfId logJson.Value)
-            x.HandleEventPost(ClientEventArgs(x, obj))
+            x.HandleEventPost(CqEventArgs(x, obj))
 
         elif obj.ContainsKey("retcode") then //API调用结果
             if KPX.FsCqHttp.Config.Logging.LogApiCall then
                 logger.Trace(sprintf "%s收到API调用结果： %s" x.SelfId logJson.Value)
-            x.HandleApiResponse(obj.ToObject<Response.ApiResponse>())
+            x.HandleApiResponse(obj.ToObject<ApiResponse>())
 
     member private x.StartMessageLoop() = 
         async {

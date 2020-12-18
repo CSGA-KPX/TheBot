@@ -6,9 +6,8 @@ open System.Net
 
 open Newtonsoft.Json.Linq
 
-open KPX.FsCqHttp
-open KPX.FsCqHttp.DataType.Event.Message
-open KPX.FsCqHttp.DataType.Message
+open KPX.FsCqHttp.Message
+open KPX.FsCqHttp.Api
 
 [<AutoOpen>]
 module private Constants = 
@@ -58,8 +57,8 @@ type DummyReverseClient(server, token) as x =
         x.AddApiResponse("get_login_info", {|``user_id`` = 10000; ``nickname`` = "Debug"|})
         x.AddApiResponse("can_send_image", {|``yes`` = true|})
 
-    member x.AddApiResponse<'T when 'T :> Api.ApiRequestBase>(obj : obj) = 
-        let api = Activator.CreateInstance(typeof<'T>) :?> Api.ApiRequestBase
+    member x.AddApiResponse<'T when 'T :> ApiRequestBase>(obj : obj) = 
+        let api = Activator.CreateInstance(typeof<'T>) :?> ApiRequestBase
         x.AddApiResponse(api.ActionName, obj)
 
     member x.AddApiResponse(str, obj) = apiResponse.Add(str, obj)

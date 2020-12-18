@@ -2,8 +2,11 @@
 
 open System
 
-open KPX.FsCqHttp.DataType
+open KPX.FsCqHttp.Message
+open KPX.FsCqHttp.Event
 open KPX.FsCqHttp.Handler
+
+open KPX.FsCqHttp.Api.Private
 
 open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.TextTable
@@ -17,12 +20,13 @@ open TheBot.Module.TRpgModule.TRpgUtils
 open TheBot.Module.TRpgModule.TRpgCharacterCard
 open TheBot.Module.TRpgModule.CardManager
 
+
 type TRpgModule() =
     inherit CommandHandlerBase()
 
     [<CommandHandlerMethodAttribute("coc7", "coc第七版", "", AltCommandStart = ".")>]
     [<CommandHandlerMethodAttribute("coc7", "coc第七版", "", IsHidden = true)>]
-    member x.HandleCoc7(msgArg : CommandArgs) =
+    member x.HandleCoc7(cmdArg : CommandEventArgs) =
         let attrs = [|  "力量", "3D6*5"
                         "体质", "3D6*5"
                         "体型", "(2D6+6)*5"
@@ -36,10 +40,10 @@ type TRpgModule() =
         let tt = TextTable("属性", "值")
 
         let seed = 
-            if msgArg.CommandAttrib.CommandStart = "." then
+            if cmdArg.CommandAttrib.CommandStart = "." then
                 Array.singleton SeedOption.SeedRandom
             else
-                SeedOption.SeedByUserDay(msgArg.MessageEvent)
+                SeedOption.SeedByUserDay(cmdArg.MessageEvent)
 
         let de = DiceExpression(Dicer(seed))
 
@@ -50,22 +54,22 @@ type TRpgModule() =
             tt.AddRow(name, d)
         tt.AddRow("总计", sum)
 
-        tt.AddPreTable(sprintf "%s的人物作成:" msgArg.MessageEvent.DisplayName)
+        tt.AddPreTable(sprintf "%s的人物作成:" cmdArg.MessageEvent.DisplayName)
 
         let job = de.Dicer.GetRandomItem(StringData.ChrJobs)
 
         tt.AddPostTable(sprintf "今日推荐职业：%s" job)
 
-        using (msgArg.OpenResponse()) (fun ret -> ret.Write(tt))
+        using (cmdArg.OpenResponse()) (fun ret -> ret.Write(tt))
 
     [<CommandHandlerMethodAttribute("sc", "理智检定 a/b san", "", AltCommandStart = ".")>]
-    member x.HandleSanCheck(msgArg : CommandArgs) = 
-        let args = msgArg.Arguments // 参数检查
-        if args.Length <> 2 then msgArg.AbortExecution(InputError, "此指令需要2个参数")
-        if not <| args.[0].Contains("/") then msgArg.AbortExecution(InputError, "参数1错误")
+    member x.HandleSanCheck(cmdArg : CommandEventArgs) = 
+        let args = cmdArg.Arguments // 参数检查
+        if args.Length <> 2 then cmdArg.AbortExecution(InputError, "此指令需要2个参数")
+        if not <| args.[0].Contains("/") then cmdArg.AbortExecution(InputError, "参数1错误")
 
         let parseSucc, currentSan = Int32.TryParse(args.[1])
-        if not parseSucc then msgArg.AbortExecution(InputError, "参数2错误")
+        if not parseSucc then cmdArg.AbortExecution(InputError, "参数2错误")
 
         let succ, fail = 
             let s = args.[0].Split("/")
@@ -84,14 +88,14 @@ type TRpgModule() =
             | _ -> 
                 "失败", de.Eval(fail).Sum |> int
 
-        use ret = msgArg.OpenResponse(ForceText)
+        use ret = cmdArg.OpenResponse(ForceText)
         ret.WriteLine("1D100 = {0}：{1}", check, status)
         ret.WriteLine("San值减少{0}点，当前剩余{1}点。", lose, max 0 (currentSan - lose))
 
     [<CommandHandlerMethodAttribute("rd", ".r 1D100缩写", "", AltCommandStart = ".")>]
     [<CommandHandlerMethodAttribute("rh", "常规暗骰", "", AltCommandStart = ".")>]
     [<CommandHandlerMethodAttribute("r", "常规骰点", "", AltCommandStart = ".")>]
-    member x.HandleDice(msgArg : CommandArgs) =
+    member x.HandleDice(cmdArg : CommandEventArgs) =
         let parser = DiceExpression()
 
         let operators =
@@ -100,63 +104,63 @@ type TRpgModule() =
             |> set
 
         let expr, reason = 
-            match msgArg.CommandName, msgArg.Arguments.Length with
+            match cmdArg.CommandName, cmdArg.Arguments.Length with
             | "rd", 0 -> "1D100", "--"
-            | "rd", _ -> "1D100", String.Join(" ", msgArg.Arguments)
+            | "rd", _ -> "1D100", String.Join(" ", cmdArg.Arguments)
 
             | "r", 0 | "rh", 0 ->
                 "1D100", "--"
             | "r", 1 | "rh", 1 ->
-                let arg = msgArg.Arguments.[0]
+                let arg = cmdArg.Arguments.[0]
                 if arg |> String.forall (fun c -> operators.Contains(c)) then
                     arg, "--"
                 else
                     "1D100", arg
 
-            | _ -> msgArg.Arguments.[0], String.Join(" ", msgArg.Arguments.[1..])
+            | _ -> cmdArg.Arguments.[0], String.Join(" ", cmdArg.Arguments.[1..])
 
         match parser.TryEval(expr) with
-        | Error e -> msgArg.QuickMessageReply(sprintf "对 %s 求值失败：%s" expr e.Message)
+        | Error e -> cmdArg.QuickMessageReply(sprintf "对 %s 求值失败：%s" expr e.Message)
         | Ok i ->
-            let msg = sprintf "%s 对 %s 投掷出%s = %O" msgArg.MessageEvent.DisplayName reason expr i
-            if msgArg.CommandName = "rh" then
-                let ret = Message.Message()
+            let msg = sprintf "%s 对 %s 投掷出%s = %O" cmdArg.MessageEvent.DisplayName reason expr i
+            if cmdArg.CommandName = "rh" then
+                let ret = Message()
                 ret.Add(msg)
-                let api = KPX.FsCqHttp.Api.MsgApi.SendPrivateMsg(msgArg.MessageEvent.UserId, ret)
-                msgArg.ApiCaller.CallApi(api)
+                let api = SendPrivateMsg(cmdArg.MessageEvent.UserId, ret)
+                cmdArg.ApiCaller.CallApi(api)
             else
-                msgArg.QuickMessageReply(msg)
+                cmdArg.QuickMessageReply(msg)
 
 
     [<CommandHandlerMethodAttribute("li", "总结疯狂症状", "", AltCommandStart = ".")>]
     [<CommandHandlerMethodAttribute("ti", "临时疯狂症状", "", AltCommandStart = ".")>]
-    member x.HandleTemporaryInsanity(msgArg : CommandArgs) = 
+    member x.HandleTemporaryInsanity(cmdArg : CommandEventArgs) = 
         let de = DiceExpression(Dicer.RandomDicer)
 
         let key = 
-            match msgArg.CommandName with
+            match cmdArg.CommandName with
             | "li" -> StringData.Key_LI
             | "ti" -> StringData.Key_TI
             | unk -> failwithf "不应匹配到的命令名:%s" unk
 
         let tmpl = de.Dicer.GetRandomItem(StringData.GetLines(key))
-        msgArg.QuickMessageReply(ParseTemplate(tmpl, de))
+        cmdArg.QuickMessageReply(ParseTemplate(tmpl, de))
         
     [<CommandHandlerMethodAttribute("bg", "", "", AltCommandStart = ".")>]
-    member x.HandleChrBackground(msgArg : CommandArgs) =
+    member x.HandleChrBackground(cmdArg : CommandEventArgs) =
         let template = StringData.GetString(StringData.Key_ChrBackground)
         let ret = ParseTemplate(template, DiceExpression(Dicer.RandomDicer))
-        msgArg.QuickMessageReply(ret)
+        cmdArg.QuickMessageReply(ret)
 
 
     [<CommandHandlerMethodAttribute("st", "设置人物卡", "", AltCommandStart = ".", IsHidden = true)>]
-    member x.HandleDiceST(msgArg : CommandArgs) =
-        msgArg.EnsureSenderOwner()
+    member x.HandleDiceST(cmdArg : CommandEventArgs) =
+        cmdArg.EnsureSenderOwner()
         
         let rx = Text.RegularExpressions.Regex(@"([^\s\|0-9]+)([0-9]+)")
-        let input = String.Join("", msgArg.Arguments)
+        let input = String.Join("", cmdArg.Arguments)
         let chr = { CharacterCard.Id = 0L
-                    CharacterCard.UserId = msgArg.MessageEvent.UserId
+                    CharacterCard.UserId = cmdArg.MessageEvent.UserId
                     CharacterCard.ChrName = "无名氏"
                     CharacterCard.Props = Collections.Generic.Dictionary<string, int>()}
 
@@ -169,73 +173,73 @@ type TRpgModule() =
             let prop = name |> Coc7.MapCoc7SkillName
             chr.[prop] <- m.Groups.[2].Value |> int
         
-        let cardCount = CountUserCard(msgArg.MessageEvent.UserId)
+        let cardCount = CountUserCard(cmdArg.MessageEvent.UserId)
         if cardCount > MAX_USER_CARDS then
-            msgArg.AbortExecution(InputError, "人物卡数量上限，你已经有{0}张，上限为{1}张。", cardCount, MAX_USER_CARDS)
+            cmdArg.AbortExecution(InputError, "人物卡数量上限，你已经有{0}张，上限为{1}张。", cardCount, MAX_USER_CARDS)
 
         if CardExists(chr) then
-            msgArg.AbortExecution(InputError, "存在尚未命名的人物卡，请命名后再创建")
+            cmdArg.AbortExecution(InputError, "存在尚未命名的人物卡，请命名后再创建")
 
         InsertCard(chr)
 
-        using (msgArg.OpenResponse(ForceImage)) (fun ret -> 
+        using (cmdArg.OpenResponse(ForceImage)) (fun ret -> 
             let tt = chr.ToTextTable()
             tt.AddPreTable("已保存人物卡：")
             ret.Write(tt) )
 
     [<CommandHandlerMethodAttribute("pc", "人物卡管理", "", AltCommandStart = ".", IsHidden = true)>]
-    member x.HandlePC(msgArg : CommandArgs) = 
-        match msgArg.Arguments |> Array.tryItem 0 with
-        | None -> msgArg.QuickMessageReply("list/use/rename")
+    member x.HandlePC(cmdArg : CommandEventArgs) = 
+        match cmdArg.Arguments |> Array.tryItem 0 with
+        | None -> cmdArg.QuickMessageReply("list/use/rename")
         | Some(cmd) ->
             match cmd.ToLowerInvariant() with
 
             | "list" ->
-                let cards = msgArg.GetChrCards()
+                let cards = cmdArg.GetChrCards()
                 use ret = new IO.StringWriter()
                 if cards.Length = 0 then
                     ret.WriteLine("没有已录入的角色卡")
                 else
-                    ret.WriteLine("{0} 当前角色卡有：", msgArg.MessageEvent.DisplayName)
+                    ret.WriteLine("{0} 当前角色卡有：", cmdArg.MessageEvent.DisplayName)
                     for card in cards do ret.WriteLine(card.ChrName)
-                msgArg.QuickMessageReply(ret.ToString())
+                cmdArg.QuickMessageReply(ret.ToString())
 
             | "use" ->
-                let cardName = msgArg.Arguments |> Array.tryItem 1
-                if cardName.IsNone then msgArg.AbortExecution(InputError, "缺少参数：角色卡")
-                let card = msgArg.GetChrCards() |> Array.tryFind (fun c -> c.ChrName = cardName.Value)
-                if card.IsNone then msgArg.AbortExecution(InputError, "没有找到名字为{0}的角色卡", cardName.Value)
-                SetCurrentCard(msgArg.MessageEvent.UserId, card.Value)
-                msgArg.QuickMessageReply("已设置")
+                let cardName = cmdArg.Arguments |> Array.tryItem 1
+                if cardName.IsNone then cmdArg.AbortExecution(InputError, "缺少参数：角色卡")
+                let card = cmdArg.GetChrCards() |> Array.tryFind (fun c -> c.ChrName = cardName.Value)
+                if card.IsNone then cmdArg.AbortExecution(InputError, "没有找到名字为{0}的角色卡", cardName.Value)
+                SetCurrentCard(cmdArg.MessageEvent.UserId, card.Value)
+                cmdArg.QuickMessageReply("已设置")
 
             | "rename" ->
-                let cardName = msgArg.Arguments |> Array.tryItem 1
-                let current  = msgArg.GetChrCard()
+                let cardName = cmdArg.Arguments |> Array.tryItem 1
+                let current  = cmdArg.GetChrCard()
                 UpsertCard({current with ChrName = cardName.Value})
-                msgArg.QuickMessageReply("已保存")
+                cmdArg.QuickMessageReply("已保存")
 
             | "copy" ->
                 let cardName =
-                    msgArg.Arguments
+                    cmdArg.Arguments
                     |> Array.tryItem 1
                     |> Option.defaultValue "新建人物卡"
-                let current  = msgArg.GetChrCard()
+                let current  = cmdArg.GetChrCard()
                 InsertCard({current with Id = 0L; ChrName = cardName})
-                msgArg.QuickMessageReply(sprintf "已将%s复制到%s" current.ChrName cardName)
+                cmdArg.QuickMessageReply(sprintf "已将%s复制到%s" current.ChrName cardName)
 
             | "show" ->
-                let current  = msgArg.GetChrCard()
-                using (msgArg.OpenResponse(ForceImage)) (fun ret -> ret.Write(current.ToTextTable()))
+                let current  = cmdArg.GetChrCard()
+                using (cmdArg.OpenResponse(ForceImage)) (fun ret -> ret.Write(current.ToTextTable()))
 
             | "clr" -> // 删除当前角色卡
-                let current  = msgArg.GetChrCard()
+                let current  = cmdArg.GetChrCard()
                 RemoveCard(current)
-                msgArg.QuickMessageReply("已删除")
+                cmdArg.QuickMessageReply("已删除")
 
             | "nuke" -> //删除所有角色卡
-                for card in msgArg.GetChrCards() do
+                for card in cmdArg.GetChrCards() do
                     RemoveCard(card)
-                msgArg.QuickMessageReply("Booom!")
+                cmdArg.QuickMessageReply("Booom!")
 
             | _ -> 
-                msgArg.QuickMessageReply("未知子命令")
+                cmdArg.QuickMessageReply("未知子命令")

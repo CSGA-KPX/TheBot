@@ -1,16 +1,15 @@
 ﻿module TheBot.Module.DiceModule.Utils
 
 open System
+
 open KPX.FsCqHttp.Api
-open KPX.FsCqHttp.DataType
-open KPX.FsCqHttp.Utils.TextTable
 
 open TheBot.Utils.GenericRPN
 open TheBot.Utils.Dicer
 
+
 module ChoiceHelper =
     open System.Text.RegularExpressions
-    open System.Collections.Generic
 
     let YesOrNoRegex = Regex("(.*)(.+)([没不]\2)(.*)", RegexOptions.Compiled)
 

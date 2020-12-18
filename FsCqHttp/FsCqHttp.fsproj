@@ -10,20 +10,45 @@
 
   <ItemGroup>
     <Compile Include="Config.fs" />
-    <Compile Include="DateType\MessageSection.fs" />
-    <Compile Include="DateType\Message.fs" />
-    <Compile Include="DateType\EventResponse.fs" />
-    <Compile Include="DateType\ApiResponse.fs" />
-    <Compile Include="DateType\Event\NoticeEvent.fs" />
-    <Compile Include="DateType\Event\MesssageEvent.fs" />
-    <Compile Include="DateType\Event\RequestEvent.fs" />
-    <Compile Include="DateType\Event\MetaEvent.fs" />
-    <Compile Include="DateType\Event\Event.fs" />
+    <Compile Include="Message\MessageSection.fs" />
+    <Compile Include="Message\Message.fs" />
+    <Compile Include="Event\NoticeEventTypes.fs" />
+    <Compile Include="Event\NoticeEvent.fs" />
+    <Compile Include="Event\MessageEventTypes.fs" />
+    <Compile Include="Event\MesssageEvent.fs" />
+    <Compile Include="Event\RequestEventTypes.fs" />
+    <Compile Include="Event\RequestEvent.fs" />
+    <Compile Include="Event\MetaEvent.fs" />
+    <Compile Include="Event\Event.fs" />
+    <Compile Include="Event\EventResponse.fs" />
+    <Compile Include="Api\ApiResponse.fs" />
     <Compile Include="Api\ApiBase.fs" />
-    <Compile Include="Api\SystemApi.fs" />
-    <Compile Include="Api\MsgApi.fs" />
-    <Compile Include="Api\GroupApi.fs" />
-    <Compile Include="Api\Request.fs" />
+    <Compile Include="Api\System\QuickOperation.fs" />
+    <Compile Include="Api\System\GetLoginInfo.fs" />
+    <Compile Include="Api\System\GetStatus.fs" />
+    <Compile Include="Api\System\GetVersionInfo.fs" />
+    <Compile Include="Api\System\CanSend.fs" />
+    <Compile Include="Api\System\SendMsg.fs" />
+    <Compile Include="Api\System\RevokeMsg.fs" />
+    <Compile Include="Api\Private\GetStrangerInfo.fs" />
+    <Compile Include="Api\Private\SetFriendAddRequest.fs" />
+    <Compile Include="Api\Private\SendPrivateMsg.fs" />
+    <Compile Include="Api\Group\SendGroupMsg.fs" />
+    <Compile Include="Api\Group\SendDiscussMsg.fs" />
+    <Compile Include="Api\Group\GetGroupList.fs" />
+    <Compile Include="Api\Group\GetGroupMemberInfo.fs" />
+    <Compile Include="Api\Group\GetGroupMemberList.fs" />
+    <Compile Include="Api\Group\SetGroupAddRequest.fs" />
+    <Compile Include="Api\Group\SetGroupKick.fs" />
+    <Compile Include="Api\Group\SetGroupBan.fs" />
+    <Compile Include="Api\Group\SetGroupAnonymousBan.fs" />
+    <Compile Include="Api\Group\SetGroupWholeBan.fs" />
+    <Compile Include="Api\Group\SetGroupAdmin.fs" />
+    <Compile Include="Api\Group\SetGroupAnonymous.fs" />
+    <Compile Include="Api\Group\SetGroupCard.fs" />
+    <Compile Include="Api\Group\SetGroupLeave.fs" />
+    <Compile Include="Api\Group\SetGroupSpecialTitle.fs" />
+    <Compile Include="Api\Group\SetDiscussLeave.fs" />
     <Compile Include="Handler\ClientEventArgs.fs" />
     <Compile Include="Handler\HandlerBase.fs" />
     <Compile Include="Handler\CommandHandler.fs" />
@@ -43,11 +68,6 @@
     <PackageReference Include="System.Drawing.Common" Version="4.7.0" />
     <PackageReference Include="System.Drawing.Primitives" Version="4.3.0" />
     <PackageReference Include="System.Net.WebSockets.Client" Version="4.3.2" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Api\Group\" />
-    <Folder Include="Api\SendMsg\" />
   </ItemGroup>
 
   <ItemGroup>

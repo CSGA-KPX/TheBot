@@ -2,7 +2,7 @@
 
 open System.Reflection
 
-open KPX.FsCqHttp.DataType
+open KPX.FsCqHttp.Event
 
 [<AbstractClass>]
 type HandlerModuleBase() as x =
@@ -15,18 +15,18 @@ type HandlerModuleBase() as x =
 
     member val Logger = NLog.LogManager.GetLogger(x.GetType().Name)
 
-    abstract HandleMessage : ClientEventArgs * Event.Message.MessageEvent -> unit
-    abstract HandleRequest : ClientEventArgs * Event.Request.RequestEvent -> unit
-    abstract HandleNotice : ClientEventArgs * Event.Notice.NoticeEvent -> unit
+    abstract HandleMessage : CqEventArgs * MessageEvent -> unit
+    abstract HandleRequest : CqEventArgs * RequestEvent -> unit
+    abstract HandleNotice : CqEventArgs * NoticeEvent -> unit
 
     default x.HandleMessage(_, _) = ()
     default x.HandleRequest(_, _) = ()
     default x.HandleNotice(_, _) = ()
 
-    abstract HandleCqHttpEvent : ClientEventArgs -> unit
+    abstract HandleCqHttpEvent : CqEventArgs -> unit
     default x.HandleCqHttpEvent(args)=
         match args.Event with
-        | Event.CqHttpEvent.Message y -> x.HandleMessage(args, y)
-        | Event.CqHttpEvent.Request y -> x.HandleRequest(args, y)
-        | Event.CqHttpEvent.Notice y -> x.HandleNotice(args, y)
-        | Event.CqHttpEvent.Meta _ -> ()
+        | MessageEvent y -> x.HandleMessage(args, y)
+        | RequestEvent y -> x.HandleRequest(args, y)
+        | NoticeEvent y -> x.HandleNotice(args, y)
+        | MetaEvent _ -> ()

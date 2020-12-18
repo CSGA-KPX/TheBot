@@ -1,4 +1,4 @@
-﻿namespace KPX.FsCqHttp.DataType.Message.Sections
+﻿namespace KPX.FsCqHttp.Message.Sections
 
 open System
 open System.Collections.Generic

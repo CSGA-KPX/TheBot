@@ -1,9 +1,11 @@
-namespace KPX.FsCqHttp.DataType.Response
+namespace KPX.FsCqHttp.Api
 
 open System
 open System.Collections.Generic
+
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
+
 
 type ApiRetCode =
     | OK = 0

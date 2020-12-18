@@ -1,17 +1,18 @@
-namespace KPX.FsCqHttp.DataType.Response
+namespace KPX.FsCqHttp.Event
 
-open KPX.FsCqHttp.DataType
 open System
-open System.IO
-open System.Text
+
 open Newtonsoft.Json
+
+open KPX.FsCqHttp.Message
+
 
 [<JsonConverter(typeof<EventResponseConverter>)>]
 type EventResponse =
     | EmptyResponse
-    | PrivateMessageResponse of reply : Message.Message
-    | GroupMessageResponse of reply : Message.Message * at_sender : bool * delete : bool * kick : bool * ban : bool * ban_duration : int
-    | DiscusMessageResponse of reply : Message.Message * at_sender : bool
+    | PrivateMessageResponse of reply : Message
+    | GroupMessageResponse of reply : Message * at_sender : bool * delete : bool * kick : bool * ban : bool * ban_duration : int
+    | DiscusMessageResponse of reply : Message * at_sender : bool
     | FriendAddResponse of approve : bool * remark : string
     | GroupAddResponse of approve : bool * reason : string
 

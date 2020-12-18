@@ -3,7 +3,9 @@ namespace KPX.FsCqHttp.Api
 open System
 open System.IO
 open System.Text
+
 open Newtonsoft.Json
+
 
 [<AbstractClass>]
 type ApiRequestBase(action : string) as x =
@@ -37,7 +39,7 @@ type ApiRequestBase(action : string) as x =
         w.WriteEndObject()
         sb.ToString()
 
-    abstract HandleResponse : KPX.FsCqHttp.DataType.Response.ApiResponse -> unit
+    abstract HandleResponse : ApiResponse -> unit
 
     /// 写入Params对象内
     abstract WriteParams : JsonTextWriter * JsonSerializer -> unit
@@ -57,7 +59,6 @@ type ApiRequestBase(action : string) as x =
             sb.AppendFormat("{0} => {1}\r\n", prop.Name, prop.GetValue(x)) |> ignore
         sb.AppendLine("".PadRight(header.Length, '-')) |> ignore
         sb.ToString()
-
 
 type IApiCallProvider = 
     

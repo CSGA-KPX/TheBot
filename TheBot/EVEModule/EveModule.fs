@@ -11,7 +11,6 @@ open BotData.EveData.Utils
 open BotData.EveData.EveType
 open BotData.EveData.Process
 
-open TheBot.Utils.HandlerUtils
 open TheBot.Utils.RecipeRPN
 
 open TheBot.Module.EveModule.Utils.Helpers
@@ -19,19 +18,20 @@ open TheBot.Module.EveModule.Utils.Config
 open TheBot.Module.EveModule.Utils.Data
 open TheBot.Module.EveModule.Utils.Extensions
 
+
 type EveModule() =
     inherit CommandHandlerBase()
 
     let data = DataBundle.Instance
     let pm = EveProcessManager.Default
 
-    let ToolWarning = "价格有延迟，算法不稳定，市场有风险, 投资需谨慎"
+    let ToolWarning = "结果仅供参考。本工具不计算行星进出口税，项目费用取近似值。"
     let er = EveExpression.EveExpression()
 
     [<CommandHandlerMethodAttribute("eveLp", "EVE LP兑换计算", "#evelp 军团名")>]
-    member x.HandleEveLp(msgArg : CommandArgs) =
+    member x.HandleEveLp(cmdArg : CommandEventArgs) =
         let cfg = Utils.LpUtils.LpConfigParser()
-        cfg.Parse(msgArg.Arguments)
+        cfg.Parse(cmdArg.Arguments)
 
         let tt = TextTable("兑换", RightAlignCell "利润", RightAlignCell "利润/LP", RightAlignCell "日均交易")
         
@@ -82,18 +82,18 @@ type EveModule() =
         |> Array.iter (fun r ->
             tt.AddRow(r.Name, r.Profit |> floor, r.ProfitPerLp |> floor, r.Volume |> floor))
 
-        using (msgArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))
+        using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))
 
     [<CommandHandlerMethodAttribute("eve矿物", "查询矿物价格", "")>]
     [<CommandHandlerMethodAttribute("em", "查询物品价格", "")>]
-    member x.HandleEveMarket(msgArg : CommandArgs) =
+    member x.HandleEveMarket(cmdArg : CommandEventArgs) =
         let mutable argOverride = None
-        if msgArg.CommandName = "eve矿物" then
+        if cmdArg.CommandName = "eve矿物" then
             argOverride <- Some(MineralNames.Replace(',', '+'))
         let t =
             let str =
                 if argOverride.IsSome then argOverride.Value
-                else String.Join(" ", msgArg.Arguments)
+                else String.Join(" ", cmdArg.Arguments)
             er.Eval(str)
 
         let att = Utils.MarketUtils.EveMarketPriceTable()
@@ -101,22 +101,22 @@ type EveModule() =
         | Accumulator a ->
             for mr in a do 
                 att.AddObject(mr.Item, mr.Quantity)
-        | _ -> msgArg.AbortExecution(InputError, sprintf "求值失败，结果是%A" t)
+        | _ -> cmdArg.AbortExecution(InputError, sprintf "求值失败，结果是%A" t)
 
         let cfg = EveConfigParser()
-        cfg.Parse(msgArg.Arguments)
-        using (msgArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(att))
+        cfg.Parse(cmdArg.Arguments)
+        using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(att))
 
     [<CommandHandlerMethodAttribute("eme", "EVE蓝图材料效率计算", "")>]
-    member x.HandleME(msgArg : CommandArgs) =
+    member x.HandleME(cmdArg : CommandEventArgs) =
         let cfg = EveConfigParser()
-        cfg.Parse(msgArg.Arguments)
+        cfg.Parse(cmdArg.Arguments)
 
         let item = data.TryGetItem(cfg.CmdLineAsString)
-        if item.IsNone then msgArg.AbortExecution(InputError, "找不到物品：{0}", cfg.CmdLineAsString)
+        if item.IsNone then cmdArg.AbortExecution(InputError, "找不到物品：{0}", cfg.CmdLineAsString)
 
         let proc0 = pm.TryGetRecipeMe(item.Value, ByRun 1.0, 0)
-        if proc0.IsNone then msgArg.AbortExecution(InputError, "找不到蓝图：{0}", cfg.CmdLineAsString)
+        if proc0.IsNone then cmdArg.AbortExecution(InputError, "找不到蓝图：{0}", cfg.CmdLineAsString)
 
         let me0Price = proc0.Value.GetTotalMaterialPrice(PriceFetchMode.Sell)
 
@@ -129,19 +129,19 @@ type EveModule() =
             let save = me0Price - cost |> ceil
             tt.AddRow(me, save)
 
-        using (msgArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))
+        using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))
 
     [<CommandHandlerMethodAttribute("er", "EVE蓝图材料计算（可用表达式）", "")>]
-    member x.HandleR(msgArg : CommandArgs) =
+    member x.HandleR(cmdArg : CommandEventArgs) =
         let cfg = EveConfigParser()
-        cfg.Parse(msgArg.Arguments)
+        cfg.Parse(cmdArg.Arguments)
 
         let final = ItemAccumulator<EveType>()
         let tt = TextTable("名称", "数量")
         tt.AddPreTable(sprintf "输入效率：%i%% "cfg.InputMe)
         match er.Eval(cfg.CmdLineAsString) with
         | Number n ->
-            msgArg.AbortExecution(InputError, "结算结果为数字: {0}", n)
+            cmdArg.AbortExecution(InputError, "结算结果为数字: {0}", n)
         | Accumulator a ->
             let pm = EveProcessManager(cfg)
             for mr in a do 
@@ -157,17 +157,17 @@ type EveModule() =
                     // 已有材料需要扣除
                     final.Update(mr)
                 | _ -> 
-                    msgArg.AbortExecution(ModuleError, "不知道如何处理：{0} * {1}", mr.Item.Name, mr.Quantity)
+                    cmdArg.AbortExecution(ModuleError, "不知道如何处理：{0} * {1}", mr.Item.Name, mr.Quantity)
 
         for mr in final do 
             tt.AddRow(mr.Item.Name, mr.Quantity)
 
-        using (msgArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))
+        using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))
 
     [<CommandHandlerMethodAttribute("err", "EVE蓝图材料计算（可用表达式）", "")>]
-    member x.HandleRR(msgArg : CommandArgs) =
+    member x.HandleRR(cmdArg : CommandEventArgs) =
         let cfg = EveConfigParser()
-        cfg.Parse(msgArg.Arguments)
+        cfg.Parse(cmdArg.Arguments)
 
         let final = ItemAccumulator<EveType>()
         let tt = TextTable("名称", "数量")
@@ -180,13 +180,13 @@ type EveModule() =
 
         match er.Eval(cfg.CmdLineAsString) with
         | Number n ->
-            msgArg.AbortExecution(InputError, "结算结果为数字: {0}", n)
+            cmdArg.AbortExecution(InputError, "结算结果为数字: {0}", n)
         | Accumulator a ->
             let pm = EveProcessManager(cfg)
             for mr in a do 
                 let proc = pm.TryGetRecipeRecMe(mr.Item, ByRun mr.Quantity)
                 if proc.IsNone then
-                    msgArg.AbortExecution(InputError, "找不到配方：{0}", mr.Item.Name)
+                    cmdArg.AbortExecution(InputError, "找不到配方：{0}", mr.Item.Name)
                 let finalProc = proc.Value.FinalProcess
                 let product = finalProc.Process.GetFirstProduct()
 
@@ -198,24 +198,24 @@ type EveModule() =
         for mr in final do 
             tt.AddRow(mr.Item.Name, mr.Quantity)
 
-        using (msgArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))
+        using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))
 
     [<CommandHandlerMethodAttribute("errc", "EVE蓝图成本计算（只计算一个物品）", "")>]
-    member x.HandleERRCV2(msgArg : CommandArgs) = 
+    member x.HandleERRCV2(cmdArg : CommandEventArgs) = 
         let cfg = EveConfigParser()
-        cfg.Parse(msgArg.Arguments)
+        cfg.Parse(cmdArg.Arguments)
 
         match er.Eval(cfg.CmdLineAsString) with
         | Number n ->
-            msgArg.AbortExecution(InputError, "结算结果为数字: {0}", n)
+            cmdArg.AbortExecution(InputError, "结算结果为数字: {0}", n)
         | Accumulator a ->
             let mr = a |> Seq.tryHead
             if mr.IsNone then
-                msgArg.AbortExecution(InputError, "没有可供计算的物品")
+                cmdArg.AbortExecution(InputError, "没有可供计算的物品")
             let pm = EveProcessManager(cfg)
             let proc = pm.TryGetRecipeMe(mr.Value.Item, ByRun mr.Value.Quantity)
             if proc.IsNone then
-                msgArg.AbortExecution(InputError, "找不到配方:{0}", mr.Value.Item.Name)
+                cmdArg.AbortExecution(InputError, "找不到配方:{0}", mr.Value.Item.Name)
 
             let tt = TextTable(LeftAlignCell "材料",
                                RightAlignCell "数量",
@@ -271,11 +271,11 @@ type EveModule() =
                                    RightAlignCell (HumanReadableFloat (sellWithTax - allCost)),
                                    RightAlignCell (HumanReadableFloat (sellWithTax - optCost)))
 
-            using (msgArg.OpenResponse(cfg.IsImageOutput)) (fun ret -> ret.Write(tt))
+            using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun ret -> ret.Write(tt))
 
     [<CommandHandlerMethodAttribute("EVE采矿", "EVE挖矿利润", "")>]
     [<CommandHandlerMethodAttribute("EVE挖矿", "EVE挖矿利润", "")>]
-    member x.HandleOreMining(msgArg : CommandArgs) =
+    member x.HandleOreMining(cmdArg : CommandEventArgs) =
         let mineSpeed = 10.0 // m^3/s
         let refineYield = 0.70
 
@@ -325,7 +325,7 @@ type EveModule() =
 
             tt.AddRow(eon, eop, ein, eip, emn, emp, etn, etp)
 
-        use ret = msgArg.OpenResponse(ForceImage)
+        use ret = cmdArg.OpenResponse(ForceImage)
         ret.Write(tt)
     
     [<CommandHandlerMethodAttribute("EVE舰船II", "T2舰船制造总览", "")>]
@@ -333,16 +333,16 @@ type EveModule() =
     [<CommandHandlerMethodAttribute("EVE组件", "T2和旗舰组件制造总览", "")>]
     [<CommandHandlerMethodAttribute("EVE种菜", "EVE种菜利润", "")>]
     [<CommandHandlerMethodAttribute("EVE装备II", "EVET2装备利润", "需要关键词")>]
-    member x.HandleManufacturingOverview(msgArg : CommandArgs) = 
+    member x.HandleManufacturingOverview(cmdArg : CommandEventArgs) = 
         let cfg = EveConfigParser()
         cfg.RegisterOption("by", "")
-        cfg.Parse(msgArg.Arguments)
+        cfg.Parse(cmdArg.Arguments)
 
-        use ret = msgArg.OpenResponse(cfg.IsImageOutput)
+        use ret = cmdArg.OpenResponse(cfg.IsImageOutput)
         ret.WriteLine(ToolWarning)
 
         let filterFunc : (EveProcess -> bool) = 
-            match msgArg.CommandName with // 注意小写匹配
+            match cmdArg.CommandName with // 注意小写匹配
             | "eve组件"  -> fun bp ->
                 (bp.Type = ProcessType.Manufacturing) 
                     && ( (bp.Process.GetFirstProduct().Item.GroupId = 334) // Tech2ComponentGroupId
@@ -387,7 +387,7 @@ type EveModule() =
                         && (allowCategoryId.Contains(bp.Process.GetFirstProduct().Item.CategoryId)) // 装备
                         && (bp.Process.GetFirstProduct().Item.MetaGroupId = 2) // T2
 
-            | other -> msgArg.AbortExecution(ModuleError, "不应发生匹配:{0}", other)
+            | other -> cmdArg.AbortExecution(ModuleError, "不应发生匹配:{0}", other)
 
 
         let pmStr = cfg.MaterialPriceMode.ToString()
@@ -435,11 +435,11 @@ type EveModule() =
 
 
     [<CommandHandlerMethodAttribute("evesci", "EVE星系成本指数查询", "")>]
-    member x.HandleSci(msgArg : CommandArgs) = 
+    member x.HandleSci(cmdArg : CommandEventArgs) = 
         let sc = BotData.EveData.SolarSystems.SolarSystemCollection.Instance
         let scc = BotData.EveData.SystemCostIndexCache.SystemCostIndexCollection.Instance
         let cfg = EveConfigParser()
-        cfg.Parse(msgArg.Arguments)
+        cfg.Parse(cmdArg.Arguments)
 
         let tt = TextTable("星系", "制造%", "材料%", "时间%", "拷贝%", "发明%", "反应%")
 
@@ -460,4 +460,4 @@ type EveModule() =
                                 100.0 * sci.Invention,
                                 100.0 * sci.Reaction)
 
-        using (msgArg.OpenResponse(cfg.IsImageOutput)) (fun ret -> ret.Write(tt))
+        using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun ret -> ret.Write(tt))

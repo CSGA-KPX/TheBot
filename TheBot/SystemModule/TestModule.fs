@@ -13,5 +13,5 @@ type TestModule() =
     inherit CommandHandlerBase()
 
     [<CommandHandlerMethodAttribute("test", "", "", IsHidden = true)>]
-        member x.HandleTest(msgArg : CommandArgs) =
+        member x.HandleTest(cmdArg : CommandEventArgs) =
             ()

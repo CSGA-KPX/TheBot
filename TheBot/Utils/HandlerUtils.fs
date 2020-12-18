@@ -11,7 +11,7 @@ let private instanceOwnerKey = "InstanceOwner"
 
 let private botAdminKey (uid : uint64) = sprintf "BotAdmins:%i" uid
 
-type ClientEventArgs with
+type CqEventArgs with
 
     member x.SetInstanceOwner(uid : uint64) = 
         ConfigManager.SystemConfig.Put(instanceOwnerKey, uid)
@@ -24,7 +24,7 @@ type ClientEventArgs with
         current.Add(uid) |> ignore
         ConfigManager.SystemConfig.Put(botAdminKey x.SelfId, current)
 
-type CommandArgs with
+type CommandEventArgs with
     
     /// 检查是否有群管理权限。包含群主或群管理员
     ///

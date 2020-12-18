@@ -1,58 +1,7 @@
-namespace KPX.FsCqHttp.Api.GroupApi
+﻿namespace KPX.FsCqHttp.Api.Group
 
-open KPX.FsCqHttp.DataType.Message
-open KPX.FsCqHttp.DataType.Response
 open KPX.FsCqHttp.Api
 
-type SetGroupKick() =
-    inherit ApiRequestBase("set_group_kick")
-
-    do raise <| System.NotImplementedException()
-
-type SetGroupBan() =
-    inherit ApiRequestBase("set_group_ban")
-
-    do raise <| System.NotImplementedException()
-
-type SetGroupAnonymousBan() =
-    inherit ApiRequestBase("set_group_anonymous_ban")
-
-    do raise <| System.NotImplementedException()
-
-type SetGroupWholeBan() =
-    inherit ApiRequestBase("set_group_whole_ban")
-
-    do raise <| System.NotImplementedException()
-
-type SetGroupAdmin() =
-    inherit ApiRequestBase("set_group_admin")
-
-    do raise <| System.NotImplementedException()
-
-type SetGroupAnonymous() =
-    inherit ApiRequestBase("set_group_anonymous")
-
-    do raise <| System.NotImplementedException()
-
-type SetGroupCard() =
-    inherit ApiRequestBase("set_group_card")
-
-    do raise <| System.NotImplementedException()
-
-type SetGroupLeave() =
-    inherit ApiRequestBase("set_group_leave")
-
-    do raise <| System.NotImplementedException()
-
-type SetGroupSpecialTitle() =
-    inherit ApiRequestBase("set_group_special_title")
-
-    do raise <| System.NotImplementedException()
-
-type SetDiscussLeave() =
-    inherit ApiRequestBase("set_discuss_leave")
-
-    do raise <| System.NotImplementedException()
 
 type GetGroupMemberInfo(groupId : uint64, userId : uint64, ?noCache : bool) =
     inherit ApiRequestBase("get_group_member_info")
@@ -107,8 +56,3 @@ type GetGroupMemberInfo(groupId : uint64, userId : uint64, ?noCache : bool) =
         x.Title <- r.Data.["title"]
         x.TitleExpireTime <- r.Data.["title_expire_time"] |> uint64
         x.CardChangeable <- r.Data.["card_changeable"] = "true"
-
-type GetGroupMemberList() =
-    inherit ApiRequestBase("get_group_member_list")
-
-    do raise <| System.NotImplementedException()

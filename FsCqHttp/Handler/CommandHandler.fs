@@ -1,8 +1,10 @@
 namespace KPX.FsCqHttp.Handler
 
 open System
-open KPX.FsCqHttp.DataType.Event
+
+open KPX.FsCqHttp.Event
 open KPX.FsCqHttp.Handler
+
 
 [<AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = true)>]
 type CommandHandlerMethodAttribute(command : string, desc, lh) =
@@ -34,8 +36,8 @@ type CommandHandlerMethodAttribute(command : string, desc, lh) =
             x.AltCommandStart
 
 // TODO: 处理AltCommandStart
-type CommandArgs(cqArg : ClientEventArgs, msg : Message.MessageEvent, attr : CommandHandlerMethodAttribute) =
-    inherit ClientEventArgs(cqArg)
+type CommandEventArgs(cqArg : CqEventArgs, msg : MessageEvent, attr : CommandHandlerMethodAttribute) =
+    inherit CqEventArgs(cqArg)
 
     let rawMsg = msg.Message.ToString()
     let cmdLine = rawMsg.Split([| ' ' |], StringSplitOptions.RemoveEmptyEntries)

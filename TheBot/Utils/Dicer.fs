@@ -1,7 +1,7 @@
 ﻿module TheBot.Utils.Dicer
 
 open System
-open KPX.FsCqHttp.DataType
+open KPX.FsCqHttp.Event
 
 let private cstOffset = TimeSpan.FromHours(8.0)
 let GetCstTime() = DateTimeOffset.UtcNow.ToOffset(cstOffset)
@@ -19,11 +19,11 @@ type SeedOption =
 
     static member GetSeedString(a : SeedOption []) = a |> Array.fold (fun str x -> str + (x.GetSeedString())) ""
 
-    static member SeedByUserDay(msg : Event.Message.MessageEvent) =
+    static member SeedByUserDay(msg : MessageEvent) =
         [| SeedDate
            SeedCustom(msg.UserId.ToString()) |]
 
-    static member SeedByAtUserDay(msg : Event.Message.MessageEvent) =
+    static member SeedByAtUserDay(msg : MessageEvent) =
         [| SeedDate
            SeedCustom
                (let at = msg.Message.GetAts()

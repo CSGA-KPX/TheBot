@@ -1,12 +1,11 @@
-namespace KPX.FsCqHttp.DataType.Message
+namespace KPX.FsCqHttp.Message
 
 open System
-open System.Collections.Generic
 
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 
-open KPX.FsCqHttp.DataType.Message.Sections
+open KPX.FsCqHttp.Message.Sections
 
 
 [<JsonConverter(typeof<MessageConverter>)>]

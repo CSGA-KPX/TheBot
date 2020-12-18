@@ -40,19 +40,19 @@ type XivMarketModule() =
         else item.Name
 
     [<CommandHandlerMethodAttribute("xivsrv", "设置默认查询的服务器", "")>]
-    member x.HandleXivDefSrv(msgArg : CommandArgs) =
-        let cfg = CommandUtils.XivConfig(msgArg)
+    member x.HandleXivDefSrv(cmdArg : CommandEventArgs) =
+        let cfg = CommandUtils.XivConfig(cmdArg)
         if cfg.IsWorldDefined then
-            let cm = ConfigManager(ConfigOwner.User (msgArg.MessageEvent.UserId))
+            let cm = ConfigManager(ConfigOwner.User (cmdArg.MessageEvent.UserId))
             let world = cfg.GetWorld()
             cm.Put(CommandUtils.defaultServerKey, world)
-            msgArg.QuickMessageReply(sprintf "%s的默认服务器设置为%s" msgArg.MessageEvent.DisplayName world.WorldName)
+            cmdArg.QuickMessageReply(sprintf "%s的默认服务器设置为%s" cmdArg.MessageEvent.DisplayName world.WorldName)
         else
-            msgArg.QuickMessageReply("没有指定服务器或服务器名称不正确")
+            cmdArg.QuickMessageReply("没有指定服务器或服务器名称不正确")
 
     [<CommandHandlerMethodAttribute("fm", "FF14市场查询", "")>]
-    member x.HandleXivMarket(msgArg : CommandArgs) =
-        let cfg = CommandUtils.XivConfig(msgArg)
+    member x.HandleXivMarket(cmdArg : CommandEventArgs) =
+        let cfg = CommandUtils.XivConfig(cmdArg)
         let worlds = cfg.GetWorlds()
 
         let tt = TextTable( LeftAlignCell "物品",
@@ -76,7 +76,7 @@ type XivMarketModule() =
         let padOnNan f = if Double.IsNaN(f) then padNumber else box f
 
         if acc.Count * worlds.Length >= 20 then
-            msgArg.AbortExecution(InputError, "查询数量超过上线")
+            cmdArg.AbortExecution(InputError, "查询数量超过上线")
 
         for world in worlds do 
             let mutable sumListingAll , sumListingHq= 0.0, 0.0
@@ -122,21 +122,21 @@ type XivMarketModule() =
                             .Add(padOnNan sumTradeAll)
                             .Add(padOnNan sumTradeHq)
                             .Add(padNumber))
-        using (msgArg.OpenResponse(cfg.IsImageOutput)) (fun ret -> ret.Write(tt))
+        using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun ret -> ret.Write(tt))
 
     [<CommandHandlerMethodAttribute("r", "根据表达式汇总多个物品的材料，不查询价格", "")>]
     [<CommandHandlerMethodAttribute("rr", "根据表达式汇总多个物品的基础材料，不查询价格", "")>]
     [<CommandHandlerMethodAttribute("rc", "计算物品基础材料成本", "物品Id或全名...")>]
     [<CommandHandlerMethodAttribute("rrc", "计算物品基础材料成本", "物品Id或全名...")>]
-    member _.GeneralRecipeCalculator(msgArg : CommandArgs) = 
-        let doCalculateCost = msgArg.CommandName = "rrc" || msgArg.CommandName = "rc"
+    member _.GeneralRecipeCalculator(cmdArg : CommandEventArgs) = 
+        let doCalculateCost = cmdArg.CommandName = "rrc" || cmdArg.CommandName = "rc"
         let materialFunc = 
-            if msgArg.CommandName = "rr" || msgArg.CommandName = "rrc" then
+            if cmdArg.CommandName = "rr" || cmdArg.CommandName = "rrc" then
                 fun (item : Item.ItemRecord) -> rm.TryGetRecipeRec(item, ByItem 1.0)
             else
                 fun (item : Item.ItemRecord) -> rm.TryGetRecipe(item)
 
-        let cfg = CommandUtils.XivConfig(msgArg)
+        let cfg = CommandUtils.XivConfig(cmdArg)
         let world = cfg.GetWorld()
 
         let tt = 
@@ -201,12 +201,12 @@ type XivMarketModule() =
             tt.AddRowFill("卖出价格", totalSell.Average )
             tt.AddRowFill("税前利润", (totalSell - sum).Average )
 
-        using (msgArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))
+        using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))
 
     [<CommandHandlerMethodAttribute("ssc", "计算部分道具兑换的价格", "兑换所需道具的名称或ID，只处理1个")>]
-    member x.HandleSSS(msgArg : CommandArgs) =
+    member x.HandleSSS(cmdArg : CommandEventArgs) =
         let sc = SpecialShop.SpecialShopCollection.Instance
-        let cfg = CommandUtils.XivConfig(msgArg)
+        let cfg = CommandUtils.XivConfig(cmdArg)
         let world = cfg.GetWorld()
         if cfg.CommandLine.Length = 0 then
             //回复所有可交易道具
@@ -226,15 +226,15 @@ type XivMarketModule() =
                     rb.AddRightAlign("--")
                       .AddLeftAlign("--") |> ignore
                 tt.AddRow(rb)
-            using (msgArg.OpenResponse(ForceImage)) (fun x -> x.Write(tt))
+            using (cmdArg.OpenResponse(ForceImage)) (fun x -> x.Write(tt))
         else
             let ret = strToItem(cfg.CommandLine.[0])
             match ret with
-            | None -> msgArg.AbortExecution(ModuleError, "找不到物品{0}", cfg.CommandLine.[0])
+            | None -> cmdArg.AbortExecution(ModuleError, "找不到物品{0}", cfg.CommandLine.[0])
             | Some reqi ->
                 let ia = sc.SearchByCostItemId(reqi.Id)
                 if ia.Length = 0 then
-                    msgArg.AbortExecution(InputError, "{0} 不能兑换道具", reqi.Name)
+                    cmdArg.AbortExecution(InputError, "{0} 不能兑换道具", reqi.Name)
                 let tt= TextTable("兑换物品", 
                                     RightAlignCell "价格", 
                                     RightAlignCell "最低", 
@@ -260,5 +260,5 @@ type XivMarketModule() =
                         .AddIf(notEmpty, lazy (market.LastUpdateTime())
                                        , def)
                     |> tt.AddRow
-                using (msgArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))
+                using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))
    

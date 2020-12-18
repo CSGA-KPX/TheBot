@@ -18,8 +18,8 @@ type DebugModule() =
     static let nlogMemoryTarget = NLog.LogManager.Configuration.FindTargetByName("memory") :?> NLog.Targets.MemoryTarget
 
     [<CommandHandlerMethodAttribute("#showconfig", "(超管) 返回配置信息", "", IsHidden = true)>]
-    member x.HandleShowConfig(msgArg : CommandArgs) =
-        msgArg.EnsureSenderOwner()
+    member x.HandleShowConfig(cmdArg : CommandEventArgs) =
+        cmdArg.EnsureSenderOwner()
 
         let cp = typeof<KPX.FsCqHttp.Config.ConfigPlaceholder>
         let prefix = cp.FullName.Replace(cp.Name, "")
@@ -39,18 +39,18 @@ type DebugModule() =
                 else
                     tt.AddRow(pname, "{复杂类型}")
 
-        using (msgArg.OpenResponse(PreferImage)) (fun ret -> ret.Write(tt))
+        using (cmdArg.OpenResponse(PreferImage)) (fun ret -> ret.Write(tt))
 
     [<CommandHandlerMethodAttribute("#setlog", "(超管) 设置日志设置", "event, api, command", IsHidden = true)>]
-    member x.HandleSetLogging(msgArg : CommandArgs) = 
-        msgArg.EnsureSenderOwner()
+    member x.HandleSetLogging(cmdArg : CommandEventArgs) = 
+        cmdArg.EnsureSenderOwner()
 
         let cfg = UserOptionParser()
         cfg.RegisterOption("event", Config.Logging.LogEventPost.ToString())
         cfg.RegisterOption("api", Config.Logging.LogApiCall.ToString())
         cfg.RegisterOption("command", Config.Logging.LogCommandCall.ToString())
 
-        cfg.Parse(msgArg.Arguments)
+        cfg.Parse(cmdArg.Arguments)
 
         let e = cfg.GetValue<bool>("event")
         let api = cfg.GetValue<bool>("api")
@@ -64,13 +64,13 @@ type DebugModule() =
                     Config.Logging.LogEventPost
                     Config.Logging.LogApiCall
                     Config.Logging.LogCommandCall
-        msgArg.QuickMessageReply(ret)
+        cmdArg.QuickMessageReply(ret)
 
     [<CommandHandlerMethodAttribute("#showlog", "(超管) 显示日志", "", IsHidden = true)>]
-    member x.HandleShowLogging(msgArg : CommandArgs) = 
-        msgArg.EnsureSenderOwner()
+    member x.HandleShowLogging(cmdArg : CommandEventArgs) = 
+        cmdArg.EnsureSenderOwner()
 
-        use ret = msgArg.OpenResponse(PreferImage)
+        use ret = cmdArg.OpenResponse(PreferImage)
         
         let logs = nlogMemoryTarget.Logs |> Seq.toArray
         

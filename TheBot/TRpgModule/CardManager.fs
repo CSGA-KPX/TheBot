@@ -49,7 +49,7 @@ let SetCurrentCard(uid, card : CharacterCard) =
 let CountUserCard (uid : uint64) =
     cardCol.Count(Query.EQ("UserId", BsonValue.op_Implicit(uid)))
 
-type CommandArgs with
+type CommandEventArgs with
     
     /// 获取发送用户的所有角色卡
     member x.GetChrCards() = 
