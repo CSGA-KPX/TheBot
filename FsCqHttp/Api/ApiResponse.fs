@@ -44,9 +44,9 @@ and ApiResponseConverter() =
 
     override x.WriteJson(_ : JsonWriter, _ : ApiResponse, _ : JsonSerializer) = raise<unit> <| NotImplementedException()
 
-    override x.ReadJson(r : JsonReader, _ : Type, _ : ApiResponse, _ : bool,
-                        _ : JsonSerializer) =
+    override x.ReadJson(r : JsonReader, _ : Type, _ : ApiResponse, _ : bool, _ : JsonSerializer) =
         let obj = JObject.Load(r)
+
         { Status = obj.["status"].Value<string>()
           ReturnCode = enum<ApiRetCode> (obj.["retcode"].Value<int32>())
           DataType =
@@ -61,6 +61,7 @@ and ApiResponseConverter() =
                   | JTokenType.Array -> yield (ApiResponse.ArrayDataKey, obj.["data"].ToString())
                   | JTokenType.Object ->
                       let child = obj.["data"].Value<JObject>()
+
                       for p in child.Properties() do
                           yield (p.Name, p.Value.ToString())
                   | JTokenType.Null -> ()

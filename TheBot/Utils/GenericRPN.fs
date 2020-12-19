@@ -37,19 +37,20 @@ type RPNToken<'T when 'T :> IOperand<'T>> =
 type GenericRPNParser<'Operand when 'Operand :> IOperand<'Operand>>(?OperatorEscapeChar : Char) =
     let opsDict =
         let defaultOps =
-                [| GenericOperator<'Operand>('(', -1, fun _ -> invalidOp "")
-                   GenericOperator<'Operand>(')', -1, fun _ -> invalidOp "")
-                   GenericOperator<'Operand>('+',  2, fun l r -> l.Add(r))
-                   GenericOperator<'Operand>('-',  2, fun l r -> l.Sub(r))
-                   GenericOperator<'Operand>('*',  3, fun l r -> l.Mul(r))
-                   GenericOperator<'Operand>('/',  3, fun l r -> l.Div(r)) |]
+            [| GenericOperator<'Operand>('(', -1, (fun _ -> invalidOp ""))
+               GenericOperator<'Operand>(')', -1, (fun _ -> invalidOp ""))
+               GenericOperator<'Operand>('+', 2, (fun l r -> l.Add(r)))
+               GenericOperator<'Operand>('-', 2, (fun l r -> l.Sub(r)))
+               GenericOperator<'Operand>('*', 3, (fun l r -> l.Mul(r)))
+               GenericOperator<'Operand>('/', 3, (fun l r -> l.Div(r))) |]
 
-        let col = 
+        let col =
             { new System.Collections.ObjectModel.KeyedCollection<char, GenericOperator<'Operand>>() with
-                member x.GetKeyForItem(item) = item.Char}
+                member x.GetKeyForItem(item) = item.Char }
 
         for op in defaultOps do
             col.Add(op)
+
         col
 
     /// 把字符串转换为操作数
@@ -59,39 +60,46 @@ type GenericRPNParser<'Operand when 'Operand :> IOperand<'Operand>>(?OperatorEsc
     member val OperatorEscape = defaultArg OperatorEscapeChar '\\'
 
     /// 获得操作符集合
-    /// 
+    ///
     /// 写入会破坏线程安全
     member x.Operatos = opsDict
 
-    member private x.SplitString(str : string) = 
+    member private x.SplitString(str : string) =
         let ret = List<_>()
         let sb = Text.StringBuilder()
-        for i = 0 to str.Length - 1 do 
+
+        for i = 0 to str.Length - 1 do
             let c = str.[i]
+
             if x.Operatos.Contains(c) then
-                let isEscaped = 
+                let isEscaped =
                     // 前一个字符还不能是转义符号
-                    if i = 0 then
-                        false // 第一个字符不可能被转义
-                    else
-                        str.[i-1] = x.OperatorEscape
+                    if i = 0 then false // 第一个字符不可能被转义
+                    else str.[i - 1] = x.OperatorEscape
+
                 if isEscaped then
                     // 删掉转义字符，然后添加
                     sb.Remove(sb.Length - 1, 1).Append(c) |> ignore
                 else
                     let token = sb.ToString()
                     sb.Clear() |> ignore
+
                     if not <| String.IsNullOrWhiteSpace(token) then ret.Add(x.Tokenize(token))
+
                     ret.Add(Operator x.Operatos.[c])
             else
                 sb.Append(c) |> ignore
+
         let last = sb.ToString()
+
         if not <| String.IsNullOrWhiteSpace(last) then ret.Add(x.Tokenize(last))
+
         ret.ToArray()
 
     member private x.InfixToPostfix(tokens : RPNToken<'Operand> []) =
         let stack = Stack<GenericOperator<'Operand>>()
         let output = Queue<RPNToken<'Operand>>()
+
         for token in tokens do
             match token with
             | Operand _ -> output.Enqueue(token)
@@ -99,32 +107,36 @@ type GenericRPNParser<'Operand when 'Operand :> IOperand<'Operand>>(?OperatorEsc
             | Operator o when o.IsRightParen ->
                 while not (stack.Peek().IsLeftParen) do
                     output.Enqueue(Operator(stack.Pop()))
+
                 if stack.Peek().IsLeftParen then stack.Pop() |> ignore
             | Operator o ->
-                while (stack.Count <> 0) && (stack.Peek().Precedence >= o.Precedence)
+                while (stack.Count <> 0)
+                      && (stack.Peek().Precedence >= o.Precedence)
                       && (not <| stack.Peek().IsLeftParen) do
                     output.Enqueue(Operator(stack.Pop()))
+
                 stack.Push(o)
+
         while stack.Count <> 0 do
             output.Enqueue(Operator(stack.Pop()))
+
         output |> Seq.toList
 
     member x.Eval(str) =
-        let rpn =
-            str
-            |> x.SplitString
-            |> x.InfixToPostfix
+        let rpn = str |> x.SplitString |> x.InfixToPostfix
 
         let stack = Stack<'Operand>()
+
         for token in rpn do
             match token with
             | Operand i -> stack.Push(i)
-            | Operator o when not o.IsBinary  ->
+            | Operator o when not o.IsBinary ->
                 let l = stack.Pop()
                 stack.Push(o.Func l l)
             | Operator o ->
                 let r, l = stack.Pop(), stack.Pop()
                 stack.Push(o.Func l r)
+
         stack.Pop()
 
     member x.TryEval(str : string) =

@@ -13,6 +13,4 @@ let Setup () =
             BotDataInitializer.ShrinkCache()
             BotDataInitializer.InitializeAllCollections()
             initCollection <- false
-    with
-    | e -> 
-        failwithf "%O" e
+    with e -> failwithf "%O" e

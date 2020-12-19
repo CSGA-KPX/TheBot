@@ -4,7 +4,9 @@ open System
 open KPX.FsCqHttp.Event
 
 let private cstOffset = TimeSpan.FromHours(8.0)
-let GetCstTime() = DateTimeOffset.UtcNow.ToOffset(cstOffset)
+
+let GetCstTime () =
+    DateTimeOffset.UtcNow.ToOffset(cstOffset)
 
 type SeedOption =
     | SeedDate
@@ -17,7 +19,9 @@ type SeedOption =
         | SeedRandom -> Guid.NewGuid().ToString()
         | SeedCustom s -> s
 
-    static member GetSeedString(a : SeedOption []) = a |> Array.fold (fun str x -> str + (x.GetSeedString())) ""
+    static member GetSeedString(a : SeedOption []) =
+        a
+        |> Array.fold (fun str x -> str + (x.GetSeedString())) ""
 
     static member SeedByUserDay(msg : MessageEvent) =
         [| SeedDate
@@ -25,18 +29,19 @@ type SeedOption =
 
     static member SeedByAtUserDay(msg : MessageEvent) =
         [| SeedDate
-           SeedCustom
-               (let at = msg.Message.GetAts()
-                if at.Length = 0 then raise <| InvalidOperationException("没有用户被At！")
-                else at.[0].ToString()) |]
+           SeedCustom(
+               let at = msg.Message.GetAts()
+
+               if at.Length = 0 then raise <| InvalidOperationException("没有用户被At！") else at.[0].ToString()
+           ) |]
 
 [<AbstractClass>]
 /// 确定性随机数生成器
-type private DRng(seed : byte []) = 
+type private DRng(seed : byte []) =
     static let utf8 = Text.Encoding.UTF8
 
-    let hash = Security.Cryptography.MD5.Create()
-                :> Security.Cryptography.HashAlgorithm
+    let hash =
+        Security.Cryptography.MD5.Create() :> Security.Cryptography.HashAlgorithm
 
     /// 用于计算hash的算法
     /// 此类型不能跨线程使用
@@ -55,39 +60,43 @@ type private DRng(seed : byte []) =
     member x.NextUInt64() = BitConverter.ToUInt64(x.GetBytes(), 0)
 
     member x.StringToUInt32(str : string) =
-        let hash = 
+        let hash =
             Array.append (x.GetBytes()) (utf8.GetBytes(str))
             |> x.HashAlgorithm.ComputeHash
+
         BitConverter.ToUInt32(hash, 0)
 
-type private ConstantDRng(seed) = 
+type private ConstantDRng(seed) =
     inherit DRng(seed)
 
     override x.GetBytes() = x.InitialSeed
 
-type private HashBasedDRng(seed) = 
+type private HashBasedDRng(seed) =
     inherit DRng(seed)
 
     let mutable hash = seed
 
-    let sync = obj()
+    let sync = obj ()
 
-    override x.GetBytes() = 
-        lock sync (fun () ->
-            hash <- x.HashAlgorithm.ComputeHash(hash)
-            hash )
+    override x.GetBytes() =
+        lock
+            sync
+            (fun () ->
+                hash <- x.HashAlgorithm.ComputeHash(hash)
+                hash)
 
 
 type Dicer private (rng : DRng) =
     static let utf8 = Text.Encoding.UTF8
     static let randomDicer = new Dicer(SeedRandom)
 
-    new (seed : SeedOption []) =
+    new(seed : SeedOption []) =
         let initSeed =
             seed
             |> SeedOption.GetSeedString
             |> utf8.GetBytes
             |> HashBasedDRng
+
         Dicer(initSeed)
 
     new(seed : SeedOption) = Dicer(Array.singleton seed)
@@ -96,21 +105,15 @@ type Dicer private (rng : DRng) =
     static member RandomDicer = randomDicer
 
     /// 生成一个新的骰子，其种子值不变
-    member x.Freeze() = 
-        rng.GetBytes()
-        |> ConstantDRng
-        |> Dicer
+    member x.Freeze() = rng.GetBytes() |> ConstantDRng |> Dicer
 
     /// 获得一个[1, faceNum]内的随机数
-    member x.GetRandom(faceNum : uint32) = 
-        rng.NextUInt32() % faceNum + 1u
-        |> int32
+    member x.GetRandom(faceNum : uint32) = rng.NextUInt32() % faceNum + 1u |> int32
 
     /// 将字符串str转换为[1, faceNum]内的随机数
-    member x.GetRandom(faceNum : uint32, str : string) = 
+    member x.GetRandom(faceNum : uint32, str : string) =
         let ret = rng.StringToUInt32(str)
-        ret % faceNum + 1u
-        |> int32
+        ret % faceNum + 1u |> int32
 
     /// 获得一组[1, faceNum]内的随机数，可能重复
     member x.GetRandomArray(faceNum, count) =
@@ -119,10 +122,12 @@ type Dicer private (rng : DRng) =
     /// 获得一组[1, faceNum]内的随机数，不重复
     member x.GetRandomArrayUnique(faceNum, count) =
         let tmp = Collections.Generic.HashSet<int>()
-        if count > (int faceNum) then 
-            raise <| ArgumentOutOfRangeException("不应超过可能数")
+
+        if count > (int faceNum) then raise <| ArgumentOutOfRangeException("不应超过可能数")
+
         while tmp.Count <> count do
             tmp.Add(x.GetRandom(faceNum)) |> ignore
+
         let ret = Array.zeroCreate<int> tmp.Count
         tmp.CopyTo(ret)
         ret
@@ -135,5 +140,6 @@ type Dicer private (rng : DRng) =
     /// 根据索引从数组获得随机项，不重复
     member x.GetRandomItems(srcArr : 'T [], count) =
         [| let faceNum = srcArr.Length |> uint32
+
            for i in x.GetRandomArrayUnique(faceNum, count) do
                yield srcArr.[i - 1] |]

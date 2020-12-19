@@ -25,4 +25,3 @@ type GetStrangerInfo(userid : uint64, ?noCache : bool) =
         x.NickName <- r.Data.["nickname"]
         x.Sex <- r.Data.["sex"]
         x.Age <- r.Data.["age"] |> int32
-

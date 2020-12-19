@@ -8,20 +8,18 @@ open BotData.XivData.Item
 
 
 [<AutoOpen>]
-module internal Utils = 
+module internal Utils =
     let inline convertInternalMaterial (i : RecipeMaterial<int32>) =
         { Item = ItemCollection.Instance.GetByKey(i.Item)
           Quantity = i.Quantity }
 
-    let convertInternalProcess (i : RecipeProcess<int>) = 
+    let convertInternalProcess (i : RecipeProcess<int>) =
         { Input = i.Input |> Array.map convertInternalMaterial
-          Output = i.Output |> Array.map convertInternalMaterial}
+          Output = i.Output |> Array.map convertInternalMaterial }
 
 [<CLIMutable>]
-type XivDbRecipe = 
+type XivDbRecipe =
     { Id : int
       Process : RecipeProcess<int> }
 
-    member x.CastProcess() = convertInternalProcess(x.Process)
-
-        
+    member x.CastProcess() = convertInternalProcess (x.Process)

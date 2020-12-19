@@ -2,10 +2,12 @@
 module KPX.FsCqHttp.Config
 
 /// 用于指示配置所在命名空间
-type ConfigPlaceholder = class end
+type ConfigPlaceholder =
+    class
+    end
 
 [<RequireQualifiedAccess>]
-module Logging = 
+module Logging =
     /// 是否记录事件上报
     let mutable LogEventPost = false
     /// 是否记录API调用
@@ -14,12 +16,12 @@ module Logging =
     let mutable LogCommandCall = true
 
 [<RequireQualifiedAccess>]
-module Command = 
+module Command =
     /// 主指令起始符
     let CommandStart = "#"
 
 [<RequireQualifiedAccess>]
-module Output = 
+module Output =
     open System.Text.RegularExpressions
 
     /// 文本回复下最长输出字符数
@@ -43,9 +45,9 @@ module Output =
         Regex(@"\p{IsBasicLatin}|\p{IsGeneralPunctuation}|±", RegexOptions.Compiled)
 
     [<RequireQualifiedAccess>]
-    module TextTable = 
+    module TextTable =
         let mutable CellPadding = "--"
-        
+
         /// 计算字符宽度
         let inline CharLen (c) =
             if CharDisplayLengthAdj.IsMatch(c.ToString()) then 1 else 2

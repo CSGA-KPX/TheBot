@@ -81,37 +81,37 @@ type FriendAddEvent =
       UserId : uint64 }
 
 /// 群消息撤回事件
-type GroupRecallEvent = 
-    {   [<JsonProperty("group_id")>]
-        GroupId : uint64
-        [<JsonProperty("user_id")>]
-        UserId : uint64
-        [<JsonProperty("operator_id")>]
-        OperatorId : uint64
-        [<JsonProperty("message_id")>]
-        MessageId : int64 }
+type GroupRecallEvent =
+    { [<JsonProperty("group_id")>]
+      GroupId : uint64
+      [<JsonProperty("user_id")>]
+      UserId : uint64
+      [<JsonProperty("operator_id")>]
+      OperatorId : uint64
+      [<JsonProperty("message_id")>]
+      MessageId : int64 }
 
 /// 好友消息撤回事件
-type FriendRecallEvent = 
-    {   [<JsonProperty("user_id")>]
-        UserId : uint64
-        [<JsonProperty("message_id")>]
-        MessageId : int64 }
-        
+type FriendRecallEvent =
+    { [<JsonProperty("user_id")>]
+      UserId : uint64
+      [<JsonProperty("message_id")>]
+      MessageId : int64 }
+
 /// 群禁言事件
-type GroupBanEvent = 
-    {   [<JsonProperty("sub_type")>]
-        SubType : string
-        [<JsonProperty("group_id")>]
-        GroupId : uint64
-        [<JsonProperty("operator_id")>]
-        OperatorId : uint64
-        [<JsonProperty("user_id")>]
-        /// 被禁言 QQ 号
-        UserId : uint64
-        [<JsonProperty("duration")>]
-        /// 禁言时长，单位秒
-        Duration : uint64   }
+type GroupBanEvent =
+    { [<JsonProperty("sub_type")>]
+      SubType : string
+      [<JsonProperty("group_id")>]
+      GroupId : uint64
+      [<JsonProperty("operator_id")>]
+      OperatorId : uint64
+      [<JsonProperty("user_id")>]
+      /// 被禁言 QQ 号
+      UserId : uint64
+      [<JsonProperty("duration")>]
+      /// 禁言时长，单位秒
+      Duration : uint64 }
 
     /// 事件为禁言操作
     member x.IsBan = x.SubType = "ban"
@@ -120,7 +120,7 @@ type GroupBanEvent =
     member x.IsLiftBan = x.SubType = "lift_ban"
 
 
-type HonorType = 
+type HonorType =
     /// 龙王
     | TalkAtive
     /// 群聊之火
@@ -130,24 +130,24 @@ type HonorType =
 
 /// go-cqhttp增加的一些群通知事件
 [<JsonConverter(typeof<GroupNotifyEventConverter>)>]
-type GroupNotifyEvent = 
+type GroupNotifyEvent =
     | Poke of GroupId : uint64 * From : uint64 * To : uint64
     /// Owner： 红包发送者，Target：运气王
     | LuckKing of GroupId : uint64 * Owner : uint64 * Target : uint64
     /// 群成员荣誉变更提示
     | Honor of GroupId : uint64 * User : uint64 * Type : HonorType
 
-and GroupNotifyEventConverter() = 
+and GroupNotifyEventConverter() =
     inherit JsonConverter<GroupNotifyEvent>()
 
     override x.WriteJson(_ : JsonWriter, _ : GroupNotifyEvent, _ : JsonSerializer) =
         raise<unit> <| NotImplementedException()
 
-    override x.ReadJson(r : JsonReader, _ : Type, _ : GroupNotifyEvent, _ : bool,
-                        _ : JsonSerializer) =
+    override x.ReadJson(r : JsonReader, _ : Type, _ : GroupNotifyEvent, _ : bool, _ : JsonSerializer) =
         let obj = JObject.Load(r)
         let gid = obj.["group_id"].Value<uint64>()
         let uid = obj.["user_id"].Value<uint64>()
+
         match obj.["sub_type"].Value<string>() with
         | "poke" ->
             let tid = obj.["target_id"].Value<uint64>()
@@ -156,30 +156,41 @@ and GroupNotifyEventConverter() =
             let tid = obj.["target_id"].Value<uint64>()
             LuckKing(gid, uid, tid)
         | "honor" ->
-            let h = match obj.["honor_type"].Value<string>() with
-                    | "talkative" -> TalkAtive
-                    | "performer" -> Performer
-                    | "emotion" -> Emotion
-                    | other ->
-                        NLog.LogManager.GetCurrentClassLogger().Fatal("群成员荣誉类型：{0}", other)
-                        raise <| ArgumentOutOfRangeException()
+            let h =
+                match obj.["honor_type"].Value<string>() with
+                | "talkative" -> TalkAtive
+                | "performer" -> Performer
+                | "emotion" -> Emotion
+                | other ->
+                    NLog
+                        .LogManager
+                        .GetCurrentClassLogger()
+                        .Fatal("群成员荣誉类型：{0}", other)
+
+                    raise <| ArgumentOutOfRangeException()
+
             Honor(gid, uid, h)
-        | other -> 
-            NLog.LogManager.GetCurrentClassLogger().Fatal("未知群通知事件类型：{0}", other)
-            raise<GroupNotifyEvent> <| ArgumentOutOfRangeException()
+        | other ->
+            NLog
+                .LogManager
+                .GetCurrentClassLogger()
+                .Fatal("未知群通知事件类型：{0}", other)
+
+            raise<GroupNotifyEvent>
+            <| ArgumentOutOfRangeException()
 
 
 /// 群名片更改时间
-type GroupCardEvent = 
-    {   [<JsonProperty("sub_type")>]
-        SubType : string
-        [<JsonProperty("group_id")>]
-        GroupId : uint64
-        [<JsonProperty("user_id")>]
-        UserId : uint64
-        /// 新名片
-        [<JsonProperty("card_new")>]
-        CardNew : string
-        /// 旧名片
-        [<JsonProperty("card_old")>]
-        CardOld : string    }
+type GroupCardEvent =
+    { [<JsonProperty("sub_type")>]
+      SubType : string
+      [<JsonProperty("group_id")>]
+      GroupId : uint64
+      [<JsonProperty("user_id")>]
+      UserId : uint64
+      /// 新名片
+      [<JsonProperty("card_new")>]
+      CardNew : string
+      /// 旧名片
+      [<JsonProperty("card_old")>]
+      CardOld : string }

@@ -6,40 +6,49 @@ open BotData.Common.Database
 open BotData.Common.Resource
 
 
-let private RouteTable = 
+let private RouteTable =
     use col = BotDataInitializer.XivCollectionChs
+
     col.GetSheet("IKDRouteTable")
     |> Seq.map (fun row -> row.As<int>("Route"))
     |> Seq.toArray
 
-let private RouteDefine = 
+let private RouteDefine =
     use col = BotDataInitializer.XivCollectionChs
+
     col.GetSheet("IKDRoute")
-    |> Seq.map (fun row ->
-        let routeName = row.As<string>("Name")
-        let timeStr = match row.As<int>("TimeDefine") with
-                        | 0 -> "占位" // 0是第一行，为了保证.[rid]操作，保留这一行了
-                        | 1 -> "黄昏"
-                        | 2 -> "黑夜"
-                        | 3 -> "白天"
-                        | o -> failwithf "未知海钓时间：%i" o
-        sprintf "%s_%s" routeName timeStr)
+    |> Seq.map
+        (fun row ->
+            let routeName = row.As<string>("Name")
+
+            let timeStr =
+                match row.As<int>("TimeDefine") with
+                | 0 -> "占位" // 0是第一行，为了保证.[rid]操作，保留这一行了
+                | 1 -> "黄昏"
+                | 2 -> "黑夜"
+                | 3 -> "白天"
+                | o -> failwithf "未知海钓时间：%i" o
+
+            sprintf "%s_%s" routeName timeStr)
     |> Seq.toArray
 
-let private RefDate = DateTimeOffset.Parse("2020/2/21 20:00 +08:00")
+let private RefDate =
+    DateTimeOffset.Parse("2020/2/21 20:00 +08:00")
+
 let private RefDateOffset = 10
 
 let rm = GetResourceManager("XivOceanFishing")
 
-let GetWindowMessage (key : string) =    
+let GetWindowMessage (key : string) =
     let msg = rm.GetString(key)
-    if isNull msg then
-        failwithf "发生错误：message是null, key是%s" key
-    msg.Split([|"\r\n"; "\r"; "\n"|], StringSplitOptions.None)
+
+    if isNull msg then failwithf "发生错误：message是null, key是%s" key
+
+    msg.Split([| "\r\n"; "\r"; "\n" |], StringSplitOptions.None)
 
 let CalculateCooldown (now : DateTimeOffset) =
     // 进位到最近的CD
-    let (next, now) = 
+    let (next, now) =
         if (now.Hour % 2) = 0 && now.Minute <= 15 then
             false, now
         else // 错过了，调整到下一个CD
@@ -49,14 +58,19 @@ let CalculateCooldown (now : DateTimeOffset) =
 
     let span = now - RefDate
 
-    let offset = (int span.TotalHours) % (RouteTable.Length * 2) / 2
-    let idx = (RefDateOffset + offset) % RouteTable.Length
+    let offset =
+        (int span.TotalHours) % (RouteTable.Length * 2)
+        / 2
+
+    let idx =
+        (RefDateOffset + offset) % RouteTable.Length
+
     let rid = RouteTable.[idx]
 
     let msgKey = RouteDefine.[rid]
 
-    {|  IsNextCooldown = next
-        CooldownDate = now
-        RouTableId = idx
-        RouteId = rid
-        Message = GetWindowMessage(msgKey)   |}
+    {| IsNextCooldown = next
+       CooldownDate = now
+       RouTableId = idx
+       RouteId = rid
+       Message = GetWindowMessage(msgKey) |}

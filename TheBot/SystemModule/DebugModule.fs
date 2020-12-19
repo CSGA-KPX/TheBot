@@ -15,25 +15,33 @@ type DebugModule() =
     inherit CommandHandlerBase()
 
     //TODO: null检查
-    static let nlogMemoryTarget = NLog.LogManager.Configuration.FindTargetByName("memory") :?> NLog.Targets.MemoryTarget
+    static let nlogMemoryTarget =
+        NLog.LogManager.Configuration.FindTargetByName("memory") :?> NLog.Targets.MemoryTarget
 
     [<CommandHandlerMethodAttribute("#showconfig", "(超管) 返回配置信息", "", IsHidden = true)>]
     member x.HandleShowConfig(cmdArg : CommandEventArgs) =
         cmdArg.EnsureSenderOwner()
 
-        let cp = typeof<KPX.FsCqHttp.Config.ConfigPlaceholder>
+        let cp =
+            typeof<KPX.FsCqHttp.Config.ConfigPlaceholder>
+
         let prefix = cp.FullName.Replace(cp.Name, "")
-        let configTypes = 
-            typeof<KPX.FsCqHttp.Config.ConfigPlaceholder>.Assembly.GetTypes()
+
+        let configTypes =
+            typeof<KPX.FsCqHttp.Config.ConfigPlaceholder>
+                .Assembly.GetTypes()
             |> Array.filter (fun t -> t.FullName.StartsWith(prefix))
 
         let tt = TextTable("名称", "值")
-        
-        for t in configTypes do 
-            let ps = t.GetProperties(BindingFlags.Static ||| BindingFlags.Public)
-            for p in ps do 
+
+        for t in configTypes do
+            let ps =
+                t.GetProperties(BindingFlags.Static ||| BindingFlags.Public)
+
+            for p in ps do
                 let v = p.GetValue(null)
                 let pname = sprintf "%s.%s" t.Name p.Name
+
                 if v.GetType().IsPrimitive || (v :? String) then
                     tt.AddRow(pname, sprintf "%A" v)
                 else
@@ -42,7 +50,7 @@ type DebugModule() =
         using (cmdArg.OpenResponse(PreferImage)) (fun ret -> ret.Write(tt))
 
     [<CommandHandlerMethodAttribute("#setlog", "(超管) 设置日志设置", "event, api, command", IsHidden = true)>]
-    member x.HandleSetLogging(cmdArg : CommandEventArgs) = 
+    member x.HandleSetLogging(cmdArg : CommandEventArgs) =
         cmdArg.EnsureSenderOwner()
 
         let cfg = UserOptionParser()
@@ -60,21 +68,24 @@ type DebugModule() =
         Config.Logging.LogApiCall <- api
         Config.Logging.LogCommandCall <- command
 
-        let ret = sprintf "日志选项已设定为：时间（%b）API（%b）指令调用（%b）"
-                    Config.Logging.LogEventPost
-                    Config.Logging.LogApiCall
-                    Config.Logging.LogCommandCall
+        let ret =
+            sprintf
+                "日志选项已设定为：时间（%b）API（%b）指令调用（%b）"
+                Config.Logging.LogEventPost
+                Config.Logging.LogApiCall
+                Config.Logging.LogCommandCall
+
         cmdArg.QuickMessageReply(ret)
 
     [<CommandHandlerMethodAttribute("#showlog", "(超管) 显示日志", "", IsHidden = true)>]
-    member x.HandleShowLogging(cmdArg : CommandEventArgs) = 
+    member x.HandleShowLogging(cmdArg : CommandEventArgs) =
         cmdArg.EnsureSenderOwner()
 
         use ret = cmdArg.OpenResponse(PreferImage)
-        
+
         let logs = nlogMemoryTarget.Logs |> Seq.toArray
-        
+
         ret.WriteLine("当前日志有记录{0}条", logs.Length)
 
-        for log in logs do 
+        for log in logs do
             ret.WriteLine(log)

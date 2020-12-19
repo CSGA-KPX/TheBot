@@ -6,23 +6,29 @@ open System.Text.RegularExpressions
 
 open TheBot.Module.DiceModule.Utils.DiceExpression
 
-let TRpgDb = BotData.Common.Database.DataBase.getLiteDB("trpg.db")
+let TRpgDb =
+    BotData.Common.Database.DataBase.getLiteDB ("trpg.db")
 
 [<RequireQualifiedAccess>]
-module StringData = 
+module StringData =
     let private data = Dictionary<string, string []>()
 
-    let private rm = TheBot.Utils.EmbeddedResource.GetResourceManager("TRpg")
+    let private rm =
+        TheBot.Utils.EmbeddedResource.GetResourceManager("TRpg")
+
     let private emptyChars = [| '\r'; '\n' |]
 
-    let GetString (name : string) = 
-        rm.GetString(name)
+    let GetString (name : string) = rm.GetString(name)
 
-    let GetLines (name : string) = 
+    let GetLines (name : string) =
         if not <| data.ContainsKey(name) then
-            let value = rm.GetString(name)
-                            .Split(emptyChars, StringSplitOptions.RemoveEmptyEntries)
+            let value =
+                rm
+                    .GetString(name)
+                    .Split(emptyChars, StringSplitOptions.RemoveEmptyEntries)
+
             data.Add(name, value)
+
         data.[name]
 
     let ChrJobs = GetLines "职业"
@@ -35,40 +41,51 @@ module StringData =
 // \n \r
 // \{eval expr [noexpr]}
 // \{randomItem arrayName}
-let private regex = Regex(@"(?<newline>\\n|\\r|\\r\\n)|\\\{(?<expr>[^\}]*)\}",
-                        RegexOptions.Compiled ||| 
-                            RegexOptions.Multiline ||| 
-                            RegexOptions.IgnoreCase)
+let private regex =
+    Regex(
+        @"(?<newline>\\n|\\r|\\r\\n)|\\\{(?<expr>[^\}]*)\}",
+        RegexOptions.Compiled
+        ||| RegexOptions.Multiline
+        ||| RegexOptions.IgnoreCase
+    )
 
-let ParseTemplate (str : string, de : DiceExpression) = 
-    let evalFunc (m : Match) = 
+let ParseTemplate (str : string, de : DiceExpression) =
+    let evalFunc (m : Match) =
         if m.Groups.["newline"].Success then
             Environment.NewLine
         else
             let expr = m.Groups.["expr"].Value.Split(" ")
-            let ret = 
+
+            let ret =
                 match expr.[0] with
-                | "eval" -> 
-                    let noExpr = expr |> Array.tryFind (fun x -> x = "noexpr")
+                | "eval" ->
+                    let noExpr =
+                        expr |> Array.tryFind (fun x -> x = "noexpr")
+
                     if noExpr.IsNone then
                         sprintf "{%s = %O}" (expr.[1]) (de.Eval(expr.[1]).Sum)
                     else
                         sprintf "%O" (de.Eval(expr.[1]).Sum)
-                | "randomItem" -> 
+                | "randomItem" ->
                     try
-                        let count = expr |> Array.tryItem 2 |> Option.defaultValue "1" |> Int32.Parse
+                        let count =
+                            expr
+                            |> Array.tryItem 2
+                            |> Option.defaultValue "1"
+                            |> Int32.Parse
+
                         let input = StringData.GetLines(expr.[1])
                         let items = de.Dicer.GetRandomItems(input, count)
                         String.Join(" ", items)
-                    with
-                    | e -> failwithf "找不到请求的数据集 %s : %s" expr.[1] e.Message
+                    with e -> failwithf "找不到请求的数据集 %s : %s" expr.[1] e.Message
 
                 | unk -> failwithf "unknown cmd : %s" unk
+
             ret
 
     regex.Replace(str, MatchEvaluator evalFunc)
 
-type Difficulty = 
+type Difficulty =
     | Critical
     | Extreme
     | Hard

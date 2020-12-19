@@ -12,12 +12,10 @@ type ItemRecord =
 
     override x.ToString() = sprintf "%s(%i)" x.Name x.Id
 
-    static member GetUnknown() =
-        { Id = -1
-          Name = "Unknown" }
+    static member GetUnknown() = { Id = -1; Name = "Unknown" }
 
 
-type ItemCollection private () = 
+type ItemCollection private () =
     inherit CachedTableCollection<int, ItemRecord>()
 
     static let instance = ItemCollection()
@@ -27,29 +25,38 @@ type ItemCollection private () =
 
     override x.IsExpired = false
 
-    override x.InitializeCollection() = 
+    override x.InitializeCollection() =
         let db = x.DbCollection
-        db.EnsureIndex(LiteDB.BsonExpression.Create("_id"), true) |> ignore
-        db.EnsureIndex(LiteDB.BsonExpression.Create("Name")) |> ignore
+
+        db.EnsureIndex(LiteDB.BsonExpression.Create("_id"), true)
+        |> ignore
+
+        db.EnsureIndex(LiteDB.BsonExpression.Create("Name"))
+        |> ignore
 
         use col = BotDataInitializer.XivCollectionChs
         let chs = col.GetSheet("Item", [| "Name" |])
 
         seq {
             for row in chs do
-                yield { Id = row.Key.Main
-                        Name = row.As<string>("Name") }
+                yield
+                    { Id = row.Key.Main
+                      Name = row.As<string>("Name") }
         }
         |> db.InsertBulk
         |> ignore
 
-    member x.GetByItemId (id : int) = 
+    member x.GetByItemId(id : int) =
         x.PassOrRaise(x.TryGetByKey(id), "找不到物品:{0}", id)
 
-    member x.TryGetByItemId (id : int) = x.TryGetByKey(id)
+    member x.TryGetByItemId(id : int) = x.TryGetByKey(id)
 
     member x.TryGetByName(name : string) =
-        let ret = x.DbCollection.FindOne(LiteDB.Query.EQ("Name", new LiteDB.BsonValue(name)))
+        let ret =
+            x.DbCollection.FindOne(LiteDB.Query.EQ("Name", new LiteDB.BsonValue(name)))
+
         if isNull (box ret) then None else Some ret
 
-    member x.SearchByName(str) = x.DbCollection.Find(LiteDB.Query.Contains("Name", str)) |> Seq.toArray
+    member x.SearchByName(str) =
+        x.DbCollection.Find(LiteDB.Query.Contains("Name", str))
+        |> Seq.toArray

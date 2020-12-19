@@ -29,7 +29,7 @@ type CommandHandlerMethodAttribute(command : string, desc, lh) =
     member val AltCommandStart = "" with get, set
 
     /// 获取该指令的指令起始符
-    member x.CommandStart = 
+    member x.CommandStart =
         if String.IsNullOrWhiteSpace(x.AltCommandStart) then
             KPX.FsCqHttp.Config.Command.CommandStart
         else
@@ -40,13 +40,15 @@ type CommandEventArgs(cqArg : CqEventArgs, msg : MessageEvent, attr : CommandHan
     inherit CqEventArgs(cqArg)
 
     let rawMsg = msg.Message.ToString()
-    let cmdLine = rawMsg.Split([| ' ' |], StringSplitOptions.RemoveEmptyEntries)
 
-    let cmdName = 
+    let cmdLine =
+        rawMsg.Split([| ' ' |], StringSplitOptions.RemoveEmptyEntries)
+
+    let cmdName =
         let cmd = cmdLine.[0].ToLowerInvariant()
         let idx = cmd.IndexOf(attr.CommandStart)
         let len = attr.CommandStart.Length
-        cmd.[idx + len .. ]
+        cmd.[idx + len..]
 
     /// 原始消息对象
     member x.MessageEvent = msg
@@ -73,7 +75,9 @@ type CommandHandlerBase() as x =
 
     do
         for method in x.GetType().GetMethods() do
-            let ret = method.GetCustomAttributes(typeof<CommandHandlerMethodAttribute>, true)
+            let ret =
+                method.GetCustomAttributes(typeof<CommandHandlerMethodAttribute>, true)
+
             for attrib in ret do
                 let attr = attrib :?> CommandHandlerMethodAttribute
                 let cs = attr.CommandStart

@@ -13,7 +13,7 @@ open LiteDB
 
 type internal EveDbMaterial = RecipeMaterial<int>
 
-type ProcessType = 
+type ProcessType =
     | Invalid = 0
     | Manufacturing = 1
     | Planet = 2
@@ -21,7 +21,7 @@ type ProcessType =
     | Refine = 4
 
 [<Flags>]
-type ProcessFlags = 
+type ProcessFlags =
     | None = 0
     | QuantityApplied = 1
     | MeApplied = 2
@@ -38,18 +38,19 @@ type EveDbProcess =
       Process : RecipeProcess<int>
       Type : ProcessType }
 
-    member x.AsEveProcess() = 
-        let convertMaterial (m : RecipeMaterial<int>) = 
+    member x.AsEveProcess() =
+        let convertMaterial (m : RecipeMaterial<int>) =
             { Item = EveTypeCollection.Instance.GetById(m.Item)
               Quantity = m.Quantity }
 
-        { Process = { Input = x.Process.Input |> Array.map convertMaterial
-                      Output = x.Process.Output |> Array.map convertMaterial}
+        { Process =
+              { Input = x.Process.Input |> Array.map convertMaterial
+                Output = x.Process.Output |> Array.map convertMaterial }
           Type = x.Type
           Flag = ProcessFlags.None }
 
 [<AbstractClass>]
-type EveProcessCollection() = 
+type EveProcessCollection() =
     inherit CachedTableCollection<int, EveDbProcess>()
 
     override x.IsExpired = false

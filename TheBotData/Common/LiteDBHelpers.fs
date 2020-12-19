@@ -3,12 +3,8 @@
 open LiteDB
 
 type ILiteCollection<'T> with
-    member x.TryFindById(id : BsonValue) = 
+    member x.TryFindById(id : BsonValue) =
         let ret = x.FindById(id)
-        if isNull (box ret) then
-            None
-        else
-            Some ret
+        if isNull (box ret) then None else Some ret
 
-do 
-    LiteDB.BsonMapper.Global.EmptyStringToNull <- false
+do LiteDB.BsonMapper.Global.EmptyStringToNull <- false

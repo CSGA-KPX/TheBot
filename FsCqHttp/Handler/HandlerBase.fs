@@ -6,10 +6,13 @@ open KPX.FsCqHttp.Event
 
 [<AbstractClass>]
 type HandlerModuleBase() as x =
-    static let allModules = 
+    static let allModules =
         [| yield! Assembly.GetExecutingAssembly().GetTypes()
            yield! Assembly.GetEntryAssembly().GetTypes() |]
-        |> Array.filter (fun t -> t.IsSubclassOf(typeof<HandlerModuleBase>) && (not <| t.IsAbstract))
+        |> Array.filter
+            (fun t ->
+                t.IsSubclassOf(typeof<HandlerModuleBase>)
+                && (not <| t.IsAbstract))
 
     static member AllDefinedModules = allModules
 
@@ -24,7 +27,8 @@ type HandlerModuleBase() as x =
     default x.HandleNotice(_, _) = ()
 
     abstract HandleCqHttpEvent : CqEventArgs -> unit
-    default x.HandleCqHttpEvent(args)=
+
+    default x.HandleCqHttpEvent(args) =
         match args.Event with
         | MessageEvent y -> x.HandleMessage(args, y)
         | RequestEvent y -> x.HandleRequest(args, y)

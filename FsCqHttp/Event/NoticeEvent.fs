@@ -23,11 +23,9 @@ type NoticeEvent =
 and NoticeEventConverter() =
     inherit JsonConverter<NoticeEvent>()
 
-    override x.WriteJson(_ : JsonWriter, _ : NoticeEvent, _ : JsonSerializer) =
-        raise<unit> <| NotImplementedException()
+    override x.WriteJson(_ : JsonWriter, _ : NoticeEvent, _ : JsonSerializer) = raise<unit> <| NotImplementedException()
 
-    override x.ReadJson(r : JsonReader, _ : Type, _ : NoticeEvent, _ : bool,
-                        _ : JsonSerializer) =
+    override x.ReadJson(r : JsonReader, _ : Type, _ : NoticeEvent, _ : bool, _ : JsonSerializer) =
         let obj = JObject.Load(r)
 
         match obj.["notice_type"].Value<string>() with
@@ -42,5 +40,10 @@ and NoticeEventConverter() =
         | "notify" -> GroupNotify(obj.ToObject<GroupNotifyEvent>())
         | "group_card" -> GroupCardUpdate(obj.ToObject<GroupCardEvent>())
         | other ->
-            NLog.LogManager.GetCurrentClassLogger().Fatal("未知通知类型：{0}", other)
-            raise<NoticeEvent> <| ArgumentOutOfRangeException()
+            NLog
+                .LogManager
+                .GetCurrentClassLogger()
+                .Fatal("未知通知类型：{0}", other)
+
+            raise<NoticeEvent>
+            <| ArgumentOutOfRangeException()

@@ -17,8 +17,12 @@ type CompanyCraftRecipeProvider private () =
 
     override x.InitializeCollection() =
         let db = x.DbCollection
-        db.EnsureIndex(LiteDB.BsonExpression.Create("_id"), true) |> ignore
-        db.EnsureIndex(LiteDB.BsonExpression.Create("Process.Output[0].Item")) |> ignore
+
+        db.EnsureIndex(LiteDB.BsonExpression.Create("_id"), true)
+        |> ignore
+
+        db.EnsureIndex(LiteDB.BsonExpression.Create("Process.Output[0].Item"))
+        |> ignore
 
         use col = BotDataInitializer.XivCollectionChs
         let chs = col.GetSheet("CompanyCraftSequence")
@@ -35,19 +39,24 @@ type CompanyCraftRecipeProvider private () =
                             let amounts =
                                 let setAmount = proc.AsArray<uint16>("SetQuantity", 12)
                                 let setCount = proc.AsArray<uint16>("SetsRequired", 12)
-                                setAmount |> Array.map2 (fun a b -> a * b |> float) setCount
+
+                                setAmount
+                                |> Array.map2 (fun a b -> a * b |> float) setCount
 
                             let materials =
                                 Array.zip itemsKeys amounts
                                 |> Array.filter (fun (id, _) -> id > 0)
-                                |> Array.map (fun (id, runs) -> {Item = id; Quantity = runs})
+                                |> Array.map (fun (id, runs) -> { Item = id; Quantity = runs })
 
                             yield! materials |]
 
-                yield { Id = 0
-                        Process = { Output = [|{ Item = ccs.As<int>("ResultItem"); 
-                                                Quantity = 1.0 }|]
-                                    Input = materials } }
+                yield
+                    { Id = 0
+                      Process =
+                          { Output =
+                                [| { Item = ccs.As<int>("ResultItem")
+                                     Quantity = 1.0 } |]
+                            Input = materials } }
         }
         |> db.InsertBulk
         |> ignore
@@ -55,8 +64,8 @@ type CompanyCraftRecipeProvider private () =
     interface IRecipeProvider<ItemRecord, RecipeProcess<ItemRecord>> with
         override x.TryGetRecipe(item) =
             let id = new LiteDB.BsonValue(item.Id)
-            let ret = x.DbCollection.FindOne(LiteDB.Query.EQ("Process.Output[0].Item", id))
-            if isNull (box ret) then
-                None
-            else
-                Some (ret.CastProcess())
+
+            let ret =
+                x.DbCollection.FindOne(LiteDB.Query.EQ("Process.Output[0].Item", id))
+
+            if isNull (box ret) then None else Some(ret.CastProcess())

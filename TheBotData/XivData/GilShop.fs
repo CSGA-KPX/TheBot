@@ -32,17 +32,23 @@ type GilShopCollection private () =
 
     override x.InitializeCollection() =
         let db = x.DbCollection
-        db.EnsureIndex(LiteDB.BsonExpression.Create("_id"), true) |> ignore
+
+        db.EnsureIndex(LiteDB.BsonExpression.Create("_id"), true)
+        |> ignore
 
         use col = BotDataInitializer.XivCollectionChs
+
         col.GetSheet("Item", [| AskKey; BidKey |])
         |> ignore
+
         seq {
             for record in col.GetSheet("GilShopItem") do
                 let item = record.AsRow("Item")
-                yield { Id = item.Key.Main
-                        Ask = item.As<int32>(AskKey)
-                        Bid = item.As<int32>(BidKey) }
+
+                yield
+                    { Id = item.Key.Main
+                      Ask = item.As<int32>(AskKey)
+                      Bid = item.As<int32>(BidKey) }
         }
         |> Seq.distinctBy (fun x -> x.Id)
         |> db.InsertBulk

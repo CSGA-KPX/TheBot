@@ -25,12 +25,18 @@ let main argv =
         printfn "Rebuilt Completed"
     elif parser.IsDefined("debug") then
         ()
-    
-    if parser.IsDefined("reverse") && parser.IsDefined("token") then
-        let endpoint = sprintf "http://localhost:%i/" (parser.GetValue<int>("reverse"))
-        let wss = new CqWebSocketServer(endpoint, parser.GetValue("token"))
+
+    if parser.IsDefined("reverse")
+       && parser.IsDefined("token") then
+        let endpoint =
+            sprintf "http://localhost:%i/" (parser.GetValue<int>("reverse"))
+
+        let wss =
+            new CqWebSocketServer(endpoint, parser.GetValue("token"))
+
         wss.Start()
-    elif parser.IsDefined("endpoint") && parser.IsDefined("token") then
+    elif parser.IsDefined("endpoint")
+         && parser.IsDefined("token") then
         let uri = Uri(parser.GetValue("endpoint"))
         let token = parser.GetValue("token")
         let aws = ActiveWebsocket(uri, token)
@@ -46,11 +52,13 @@ let main argv =
     mtx.WaitOne() |> ignore
 
     logger.Info("TheBot已结束。正在关闭WS连接")
-    for ws in CqWsContextPool.Instance do 
+
+    for ws in CqWsContextPool.Instance do
         if ws.CheckOnline() then
             logger.Info(sprintf "向%s发送停止信号" ws.SelfId)
             ws.Stop()
-        else    
+        else
             logger.Error(sprintf "%s已经停止" ws.SelfId)
+
     Console.ReadLine() |> ignore
     0 // return an integer exit code

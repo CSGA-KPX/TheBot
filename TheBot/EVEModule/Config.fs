@@ -5,7 +5,7 @@ open KPX.FsCqHttp.Utils.UserOption
 
 open BotData.EveData.Utils
 
-type EveConfigParser() as x = 
+type EveConfigParser() as x =
     inherit UserOptionParser()
 
     do
@@ -22,7 +22,7 @@ type EveConfigParser() as x =
         x.RegisterOption("buytax", "4")
 
     /// 是否强制文本输出。具体输出方式取决于酷Q
-    member x.IsImageOutput = 
+    member x.IsImageOutput =
         if x.IsDefined("text") then ForceText else PreferImage
 
     member x.IsDebug = x.IsDefined("debug")
@@ -40,10 +40,7 @@ type EveConfigParser() as x =
     member x.ExpandPlanet = x.IsDefined("p")
 
     member x.MaterialPriceMode =
-        if x.IsDefined("buy") then
-            PriceFetchMode.BuyWithTax
-        else
-            PriceFetchMode.Sell
+        if x.IsDefined("buy") then PriceFetchMode.BuyWithTax else PriceFetchMode.Sell
 
     interface BotData.EveData.Process.IEveCalculatorConfig with
         member x.InputME = x.InputMe

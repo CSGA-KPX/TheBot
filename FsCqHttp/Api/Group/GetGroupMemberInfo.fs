@@ -24,8 +24,7 @@ type GetGroupMemberInfo(groupId : uint64, userId : uint64, ?noCache : bool) =
     member val CardChangeable = false with get, set
 
     member x.DisplayName =
-        if System.String.IsNullOrEmpty(x.Card) then x.NickName
-        else x.Card
+        if System.String.IsNullOrEmpty(x.Card) then x.NickName else x.Card
 
     override x.WriteParams(w, _) =
         w.WritePropertyName("group_id")

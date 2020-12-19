@@ -15,4 +15,5 @@ type GetGroupList() =
 
     member val Groups : GroupInfo [] = [||] with get, set
 
-    override x.HandleResponse(r) = x.Groups <- r.TryParseArrayData<GroupInfo>()
+    override x.HandleResponse(r) =
+        x.Groups <- r.TryParseArrayData<GroupInfo>()

@@ -4,11 +4,11 @@ open System.Collections.Generic
 
 
 [<Struct>]
-type ProcessQuantity = 
+type ProcessQuantity =
     | ByRun of runs : float
     | ByItem of items : float
 
-    member x.ToItems(proc : RecipeProcess<_>) = 
+    member x.ToItems(proc : RecipeProcess<_>) =
         match x with
         | ByItem value -> value
         | ByRun value ->
@@ -16,7 +16,7 @@ type ProcessQuantity =
             value * qPerRun
 
     /// 将物品数转换为流程数
-    member x.ToRuns(proc : RecipeProcess<_>) = 
+    member x.ToRuns(proc : RecipeProcess<_>) =
         match x with
         | ByRun value -> value
         | ByItem value ->
@@ -24,7 +24,7 @@ type ProcessQuantity =
             value / qPerRun
 
 [<AbstractClass>]
-type RecipeManager<'Item, 'Recipe when 'Item : equality>() = 
+type RecipeManager<'Item, 'Recipe when 'Item : equality>() =
     let providers = List<IRecipeProvider<'Item, 'Recipe>>()
 
     member x.AddProvider(p) = providers.Add(p)
@@ -35,10 +35,10 @@ type RecipeManager<'Item, 'Recipe when 'Item : equality>() =
         |> Seq.choose (fun p -> p.TryGetRecipe(item))
 
     /// 查找指定物品的生产配方
-    abstract TryGetRecipe: 'Item -> 'Recipe option
+    abstract TryGetRecipe : 'Item -> 'Recipe option
     abstract TryGetRecipe : 'Item * ProcessQuantity -> 'Recipe option
 
-    member x.TryGetRecipe(material : RecipeMaterial<'Item>) = 
+    member x.TryGetRecipe(material : RecipeMaterial<'Item>) =
         x.TryGetRecipe(material.Item, ByItem material.Quantity)
 
     member x.GetRecipe(item : 'Item) = x.TryGetRecipe(item).Value
