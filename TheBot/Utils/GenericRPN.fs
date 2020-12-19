@@ -1,4 +1,5 @@
-﻿module TheBot.Utils.GenericRPN
+﻿namespace TheBot.Utils.GenericRPN
+
 open System
 open System.Collections.Generic
 
@@ -63,30 +64,30 @@ type GenericRPNParser<'Operand when 'Operand :> IOperand<'Operand>>(?OperatorEsc
     member x.Operatos = opsDict
 
     member private x.SplitString(str : string) = 
-        [|
-            let sb = Text.StringBuilder()
-            for i = 0 to str.Length - 1 do 
-                let c = str.[i]
-                if x.Operatos.Contains(c) then
-                    let isEscaped = 
-                        // 前一个字符还不能是转义符号
-                        if i = 0 then
-                            false // 第一个字符不可能被转义
-                        else
-                            str.[i-1] = x.OperatorEscape
-                    if isEscaped then
-                        // 删掉转义字符，然后添加
-                        sb.Remove(sb.Length - 1, 1).Append(c) |> ignore
+        let ret = List<_>()
+        let sb = Text.StringBuilder()
+        for i = 0 to str.Length - 1 do 
+            let c = str.[i]
+            if x.Operatos.Contains(c) then
+                let isEscaped = 
+                    // 前一个字符还不能是转义符号
+                    if i = 0 then
+                        false // 第一个字符不可能被转义
                     else
-                        let token = sb.ToString()
-                        sb.Clear() |> ignore
-                        if not <| String.IsNullOrWhiteSpace(token) then yield Choice1Of2 token
-                        yield Choice2Of2 x.Operatos.[c]
+                        str.[i-1] = x.OperatorEscape
+                if isEscaped then
+                    // 删掉转义字符，然后添加
+                    sb.Remove(sb.Length - 1, 1).Append(c) |> ignore
                 else
-                    sb.Append(c) |> ignore
-            let last = sb.ToString()
-            if not <| String.IsNullOrWhiteSpace(last) then yield Choice1Of2 last
-        |]
+                    let token = sb.ToString()
+                    sb.Clear() |> ignore
+                    if not <| String.IsNullOrWhiteSpace(token) then ret.Add(x.Tokenize(token))
+                    ret.Add(Operator x.Operatos.[c])
+            else
+                sb.Append(c) |> ignore
+        let last = sb.ToString()
+        if not <| String.IsNullOrWhiteSpace(last) then ret.Add(x.Tokenize(last))
+        ret.ToArray()
 
     member private x.InfixToPostfix(tokens : RPNToken<'Operand> []) =
         let stack = Stack<GenericOperator<'Operand>>()
@@ -112,10 +113,6 @@ type GenericRPNParser<'Operand when 'Operand :> IOperand<'Operand>>(?OperatorEsc
         let rpn =
             str
             |> x.SplitString
-            |> Array.map (
-                function
-                | Choice1Of2 str -> x.Tokenize(str)
-                | Choice2Of2 op -> Operator op)
             |> x.InfixToPostfix
 
         let stack = Stack<'Operand>()
