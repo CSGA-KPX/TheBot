@@ -30,6 +30,11 @@ type Message(sec : MessageSection []) as x =
 
     member x.Add(img : Drawing.Bitmap) = x.Add(ImageSection.Create(img))
 
+    member x.TryGetSection<'T when 'T :> MessageSection>() = 
+        x
+        |> Seq.tryFind (fun sec -> sec :? 'T)
+        |> Option.map (fun sec -> sec :?> 'T)
+
     member x.GetSections<'T when 'T :> MessageSection>() =
         [| for item in x do
             match item with

@@ -103,8 +103,15 @@ type CqWsContext(ws : WebSocket) =
     member private x.HandleEventPost(args : CqEventArgs) =
         try
             match args.Event with
-            | MessageEvent msgEvent ->
-                let str = msgEvent.Message.ToString()
+            | MetaEvent _ -> () // 心跳和生命周期事件没啥用
+            | NoticeEvent e ->
+                for m in modules do
+                    m.HandleNotice(args, e)
+            | RequestEvent e ->
+                for m in modules do
+                    m.HandleRequest(args, e)
+            | MessageEvent e ->
+                let str = e.Message.ToString()
 
                 let endIdx =
                     let idx = str.IndexOf(" ")
@@ -115,18 +122,15 @@ type CqWsContext(ws : WebSocket) =
                 // 没匹配再轮询
                 if cmdCache.ContainsKey(key) then
                     let (cmdModule, attr, method) = cmdCache.[key]
-                    let cmdArg = CommandEventArgs(args, msgEvent, attr)
+                    let cmdArg = CommandEventArgs(args, e, attr)
 
                     if KPX.FsCqHttp.Config.Logging.LogCommandCall then
-                        logger.Info("Calling handler {0}\r\n Command Context {1}", method.Name, sprintf "%A" msgEvent)
+                        logger.Info("Calling handler {0}\r\n Command Context {1}", method.Name, sprintf "%A" e)
                         method.Invoke(cmdModule, [| cmdArg |]) |> ignore
                 else
                     for m in modules do
-                        m.HandleCqHttpEvent(args)
-            | _ ->
-                // 非消息事件全部for m in modules do m.HandleCqHttpEvent(args)
-                for m in modules do
-                    m.HandleCqHttpEvent(args)
+                        m.HandleMessage(args, e)
+
         with e ->
             let rootExn = getRootExn e
 
@@ -161,7 +165,7 @@ type CqWsContext(ws : WebSocket) =
         let obj = JObject.Parse(json)
 
         let logJson =
-            lazy (obj.ToString(Newtonsoft.Json.Formatting.None))
+            lazy (obj.ToString())
 
         if (obj.ContainsKey("post_type")) then //消息上报
             if KPX.FsCqHttp.Config.Logging.LogEventPost then logger.Trace(sprintf "%s收到上报：%s" x.SelfId logJson.Value)
@@ -224,11 +228,12 @@ type CqWsContext(ws : WebSocket) =
                 let mre = new ManualResetEvent(false)
                 let json = req.GetRequestJson(echo)
 
-                let ret = apiPending.TryAdd(echo, (mre, req))
+                let _ = apiPending.TryAdd(echo, (mre, req))
 
                 if KPX.FsCqHttp.Config.Logging.LogApiCall then
-                    logger.Trace(sprintf "添加echo %s : %b" echo ret)
-                    logger.Trace(sprintf "%s请求API：%s" x.SelfId json)
+                    logger.Trace(sprintf "%s请求API：%s" x.SelfId req.ActionName)
+                    if KPX.FsCqHttp.Config.Logging.LogApiJson then
+                        logger.Trace(sprintf "%s请求API：%s" x.SelfId json)
 
                 let data = json |> utf8.GetBytes
 
@@ -239,8 +244,6 @@ type CqWsContext(ws : WebSocket) =
                 let! _ = Async.AwaitWaitHandle(mre :> WaitHandle)
 
                 apiPending.TryRemove(echo) |> ignore
-
-                if KPX.FsCqHttp.Config.Logging.LogApiCall then logger.Trace(sprintf "echo:%s 已完成" echo)
 
                 req.IsExecuted <- true
             }

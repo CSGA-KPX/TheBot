@@ -25,12 +25,3 @@ type HandlerModuleBase() as x =
     default x.HandleMessage(_, _) = ()
     default x.HandleRequest(_, _) = ()
     default x.HandleNotice(_, _) = ()
-
-    abstract HandleCqHttpEvent : CqEventArgs -> unit
-
-    default x.HandleCqHttpEvent(args) =
-        match args.Event with
-        | MessageEvent y -> x.HandleMessage(args, y)
-        | RequestEvent y -> x.HandleRequest(args, y)
-        | NoticeEvent y -> x.HandleNotice(args, y)
-        | MetaEvent _ -> ()

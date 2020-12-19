@@ -23,12 +23,12 @@ type DebugModule() =
         cmdArg.EnsureSenderOwner()
 
         let cp =
-            typeof<KPX.FsCqHttp.Config.ConfigPlaceholder>
+            typeof<Config.ConfigPlaceholder>
 
         let prefix = cp.FullName.Replace(cp.Name, "")
 
         let configTypes =
-            typeof<KPX.FsCqHttp.Config.ConfigPlaceholder>
+            typeof<Config.ConfigPlaceholder>
                 .Assembly.GetTypes()
             |> Array.filter (fun t -> t.FullName.StartsWith(prefix))
 
@@ -56,23 +56,27 @@ type DebugModule() =
         let cfg = UserOptionParser()
         cfg.RegisterOption("event", Config.Logging.LogEventPost.ToString())
         cfg.RegisterOption("api", Config.Logging.LogApiCall.ToString())
+        cfg.RegisterOption("apijson", Config.Logging.LogApiJson.ToString())
         cfg.RegisterOption("command", Config.Logging.LogCommandCall.ToString())
 
         cfg.Parse(cmdArg.Arguments)
 
         let e = cfg.GetValue<bool>("event")
         let api = cfg.GetValue<bool>("api")
+        let apiJson = cfg.GetValue<bool>("apijson")
         let command = cfg.GetValue<bool>("command")
 
         Config.Logging.LogEventPost <- e
         Config.Logging.LogApiCall <- api
+        Config.Logging.LogApiJson <- apiJson
         Config.Logging.LogCommandCall <- command
 
         let ret =
             sprintf
-                "日志选项已设定为：时间（%b）API（%b）指令调用（%b）"
+                "日志选项已设定为：时间(%b) Api(%b) ApiJson(%b) 指令调用(%b)"
                 Config.Logging.LogEventPost
                 Config.Logging.LogApiCall
+                Config.Logging.LogApiJson
                 Config.Logging.LogCommandCall
 
         cmdArg.QuickMessageReply(ret)
@@ -81,11 +85,14 @@ type DebugModule() =
     member x.HandleShowLogging(cmdArg : CommandEventArgs) =
         cmdArg.EnsureSenderOwner()
 
-        use ret = cmdArg.OpenResponse(PreferImage)
+        let logs = nlogMemoryTarget.Logs
 
-        let logs = nlogMemoryTarget.Logs |> Seq.toArray
+        if logs.Count = 0 then
+            cmdArg.QuickMessageReply("暂无")
+        else
+            use ret = cmdArg.OpenResponse(PreferImage)
 
-        ret.WriteLine("当前日志有记录{0}条", logs.Length)
+            ret.WriteLine("当前日志有记录{0}条", logs.Count)
 
-        for log in logs do
-            ret.WriteLine(log)
+            for log in logs do
+                ret.WriteLine(log)

@@ -11,20 +11,11 @@ let logger = NLog.LogManager.GetCurrentClassLogger()
 [<EntryPoint>]
 let main argv =
     let parser = UserOptionParser()
-    parser.RegisterOption("rebuilddb", "")
     parser.RegisterOption("debug", "")
     parser.RegisterOption("endpoint", "")
     parser.RegisterOption("token", "")
     parser.RegisterOption("reverse", "5004")
     parser.Parse(argv)
-
-    if parser.IsDefined("rebuilddb") then
-        BotData.Common.Database.BotDataInitializer.ClearCache()
-        BotData.Common.Database.BotDataInitializer.ShrinkCache()
-        BotData.Common.Database.BotDataInitializer.InitializeAllCollections()
-        printfn "Rebuilt Completed"
-    elif parser.IsDefined("debug") then
-        ()
 
     if parser.IsDefined("reverse")
        && parser.IsDefined("token") then

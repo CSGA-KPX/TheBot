@@ -23,8 +23,7 @@ type ApiRequestBase(action : string) as x =
     member internal x.Logger = logger
 
     /// 生成请求Json
-    member x.GetRequestJson(?echo : string) =
-        let echo = defaultArg echo ""
+    member x.GetRequestJson(echo : string) =
         let sb = StringBuilder()
         use sw = new StringWriter(sb)
         let js = JsonSerializer()

@@ -23,7 +23,9 @@ type XivMarketModule() =
     let gilShop = GilShop.GilShopCollection.Instance
     let xivExpr = XivExpression.XivExpression()
 
-    //let marketInfo = CompundMarketInfo.MarketInfoCollection.Instance
+    let padNumber = box <| RightAlignCell "--"
+    let padOnNan f =
+        if Double.IsNaN(f) then padNumber else box f
 
     let isNumber (str : string) =
         if str.Length <> 0 then String.forall (Char.IsDigit) str else false
@@ -78,11 +80,6 @@ type XivMarketModule() =
             | Ok (Accumulator a) ->
                 for i in a do
                     acc.Update(i)
-
-        let padNumber = box <| RightAlignCell "--"
-
-        let padOnNan f =
-            if Double.IsNaN(f) then padNumber else box f
 
         if acc.Count * worlds.Length >= 20 then cmdArg.AbortExecution(InputError, "查询数量超过上线")
 
@@ -334,15 +331,13 @@ type XivMarketModule() =
 
                     RowBuilder()
                         .Add(recv.Name)
-                        .AddIf(notEmpty, lazy (market.StdEvPrice().Round().Average), def)
-                        .AddIf(notEmpty, lazy (market.MinPrice()), def)
-                        .AddIf(notEmpty,
-                               lazy
-                                   ((market.StdEvPrice().Round()
-                                     * (float <| info.ReceiveCount)
-                                     / (float <| info.CostCount))
-                                       .Average),
-                                   def)
+                        .Add(padOnNan(market.StdEvPrice().Round().Average))
+                        .Add(padOnNan(market.MinPrice()))
+                        .Add(padOnNan
+                                 ((market.StdEvPrice().Round()
+                                   * (float <| info.ReceiveCount)
+                                   / (float <| info.CostCount))
+                                     .Average))
                         .AddIf(notEmpty, lazy (market.LastUpdateTime()), def)
                     |> tt.AddRow
 
