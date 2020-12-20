@@ -1,4 +1,4 @@
-﻿module TheBot.Module.TestModule
+﻿namespace TheBot.Module.TestModule
 
 open System
 open System.Text

@@ -1,4 +1,4 @@
-﻿module TheBot.Module.DebugModule
+﻿namespace TheBot.Module.DebugModule
 
 open System
 open System.Reflection

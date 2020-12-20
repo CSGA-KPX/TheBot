@@ -41,3 +41,5 @@ let HumanReadableFloat (d : float) =
             String.Format("{0:N0}{1}", d / 10.0 ** scale, postfix)
         else
             String.Format("{0:N2}{1}", d / 10.0 ** scale, postfix)
+[<Literal>]
+let ToolWarning = "结果仅供参考。本工具不计算行星进出口税，项目费用取近似值。"

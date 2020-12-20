@@ -1,4 +1,4 @@
-module TheBot.Module.RepeaterModule
+namespace TheBot.Module.RepeaterModule
 
 open System.Collections
 

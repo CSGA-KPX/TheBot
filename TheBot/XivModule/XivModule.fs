@@ -101,9 +101,7 @@ type XivModule() =
                "大猫"
                "兔子" |]
 
-        let atUser =
-            cmdArg.MessageEvent.Message.GetAts()
-            |> Array.tryHead
+        let atUser = cmdArg.MessageEvent.Message.TryGetAt()
 
         if atUser.IsSome then
             match atUser.Value with

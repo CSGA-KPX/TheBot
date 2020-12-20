@@ -337,6 +337,7 @@ type XivMarketModule() =
                                  ((market.StdEvPrice().Round()
                                    * (float <| info.ReceiveCount)
                                    / (float <| info.CostCount))
+                                     .Round()
                                      .Average))
                         .AddIf(notEmpty, lazy (market.LastUpdateTime()), def)
                     |> tt.AddRow

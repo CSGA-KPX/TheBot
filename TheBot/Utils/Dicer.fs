@@ -30,9 +30,8 @@ type SeedOption =
     static member SeedByAtUserDay(msg : MessageEvent) =
         [| SeedDate
            SeedCustom(
-               let at = msg.Message.GetAts()
-
-               if at.Length = 0 then raise <| InvalidOperationException("没有用户被At！") else at.[0].ToString()
+               let at = msg.Message.TryGetAt()
+               if at.IsNone then raise <| InvalidOperationException("没有用户被At！") else at.Value.ToString()
            ) |]
 
 [<AbstractClass>]

@@ -1,4 +1,4 @@
-module TheBot.Module.DiceModule.DiceModule
+namespace TheBot.Module.DiceModule.DiceModule
 
 open System
 
@@ -16,16 +16,14 @@ open TheBot.Utils.Dicer
 
 open TheBot.Module.DiceModule.Utils
 
+
 type DiceModule() =
     inherit CommandHandlerBase()
 
     [<CommandHandlerMethodAttribute("cc", "同#c，但每次结果随机", "A B C D")>]
     [<CommandHandlerMethodAttribute("c", "对多个选项1d100", "A B C D")>]
     member x.HandleChoices(cmdArg : CommandEventArgs) =
-        let atUser =
-            cmdArg.MessageEvent.Message.GetAts()
-            |> Array.tryHead
-
+        let atUser = cmdArg.MessageEvent.Message.TryGetAt()
         use sw = cmdArg.OpenResponse(ForceText)
 
         if atUser.IsSome then

@@ -1,4 +1,4 @@
-﻿module TheBot.Module.TRpgModule.TRpgModule
+﻿namespace TheBot.Module.TRpgModule.TRpgModule
 
 open System
 

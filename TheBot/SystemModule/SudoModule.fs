@@ -1,4 +1,4 @@
-module TheBot.Module.SudoModule
+namespace TheBot.Module.SudoModule
 
 open System
 open System.IO

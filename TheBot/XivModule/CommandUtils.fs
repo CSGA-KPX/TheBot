@@ -9,6 +9,7 @@ open TheBot.Utils.Config
 open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.UserOption
 
+
 [<Literal>]
 let defaultServerKey = "defaultServerKey"
 

@@ -1,4 +1,4 @@
-﻿module TheBot.Module.EatModule.Instance
+﻿namespace TheBot.Module.EatModule.Instance
 
 open System
 open KPX.FsCqHttp.Api.Group
@@ -16,10 +16,7 @@ type EatModule() =
 
     [<CommandHandlerMethodAttribute("eat", "吃什么？", "#eat 晚餐")>]
     member x.HandleEat(cmdArg : CommandEventArgs) =
-        let at =
-            cmdArg.MessageEvent.Message.GetAts()
-            |> Array.tryHead
-
+        let at = cmdArg.MessageEvent.Message.TryGetAt()
         use ret = cmdArg.OpenResponse()
 
         match at with

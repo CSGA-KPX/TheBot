@@ -1,7 +1,5 @@
 ﻿namespace TheBot.Module.EveModule
 
-open System
-
 open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.TextTable
@@ -19,112 +17,13 @@ open TheBot.Module.EveModule.Utils.Data
 open TheBot.Module.EveModule.Utils.Extensions
 
 
-type EveModule() =
+type EveRecipeModule() =
     inherit CommandHandlerBase()
 
     let data = DataBundle.Instance
     let pm = EveProcessManager.Default
 
-    let ToolWarning = "结果仅供参考。本工具不计算行星进出口税，项目费用取近似值。"
     let er = EveExpression.EveExpression()
-
-    [<CommandHandlerMethodAttribute("eveLp", "EVE LP兑换计算", "#evelp 军团名")>]
-    member x.HandleEveLp(cmdArg : CommandEventArgs) =
-        let cfg = Utils.LpUtils.LpConfigParser()
-        cfg.Parse(cmdArg.Arguments)
-
-        let tt =
-            TextTable("兑换", RightAlignCell "利润", RightAlignCell "利润/LP", RightAlignCell "日均交易")
-
-        let minVol = cfg.MinimalVolume
-        let minVal = cfg.MinimalValue
-        tt.AddPreTable(sprintf "最低交易量(vol)：%g 最低LP价值(val)：%g 结果上限(count)：%i" minVol minVal cfg.RecordCount)
-        tt.AddPreTable("警告：请参考交易量，利润很高的不一定卖得掉")
-
-        let corp =
-            data.GetNpcCorporation(cfg.CmdLineAsString)
-
-        data.GetLpStoreOffersByCorp(corp)
-        |> Array.map
-            (fun lpOffer ->
-                let proc = lpOffer.CastProcess()
-                let itemOffer = proc.GetFirstProduct()
-
-                let totalCost =
-                    let inputCost =
-                        proc.Input
-                        |> Array.sumBy
-                            (fun mr ->
-                                mr.Item.GetPrice(cfg.MaterialPriceMode)
-                                * mr.Quantity)
-
-                    inputCost + lpOffer.IskCost
-
-                let dailyVolume, sellPrice =
-                    if itemOffer.Item.IsBlueprint then
-                        let proc = pm.GetRecipe(itemOffer)
-
-                        let price =
-                            proc.GetTotalProductPrice(PriceFetchMode.SellWithTax)
-                            - proc.GetInstallationCost(cfg)
-
-                        data.GetItemTradeVolume(proc.Process.GetFirstProduct().Item), price
-                    else
-                        let price =
-                            proc.Output
-                            |> Array.sumBy
-                                (fun mr ->
-                                    mr.Item.GetPrice(PriceFetchMode.SellWithTax)
-                                    * mr.Quantity)
-
-                        data.GetItemTradeVolume(itemOffer.Item), price
-
-                let offerStr =
-                    sprintf "%s*%g" itemOffer.Item.Name itemOffer.Quantity
-
-                {| Name = offerStr
-                   TotalCost = totalCost
-                   SellPrice = sellPrice
-                   Profit = sellPrice - totalCost
-                   ProfitPerLp = (sellPrice - totalCost) / lpOffer.LpCost
-                   Volume = dailyVolume
-                   LpCost = lpOffer.LpCost
-                   Offer = itemOffer |})
-        |> Array.filter (fun r -> (r.ProfitPerLp >= minVal) && (r.Volume >= minVol))
-        |> Array.sortByDescending
-            (fun r ->
-                //let weightedVolume = r.Volume / r.Offer.Quantity
-                //r.ProfitPerLp * weightedVolume)
-                r.ProfitPerLp)
-        |> Array.truncate cfg.RecordCount
-        |> Array.iter (fun r -> tt.AddRow(r.Name, r.Profit |> floor, r.ProfitPerLp |> floor, r.Volume |> floor))
-
-        using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))
-
-    [<CommandHandlerMethodAttribute("eve矿物", "查询矿物价格", "")>]
-    [<CommandHandlerMethodAttribute("em", "查询物品价格", "")>]
-    member x.HandleEveMarket(cmdArg : CommandEventArgs) =
-        let mutable argOverride = None
-
-        if cmdArg.CommandName = "eve矿物" then argOverride <- Some(MineralNames.Replace(',', '+'))
-
-        let t =
-            let str =
-                if argOverride.IsSome then argOverride.Value else String.Join(" ", cmdArg.Arguments)
-
-            er.Eval(str)
-
-        let att = Utils.MarketUtils.EveMarketPriceTable()
-
-        match t with
-        | Accumulator a ->
-            for mr in a do
-                att.AddObject(mr.Item, mr.Quantity)
-        | _ -> cmdArg.AbortExecution(InputError, sprintf "求值失败，结果是%A" t)
-
-        let cfg = EveConfigParser()
-        cfg.Parse(cmdArg.Arguments)
-        using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(att))
 
     [<CommandHandlerMethodAttribute("eme", "EVE蓝图材料效率计算", "")>]
     member x.HandleME(cmdArg : CommandEventArgs) =
@@ -351,81 +250,6 @@ type EveModule() =
 
             using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun ret -> ret.Write(tt))
 
-    [<CommandHandlerMethodAttribute("EVE采矿", "EVE挖矿利润", "")>]
-    [<CommandHandlerMethodAttribute("EVE挖矿", "EVE挖矿利润", "")>]
-    member x.HandleOreMining(cmdArg : CommandEventArgs) =
-        let mineSpeed = 10.0 // m^3/s
-        let refineYield = 0.70
-
-        let tt =
-            TextTable(
-                "矿石",
-                RightAlignCell "秒利润",
-                "冰矿",
-                RightAlignCell "秒利润",
-                "月矿",
-                RightAlignCell "秒利润",
-                "导管",
-                RightAlignCell "秒利润"
-            )
-
-        tt.AddPreTable(ToolWarning)
-        tt.AddPreTable(sprintf "采集能力：%g m3/s 精炼效率:%g" mineSpeed refineYield)
-
-        let getSubTypes (names : string) =
-            names.Split(',')
-            |> Array.map
-                (fun name ->
-                    let item = data.GetItem(name)
-
-                    let proc =
-                        RefineProcessCollection
-                            .Instance
-                            .GetProcessFor(item)
-                            .Process
-
-                    let input = proc.Input.[0]
-
-                    let refinePerSec =
-                        mineSpeed / input.Item.Volume / input.Quantity
-
-                    let price =
-                        proc.Output
-                        |> Array.sumBy
-                            (fun m ->
-                                m.Quantity
-                                * refinePerSec
-                                * refineYield
-                                * m.Item.GetPriceInfo().Sell)
-
-                    name, price |> ceil)
-            |> Array.sortByDescending snd
-
-        let moon = getSubTypes MoonNames
-        let ice = getSubTypes IceNames
-        let ore = getSubTypes OreNames
-        let tore = getSubTypes TriglavianOreNames
-
-        let tryGetRow (arr : (string * float) []) (id : int) =
-            if id <= arr.Length - 1 then
-                let n, p = arr.[id]
-                (box n, box p)
-            else
-                (box "--", box <| RightAlignCell "--")
-
-        let rowMax =
-            (max (max ice.Length moon.Length) ore.Length) - 1
-        for i = 0 to rowMax do
-            let eon, eop = tryGetRow ore i
-            let ein, eip = tryGetRow ice i
-            let emn, emp = tryGetRow moon i
-            let etn, etp = tryGetRow tore i
-
-            tt.AddRow(eon, eop, ein, eip, emn, emp, etn, etp)
-
-        use ret = cmdArg.OpenResponse(ForceImage)
-        ret.Write(tt)
-
     [<CommandHandlerMethodAttribute("EVE舰船II", "T2舰船制造总览", "")>]
     [<CommandHandlerMethodAttribute("EVE舰船", "T2舰船制造总览", "")>]
     [<CommandHandlerMethodAttribute("EVE组件", "T2和旗舰组件制造总览", "")>]
@@ -556,43 +380,3 @@ type EveModule() =
 
                 ret.Write(tt)
                 ret.WriteEmptyLine())
-
-
-    [<CommandHandlerMethodAttribute("evesci", "EVE星系成本指数查询", "")>]
-    member x.HandleSci(cmdArg : CommandEventArgs) =
-        let sc =
-            BotData.EveData.SolarSystems.SolarSystemCollection.Instance
-
-        let scc =
-            BotData.EveData.SystemCostIndexCache.SystemCostIndexCollection.Instance
-
-        let cfg = EveConfigParser()
-        cfg.Parse(cmdArg.Arguments)
-
-        let tt =
-            TextTable("星系", "制造%", "材料%", "时间%", "拷贝%", "发明%", "反应%")
-
-        for arg in cfg.CommandLine do
-            let sys = sc.TryGetBySolarSystem(arg)
-
-            if sys.IsNone then
-                tt.AddPreTable(sprintf "%s不是有效星系名称" arg)
-            else
-                let sci = scc.TryGetBySystem(sys.Value)
-
-                if sci.IsNone then
-                    tt.AddPreTable(sprintf "没有%s的指数信息" arg)
-                else
-                    let sci = sci.Value
-
-                    tt.AddRow(
-                        arg,
-                        100.0 * sci.Manufacturing,
-                        100.0 * sci.ResearcMaterial,
-                        100.0 * sci.ResearchTime,
-                        100.0 * sci.Copying,
-                        100.0 * sci.Invention,
-                        100.0 * sci.Reaction
-                    )
-
-        using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun ret -> ret.Write(tt))

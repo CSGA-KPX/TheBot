@@ -5,6 +5,7 @@ open LibDmfXiv.Shared
 
 open BotData.XivData
 
+
 type StdEv =
     { Average : float
       Deviation : float }

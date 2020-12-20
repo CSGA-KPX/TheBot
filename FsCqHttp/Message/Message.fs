@@ -30,26 +30,36 @@ type Message(sec : MessageSection []) as x =
 
     member x.Add(img : Drawing.Bitmap) = x.Add(ImageSection.Create(img))
 
-    member x.TryGetSection<'T when 'T :> MessageSection>() = 
-        x
-        |> Seq.tryFind (fun sec -> sec :? 'T)
-        |> Option.map (fun sec -> sec :?> 'T)
-
     member x.GetSections<'T when 'T :> MessageSection>() =
-        [| for item in x do
-            match item with
-            | :? 'T as t -> yield t
-            | _ -> () |]
+        x
+        |> Seq.filter (fun sec -> sec :? 'T)
+        |> Seq.map (fun sec -> sec :?> 'T)
+
+    member x.TryGetSection<'T when 'T :> MessageSection>() = x.GetSections<'T>() |> Seq.tryHead
+
+    member x.TryGetAt(?allowAll : bool) =
+        let allowAll = defaultArg allowAll false
+
+        x.GetSections<AtSection>()
+        |> Seq.tryFind
+            (fun atSection ->
+                match atSection.At with
+                | AtUserType.All -> allowAll
+                | AtUserType.User _ -> true)
+        |> Option.map (fun atSection -> atSection.At)
 
     /// 获取At
     /// 默认忽略at全体成员
     member x.GetAts(?allowAll : bool) =
         let allowAll = defaultArg allowAll false
 
-        [| for sec in x.GetSections<AtSection>() do
-            match sec.At with
-            | AtUserType.All -> if allowAll then yield sec.At
-            | AtUserType.User _ -> yield sec.At |]
+        x.GetSections<AtSection>()
+        |> Seq.filter
+            (fun atSection ->
+                match atSection.At with
+                | AtUserType.All -> allowAll
+                | AtUserType.User _ -> true)
+        |> Seq.map (fun atSection -> atSection.At)
 
     /// 提取所有文本段为字符串
     override x.ToString() =
