@@ -24,6 +24,7 @@ type XivMarketModule() =
     let xivExpr = XivExpression.XivExpression()
 
     let padNumber = box <| RightAlignCell "--"
+
     let padOnNan f =
         if Double.IsNaN(f) then padNumber else box f
 
@@ -124,30 +125,30 @@ type XivMarketModule() =
                 let updateVal =
                     if updated = TimeSpan.MaxValue then padNumber else box updated
 
-                tt.AddRow(
-                    RowBuilder()
-                        .Add(mr.Item.Name)
-                        .Add(world.WorldName)
-                        .Add(mr.Quantity)
-                        .Add(padOnNan lstAll)
-                        .Add(padOnNan lstHq)
-                        .Add(padOnNan logAll)
-                        .Add(padOnNan logHq)
-                        .Add(updateVal)
-                )
+                tt.RowBuilder {
+                    yield mr.Item.Name
+                    yield world.WorldName
+                    yield mr.Quantity
+                    yield padOnNan lstAll
+                    yield padOnNan lstHq
+                    yield padOnNan logAll
+                    yield padOnNan logHq
+                    yield updateVal
+                }
+                |> tt.AddRow
 
             if acc.Count >= 2 then
-                tt.AddRow(
-                    RowBuilder()
-                        .Add("合计")
-                        .Add("--")
-                        .Add(padNumber)
-                        .Add(padOnNan sumListingAll)
-                        .Add(padOnNan sumListingHq)
-                        .Add(padOnNan sumTradeAll)
-                        .Add(padOnNan sumTradeHq)
-                        .Add(padNumber)
-                )
+                tt.RowBuilder {
+                    yield "合计"
+                    yield "--"
+                    yield padNumber
+                    yield padOnNan sumListingAll
+                    yield padOnNan sumListingHq
+                    yield padOnNan sumTradeAll
+                    yield padOnNan sumTradeHq
+                    yield padNumber
+                }
+                |> tt.AddRow
 
         using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun ret -> ret.Write(tt))
 
@@ -196,44 +197,29 @@ type XivMarketModule() =
         let mutable sum = MarketUtils.StdEv.Zero
 
         for mr in acc |> Seq.sortBy (fun kv -> kv.Item.Id) do
-            let item = mr.Item
-            let quantity = mr.Quantity
-
             let market =
                 if doCalculateCost then
                     MarketUtils
                         .MarketAnalyzer
-                        .GetMarketListing(world, item)
+                        .GetMarketListing(world, mr.Item)
                         .TakeVolume()
                     |> Some
                 else
                     None
 
-            RowBuilder()
-                .Add(item |> tryLookupNpcPrice)
-                .AddCond(doCalculateCost,
-                         lazy
-                             (if market.Value.IsEmpty then
-                                 box <| RightAlignCell "--"
-                              else
-                                  box <| market.Value.StdEvPrice().Round().Average))
-                .Add(quantity)
-                .AddCond(doCalculateCost,
-                         lazy
-                             (if market.Value.IsEmpty then
-                                 box <| RightAlignCell "--"
-                              else
-                                  let subtotal =
-                                      market.Value.StdEvPrice().Round() * quantity
+            tt.RowBuilder {
+                yield mr.Item |> tryLookupNpcPrice
+                if doCalculateCost then yield padOnNan (market.Value.StdEvPrice().Round().Average)
+                yield mr.Quantity
 
-                                  sum <- sum + subtotal
-                                  box subtotal.Average))
-                .AddCond(doCalculateCost,
-                         lazy
-                             (if market.Value.IsEmpty then
-                                 box <| RightAlignCell "--"
-                              else
-                                  box <| market.Value.LastUpdateTime()))
+                if doCalculateCost then
+                    let subtotal =
+                        market.Value.StdEvPrice().Round() * mr.Quantity
+
+                    sum <- sum + subtotal
+                    yield padOnNan subtotal.Average
+                    yield market.Value.LastUpdateTime()
+            }
             |> tt.AddRow
 
         if doCalculateCost then
@@ -283,15 +269,15 @@ type XivMarketModule() =
                 sc.AllCostItems() |> Seq.chunkBySize headerCol
 
             for chunk in chunks do
-                let rb = RowBuilder()
-
-                for item in chunk do
-                    rb.Add(item.Id).Add(item.Name) |> ignore
-                for i = 0 to headerCol - chunk.Length - 1 do
-                    rb.AddRightAlign("--").AddLeftAlign("--")
-                    |> ignore
-
-                tt.AddRow(rb)
+                tt.RowBuilder {
+                    for item in chunk do
+                        yield item.Id
+                        yield item.Name
+                    for _ = 0 to headerCol - chunk.Length - 1 do
+                        yield CellType.CreateRightAlign("--")
+                        yield CellType.CreateLeftAlign("--")
+                }
+                |> tt.AddRow
 
             using (cmdArg.OpenResponse(ForceImage)) (fun x -> x.Write(tt))
         else
@@ -324,22 +310,23 @@ type XivMarketModule() =
                             .GetMarketListing(world, recv)
                             .TakeVolume()
 
-                    let isEmpty = market.IsEmpty
-                    let notEmpty = not isEmpty
+                    tt.RowBuilder {
+                        yield recv.Name
+                        yield padOnNan (market.StdEvPrice().Round().Average)
+                        yield padOnNan (market.MinPrice())
 
-                    let def = lazy (RightAlignCell "--")
+                        yield
+                            padOnNan (
+                                (market.StdEvPrice().Round()
+                                 * (float <| info.ReceiveCount)
+                                 / (float <| info.CostCount))
+                                    .Round()
+                                    .Average
+                            )
 
-                    RowBuilder()
-                        .Add(recv.Name)
-                        .Add(padOnNan(market.StdEvPrice().Round().Average))
-                        .Add(padOnNan(market.MinPrice()))
-                        .Add(padOnNan
-                                 ((market.StdEvPrice().Round()
-                                   * (float <| info.ReceiveCount)
-                                   / (float <| info.CostCount))
-                                     .Round()
-                                     .Average))
-                        .AddIf(notEmpty, lazy (market.LastUpdateTime()), def)
+                        if market.IsEmpty then yield CellType.CreateRightAlign("--") else yield market.LastUpdateTime()
+
+                    }
                     |> tt.AddRow
 
                 using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))

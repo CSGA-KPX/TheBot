@@ -51,7 +51,6 @@ type EveRecipeModule() =
             "直接材料总价："
             + System.String.Format("{0:N0}", ceil me0Price)
         )
-
         for me = 0 to 10 do
             let cost =
                 pm
@@ -263,6 +262,17 @@ type EveRecipeModule() =
         use ret = cmdArg.OpenResponse(cfg.IsImageOutput)
         ret.WriteLine(ToolWarning)
 
+        ret.WriteLine(
+            sprintf
+                "输入效率：%i%% 默认效率：%i%% 成本指数：%i%% 设施税率%i%%"
+                cfg.InputMe
+                cfg.DerivativetMe
+                cfg.SystemCostIndex
+                cfg.StructureTax
+        )
+
+        ret.WriteLine(sprintf "展开行星材料：%b 展开反应公式：%b" cfg.ExpandPlanet cfg.ExpandReaction)
+
         let filterFunc : (EveProcess -> bool) =
             match cmdArg.CommandName with // 注意小写匹配
             | "eve组件" ->
@@ -292,7 +302,7 @@ type EveRecipeModule() =
             | "eve装备ii" ->
                 let isGroup = cfg.GetValue("by") = "group"
 
-                if isGroup then ret.WriteLine("按装备名匹配") else ret.WriteLine("按名称匹配，按组名匹配请使用by:group")
+                if isGroup then ret.WriteLine("按组名匹配") else ret.WriteLine("按名称匹配，按组名匹配请使用by:group")
 
                 let keyword =
                     if cfg.CommandLine.Length = 0 then ret.AbortExecution(InputError, "需要一个装备名称关键词")

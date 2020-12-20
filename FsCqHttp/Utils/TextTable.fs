@@ -151,32 +151,46 @@ type internal TextColumn() =
                          else
                              RightAlignCell(padding + cell.Value)
 
-/// 对于太长或者逻辑复杂不方便使用TextTable.AddRow()时使用
+
+[<Struct>]
+type RowBuilderType = internal B of (List<CellType> -> unit)
+
 type RowBuilder() =
-    let fields = List<CellType>()
+    let (!) =
+        function
+        | B f -> f
 
-    member x.Add(o : obj) =
-        fields.Add(CellType.CreateFrom(o))
-        x
+    [<CustomOperation("yieldLeft")>]
+    member x.YieldLeft(value : obj) = x.Yield(CellType.CreateLeftAlign(value))
 
-    member x.AddCond(cond : bool, o : Lazy<_>) = if cond then x.Add(o.Value) else x
+    [<CustomOperation("yieldRight")>]
+    member x.YieldRight(value : obj) = x.Yield(CellType.CreateRightAlign(value))
 
-    member x.AddIf(cond : bool, ifTrue : Lazy<_>, ifFalse : Lazy<_>) =
-        if cond then x.Add(ifTrue.Value) else x.Add(ifFalse.Value)
+    member _.Yield(value : obj) =
+        B(fun b -> b.Add(CellType.CreateFrom(value)))
 
-    member x.AddLeftAlign(o : obj) =
-        fields.Add(CellType.CreateLeftAlign(o))
-        x
+    member _.Combine(f, g) =
+        B
+            (fun b ->
+                ! f b
+                ! g b)
 
-    member x.AddLeftAlignCond(cond : bool, o) = if cond then x.AddLeftAlign(o) else x
+    member _.Delay f = B(fun b -> ! (f ()) b)
+    member _.Zero() = B(fun _ -> ())
 
-    member x.AddRightAlign(o : obj) =
-        fields.Add(CellType.CreateRightAlign(o))
-        x
+    member _.For(xs : 'a seq, f : 'a -> RowBuilderType) =
+        B
+            (fun b ->
+                let e = xs.GetEnumerator()
 
-    member x.AddRightAlignCond(cond : bool, o) = if cond then x.AddRightAlign(o) else x
+                while e.MoveNext() do
+                    ! (f e.Current) b)
 
-    member internal x.GetFields() = fields
+    member _.While(p : unit -> bool, f : RowBuilderType) =
+        B
+            (fun b ->
+                while p () do
+                    ! f b)
 
 /// 延迟TextTable的求值时间点，便于在最终输出前对TextTable的参数进行调整
 type private DelayedTableItem =
@@ -184,6 +198,8 @@ type private DelayedTableItem =
     | TableItem of TextTable
 
 and TextTable([<ParamArray>] header : Object []) =
+    static let builder = RowBuilder()
+
     let preTableLines = List<DelayedTableItem>()
     let postTableLines = List<DelayedTableItem>()
 
@@ -210,8 +226,13 @@ and TextTable([<ParamArray>] header : Object []) =
     member x.AddPostTable(str : string) = postTableLines.Add(StringItem str)
     member x.AddPostTable(tt : TextTable) = postTableLines.Add(TableItem tt)
 
-    member x.AddRow(builder : RowBuilder) =
-        let fields = builder.GetFields()
+    /// 获取用于行构造器的对象
+    member x.RowBuilder = builder
+
+    member x.AddRow(builderType : RowBuilderType) = 
+        let (B builder) = builderType
+        let fields = List<_>()
+        builder fields
 
         if fields.Count <> colCount
         then invalidArg (nameof builder) (sprintf "数量不足：需求%i 提供%i" colCount fields.Count)
@@ -279,3 +300,5 @@ type KPX.FsCqHttp.Utils.TextResponse.TextResponse with
 
         for line in tt.ToLines() do
             x.WriteLine(line)
+
+
