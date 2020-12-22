@@ -1,10 +1,10 @@
-﻿module TheBot.Utils.HandlerUtils
+﻿module KPX.TheBot.Utils.HandlerUtils
 
 open System.Collections.Generic
 
 open KPX.FsCqHttp.Handler
 
-open TheBot.Utils.Config
+open KPX.TheBot.Utils.Config
 
 [<Literal>]
 let private instanceOwnerKey = "InstanceOwner"

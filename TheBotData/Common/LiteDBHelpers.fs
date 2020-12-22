@@ -1,4 +1,4 @@
-﻿module BotData.Common.LiteDBHelpers
+﻿module KPX.TheBot.Data.Common.LiteDBHelpers
 
 open LiteDB
 

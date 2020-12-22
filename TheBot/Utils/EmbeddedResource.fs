@@ -1,4 +1,4 @@
-﻿module TheBot.Utils.EmbeddedResource
+﻿module KPX.TheBot.Utils.EmbeddedResource
 
 open System
 open System.Reflection

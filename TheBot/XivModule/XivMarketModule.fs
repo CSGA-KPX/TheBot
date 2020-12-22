@@ -1,4 +1,4 @@
-﻿namespace TheBot.Module.XivMarketModule
+﻿namespace KPX.TheBot.Module.XivMarketModule
 
 open System
 
@@ -7,13 +7,13 @@ open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.TextTable
 
-open BotData.CommonModule.Recipe
-open BotData.XivData
+open KPX.TheBot.Data.CommonModule.Recipe
+open KPX.TheBot.Data.XivData
 
-open TheBot.Utils.Config
-open TheBot.Utils.RecipeRPN
+open KPX.TheBot.Utils.Config
+open KPX.TheBot.Utils.RecipeRPN
 
-open TheBot.Module.XivModule.Utils
+open KPX.TheBot.Module.XivModule.Utils
 
 type XivMarketModule() =
     inherit CommandHandlerBase()

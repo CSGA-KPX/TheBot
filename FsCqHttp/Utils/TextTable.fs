@@ -113,14 +113,12 @@ type internal TextColumn() =
     /// 将列内所有单元格重置为左对齐
     member x.ForceLeftAlign() =
         x.SetLeftAlignment()
-
         for i = 0 to x.Count - 1 do
             x.[i] <- LeftAlignCell x.[i].Value
 
     /// 将列内所有单元格重置为右对齐
     member x.ForceRightAlign() =
         x.SetRightAlignment()
-
         for i = 0 to x.Count - 1 do
             x.[i] <- RightAlignCell x.[i].Value
 
@@ -135,7 +133,6 @@ type internal TextColumn() =
 
         let padCharLen =
             KPX.FsCqHttp.Config.Output.TextTable.CharLen(padChar)
-
         for i = 0 to x.Count - 1 do
             let cell = x.[i]
             let width = cell.DisplayWidth
@@ -145,7 +142,6 @@ type internal TextColumn() =
             if padLen <> 0 || rstLen <> 0 then
                 let padding =
                     String(padChar, padLen) + String(' ', rstLen)
-
                 x.[i] <- if cell.IsLeftAlign then
                              LeftAlignCell(cell.Value + padding)
                          else
@@ -159,12 +155,6 @@ type RowBuilder() =
     let (!) =
         function
         | B f -> f
-
-    [<CustomOperation("yieldLeft")>]
-    member x.YieldLeft(value : obj) = x.Yield(CellType.CreateLeftAlign(value))
-
-    [<CustomOperation("yieldRight")>]
-    member x.YieldRight(value : obj) = x.Yield(CellType.CreateRightAlign(value))
 
     member _.Yield(value : obj) =
         B(fun b -> b.Add(CellType.CreateFrom(value)))
@@ -229,7 +219,7 @@ and TextTable([<ParamArray>] header : Object []) =
     /// 获取用于行构造器的对象
     member x.RowBuilder = builder
 
-    member x.AddRow(builderType : RowBuilderType) = 
+    member x.AddRow(builderType : RowBuilderType) =
         let (B builder) = builderType
         let fields = List<_>()
         builder fields
@@ -250,12 +240,12 @@ and TextTable([<ParamArray>] header : Object []) =
     member x.AddRowFill([<ParamArray>] objs : Object []) =
         if objs.Length > colCount
         then invalidArg (nameof objs) (sprintf "输入过多：需求%i 提供%i" colCount objs.Length)
+
         for i = 0 to objs.Length - 1 do
             cols.[i].Add(CellType.CreateFrom(objs.[i]))
 
         let def =
             box KPX.FsCqHttp.Config.Output.TextTable.CellPadding
-
         for i = objs.Length to colCount - 1 do
             cols.[i].AddDefaultAlignment(def)
 
@@ -277,10 +267,8 @@ and TextTable([<ParamArray>] header : Object []) =
 
            let interColumnPadding = sprintf " %c " x.ColumnPaddingChar
            let sb = Text.StringBuilder()
-
            for row = 0 to cols.[0].Count - 1 do
                sb.Clear().Append(cols.[0].[row].Value) |> ignore
-
                for col = 1 to colCount - 1 do
                    sb
                        .Append(interColumnPadding)
@@ -300,5 +288,3 @@ type KPX.FsCqHttp.Utils.TextResponse.TextResponse with
 
         for line in tt.ToLines() do
             x.WriteLine(line)
-
-

@@ -1,6 +1,6 @@
 ﻿module XivItemTest
 
-open BotData
+open KPX.TheBot.Data
 open NUnit.Framework
 
 [<OneTimeSetUp>]

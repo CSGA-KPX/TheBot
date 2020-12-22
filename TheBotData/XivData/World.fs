@@ -1,4 +1,4 @@
-﻿module BotData.XivData.World
+﻿module KPX.TheBot.Data.XivData.World
 
 [<AutoOpen>]
 module private WorldConstant =
@@ -40,7 +40,7 @@ let Worlds =
     let pyMapping = WorldNamePinyin |> readOnlyDict
 
     use col =
-        BotData.Common.Database.BotDataInitializer.XivCollectionChs
+        KPX.TheBot.Data.Common.Database.BotDataInitializer.XivCollectionChs
 
     let worlds =
         col.GetSheet("World")

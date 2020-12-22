@@ -1,4 +1,4 @@
-﻿namespace TheBot.Module.TestModule
+﻿namespace KPX.TheBot.Module.TestModule
 
 open System
 open System.Text

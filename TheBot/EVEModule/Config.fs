@@ -1,9 +1,9 @@
-﻿namespace TheBot.Module.EveModule.Utils.Config
+﻿namespace KPX.TheBot.Module.EveModule.Utils.Config
 
 open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.UserOption
 
-open BotData.EveData.Utils
+open KPX.TheBot.Data.EveData.Utils
 
 type EveConfigParser() as x =
     inherit UserOptionParser()
@@ -42,7 +42,7 @@ type EveConfigParser() as x =
     member x.MaterialPriceMode =
         if x.IsDefined("buy") then PriceFetchMode.BuyWithTax else PriceFetchMode.Sell
 
-    interface BotData.EveData.Process.IEveCalculatorConfig with
+    interface KPX.TheBot.Data.EveData.Process.IEveCalculatorConfig with
         member x.InputME = x.InputMe
         member x.DerivedME = x.DerivativetMe
         member x.ExpandPlanet = x.ExpandPlanet

@@ -1,12 +1,12 @@
-﻿module TheBot.Module.EatModule.Utils
+﻿module KPX.TheBot.Module.EatModule.Utils
 
 open System
 
-open TheBot.Utils.Dicer
+open KPX.TheBot.Utils.Dicer
 
 
 let private rm =
-    TheBot.Utils.EmbeddedResource.GetResourceManager("Eat")
+    KPX.TheBot.Utils.EmbeddedResource.GetResourceManager("Eat")
 
 let private emptyChars = [| ' '; '\t'; '\r'; '\n' |]
 

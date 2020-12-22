@@ -1,4 +1,4 @@
-﻿namespace TheBot.Module.EveModule
+﻿namespace KPX.TheBot.Module.EveModule
 
 open System
 
@@ -6,17 +6,17 @@ open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.TextTable
 
-open BotData.CommonModule.Recipe
-open BotData.EveData.Utils
-open BotData.EveData.EveType
-open BotData.EveData.Process
+open KPX.TheBot.Data.CommonModule.Recipe
+open KPX.TheBot.Data.EveData.Utils
+open KPX.TheBot.Data.EveData.EveType
+open KPX.TheBot.Data.EveData.Process
 
-open TheBot.Utils.RecipeRPN
+open KPX.TheBot.Utils.RecipeRPN
 
-open TheBot.Module.EveModule.Utils.Helpers
-open TheBot.Module.EveModule.Utils.Config
-open TheBot.Module.EveModule.Utils.Data
-open TheBot.Module.EveModule.Utils.Extensions
+open KPX.TheBot.Module.EveModule.Utils.Helpers
+open KPX.TheBot.Module.EveModule.Utils.Config
+open KPX.TheBot.Module.EveModule.Utils.Data
+open KPX.TheBot.Module.EveModule.Utils.Extensions
 
 
 type EveMarketModule() =

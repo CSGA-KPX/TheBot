@@ -1,4 +1,4 @@
-﻿module BotData.EveData.Utils
+﻿module KPX.TheBot.Data.EveData.Utils
 
 open System
 

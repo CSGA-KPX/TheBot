@@ -1,8 +1,8 @@
-﻿namespace BotData.XivData.ClassJobMapping
+﻿namespace KPX.TheBot.Data.XivData.ClassJobMapping
 
 open System
 
-open BotData.Common.Database
+open KPX.TheBot.Data.Common.Database
 
 [<CLIMutable>]
 type Mapping =

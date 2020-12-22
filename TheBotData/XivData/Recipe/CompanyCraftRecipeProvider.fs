@@ -1,9 +1,9 @@
-﻿namespace BotData.XivData.Recipe
+﻿namespace KPX.TheBot.Data.XivData.Recipe
 
-open BotData.Common.Database
-open BotData.CommonModule.Recipe
+open KPX.TheBot.Data.Common.Database
+open KPX.TheBot.Data.CommonModule.Recipe
 
-open BotData.XivData.Item
+open KPX.TheBot.Data.XivData.Item
 
 type CompanyCraftRecipeProvider private () =
     inherit CachedTableCollection<int, XivDbRecipe>()

@@ -1,16 +1,16 @@
 ﻿/// 此模块用于角色卡的CRUD操作
-module TheBot.Module.TRpgModule.CardManager
+module KPX.TheBot.Module.TRpgModule.CardManager
 
 open System
 
 open LiteDB
 
-open BotData.Common.LiteDBHelpers
+open KPX.TheBot.Data.Common.LiteDBHelpers
 
 open KPX.FsCqHttp.Handler
 
-open TheBot.Module.TRpgModule.TRpgUtils
-open TheBot.Module.TRpgModule.TRpgCharacterCard
+open KPX.TheBot.Module.TRpgModule.TRpgUtils
+open KPX.TheBot.Module.TRpgModule.TRpgCharacterCard
 
 [<Literal>]
 let MAX_USER_CARDS = 16

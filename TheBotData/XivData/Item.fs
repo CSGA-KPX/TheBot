@@ -1,8 +1,8 @@
-﻿namespace BotData.XivData.Item
+﻿namespace KPX.TheBot.Data.XivData.Item
 
 open System
 
-open BotData.Common.Database
+open KPX.TheBot.Data.Common.Database
 
 [<CLIMutable>]
 type ItemRecord =

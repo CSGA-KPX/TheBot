@@ -1,4 +1,4 @@
-﻿namespace BotData.EveData.SystemCostIndexCache
+﻿namespace KPX.TheBot.Data.EveData.SystemCostIndexCache
 
 open System
 open System.IO
@@ -6,10 +6,10 @@ open System.IO
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 
-open BotData.Common.Database
-open BotData.Common.Network
+open KPX.TheBot.Data.Common.Database
+open KPX.TheBot.Data.Common.Network
 
-open BotData.EveData.Utils
+open KPX.TheBot.Data.EveData.Utils
 
 [<CLIMutable>]
 type SystemCostIndex =
@@ -42,7 +42,7 @@ type SystemCostIndexCollection private () =
         >= TimeSpan.FromDays(1.0)
 
     override x.Depends =
-        [| typeof<BotData.EveData.SolarSystems.SolarSystemCollection> |]
+        [| typeof<KPX.TheBot.Data.EveData.SolarSystems.SolarSystemCollection> |]
 
     override x.InitializeCollection() =
         let url =
@@ -87,9 +87,9 @@ type SystemCostIndexCollection private () =
         |> x.DbCollection.InsertBulk
         |> ignore
 
-    member x.TryGetBySystem(system : BotData.EveData.SolarSystems.SolarSystem) =
+    member x.TryGetBySystem(system : KPX.TheBot.Data.EveData.SolarSystems.SolarSystem) =
         x.CheckUpdate()
         x.TryGetByKey(system.Id)
 
-    member x.GetBySystem(system : BotData.EveData.SolarSystems.SolarSystem) =
+    member x.GetBySystem(system : KPX.TheBot.Data.EveData.SolarSystems.SolarSystem) =
         x.PassOrRaise(x.TryGetByKey(system.Id), "没有{0}的工业指数资料", system.Name)

@@ -1,4 +1,4 @@
-namespace TheBot.Module.DiceModule.DiceModule
+namespace KPX.TheBot.Module.DiceModule.DiceModule
 
 open System
 
@@ -12,9 +12,9 @@ open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.TextTable
 
-open TheBot.Utils.Dicer
+open KPX.TheBot.Utils.Dicer
 
-open TheBot.Module.DiceModule.Utils
+open KPX.TheBot.Module.DiceModule.Utils
 
 
 type DiceModule() =

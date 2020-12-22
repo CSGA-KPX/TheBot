@@ -1,8 +1,8 @@
-﻿namespace TheBot.Module.EveModule.Utils.Data
+﻿namespace KPX.TheBot.Module.EveModule.Utils.Data
 
-open BotData.EveData
-open BotData.EveData.EveType
-open BotData.EveData.NpcCorporation
+open KPX.TheBot.Data.EveData
+open KPX.TheBot.Data.EveData.EveType
+open KPX.TheBot.Data.EveData.NpcCorporation
 
 
 type DataBundle private () =

@@ -1,12 +1,12 @@
-﻿namespace BotData.XivData.CraftGearSet
+﻿namespace KPX.TheBot.Data.XivData.CraftGearSet
 
 open System
 
 open LiteDB
 
-open BotData.Common.Database
-open BotData.XivData.Item
-open BotData.XivData.Recipe
+open KPX.TheBot.Data.Common.Database
+open KPX.TheBot.Data.XivData.Item
+open KPX.TheBot.Data.XivData.Recipe
 
 [<CLIMutable>]
 type CraftableGear =

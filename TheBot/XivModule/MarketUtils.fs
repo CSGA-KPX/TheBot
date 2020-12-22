@@ -1,9 +1,9 @@
-﻿module TheBot.Module.XivModule.Utils.MarketUtils
+﻿module KPX.TheBot.Module.XivModule.Utils.MarketUtils
 
 open System
 open LibDmfXiv.Shared
 
-open BotData.XivData
+open KPX.TheBot.Data.XivData
 
 
 type StdEv =

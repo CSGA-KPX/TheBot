@@ -1,4 +1,4 @@
-﻿namespace TheBot.Module.DebugModule
+﻿namespace KPX.TheBot.Module.DebugModule
 
 open System
 open System.Reflection
@@ -9,7 +9,7 @@ open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.TextTable
 open KPX.FsCqHttp.Utils.UserOption
 
-open TheBot.Utils.HandlerUtils
+open KPX.TheBot.Utils.HandlerUtils
 
 type DebugModule() =
     inherit CommandHandlerBase()

@@ -1,4 +1,4 @@
-﻿module BotData.Common.Resource
+﻿module KPX.TheBot.Data.Common.Resource
 // 用于资源文件的访问
 
 open System

@@ -1,11 +1,12 @@
-﻿namespace TheBot.Module.EveModule
+﻿namespace KPX.TheBot.Module.EveModule
 
 open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.TextTable
 
-open TheBot.Module.EveModule.Utils.Config
+open KPX.TheBot.Module.EveModule.Utils.Config
 
+open KPX.TheBot.Data.EveData
 
 type EveMiscModule() =
     inherit CommandHandlerBase()
@@ -13,10 +14,10 @@ type EveMiscModule() =
     [<CommandHandlerMethodAttribute("evesci", "EVE星系成本指数查询", "")>]
     member x.HandleSci(cmdArg : CommandEventArgs) =
         let sc =
-            BotData.EveData.SolarSystems.SolarSystemCollection.Instance
+            SolarSystems.SolarSystemCollection.Instance
 
         let scc =
-            BotData.EveData.SystemCostIndexCache.SystemCostIndexCollection.Instance
+            SystemCostIndexCache.SystemCostIndexCollection.Instance
 
         let cfg = EveConfigParser()
         cfg.Parse(cmdArg.Arguments)

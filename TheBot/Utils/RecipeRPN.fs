@@ -1,13 +1,13 @@
-﻿module TheBot.Utils.RecipeRPN
+﻿module KPX.TheBot.Utils.RecipeRPN
 
 open System
 
-open TheBot.Utils.GenericRPN
+open KPX.TheBot.Utils.GenericRPN
 
-open BotData.CommonModule.Recipe
+open KPX.TheBot.Data.CommonModule.Recipe
 
 
-type ItemAccumulator<'Item when 'Item : equality> = BotData.CommonModule.Recipe.ItemAccumulator<'Item>
+type ItemAccumulator<'Item when 'Item : equality> = KPX.TheBot.Data.CommonModule.Recipe.ItemAccumulator<'Item>
 
 type RecipeOperand<'Item when 'Item : equality> =
     | Number of float

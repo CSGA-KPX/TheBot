@@ -1,8 +1,8 @@
 ﻿module XivRecipeTest2
 
-open BotData
+open KPX.TheBot.Data
 
-open BotData.XivData.Recipe
+open KPX.TheBot.Data.XivData.Recipe
 
 open NUnit.Framework
 

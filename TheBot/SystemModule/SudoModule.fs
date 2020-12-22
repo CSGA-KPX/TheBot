@@ -1,4 +1,4 @@
-namespace TheBot.Module.SudoModule
+namespace KPX.TheBot.Module.SudoModule
 
 open System
 open System.IO
@@ -13,7 +13,9 @@ open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Utils.TextTable
 open KPX.FsCqHttp.Utils.UserOption
 
-open TheBot.Utils.HandlerUtils
+open KPX.TheBot.Utils.HandlerUtils
+
+open KPX.TheBot.Data.Common.Database
 
 type SudoModule() =
     inherit CommandHandlerBase()
@@ -42,10 +44,10 @@ type SudoModule() =
     [<CommandHandlerMethodAttribute("#rebuilddatacache", "(超管) 重建数据缓存", "", IsHidden = true)>]
     member x.HandleRebuildXivDb(cmdArg : CommandEventArgs) =
         cmdArg.EnsureSenderOwner()
-        BotData.Common.Database.BotDataInitializer.ClearCache()
-        BotData.Common.Database.BotDataInitializer.ShrinkCache()
+        BotDataInitializer.ClearCache()
+        BotDataInitializer.ShrinkCache()
         cmdArg.QuickMessageReply("清空数据库完成")
-        BotData.Common.Database.BotDataInitializer.InitializeAllCollections()
+        BotDataInitializer.InitializeAllCollections()
         cmdArg.QuickMessageReply("重建数据库完成")
 
     [<CommandHandlerMethodAttribute("#su", "提交凭据，添加当前用户为超管", "", IsHidden = true)>]

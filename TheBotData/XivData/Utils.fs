@@ -1,4 +1,4 @@
-﻿module BotData.XivData.Item.Utils
+﻿module KPX.TheBot.Data.XivData.Item.Utils
 
 open LibFFXIV.GameData.Raw
 

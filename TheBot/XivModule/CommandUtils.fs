@@ -1,10 +1,10 @@
-﻿module TheBot.Module.XivModule.Utils.CommandUtils
+﻿module KPX.TheBot.Module.XivModule.Utils.CommandUtils
 
-open BotData.XivData
+open KPX.TheBot.Data.XivData
 
 open KPX.FsCqHttp.Handler
 
-open TheBot.Utils.Config
+open KPX.TheBot.Utils.Config
 
 open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.UserOption

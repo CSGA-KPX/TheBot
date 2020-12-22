@@ -1,11 +1,11 @@
-﻿module TheBot.Module.XivModule.Utils.XivExpression
+﻿module KPX.TheBot.Module.XivModule.Utils.XivExpression
 
 open System
 
-open BotData.XivData
+open KPX.TheBot.Data.XivData
 
-open TheBot.Utils.GenericRPN
-open TheBot.Utils.RecipeRPN
+open KPX.TheBot.Utils.GenericRPN
+open KPX.TheBot.Utils.RecipeRPN
 
 
 type ItemAccumulator = ItemAccumulator<Item.ItemRecord>

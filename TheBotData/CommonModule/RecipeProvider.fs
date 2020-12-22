@@ -1,4 +1,4 @@
-﻿namespace BotData.CommonModule.Recipe
+﻿namespace KPX.TheBot.Data.CommonModule.Recipe
 
 open System
 open System.Collections.Generic

@@ -1,4 +1,4 @@
-﻿namespace BotData.EveData.Process
+﻿namespace KPX.TheBot.Data.EveData.Process
 
 open System
 open System.Collections.Generic
@@ -7,8 +7,8 @@ open System.IO
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 
-open BotData.CommonModule.Recipe
-open BotData.EveData.EveType
+open KPX.TheBot.Data.CommonModule.Recipe
+open KPX.TheBot.Data.EveData.EveType
 
 /// 行星材料配方
 type PlanetProcessCollection private () =
@@ -26,7 +26,7 @@ type PlanetProcessCollection private () =
         |> ignore
 
         use archive =
-            BotData.EveData.Utils.GetEveDataArchive()
+            KPX.TheBot.Data.EveData.Utils.GetEveDataArchive()
 
         use f =
             archive.GetEntry("schematics.json").Open()

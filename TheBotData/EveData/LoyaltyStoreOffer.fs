@@ -1,13 +1,13 @@
-﻿namespace BotData.EveData.LoyaltyStoreOffer
+﻿namespace KPX.TheBot.Data.EveData.LoyaltyStoreOffer
 
 open Newtonsoft.Json.Linq
 
-open BotData.Common.Database
-open BotData.Common.Network
-open BotData.CommonModule.Recipe
+open KPX.TheBot.Data.Common.Database
+open KPX.TheBot.Data.Common.Network
+open KPX.TheBot.Data.CommonModule.Recipe
 
-open BotData.EveData.Process
-open BotData.EveData.NpcCorporation
+open KPX.TheBot.Data.EveData.Process
+open KPX.TheBot.Data.EveData.NpcCorporation
 
 [<CLIMutable>]
 type LoyaltyStoreOffer =
@@ -18,7 +18,7 @@ type LoyaltyStoreOffer =
 
     member x.CastProcess() =
         let ec =
-            BotData.EveData.EveType.EveTypeCollection.Instance
+            KPX.TheBot.Data.EveData.EveType.EveTypeCollection.Instance
 
         { Input =
               x.Process.Input

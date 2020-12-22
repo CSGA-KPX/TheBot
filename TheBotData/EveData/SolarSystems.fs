@@ -1,4 +1,4 @@
-﻿namespace BotData.EveData.SolarSystems
+﻿namespace KPX.TheBot.Data.EveData.SolarSystems
 
 open System
 open System.IO
@@ -6,7 +6,7 @@ open System.IO
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 
-open BotData.Common.Database
+open KPX.TheBot.Data.Common.Database
 
 [<CLIMutable>]
 type SolarSystem = { Id : int; Name : string }
@@ -28,7 +28,7 @@ type SolarSystemCollection private () =
 
         seq {
             use archive =
-                BotData.EveData.Utils.GetEveDataArchive()
+                KPX.TheBot.Data.EveData.Utils.GetEveDataArchive()
 
             use f =
                 archive.GetEntry("SolarSystem.tsv").Open()

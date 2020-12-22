@@ -1,4 +1,4 @@
-﻿namespace TheBot.Module.TRpgModule.TRpgModule
+﻿namespace KPX.TheBot.Module.TRpgModule.TRpgModule
 
 open System
 
@@ -11,14 +11,14 @@ open KPX.FsCqHttp.Api.Private
 open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.TextTable
 
-open TheBot.Utils.Dicer
-open TheBot.Utils.HandlerUtils
+open KPX.TheBot.Utils.Dicer
+open KPX.TheBot.Utils.HandlerUtils
 
-open TheBot.Module.DiceModule.Utils.DiceExpression
+open KPX.TheBot.Module.DiceModule.Utils.DiceExpression
 
-open TheBot.Module.TRpgModule.TRpgUtils
-open TheBot.Module.TRpgModule.TRpgCharacterCard
-open TheBot.Module.TRpgModule.CardManager
+open KPX.TheBot.Module.TRpgModule.TRpgUtils
+open KPX.TheBot.Module.TRpgModule.TRpgCharacterCard
+open KPX.TheBot.Module.TRpgModule.CardManager
 
 
 type TRpgModule() =

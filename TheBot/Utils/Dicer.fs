@@ -1,4 +1,4 @@
-﻿module TheBot.Utils.Dicer
+﻿module KPX.TheBot.Utils.Dicer
 
 open System
 open KPX.FsCqHttp.Event

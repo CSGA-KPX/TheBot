@@ -1,4 +1,4 @@
-﻿namespace BotData.EveData.NpcCorporation
+﻿namespace KPX.TheBot.Data.EveData.NpcCorporation
 
 open System
 open System.IO
@@ -6,7 +6,7 @@ open System.IO
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 
-open BotData.Common.Database
+open KPX.TheBot.Data.Common.Database
 
 [<CLIMutable>]
 type NpcCorporation =
@@ -31,7 +31,7 @@ type NpcCorporationoCollection private () =
 
         seq {
             use archive =
-                BotData.EveData.Utils.GetEveDataArchive()
+                KPX.TheBot.Data.EveData.Utils.GetEveDataArchive()
 
             use f =
                 archive.GetEntry("npccorporations.json").Open()

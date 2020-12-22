@@ -1,4 +1,4 @@
-namespace TheBot.Module.XivModule
+namespace KPX.TheBot.Module.XivModule
 
 open System
 open System.Text
@@ -11,9 +11,9 @@ open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.TextTable
 open KPX.FsCqHttp.Utils.UserOption
 
-open BotData.XivData
+open KPX.TheBot.Data.XivData
 
-open TheBot.Utils.Dicer
+open KPX.TheBot.Utils.Dicer
 
 
 type XivModule() =

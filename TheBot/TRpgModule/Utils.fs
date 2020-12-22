@@ -1,20 +1,20 @@
-﻿module TheBot.Module.TRpgModule.TRpgUtils
+﻿module KPX.TheBot.Module.TRpgModule.TRpgUtils
 
 open System
 open System.Collections.Generic
 open System.Text.RegularExpressions
 
-open TheBot.Module.DiceModule.Utils.DiceExpression
+open KPX.TheBot.Module.DiceModule.Utils.DiceExpression
 
 let TRpgDb =
-    BotData.Common.Database.DataBase.getLiteDB ("trpg.db")
+    KPX.TheBot.Data.Common.Database.DataBase.getLiteDB ("trpg.db")
 
 [<RequireQualifiedAccess>]
 module StringData =
     let private data = Dictionary<string, string []>()
 
     let private rm =
-        TheBot.Utils.EmbeddedResource.GetResourceManager("TRpg")
+        KPX.TheBot.Utils.EmbeddedResource.GetResourceManager("TRpg")
 
     let private emptyChars = [| '\r'; '\n' |]
 

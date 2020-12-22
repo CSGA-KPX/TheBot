@@ -1,4 +1,4 @@
-﻿namespace TheBot.AssemblyInfo
+﻿namespace KPX.TheBot.AssemblyInfo
 
 open System.Reflection
 open System.Runtime.CompilerServices

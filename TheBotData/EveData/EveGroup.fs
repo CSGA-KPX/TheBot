@@ -1,4 +1,4 @@
-﻿namespace BotData.EveData.Group
+﻿namespace KPX.TheBot.Data.EveData.Group
 
 open System
 open System.IO
@@ -6,7 +6,7 @@ open System.IO
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 
-open BotData.Common.Database
+open KPX.TheBot.Data.Common.Database
 
 [<CLIMutable>]
 type EveGroup =
@@ -28,7 +28,7 @@ type EveGroupCollection private () =
 
     override x.InitializeCollection() =
         use archive =
-            BotData.EveData.Utils.GetEveDataArchive()
+            KPX.TheBot.Data.EveData.Utils.GetEveDataArchive()
 
         use f =
             archive.GetEntry("evegroups.json").Open()

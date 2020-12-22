@@ -1,4 +1,4 @@
-﻿module BotData.Common.Network
+﻿module KPX.TheBot.Data.Common.Network
 
 open System.Net.Http
 

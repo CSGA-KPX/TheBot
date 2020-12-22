@@ -1,4 +1,4 @@
-﻿namespace BotData.EveData.MarketPriceCache
+﻿namespace KPX.TheBot.Data.EveData.MarketPriceCache
 
 open System
 open System.IO
@@ -6,11 +6,11 @@ open System.IO
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 
-open BotData.Common.Database
-open BotData.Common.Network
+open KPX.TheBot.Data.Common.Database
+open KPX.TheBot.Data.Common.Network
 
-open BotData.EveData.Utils
-open BotData.EveData.EveType
+open KPX.TheBot.Data.EveData.Utils
+open KPX.TheBot.Data.EveData.EveType
 
 [<CLIMutable>]
 type PriceCache =

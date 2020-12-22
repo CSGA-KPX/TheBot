@@ -1,4 +1,4 @@
-﻿module TheBot.Utils.Config
+﻿module KPX.TheBot.Utils.Config
 
 open System
 
@@ -16,7 +16,7 @@ type Int64JsonConverter() =
         reader.Value |> string |> uint64
 
 let private Db =
-    BotData.Common.Database.DataBase.getLiteDB ("thebot_config.db")
+    KPX.TheBot.Data.Common.Database.DataBase.getLiteDB ("thebot_config.db")
 
 [<RequireQualifiedAccess>]
 type ConfigOwner =

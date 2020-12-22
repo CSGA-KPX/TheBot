@@ -1,12 +1,12 @@
-﻿namespace BotData.EveData.Process
+﻿namespace KPX.TheBot.Data.EveData.Process
 
 open System
 
-open BotData.Common.Database
+open KPX.TheBot.Data.Common.Database
 
-open BotData.CommonModule.Recipe
+open KPX.TheBot.Data.CommonModule.Recipe
 
-open BotData.EveData.EveType
+open KPX.TheBot.Data.EveData.EveType
 
 open LiteDB
 

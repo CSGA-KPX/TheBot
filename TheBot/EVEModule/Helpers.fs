@@ -1,4 +1,4 @@
-﻿module TheBot.Module.EveModule.Utils.Helpers
+﻿module KPX.TheBot.Module.EveModule.Utils.Helpers
 
 open System
 open System.Net.Http

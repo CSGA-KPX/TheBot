@@ -1,4 +1,4 @@
-﻿module BotData.XivData.CompundMarketInfo
+﻿module KPX.TheBot.Data.XivData.CompundMarketInfo
 
 
 open System
@@ -11,10 +11,10 @@ open LibDmfXiv.Shared.MarketOrder
 open LibDmfXiv.Shared.TradeLog
 open LibDmfXiv.Client
 
-open BotData.Common.Database
-open BotData.Common.Network
+open KPX.TheBot.Data.Common.Database
+open KPX.TheBot.Data.Common.Network
 
-open BotData.XivData
+open KPX.TheBot.Data.XivData
 
 [<CLIMutable>]
 type MarketInfo =

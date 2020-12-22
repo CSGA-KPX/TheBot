@@ -1,8 +1,8 @@
-﻿namespace BotData.XivData.Recipe
+﻿namespace KPX.TheBot.Data.XivData.Recipe
 
-open BotData.CommonModule.Recipe
+open KPX.TheBot.Data.CommonModule.Recipe
 
-open BotData.XivData.Item
+open KPX.TheBot.Data.XivData.Item
 
 type XivRecipeManager private () =
     inherit RecipeManager<ItemRecord, RecipeProcess<ItemRecord>>()

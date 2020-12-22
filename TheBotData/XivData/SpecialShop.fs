@@ -1,13 +1,13 @@
-﻿namespace BotData.XivData.SpecialShop
+﻿namespace KPX.TheBot.Data.XivData.SpecialShop
 
 open System
 open System.Collections.Generic
 
 open LiteDB
 
-open BotData.Common.Database
+open KPX.TheBot.Data.Common.Database
 
-open BotData.XivData.Item
+open KPX.TheBot.Data.XivData.Item
 
 [<CLIMutable>]
 type SpecialShopInfo =

@@ -1,4 +1,4 @@
-﻿namespace BotData.EveData.EveType
+﻿namespace KPX.TheBot.Data.EveData.EveType
 
 open System
 open System.IO
@@ -7,8 +7,8 @@ open System.Collections.Generic
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 
-open BotData.Common.Database
-open BotData.EveData.Group
+open KPX.TheBot.Data.Common.Database
+open KPX.TheBot.Data.EveData.Group
 
 [<CLIMutable>]
 type EveType =
@@ -40,7 +40,7 @@ type EveTypeCollection private () =
 
         seq {
             use archive =
-                BotData.EveData.Utils.GetEveDataArchive()
+                KPX.TheBot.Data.EveData.Utils.GetEveDataArchive()
 
             use f = archive.GetEntry("evetypes.json").Open()
             use r = new JsonTextReader(new StreamReader(f))

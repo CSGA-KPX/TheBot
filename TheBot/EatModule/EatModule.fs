@@ -1,4 +1,4 @@
-﻿namespace TheBot.Module.EatModule.Instance
+﻿namespace KPX.TheBot.Module.EatModule.Instance
 
 open System
 open KPX.FsCqHttp.Api.Group
@@ -6,9 +6,9 @@ open KPX.FsCqHttp.Message
 open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Utils.TextResponse
 
-open TheBot.Module.EatModule.Utils
+open KPX.TheBot.Module.EatModule.Utils
 
-open TheBot.Utils.Dicer
+open KPX.TheBot.Utils.Dicer
 
 
 type EatModule() =
@@ -24,7 +24,7 @@ type EatModule() =
         | Some (Sections.AtUserType.User uid) when uid = cmdArg.SelfId
                                                    || uid = cmdArg.MessageEvent.UserId ->
             use s =
-                TheBot.Utils.EmbeddedResource.GetResFileStream("Funny.jpg")
+                KPX.TheBot.Utils.EmbeddedResource.GetResFileStream("Funny.jpg")
 
             use img =
                 Drawing.Bitmap.FromStream(s) :?> Drawing.Bitmap

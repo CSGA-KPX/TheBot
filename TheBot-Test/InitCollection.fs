@@ -1,6 +1,6 @@
 ﻿module InitCollection
 
-open BotData.Common.Database
+open KPX.TheBot.Data.Common.Database
 
 open NUnit.Framework
 

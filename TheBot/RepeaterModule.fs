@@ -1,4 +1,4 @@
-namespace TheBot.Module.RepeaterModule
+namespace KPX.TheBot.Module.RepeaterModule
 
 open System.Collections
 

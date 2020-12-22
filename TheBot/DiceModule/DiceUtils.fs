@@ -1,11 +1,11 @@
-﻿module TheBot.Module.DiceModule.Utils
+﻿module KPX.TheBot.Module.DiceModule.Utils
 
 open System
 
 open KPX.FsCqHttp.Api
 
-open TheBot.Utils.GenericRPN
-open TheBot.Utils.Dicer
+open KPX.TheBot.Utils.GenericRPN
+open KPX.TheBot.Utils.Dicer
 
 
 module ChoiceHelper =

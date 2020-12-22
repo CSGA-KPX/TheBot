@@ -1,11 +1,11 @@
-﻿module TheBot.Module.TRpgModule.TRpgCharacterCard
+﻿module KPX.TheBot.Module.TRpgModule.TRpgCharacterCard
 
 open System
 open System.Collections.Generic
 
 open KPX.FsCqHttp.Utils.TextTable
 
-open TheBot.Module.TRpgModule.TRpgUtils
+open KPX.TheBot.Module.TRpgModule.TRpgUtils
 
 [<CLIMutable>]
 type CharacterCard =

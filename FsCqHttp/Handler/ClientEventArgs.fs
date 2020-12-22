@@ -61,7 +61,7 @@ type CqEventArgs private (api : IApiCallProvider, ctx : JObject, selfId, event) 
     /// 中断执行过程
     member x.AbortExecution(level : ErrorLevel, fmt : string, [<ParamArray>] args : obj []) : 'T =
         match level with
-        | IgnoreError -> ()
+        | IgnoreError -> raise IgnoreException
         | other ->
             let msg = String.Format(fmt, args)
             let lvl = other.ToString()

@@ -1,9 +1,9 @@
-﻿module BotData.XivData.OceanFishing
+﻿module KPX.TheBot.Data.XivData.OceanFishing
 
 open System
 
-open BotData.Common.Database
-open BotData.Common.Resource
+open KPX.TheBot.Data.Common.Database
+open KPX.TheBot.Data.Common.Resource
 
 
 let private RouteTable =

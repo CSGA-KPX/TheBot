@@ -1,11 +1,11 @@
-﻿namespace BotData.EveData.Process
+﻿namespace KPX.TheBot.Data.EveData.Process
 
 open System
 
-open BotData.CommonModule.Recipe
+open KPX.TheBot.Data.CommonModule.Recipe
 
-open BotData.EveData.EveType
-open BotData.EveData.Process
+open KPX.TheBot.Data.EveData.EveType
+open KPX.TheBot.Data.EveData.Process
 
 
 type IEveCalculatorConfig =

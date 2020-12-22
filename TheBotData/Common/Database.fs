@@ -1,4 +1,4 @@
-﻿namespace BotData.Common.Database
+﻿namespace KPX.TheBot.Data.Common.Database
 // 此命名空间提供一个统一的数据库接口供数据缓存使用
 
 
@@ -6,7 +6,7 @@ open System
 open System.Collections.Generic
 open System.Reflection
 
-open BotData.Common.LiteDBHelpers
+open KPX.TheBot.Data.Common.LiteDBHelpers
 
 open LibFFXIV.GameData.Raw
 

@@ -1,14 +1,14 @@
-﻿module TheBot.Module.EveModule.Utils.Extensions
+﻿module KPX.TheBot.Module.EveModule.Utils.Extensions
 
-open BotData.EveData.Utils
-open BotData.EveData.EveType
-open BotData.EveData.Process
-open BotData.EveData.MarketPriceCache
-open BotData.EveData.GameInternalPriceCache
+open KPX.TheBot.Data.EveData.Utils
+open KPX.TheBot.Data.EveData.EveType
+open KPX.TheBot.Data.EveData.Process
+open KPX.TheBot.Data.EveData.MarketPriceCache
+open KPX.TheBot.Data.EveData.GameInternalPriceCache
 
-open TheBot.Module.EveModule.Utils.Helpers
-open TheBot.Module.EveModule.Utils.Data
-open TheBot.Module.EveModule.Utils.Config
+open KPX.TheBot.Module.EveModule.Utils.Helpers
+open KPX.TheBot.Module.EveModule.Utils.Data
+open KPX.TheBot.Module.EveModule.Utils.Config
 
 type EveType with
     member x.GetPrice(pm : PriceFetchMode) =
@@ -40,7 +40,7 @@ type EveType with
 
     /// 不是所有物品都有市场分类
     member x.MarketGroup =
-        BotData.EveData.EveMarketGroup.MarketGroupCollection.Instance.TryGetById(x.MarketGroupId)
+        KPX.TheBot.Data.EveData.EveMarketGroup.MarketGroupCollection.Instance.TryGetById(x.MarketGroupId)
 
     member x.IsBlueprint = x.CategoryId = 9
 

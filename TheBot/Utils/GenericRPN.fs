@@ -1,4 +1,4 @@
-﻿namespace TheBot.Utils.GenericRPN
+﻿namespace KPX.TheBot.Utils.GenericRPN
 
 open System
 open System.Collections.Generic

@@ -1,4 +1,4 @@
-﻿namespace BotData.EveData.EveMarketGroup
+﻿namespace KPX.TheBot.Data.EveData.EveMarketGroup
 
 open System
 open System.IO
@@ -7,7 +7,7 @@ open System.Collections.Generic
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 
-open BotData.Common.Database
+open KPX.TheBot.Data.Common.Database
 
 [<CLIMutable>]
 type MarketGroup =
@@ -33,7 +33,7 @@ type MarketGroupCollection private () =
 
         seq {
             use archive =
-                BotData.EveData.Utils.GetEveDataArchive()
+                KPX.TheBot.Data.EveData.Utils.GetEveDataArchive()
 
             use f =
                 archive.GetEntry("marketgroups.json").Open()
