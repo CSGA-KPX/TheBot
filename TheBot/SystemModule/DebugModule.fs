@@ -22,8 +22,7 @@ type DebugModule() =
     member x.HandleShowConfig(cmdArg : CommandEventArgs) =
         cmdArg.EnsureSenderOwner()
 
-        let cp =
-            typeof<Config.ConfigPlaceholder>
+        let cp = typeof<Config.ConfigPlaceholder>
 
         let prefix = cp.FullName.Replace(cp.Name, "")
 

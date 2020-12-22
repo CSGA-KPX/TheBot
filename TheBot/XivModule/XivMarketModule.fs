@@ -273,6 +273,7 @@ type XivMarketModule() =
                     for item in chunk do
                         yield item.Id
                         yield item.Name
+
                     for _ = 0 to headerCol - chunk.Length - 1 do
                         yield CellType.CreateRightAlign("--")
                         yield CellType.CreateLeftAlign("--")

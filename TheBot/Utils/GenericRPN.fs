@@ -67,7 +67,6 @@ type GenericRPNParser<'Operand when 'Operand :> IOperand<'Operand>>(?OperatorEsc
     member private x.SplitString(str : string) =
         let ret = List<_>()
         let sb = Text.StringBuilder()
-
         for i = 0 to str.Length - 1 do
             let c = str.[i]
 

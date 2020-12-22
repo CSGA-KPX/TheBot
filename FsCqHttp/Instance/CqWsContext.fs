@@ -164,8 +164,7 @@ type CqWsContext(ws : WebSocket) =
     member private x.HandleMessage(json : string) =
         let obj = JObject.Parse(json)
 
-        let logJson =
-            lazy (obj.ToString())
+        let logJson = lazy (obj.ToString())
 
         if (obj.ContainsKey("post_type")) then //消息上报
             if KPX.FsCqHttp.Config.Logging.LogEventPost then logger.Trace(sprintf "%s收到上报：%s" x.SelfId logJson.Value)
@@ -232,8 +231,7 @@ type CqWsContext(ws : WebSocket) =
 
                 if KPX.FsCqHttp.Config.Logging.LogApiCall then
                     logger.Trace(sprintf "%s请求API：%s" x.SelfId req.ActionName)
-                    if KPX.FsCqHttp.Config.Logging.LogApiJson then
-                        logger.Trace(sprintf "%s请求API：%s" x.SelfId json)
+                    if KPX.FsCqHttp.Config.Logging.LogApiJson then logger.Trace(sprintf "%s请求API：%s" x.SelfId json)
 
                 let data = json |> utf8.GetBytes
 

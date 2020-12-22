@@ -73,6 +73,7 @@ type XivModule() =
             let list = uo.GetValue<int>("list")
 
             if list > 31 then cmdArg.AbortExecution(InputError, "一个月还不够嘛？")
+
             for i = 0 to uo.GetValue<int>("list") do
                 let date = startDate.AddDays(float i)
 
@@ -279,6 +280,7 @@ type XivModule() =
                 let count = cfg.GetValue<int>("list")
 
                 if count > 12 * 31 then cmdArg.AbortExecution(InputError, "那时间可太长了。")
+
                 for i = 0 to count - 1 do
                     let cd = now.AddHours((float i) * 2.0)
                     let info = OceanFishing.CalculateCooldown(cd)

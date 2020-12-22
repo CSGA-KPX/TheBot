@@ -51,6 +51,7 @@ type EveRecipeModule() =
             "直接材料总价："
             + System.String.Format("{0:N0}", ceil me0Price)
         )
+
         for me = 0 to 10 do
             let cost =
                 pm

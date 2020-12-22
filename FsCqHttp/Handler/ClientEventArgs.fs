@@ -78,7 +78,6 @@ type CqEventArgs private (api : IApiCallProvider, ctx : JObject, selfId, event) 
 
             x.QuickMessageReply(sprintf "错误：%s" msg)
             raise IgnoreException
-
         Unchecked.defaultof<'T>
 
     member x.SendResponse(r : EventResponse) =
