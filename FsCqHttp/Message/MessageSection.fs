@@ -6,6 +6,8 @@ open System.Reflection
 
 open Newtonsoft.Json.Linq
 
+open KPX.FsCqHttp.Message
+
 
 [<AbstractClass>]
 type MessageSection(typeName : string) =
@@ -60,37 +62,32 @@ type MessageSection(typeName : string) =
 
         sprintf "[%s:%s]" x.TypeName (String.Join(";", args))
 
-    static member internal CreateFrom(sec : JObject) =
-        let mutable typeName = sec.["type"].Value<string>()
-
-        if not <| sectionInfoCache.ContainsKey(typeName) then typeName <- ""
-
-        let t = sectionInfoCache.[typeName]
-
-        let obj =
-            Activator.CreateInstance(t) :?> MessageSection
-
-        obj.ParseFrom(sec)
-        obj
-
     static member internal CreateFrom(typeName : string, values : seq<string * string>) =
         let mutable typeName = typeName
 
-        if not <| sectionInfoCache.ContainsKey(typeName) then typeName <- ""
+        if String.IsNullOrEmpty(typeName) then invalidArg (nameof typeName) "消息段名称为空"
 
-        let t = sectionInfoCache.[typeName]
-
-        let obj =
-            Activator.CreateInstance(t) :?> MessageSection
+        let section =
+            if sectionInfoCache.ContainsKey(typeName) then
+                sectionInfoCache.[typeName]
+                |> Activator.CreateInstance
+                :?> MessageSection
+            else
+                RawMessageSection(typeName) :> MessageSection
 
         for (name, value) in values do
-            obj.SetValue(name, value)
+            section.SetValue(name, value)
 
-        obj
+        section
 
 /// 用于储存类型未知消息段
-type RawMessageSection() =
+and RawMessageSection(realTypeName) =
     inherit MessageSection("")
+
+    /// 实际消息段类型
+    ///
+    /// 覆盖MessageSection.TypeName
+    member x.TypeName = realTypeName
 
 type TextSection() =
     inherit MessageSection("text")
@@ -174,20 +171,6 @@ type VideoSection() =
     /// 未实现
     member x.Timeout = raise<int> <| NotImplementedException()
 
-[<RequireQualifiedAccess>]
-type AtUserType =
-    | All
-    | User of uint64
-
-    override x.ToString() =
-        match x with
-        | All -> "all"
-        | User x -> x |> string
-
-    /// 将CQ码中字符串转换为AtUserType
-    static member internal FromString(str : string) =
-        if str = "all" then All else User(str |> uint64)
-
 type AtSection() =
     inherit MessageSection("at")
 
@@ -265,7 +248,6 @@ type ForwardSection() =
     inherit MessageSection("forward")
 
     member x.ForwardMessageId = x.GetValue("id")
-
 
 /// 未实现
 type NodeForwardSection() =

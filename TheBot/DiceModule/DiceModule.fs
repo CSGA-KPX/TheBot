@@ -30,12 +30,12 @@ type DiceModule() =
             let loginInfo = cmdArg.ApiCaller.CallApi<GetLoginInfo>()
 
             match atUser.Value with
-            | Sections.AtUserType.All -> sw.AbortExecution(InputError, "公共事件请at bot账号")
-            | Sections.AtUserType.User x when x = cmdArg.SelfId
+            | AtUserType.All -> sw.AbortExecution(InputError, "公共事件请at bot账号")
+            | AtUserType.User x when x = cmdArg.SelfId
                                               && not
                                                  <| cmdArg.RawMessage.Contains(loginInfo.Nickname) ->
                 sw.WriteLine("公投：")
-            | Sections.AtUserType.User x ->
+            | AtUserType.User x ->
                 let atUserName =
                     GetGroupMemberInfo(cmdArg.MessageEvent.GroupId, x)
 

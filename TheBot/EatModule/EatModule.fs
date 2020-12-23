@@ -20,8 +20,8 @@ type EatModule() =
         use ret = cmdArg.OpenResponse()
 
         match at with
-        | Some Sections.AtUserType.All -> ret.AbortExecution(InputError, "你要请客吗？")
-        | Some (Sections.AtUserType.User uid) when uid = cmdArg.SelfId
+        | Some AtUserType.All -> ret.AbortExecution(InputError, "你要请客吗？")
+        | Some (AtUserType.User uid) when uid = cmdArg.SelfId
                                                    || uid = cmdArg.MessageEvent.UserId ->
             use s =
                 KPX.TheBot.Utils.EmbeddedResource.GetResFileStream("Funny.jpg")
@@ -34,7 +34,7 @@ type EatModule() =
             cmdArg.QuickMessageReply(msg)
             ret.AbortExecution(IgnoreError, "")
 
-        | Some (Sections.AtUserType.User uid) ->
+        | Some (AtUserType.User uid) ->
             let atUserName =
                 GetGroupMemberInfo(cmdArg.MessageEvent.GroupId, uid)
 

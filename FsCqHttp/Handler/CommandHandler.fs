@@ -6,6 +6,7 @@ open KPX.FsCqHttp.Event
 open KPX.FsCqHttp.Handler
 
 
+[<Sealed>]
 [<AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = true)>]
 type CommandHandlerMethodAttribute(command : string, desc, lh) =
     inherit Attribute()
@@ -35,7 +36,7 @@ type CommandHandlerMethodAttribute(command : string, desc, lh) =
         else
             x.AltCommandStart
 
-// TODO: 处理AltCommandStart
+[<Sealed>]
 type CommandEventArgs(cqArg : CqEventArgs, msg : MessageEvent, attr : CommandHandlerMethodAttribute) =
     inherit CqEventArgs(cqArg)
 

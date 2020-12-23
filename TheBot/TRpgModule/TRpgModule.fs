@@ -27,6 +27,8 @@ type TRpgModule() =
     [<CommandHandlerMethodAttribute("coc7", "coc第七版", "", AltCommandStart = ".")>]
     [<CommandHandlerMethodAttribute("coc7", "coc第七版", "", IsHidden = true)>]
     member x.HandleCoc7(cmdArg : CommandEventArgs) =
+        let isDotCommand = cmdArg.CommandAttrib.CommandStart = "."
+
         let attrs =
             [| "力量", "3D6*5"
                "体质", "3D6*5"
@@ -41,7 +43,7 @@ type TRpgModule() =
         let tt = TextTable("属性", "值")
 
         let seed =
-            if cmdArg.CommandAttrib.CommandStart = "." then
+            if isDotCommand then
                 Array.singleton SeedOption.SeedRandom
             else
                 SeedOption.SeedByUserDay(cmdArg.MessageEvent)
@@ -62,7 +64,7 @@ type TRpgModule() =
         let job =
             de.Dicer.GetRandomItem(StringData.ChrJobs)
 
-        tt.AddPostTable(sprintf "今日推荐职业：%s" job)
+        if isDotCommand then tt.AddPostTable(sprintf "推荐职业：%s" job) else tt.AddPostTable(sprintf "今日推荐职业：%s" job)
 
         using (cmdArg.OpenResponse()) (fun ret -> ret.Write(tt))
 

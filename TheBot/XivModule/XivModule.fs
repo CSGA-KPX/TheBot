@@ -106,9 +106,9 @@ type XivModule() =
 
         if atUser.IsSome then
             match atUser.Value with
-            | Sections.AtUserType.All -> cmdArg.AbortExecution(InputError, "全员发洗澡水？给我一瓶谢谢！")
-            | Sections.AtUserType.User i when i = cmdArg.SelfId -> cmdArg.AbortExecution(InputError, "请联系开发者")
-            | Sections.AtUserType.User _ -> cmdArg.AbortExecution(ModuleError, "暂不支持")
+            | AtUserType.All -> cmdArg.AbortExecution(InputError, "全员发洗澡水？给我一瓶谢谢！")
+            | AtUserType.User i when i = cmdArg.SelfId -> cmdArg.AbortExecution(InputError, "请联系开发者")
+            | AtUserType.User _ -> cmdArg.AbortExecution(ModuleError, "暂不支持")
 
         let dicer =
             new Dicer(SeedOption.SeedByUserDay(cmdArg.MessageEvent))

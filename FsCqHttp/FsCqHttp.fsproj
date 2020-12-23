@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <Compile Include="Config.fs" />
+    <Compile Include="Message\MessageTypes.fs" />
     <Compile Include="Message\MessageSection.fs" />
     <Compile Include="Message\Message.fs" />
     <Compile Include="Event\NoticeEventTypes.fs" />
