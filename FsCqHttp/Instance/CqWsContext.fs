@@ -96,7 +96,7 @@ type CqWsContext(ws : WebSocket) =
         x.StartMessageLoop()
         started.WaitOne() |> ignore
 
-        (x :> IApiCallProvider).CallApi(self)
+        (x :> IApiCallProvider).CallApi(self) |> ignore
 
     member x.Stop() = cts.Cancel()
 
@@ -227,7 +227,7 @@ type CqWsContext(ws : WebSocket) =
                 let mre = new ManualResetEvent(false)
                 let json = req.GetRequestJson(echo)
 
-                let _ = apiPending.TryAdd(echo, (mre, req))
+                let _ = apiPending.TryAdd(echo, (mre, req :> ApiRequestBase))
 
                 if KPX.FsCqHttp.Config.Logging.LogApiCall then
                     logger.Trace(sprintf "%s请求API：%s" x.SelfId req.ActionName)
@@ -244,13 +244,13 @@ type CqWsContext(ws : WebSocket) =
                 apiPending.TryRemove(echo) |> ignore
 
                 req.IsExecuted <- true
+                return req
             }
             |> Async.RunSynchronously
 
         member x.CallApi<'T when 'T :> ApiRequestBase and 'T : (new : unit -> 'T)>() =
             let req = Activator.CreateInstance<'T>()
             (x :> IApiCallProvider).CallApi(req)
-            req
 
     interface IDisposable with
         member x.Dispose() = x.Stop()

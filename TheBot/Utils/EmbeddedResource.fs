@@ -13,18 +13,25 @@ let GetResFileStream (filename) =
     let assembly = Assembly.GetExecutingAssembly()
     assembly.GetManifestResourceStream(resName)
 
-let private emptyChars = [| '\r'; '\n' |]
+let private newLines = [| '\r'; '\n' |]
 
 type StringResource(resxName : string) =
     let mgr = GetResourceManager(resxName)
 
+    /// 返回原始字符串
     member x.GetString(key : string) = mgr.GetString(key)
+
+    /// 返回空白字符分隔后的词
+    member x.GetWords(key : string) =
+        mgr
+            .GetString(key)
+            .Split(Array.empty<char>, StringSplitOptions.RemoveEmptyEntries)
 
     /// 返回所有行
     member x.GetLines(key : string) =
         x
             .GetString(key)
-            .Split(emptyChars, StringSplitOptions.RemoveEmptyEntries)
+            .Split(newLines, StringSplitOptions.RemoveEmptyEntries)
 
     /// 返回所有不以cmtStart开始的行
     member x.GetLinesWithoutCommand(key : string, ?cmtStart : string) =

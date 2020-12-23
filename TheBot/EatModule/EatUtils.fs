@@ -22,40 +22,6 @@ type EatFormat =
     | HeadWithoutNumber
     | YesOrNo
 
-type EatChoices(array : string [], dicer : Dicer) =
-    static let formatPair (pair : string * int) = sprintf "%s(%i)" (fst pair) (snd pair)
-    static let goodCutoff = 5
-    static let noCutOff = 96
-
-    let mapped =
-        array
-        |> Array.map (fun x -> x, dicer.GetRandom(100u, x))
-        |> Array.sortBy (snd)
-
-    member x.ToString(f : EatFormat) =
-        use sw = new IO.StringWriter()
-
-        match f with
-        | EatFormat.All ->
-            mapped
-            |> Array.iter (fun p -> sw.Write(formatPair p))
-        | EatFormat.Head -> sw.Write(formatPair (mapped |> Array.head))
-        | EatFormat.HeadWithoutNumber -> sw.Write(snd (mapped |> Array.head))
-        | EatFormat.YesOrNo ->
-            let g =
-                mapped
-                |> Array.filter (fun (_, s) -> s <= goodCutoff)
-
-            let n =
-                mapped
-                |> Array.filter (fun (_, s) -> s >= noCutOff)
-                |> Array.sortByDescending (snd)
-
-            sw.WriteLine(("宜：{0}", String.Join(" ", g |> Array.map (formatPair))))
-            sw.WriteLine(("忌：{0}", String.Join(" ", n |> Array.map (formatPair))))
-
-        sw.ToString()
-
 let private breakfast = readChoice ("早加餐") |> Array.distinct
 let private dinner = readChoice ("中晚餐") |> Array.distinct
 let private hotpot_soup = readChoice ("火锅底料") |> Array.distinct

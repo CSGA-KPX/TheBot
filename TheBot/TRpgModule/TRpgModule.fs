@@ -144,10 +144,9 @@ type TRpgModule() =
                 let ret = Message()
                 ret.Add(msg)
 
-                let api =
-                    SendPrivateMsg(cmdArg.MessageEvent.UserId, ret)
-
-                cmdArg.ApiCaller.CallApi(api)
+                SendPrivateMsg(cmdArg.MessageEvent.UserId, ret)
+                |> cmdArg.ApiCaller.CallApi
+                |> ignore
             else
                 cmdArg.QuickMessageReply(msg)
 

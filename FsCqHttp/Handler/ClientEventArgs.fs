@@ -46,11 +46,11 @@ type CqEventArgs private (api : IApiCallProvider, ctx : JObject, selfId, event) 
         let event = CqHttpEvent.FromJObject(ctx)
         CqEventArgs(api, ctx, sid, event)
 
-    new(arg : CqEventArgs) = CqEventArgs(arg.ApiCaller, arg.RawEvent, arg.SelfId, arg.Event)
+    new(arg : CqEventArgs) = CqEventArgs(arg.ApiCaller, arg.RawEvent, arg.BotUserId, arg.Event)
 
     member internal x.Logger = logger
 
-    member val SelfId : uint64 = selfId
+    member val BotUserId : uint64 = selfId
 
     member val Event : CqHttpEvent = event
 
@@ -69,7 +69,7 @@ type CqEventArgs private (api : IApiCallProvider, ctx : JObject, selfId, event) 
 
             x.Logger.Warn(
                 "[{0}] -> {1} : {3} \r\n ctx： {2} \r\n stack : {4}",
-                x.SelfId,
+                x.BotUserId,
                 lvl,
                 sprintf "%A" x.Event,
                 msg,
