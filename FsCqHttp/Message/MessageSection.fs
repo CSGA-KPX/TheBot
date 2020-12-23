@@ -14,10 +14,15 @@ type MessageSection(typeName : string) =
 
     static let sectionInfoCache =
         let parent = typeof<MessageSection>
+        let rawClass = typeof<RawMessageSection>
         let asm = Assembly.GetExecutingAssembly()
 
         asm.GetTypes()
-        |> Array.filter (fun t -> t.IsSubclassOf(parent) && (not t.IsAbstract))
+        |> Array.filter
+            (fun t ->
+                t.IsSubclassOf(parent)
+                && (not t.IsAbstract)
+                && (t <> rawClass))
         |> Array.map
             (fun t ->
                 let obj =
