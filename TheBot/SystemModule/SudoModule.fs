@@ -132,7 +132,7 @@ type SudoModule() =
             cmdArg.EnsureSenderAdmin()
 
             let key =
-                allowGroupFmt cmdArg.SelfId (cfg.GetValue<uint64>("group"))
+                allowGroupFmt cmdArg.BotUserId (cfg.GetValue<uint64>("group"))
 
             allowList.Add(key) |> ignore
             cmdArg.QuickMessageReply(sprintf "接受来自[%s]的邀请" key)
@@ -140,7 +140,7 @@ type SudoModule() =
             cmdArg.EnsureSenderAdmin()
 
             let key =
-                allowQqFmt cmdArg.SelfId (cfg.GetValue<uint64>("friend"))
+                allowQqFmt cmdArg.BotUserId (cfg.GetValue<uint64>("friend"))
 
             allowList.Add(key) |> ignore
             cmdArg.QuickMessageReply(sprintf "接受来自[%s]的邀请" key)
@@ -154,12 +154,12 @@ type SudoModule() =
         match e with
         | FriendRequest req ->
             let inList =
-                allowList.Contains(allowQqFmt args.SelfId req.UserId)
+                allowList.Contains(allowQqFmt args.BotUserId req.UserId)
 
             let isAdmin = args.GetBotAdmins().Contains(req.UserId)
             args.SendResponse(FriendAddResponse(inList || isAdmin, ""))
         | GroupRequest req ->
             let inList =
-                allowList.Contains(allowGroupFmt args.SelfId req.GroupId)
+                allowList.Contains(allowGroupFmt args.BotUserId req.GroupId)
 
             args.SendResponse(GroupAddResponse(inList, ""))

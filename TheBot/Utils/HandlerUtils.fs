@@ -17,12 +17,12 @@ type CqEventArgs with
         ConfigManager.SystemConfig.Put(instanceOwnerKey, uid)
 
     member x.GetBotAdmins() =
-        ConfigManager.SystemConfig.Get(botAdminKey x.SelfId, HashSet<uint64>())
+        ConfigManager.SystemConfig.Get(botAdminKey x.BotUserId, HashSet<uint64>())
 
     member x.GrantBotAdmin(uid : uint64) =
         let current = x.GetBotAdmins()
         current.Add(uid) |> ignore
-        ConfigManager.SystemConfig.Put(botAdminKey x.SelfId, current)
+        ConfigManager.SystemConfig.Put(botAdminKey x.BotUserId, current)
 
 type CommandEventArgs with
 

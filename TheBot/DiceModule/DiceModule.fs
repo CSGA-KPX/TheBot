@@ -31,16 +31,15 @@ type DiceModule() =
 
             match atUser.Value with
             | AtUserType.All -> sw.AbortExecution(InputError, "公共事件请at bot账号")
-            | AtUserType.User x when x = cmdArg.SelfId
-                                              && not
+            | AtUserType.User x when x = cmdArg.BotUserId                                              && not
                                                  <| cmdArg.RawMessage.Contains(loginInfo.Nickname) ->
                 sw.WriteLine("公投：")
             | AtUserType.User x ->
-                let atUserName =
+                let atUserInfo =
                     GetGroupMemberInfo(cmdArg.MessageEvent.GroupId, x)
+                    |> cmdArg.ApiCaller.CallApi
 
-                cmdArg.ApiCaller.CallApi(atUserName)
-                sw.WriteLine("{0} 为 {1} 投掷：", cmdArg.MessageEvent.DisplayName, atUserName.DisplayName)
+                sw.WriteLine("{0} 为 {1} 投掷：", cmdArg.MessageEvent.DisplayName, atUserInfo.DisplayName)
 
         let tt = TextTable("1D100", "选项")
 

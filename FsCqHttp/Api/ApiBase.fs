@@ -78,6 +78,6 @@ type ApiRequestBase(action : string) as x =
 
 type IApiCallProvider =
 
-    abstract CallApi : ApiRequestBase -> unit
+    abstract CallApi<'T when 'T :> ApiRequestBase> : 'T -> 'T
     /// 调用一个不需要额外设定的api
     abstract CallApi<'T when 'T :> ApiRequestBase and 'T : (new : unit -> 'T)> : unit -> 'T

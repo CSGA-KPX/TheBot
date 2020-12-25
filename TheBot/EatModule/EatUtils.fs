@@ -3,205 +3,181 @@
 open System
 
 open KPX.TheBot.Utils.Dicer
+open KPX.TheBot.Utils.EmbeddedResource
 
 
-let private rm =
-    KPX.TheBot.Utils.EmbeddedResource.GetResourceManager("Eat")
+[<AutoOpen>]
+module private Data =
+    let diceSides = 100u
 
-let private emptyChars = [| ' '; '\t'; '\r'; '\n' |]
+    let private mgr = StringResource("Eat")
+    let breakfast = mgr.GetWords("早加餐") |> Array.distinct
+    let dinner = mgr.GetWords("中晚餐") |> Array.distinct
+    let hotpot_soup = mgr.GetWords("火锅底料") |> Array.distinct
+    let hotpot_sauce = mgr.GetWords("火锅蘸料") |> Array.distinct
+    let hotpot_dish = mgr.GetWords("火锅配菜") |> Array.distinct
+    let dinnerTypes = [| "早餐"; "午餐"; "晚餐"; "加餐" |]
 
-let private readChoice (name : string) =
-    rm
-        .GetString(name)
-        .Split(emptyChars, StringSplitOptions.RemoveEmptyEntries)
+    let saizeriya =
+        [| for row in mgr.GetLines("萨莉亚") do
+            let s =
+                row.Split([| '：' |], StringSplitOptions.RemoveEmptyEntries)
 
-[<RequireQualifiedAccess>]
-type EatFormat =
-    | All
-    | Head
-    | HeadWithoutNumber
-    | YesOrNo
+            let name = s.[0]
 
-type EatChoices(array : string [], dicer : Dicer) =
-    static let formatPair (pair : string * int) = sprintf "%s(%i)" (fst pair) (snd pair)
-    static let goodCutoff = 5
-    static let noCutOff = 96
+            let c =
+                s.[1]
+                    .Split(Array.empty<char>, StringSplitOptions.RemoveEmptyEntries)
+
+            yield name, c |]
+
+[<Struct>]
+type MappedOption =
+    { Original : string
+      Mapped : string
+      Value : int }
+
+    member x.DescribeValue() =
+        let d = x.Value
+
+        match d with
+        | _ when d = 100 -> "黄连素备好"
+        | _ when d >= 96 -> "上秤看看"
+        | _ when d >= 76 -> "算了吧"
+        | _ when d >= 51 -> "不推荐"
+        | _ when d >= 26 -> "也不是不行"
+        | _ when d >= 6 -> "还好"
+        | _ when d >= 1 -> "好主意"
+        | _ -> raise <| ArgumentOutOfRangeException("value")
+
+    /// 转换为带有值的字符串形式
+    override x.ToString() = sprintf "%s(%i)" x.Original x.Value
+
+    static member Create(dicer : Dicer, option : string) =
+        { Original = option
+          Mapped = option
+          Value = dicer.GetRandom(diceSides, option) }
+
+    static member Create(dicer : Dicer, option : string, prefix) =
+        let mapped = prefix + option
+
+        { Original = option
+          Mapped = mapped
+          Value = dicer.GetRandom(diceSides, mapped) }
+
+type EatChoices(options : seq<string>, dicer : Dicer, ?prefix : string) =
+    let prefix = defaultArg prefix ""
 
     let mapped =
-        array
-        |> Array.map (fun x -> x, dicer.GetRandom(100u, x))
-        |> Array.sortBy (snd)
+        if not dicer.IsFreezed then invalidArg (nameof dicer) "Dicer没有固定"
 
-    member x.ToString(f : EatFormat) =
-        use sw = new IO.StringWriter()
+        options
+        |> Seq.map
+            (fun opt ->
+                if prefix = "" then MappedOption.Create(dicer, opt) else MappedOption.Create(dicer, opt, prefix))
+        |> Seq.sortBy (fun opt -> opt.Value)
+        |> Seq.cache
 
-        match f with
-        | EatFormat.All ->
-            mapped
-            |> Array.iter (fun p -> sw.Write(formatPair p))
-        | EatFormat.Head -> sw.Write(formatPair (mapped |> Array.head))
-        | EatFormat.HeadWithoutNumber -> sw.Write(snd (mapped |> Array.head))
-        | EatFormat.YesOrNo ->
-            let g =
-                mapped
-                |> Array.filter (fun (_, s) -> s <= goodCutoff)
+    member x.MappedOptions = mapped |> Seq.readonly
 
-            let n =
-                mapped
-                |> Array.filter (fun (_, s) -> s >= noCutOff)
-                |> Array.sortByDescending (snd)
+    /// 获取所有小于等于threadhold的选项
+    member x.GetGoodOptions(threadhold) =
+        mapped
+        |> Seq.filter (fun opt -> opt.Value <= threadhold)
 
-            sw.WriteLine(("宜：{0}", String.Join(" ", g |> Array.map (formatPair))))
-            sw.WriteLine(("忌：{0}", String.Join(" ", n |> Array.map (formatPair))))
+    /// 获取所有大于等于threadhold的选项(默认51)
+    member x.GetBadOptions(threadhold) =
+        mapped
+        |> Seq.filter (fun opt -> opt.Value >= threadhold)
 
-        sw.ToString()
+/// 根据早中晚加分别打分
+///
+/// 如果只有一个选项就给评价，多个选项只有打分
+let scoreByMeals (dicer : Dicer) (options : string []) (ret : IO.TextWriter) =
+    if not dicer.IsFreezed then invalidArg (nameof dicer) "Dicer没有固定"
 
-let private breakfast = readChoice ("早加餐") |> Array.distinct
-let private dinner = readChoice ("中晚餐") |> Array.distinct
-let private hotpot_soup = readChoice ("火锅底料") |> Array.distinct
-let private hotpot_sauce = readChoice ("火锅蘸料") |> Array.distinct
-let private hotpot_dish = readChoice ("火锅配菜") |> Array.distinct
-let private DinnerTypes = [| "早餐"; "午餐"; "晚餐"; "加餐" |]
+    match options.Length with
+    | 0 -> invalidArg (nameof options) "没有可选项"
+    | 1 ->
+        for t in dinnerTypes do
+            let str = sprintf "%s吃%s" t options.[0]
+            let opt = MappedOption.Create(dicer, str)
+            ret.WriteLine(sprintf "%s : %s(%i)" str (opt.DescribeValue()) opt.Value)
+    | _ ->
+        for t in dinnerTypes do
+            let prefix = sprintf "%s吃" t
 
-let ng = readChoice ("别吃") |> Array.distinct
+            let mapped =
+                EatChoices(options, dicer, prefix).MappedOptions
+                |> Seq.map (fun x -> x.ToString())
 
-let whenToEatSingle (dicer : Dicer, str : string) =
-    [| for t in DinnerTypes do
-        let str = sprintf "%s吃%s" t str
-        let d = dicer.GetRandom(100u, str)
+            ret.WriteLine(sprintf "%s：%s" t (String.Join(" ", mapped)))
 
-        let ret =
-            match d with
-            | _ when d = 100 -> "黄连素备好"
-            | _ when d >= 96 -> "上秤看看"
-            | _ when d >= 76 -> "算了吧"
-            | _ when d >= 51 -> "不推荐"
-            | _ when d >= 26 -> "也不是不行"
-            | _ when d >= 6 -> "还好"
-            | _ when d >= 1 -> "好主意"
-            | _ -> failwith "你说啥来着？"
+/// 对 prefix+吃+option打分
+let private mealsFunc prefix options (dicer : Dicer) (ret : IO.TextWriter) =
+    let mapped = EatChoices(options, dicer, prefix + "吃")
 
-        yield sprintf "%s : %s(%i)" str ret d |]
+    let eat =
+        mapped.GetGoodOptions(5)
+        |> Seq.map (fun opt -> opt.ToString())
 
-let whenToEatMulti (dicer : Dicer, strs : string []) =
-    [| for t in DinnerTypes do
-        let cs =
-            strs
-            |> Array.distinct
-            |> Array.map (fun x -> x, dicer.GetRandom(100u, sprintf "%s吃%s" t x))
-            |> Array.sortBy snd
-            |> Array.map (fun (x, y) -> sprintf "%s(%i)" x y)
+    let notEat =
+        mapped.GetBadOptions(96)
+        |> Seq.map (fun opt -> opt.ToString())
 
-        t + "：" + String.Join(" ", cs) |]
+    ret.WriteLine("宜：{0}", String.Join(" ", eat))
+    ret.WriteLine("忌：{0}", String.Join(" ", notEat))
 
-let whenToEat (dicer : Dicer, strs : string []) =
-    match strs.Length with
-    | 1 -> whenToEatSingle (dicer, strs.[0])
-    | _ -> whenToEatMulti (dicer, strs)
+let private hotpotFunc (dicer : Dicer) (ret : IO.TextWriter) =
 
-let private mealsFunc prefix array (dicer : Dicer) =
-    let luck = dicer.GetRandom(100u, "吃" + prefix)
+    scoreByMeals dicer (Array.singleton "火锅") ret
 
-    // TODO: 以后换成大成功事件
-    if luck >= Int32.MaxValue then
-        dicer.GetRandomItem(ng)
-    else
-        let mapped =
-            array
-            |> Array.map (fun x -> x, dicer.GetRandom(100u, prefix + "吃" + x))
+    ret.WriteLine()
 
-        let eat =
-            mapped
-            |> Array.filter (fun (_, c) -> c <= 5)
-            |> Array.sortBy (snd)
-            |> Array.map (fun (i, c) -> sprintf "%s(%i)" i c)
-
-        let notEat =
-            mapped
-            |> Array.filter (fun (_, c) -> c >= 96)
-            |> Array.sortByDescending (snd)
-            |> Array.map (fun (i, c) -> sprintf "%s(%i)" i c)
-
-        sprintf "宜：%s\r\n忌：%s" (String.Join(" ", eat)) (String.Join(" ", notEat))
-
-let private hotpotFunc (dicer : Dicer) =
-    let sw = new IO.StringWriter()
-
-    for l in whenToEat (dicer, Array.singleton "火锅") do
-        sw.WriteLine(l)
-
-    sw.WriteLine() |> ignore
+    let prefix = "火锅吃"
 
     let soup =
-        hotpot_soup
-        |> Array.map (fun x -> x, dicer.GetRandom(100u, "火锅吃" + x))
-        |> Array.sortBy (snd)
-        |> Array.map (fun (i, c) -> sprintf "%s(%i)" i c)
+        EatChoices(hotpot_soup, dicer, prefix)
+            .MappedOptions
+        |> Seq.map (fun x -> x.ToString())
 
     let sauce =
-        hotpot_sauce
-        |> Array.map (fun x -> x, dicer.GetRandom(100u, "火锅吃" + x))
-        |> Array.sortBy (snd)
-        |> Array.map (fun (i, c) -> sprintf "%s(%i)" i c)
+        EatChoices(hotpot_sauce, dicer, prefix)
+            .MappedOptions
+        |> Seq.map (fun x -> x.ToString())
 
-    let dish =
-        hotpot_dish
-        |> Array.map (fun x -> x, dicer.GetRandom(100u, "火锅吃" + x))
+    let dish = EatChoices(hotpot_dish, dicer, prefix)
 
-    let dish_good =
-        dish
-        |> Array.filter (fun (_, c) -> c <= 10)
-        |> Array.sortBy (snd)
-        |> Array.map (fun (i, c) -> sprintf "%s(%i)" i c)
+    let goodDish =
+        dish.GetGoodOptions(5)
+        |> Seq.map (fun x -> x.ToString())
 
-    let dish_bad =
-        dish
-        |> Array.filter (fun (_, c) -> c >= 91)
-        |> Array.sortByDescending (snd)
-        |> Array.map (fun (i, c) -> sprintf "%s(%i)" i c)
+    let badDish =
+        dish.GetBadOptions(96)
+        |> Seq.map (fun x -> x.ToString())
 
-    sw.WriteLine("锅底：{0}", String.Join(" ", soup))
-    sw.WriteLine("蘸料：{0}", String.Join(" ", sauce))
-    sw.WriteLine("　宜：{0}", String.Join(" ", dish_good))
-    sw.WriteLine("　忌：{0}", String.Join(" ", dish_bad))
-    sw.ToString()
+    ret.WriteLine("锅底：{0}", String.Join(" ", soup))
+    ret.WriteLine("蘸料：{0}", String.Join(" ", sauce))
+    ret.WriteLine("　宜：{0}", String.Join(" ", goodDish))
+    ret.WriteLine("　忌：{0}", String.Join(" ", badDish))
 
-let private saizeriya =
-    [| for row in rm
-        .GetString("萨莉亚")
-           .Split([| '\r'; '\n' |], StringSplitOptions.RemoveEmptyEntries) do
-           let s =
-               row.Split([| '：' |], StringSplitOptions.RemoveEmptyEntries)
+let private saizeriyaFunc (dicer : Dicer) (ret : IO.TextWriter) =
 
-           let name = s.[0]
+    scoreByMeals dicer (Array.singleton "萨莉亚") ret
 
-           let c =
-               s.[1]
-                   .Split(emptyChars, StringSplitOptions.RemoveEmptyEntries)
+    ret.WriteLine() |> ignore
 
-           yield name, c |]
+    let prefix = "萨莉亚吃"
 
-let private saizeriyaFunc (dicer : Dicer) =
-    let sw = new IO.StringWriter()
+    for (section, options) in saizeriya do
+        let opts =
+            EatChoices(options, dicer, prefix)
+                .GetGoodOptions(49)
+            |> Seq.truncate 5
+            |> Seq.map (fun x -> x.ToString())
+            |> Seq.toArray
 
-    for l in whenToEat (dicer, Array.singleton "萨莉亚") do
-        sw.WriteLine(l)
-
-    sw.WriteLine() |> ignore
-
-    for (name, c) in saizeriya do
-        let mapped =
-            c
-            |> Array.map (fun x -> x, dicer.GetRandom(100u, "萨莉亚吃" + x))
-            |> Array.filter (fun (_, c) -> c <= 50)
-            |> Array.sortBy (snd)
-            |> Array.truncate 5
-            |> Array.map (fun (i, c) -> sprintf "%s(%i)" i c)
-
-        if mapped.Length <> 0
-        then sw.WriteLine(sprintf "%s：%s" name (String.Join(" ", mapped)))
-
-    sw.ToString()
+        if opts.Length <> 0 then ret.WriteLine("{0}：{1}", section, String.Join(" ", opts))
 
 let eatAlias =
     let map =
@@ -209,16 +185,19 @@ let eatAlias =
            "午餐", [| "中"; "中饭"; "午" |]
            "晚餐", [| "晚"; "晚饭" |]
            "加餐", [| "加"; "夜宵" |]
-           "萨莉亚", [| "萨利亚" |] |]
+           "萨莉亚", [| "萨利亚" |]
+           "火锅", Array.empty |]
 
     seq {
         for (key, aliases) in map do
+            yield key, key
+
             for alias in aliases do
                 yield alias, key
     }
     |> readOnlyDict
 
-let eatFuncs : Collections.Generic.IReadOnlyDictionary<string, Dicer -> string> =
+let eatFuncs : Collections.Generic.IReadOnlyDictionary<string, Dicer -> IO.TextWriter -> unit> =
     [| "早餐", mealsFunc "早餐" breakfast
        "加餐", mealsFunc "加餐" breakfast
        "晚餐", mealsFunc "晚餐" dinner
