@@ -34,7 +34,7 @@ type StringResource(resxName : string) =
             .Split(newLines, StringSplitOptions.RemoveEmptyEntries)
 
     /// 返回所有不以cmtStart开始的行
-    member x.GetLinesWithoutCommand(key : string, ?cmtStart : string) =
+    member x.GetLinesWithoutComment(key : string, ?cmtStart : string) =
         let cmtStart = defaultArg cmtStart "//"
 
         x.GetLines(key)

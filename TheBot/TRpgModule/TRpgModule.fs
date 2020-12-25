@@ -154,26 +154,27 @@ type TRpgModule() =
     [<CommandHandlerMethodAttribute("li", "总结疯狂症状", "", AltCommandStart = ".")>]
     [<CommandHandlerMethodAttribute("ti", "临时疯狂症状", "", AltCommandStart = ".")>]
     member x.HandleTemporaryInsanity(cmdArg : CommandEventArgs) =
-        let de = DiceExpression(Dicer.RandomDicer)
-
         let key =
             match cmdArg.CommandName with
             | "li" -> StringData.Key_LI
             | "ti" -> StringData.Key_TI
             | unk -> failwithf "不应匹配到的命令名:%s" unk
 
+        let de = DiceExpression(Dicer.RandomDicer)
+
         let tmpl =
             de.Dicer.GetRandomItem(StringData.GetLines(key))
 
-        cmdArg.QuickMessageReply(ParseTemplate(tmpl, de))
+        let ret = TrpgStringTemplate(de).ParseTemplate(tmpl)
+
+        cmdArg.QuickMessageReply(ret)
 
     [<CommandHandlerMethodAttribute("bg", "", "", AltCommandStart = ".")>]
     member x.HandleChrBackground(cmdArg : CommandEventArgs) =
-        let template =
-            StringData.GetString(StringData.Key_ChrBackground)
 
-        let ret =
-            ParseTemplate(template, DiceExpression(Dicer.RandomDicer))
+        let de = DiceExpression(Dicer.RandomDicer)
+
+        let ret = TrpgStringTemplate(de).ParseByKey(StringData.Key_ChrBackground)
 
         cmdArg.QuickMessageReply(ret)
 

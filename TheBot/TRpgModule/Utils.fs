@@ -4,7 +4,10 @@ open System
 open System.Collections.Generic
 open System.Text.RegularExpressions
 
+open KPX.TheBot.Utils.EmbeddedResource
+
 open KPX.TheBot.Module.DiceModule.Utils.DiceExpression
+
 
 let TRpgDb =
     KPX.TheBot.Data.Common.Database.DataBase.getLiteDB ("trpg.db")
@@ -13,20 +16,13 @@ let TRpgDb =
 module StringData =
     let private data = Dictionary<string, string []>()
 
-    let private rm =
-        KPX.TheBot.Utils.EmbeddedResource.GetResourceManager("TRpg")
+    let mgr = StringResource("TRpg")
 
-    let private emptyChars = [| '\r'; '\n' |]
-
-    let GetString (name : string) = rm.GetString(name)
+    let GetString (name : string) = mgr.GetString(name)
 
     let GetLines (name : string) =
         if not <| data.ContainsKey(name) then
-            let value =
-                rm
-                    .GetString(name)
-                    .Split(emptyChars, StringSplitOptions.RemoveEmptyEntries)
-
+            let value = mgr.GetLines(name)
             data.Add(name, value)
 
         data.[name]
@@ -38,52 +34,43 @@ module StringData =
     let Key_SkillAlias = "技能别名"
     let Key_DefaultSkillValues = "默认技能数值"
 
-// \n \r
-// \{eval expr [noexpr]}
-// \{randomItem arrayName}
-let private regex =
-    Regex(
-        @"(?<newline>\\n|\\r|\\r\\n)|\\\{(?<expr>[^\}]*)\}",
-        RegexOptions.Compiled
-        ||| RegexOptions.Multiline
-        ||| RegexOptions.IgnoreCase
-    )
 
-let ParseTemplate (str : string, de : DiceExpression) =
-    let evalFunc (m : Match) =
-        if m.Groups.["newline"].Success then
-            Environment.NewLine
-        else
-            let expr = m.Groups.["expr"].Value.Split(" ")
+type TrpgStringTemplate(de : DiceExpression) =
+    inherit StringTemplate()
 
-            let ret =
-                match expr.[0] with
-                | "eval" ->
-                    let noExpr =
-                        expr |> Array.tryFind (fun x -> x = "noexpr")
+    member x.ParseByKey(key : string) =
+        x.ParseTemplate(StringData.GetString(key))
 
-                    if noExpr.IsNone then
-                        sprintf "{%s = %O}" (expr.[1]) (de.Eval(expr.[1]).Sum)
-                    else
-                        sprintf "%O" (de.Eval(expr.[1]).Sum)
-                | "randomItem" ->
-                    try
-                        let count =
-                            expr
-                            |> Array.tryItem 2
-                            |> Option.defaultValue "1"
-                            |> Int32.Parse
+    override x.ProcessFunctions(name, args) =
+        match name with
+        | "eval" ->
+            let ShowExpr =
+                args
+                |> Array.exists (fun x -> x = "noexpr")
+                |> not
 
-                        let input = StringData.GetLines(expr.[1])
-                        let items = de.Dicer.GetRandomItems(input, count)
-                        String.Join(" ", items)
-                    with e -> failwithf "找不到请求的数据集 %s : %s" expr.[1] e.Message
+            let expression = args |> Array.tryHead
+            if expression.IsNone then invalidArg "args" "找不到表达式"
 
-                | unk -> failwithf "unknown cmd : %s" unk
+            if ShowExpr
+            then sprintf "{%s = %O}" (expression.Value) (de.Eval(expression.Value).Sum)
+            else sprintf "%O" (de.Eval(expression.Value).Sum)
+        | "randomItem" ->
+            try
+                let name = args |> Array.tryHead
+                if name.IsNone then invalidArg "args" "没有指定数据集名称"
 
-            ret
+                let count =
+                    args
+                    |> Array.tryItem 1
+                    |> Option.defaultValue "1"
+                    |> Int32.Parse
 
-    regex.Replace(str, MatchEvaluator evalFunc)
+                let input = StringData.GetLines(name.Value)
+                let items = de.Dicer.GetRandomItems(input, count)
+                String.Join(" ", items)
+            with e -> failwithf "找不到请求的数据集 %s : %s" name e.Message
+        | other -> invalidArg (nameof name) ("未知指令名称" + other)
 
 type Difficulty =
     | Critical
