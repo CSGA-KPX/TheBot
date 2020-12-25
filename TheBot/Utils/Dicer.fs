@@ -106,6 +106,9 @@ type Dicer private (rng : DRng) =
     /// 生成一个新的骰子，其种子值不变
     member x.Freeze() = rng.GetBytes() |> ConstantDRng |> Dicer
 
+    /// 该Dicer是否返回恒定值(ConstantDRng)
+    member x.IsFreezed = rng :? ConstantDRng
+
     /// 获得一个[1, faceNum]内的随机数
     member x.GetRandom(faceNum : uint32) = rng.NextUInt32() % faceNum + 1u |> int32
 

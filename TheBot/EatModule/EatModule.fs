@@ -19,10 +19,15 @@ type EatModule() =
         let at = cmdArg.MessageEvent.Message.TryGetAt()
         use ret = cmdArg.OpenResponse()
 
+        let mutable seed =
+            SeedOption.SeedByUserDay(cmdArg.MessageEvent)
+
         match at with
-        | Some Sections.AtUserType.All -> ret.AbortExecution(InputError, "你要请客吗？")
+        | Some Sections.AtUserType.All //TryGetAt不接受@all，不会匹配
+        | None -> ()
         | Some (Sections.AtUserType.User uid) when uid = cmdArg.BotUserId
                                                    || uid = cmdArg.MessageEvent.UserId ->
+            // @自己 @Bot 迷惑行为
             use s =
                 KPX.TheBot.Utils.EmbeddedResource.GetResFileStream("Funny.jpg")
 
@@ -35,33 +40,20 @@ type EatModule() =
             ret.AbortExecution(IgnoreError, "")
 
         | Some (Sections.AtUserType.User uid) ->
-            let atUserName =
+            seed <- SeedOption.SeedByAtUserDay(cmdArg.MessageEvent)
+
+            let atUserInfo =
                 GetGroupMemberInfo(cmdArg.MessageEvent.GroupId, uid)
                 |> cmdArg.ApiCaller.CallApi
 
-            ret.WriteLine("{0} 为 {1} 投掷：", cmdArg.MessageEvent.DisplayName, atUserName.DisplayName)
-        | None -> ()
-
-        let seed =
-            if at.IsSome then
-                SeedOption.SeedByAtUserDay(cmdArg.MessageEvent)
-            else
-                SeedOption.SeedByUserDay(cmdArg.MessageEvent)
+            ret.WriteLine("{0} 为 {1} 投掷：", cmdArg.MessageEvent.DisplayName, atUserInfo.DisplayName)
 
         let dicer = Dicer(seed).Freeze()
 
         match cmdArg.Arguments.Length with
         | 0 -> ret.AbortExecution(InputError, "自选输菜名，预设套餐：早/中/晚/加/火锅/萨莉亚")
-        | 1 ->
-            // 一个选项时处理套餐
-            let mutable str = cmdArg.Arguments.[0]
-            if eatAlias.ContainsKey(str) then str <- eatAlias.[str]
-
-            if eatFuncs.ContainsKey(str) then
-                ret.Write(eatFuncs.[str] (dicer))
-            else
-                for l in whenToEat (dicer, cmdArg.Arguments) do
-                    ret.WriteLine(l)
-        | _ ->
-            for l in whenToEat (dicer, cmdArg.Arguments) do
-                ret.WriteLine(l)
+        | 1 when eatAlias.ContainsKey(cmdArg.Arguments.[0]) ->
+            let key = eatAlias.[cmdArg.Arguments.[0]]
+            let func = eatFuncs.[key]
+            func dicer ret
+        | _ -> scoreByMeals dicer cmdArg.Arguments ret
