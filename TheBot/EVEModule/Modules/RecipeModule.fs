@@ -239,10 +239,11 @@ type EveRecipeModule() =
             using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun ret -> ret.Write(tt))
 
     [<CommandHandlerMethodAttribute("EVE舰船II", "T2舰船制造总览", "")>]
-    [<CommandHandlerMethodAttribute("EVE舰船", "T2舰船制造总览", "")>]
+    [<CommandHandlerMethodAttribute("EVE舰船", "T1舰船制造总览", "")>]
     [<CommandHandlerMethodAttribute("EVE组件", "T2和旗舰组件制造总览", "")>]
     [<CommandHandlerMethodAttribute("EVE种菜", "EVE种菜利润", "")>]
-    [<CommandHandlerMethodAttribute("EVE装备II", "EVET2装备利润", "需要关键词")>]
+    [<CommandHandlerMethodAttribute("EVE装备II", "EVET2装备利润", "")>]
+    [<CommandHandlerMethodAttribute("EVE燃料块", "EVE燃料块", "")>]
     member x.HandleManufacturingOverview(cmdArg : CommandEventArgs) =
         let cfg = EveConfigParser()
         cfg.RegisterOption("by", "")
@@ -264,6 +265,10 @@ type EveRecipeModule() =
 
         let filterFunc : (EveProcess -> bool) =
             match cmdArg.CommandName with // 注意小写匹配
+            | "eve燃料块" ->
+                fun bp ->
+                    (bp.Type = ProcessType.Manufacturing)
+                    && (bp.Process.GetFirstProduct().Item.Name.Contains("燃料块"))
             | "eve组件" ->
                 fun bp ->
                     (bp.Type = ProcessType.Manufacturing)
