@@ -46,9 +46,7 @@ type EveLpStoreModule() =
         let minVol = cfg.MinimalVolume
         let minVal = cfg.MinimalValue
 
-        tt.AddPreTable(
-            sprintf "最低交易量(vol)：%g 最低LP价值(val)：%g 结果上限(count)：%i" minVol minVal cfg.RecordCount
-        )
+        tt.AddPreTable(sprintf "最低交易量(vol)：%g 最低LP价值(val)：%g 结果上限(count)：%i" minVol minVal cfg.RecordCount)
 
         tt.AddPreTable("警告：请参考交易量，利润很高的不一定卖得掉")
 
@@ -108,8 +106,6 @@ type EveLpStoreModule() =
                 //r.ProfitPerLp * weightedVolume)
                 r.ProfitPerLp)
         |> Array.truncate cfg.RecordCount
-        |> Array.iter
-            (fun r ->
-                tt.AddRow(r.Name, r.Profit |> floor, r.ProfitPerLp |> floor, r.Volume |> floor))
+        |> Array.iter (fun r -> tt.AddRow(r.Name, r.Profit |> floor, r.ProfitPerLp |> floor, r.Volume |> floor))
 
         using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))

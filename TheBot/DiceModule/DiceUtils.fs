@@ -103,7 +103,4 @@ module DiceExpression =
         override x.Tokenize(token) =
             let succ, number = Double.TryParse(token)
 
-            if succ then
-                Operand(DicerOperand(Array.singleton number))
-            else
-                failwithf "无法将 %s 解析为数字或运算符" token
+            if succ then Operand(DicerOperand(Array.singleton number)) else failwithf "无法将 %s 解析为数字或运算符" token

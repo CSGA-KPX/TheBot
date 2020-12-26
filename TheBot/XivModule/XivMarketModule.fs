@@ -51,9 +51,7 @@ type XivMarketModule() =
             let world = cfg.GetWorld()
             cm.Put(CommandUtils.defaultServerKey, world)
 
-            cmdArg.QuickMessageReply(
-                sprintf "%s的默认服务器设置为%s" cmdArg.MessageEvent.DisplayName world.WorldName
-            )
+            cmdArg.QuickMessageReply(sprintf "%s的默认服务器设置为%s" cmdArg.MessageEvent.DisplayName world.WorldName)
         else
             cmdArg.QuickMessageReply("没有指定服务器或服务器名称不正确")
 
@@ -168,10 +166,7 @@ type XivMarketModule() =
         let world = cfg.GetWorld()
 
         let tt =
-            if doCalculateCost then
-                TextTable("物品", "价格", "数量", "小计", "更新时间")
-            else
-                TextTable("物品", "数量")
+            if doCalculateCost then TextTable("物品", "价格", "数量", "小计", "更新时间") else TextTable("物品", "数量")
 
         if doCalculateCost then tt.AddPreTable(sprintf "服务器：%s" world.WorldName)
 
@@ -275,6 +270,7 @@ type XivMarketModule() =
                     for item in chunk do
                         yield item.Id
                         yield item.Name
+
                     for _ = 0 to headerCol - chunk.Length - 1 do
                         yield TableCell.CreateRightAlign("--")
                         yield TableCell.CreateLeftAlign("--")
@@ -301,9 +297,7 @@ type XivMarketModule() =
                         RightAlignCell "更新时间"
                     )
 
-                tt.AddPreTable(
-                    sprintf "兑换道具:%s 土豆：%s/%s" reqi.Name world.DataCenter world.WorldName
-                )
+                tt.AddPreTable(sprintf "兑换道具:%s 土豆：%s/%s" reqi.Name world.DataCenter world.WorldName)
 
                 for info in ia do
                     let recv = itemCol.GetByItemId(info.ReceiveItem)
@@ -326,10 +320,7 @@ type XivMarketModule() =
                                     .Average
                             )
 
-                        if market.IsEmpty then
-                            yield TableCell.CreateRightAlign("--")
-                        else
-                            yield market.LastUpdateTime()
+                        if market.IsEmpty then yield TableCell.CreateRightAlign("--") else yield market.LastUpdateTime()
 
                     }
                     |> tt.AddRow

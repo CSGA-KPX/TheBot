@@ -13,9 +13,7 @@ type ActiveWebsocket(url, token) =
     let mutable context : CqWsContext option = None
 
     member x.GetContext() =
-        if context.IsSome && (leftRestartCount <= 0) then failwithf
-                                                              "ActiveWebsocket:%s 超过重连次数上限"
-                                                              context.Value.SelfId
+        if context.IsSome && (leftRestartCount <= 0) then failwithf "ActiveWebsocket:%s 超过重连次数上限" context.Value.SelfId
 
         if context.IsSome
            && (DateTimeOffset.Now - lastRestart).TotalMinutes

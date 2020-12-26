@@ -36,9 +36,7 @@ type PriceCacheCollection private () =
 
     override x.FetchItem(itemId) =
         let url =
-            sprintf
-                @"https://www.ceve-market.org/api/market/region/10000002/system/30000142/type/%i.json"
-                itemId
+            sprintf @"https://www.ceve-market.org/api/market/region/10000002/system/30000142/type/%i.json" itemId
 
         x.Logger.Info(sprintf "Fetching %s" url)
 

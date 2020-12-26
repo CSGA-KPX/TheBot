@@ -29,10 +29,7 @@ and TextTable([<ParamArray>] header : Object []) =
                 let cell = TableCell.CreateFrom(o)
                 cols.[i].Add(cell)
                 // 根据表头设置默认的对齐类型
-                if cell.IsLeftAlign then
-                    cols.[i].SetLeftAlignment()
-                else
-                    cols.[i].SetRightAlignment())
+                if cell.IsLeftAlign then cols.[i].SetLeftAlignment() else cols.[i].SetRightAlignment())
 
     member val ColumnPaddingChar = KPX.FsCqHttp.Config.Output.TextTable.FullWidthSpace with get, set
 
@@ -66,12 +63,12 @@ and TextTable([<ParamArray>] header : Object []) =
     member x.AddRowFill([<ParamArray>] objs : Object []) =
         if objs.Length > colCount
         then invalidArg (nameof objs) (sprintf "输入过多：需求%i 提供%i" colCount objs.Length)
-
         for i = 0 to objs.Length - 1 do
             cols.[i].Add(TableCell.CreateFrom(objs.[i]))
 
         let def =
             box KPX.FsCqHttp.Config.Output.TextTable.CellPadding
+
         for i = objs.Length to colCount - 1 do
             cols.[i].AddDefaultAlignment(def)
 
@@ -93,8 +90,10 @@ and TextTable([<ParamArray>] header : Object []) =
 
            let interColumnPadding = sprintf " %c " x.ColumnPaddingChar
            let sb = Text.StringBuilder()
+
            for row = 0 to cols.[0].Count - 1 do
                sb.Clear().Append(cols.[0].[row].Value) |> ignore
+
                for col = 1 to colCount - 1 do
                    sb
                        .Append(interColumnPadding)

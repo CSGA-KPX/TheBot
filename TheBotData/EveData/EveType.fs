@@ -67,30 +67,18 @@ type EveTypeCollection private () =
                         o.GetValue("typeName").ToObject<string>()
 
                     let vol =
-                        if o.ContainsKey("volume") then
-                            o.GetValue("volume").ToObject<float>()
-                        else
-                            nan
+                        if o.ContainsKey("volume") then o.GetValue("volume").ToObject<float>() else nan
 
                     let meta =
-                        if o.ContainsKey("metaGroupID") then
-                            o.GetValue("metaGroupID").ToObject<int>()
-                        else
-                            1
+                        if o.ContainsKey("metaGroupID") then o.GetValue("metaGroupID").ToObject<int>() else 1
 
                     let published = o.GetValue("published").ToObject<bool>()
 
                     let portionSize =
-                        if o.ContainsKey("portionSize") then
-                            o.GetValue("portionSize").ToObject<int>()
-                        else
-                            0
+                        if o.ContainsKey("portionSize") then o.GetValue("portionSize").ToObject<int>() else 0
 
                     let marketGroupId =
-                        if o.ContainsKey("marketGroupID") then
-                            o.GetValue("marketGroupID").ToObject<int>()
-                        else
-                            0
+                        if o.ContainsKey("marketGroupID") then o.GetValue("marketGroupID").ToObject<int>() else 0
 
                     if allow && published then
                         yield

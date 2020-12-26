@@ -23,8 +23,7 @@ type NoticeEvent =
 and NoticeEventConverter() =
     inherit JsonConverter<NoticeEvent>()
 
-    override x.WriteJson(_ : JsonWriter, _ : NoticeEvent, _ : JsonSerializer) =
-        raise<unit> <| NotImplementedException()
+    override x.WriteJson(_ : JsonWriter, _ : NoticeEvent, _ : JsonSerializer) = raise<unit> <| NotImplementedException()
 
     override x.ReadJson(r : JsonReader, _ : Type, _ : NoticeEvent, _ : bool, _ : JsonSerializer) =
         let obj = JObject.Load(r)

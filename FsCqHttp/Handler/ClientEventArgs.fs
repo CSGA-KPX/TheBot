@@ -102,8 +102,7 @@ type CqEventArgs private (api : IApiCallProvider, ctx : JObject, selfId, event) 
         | MessageEvent ctx ->
             match ctx with
             | _ when ctx.IsDiscuss -> x.SendResponse(DiscusMessageResponse(msg, atUser))
-            | _ when ctx.IsGroup ->
-                x.SendResponse(GroupMessageResponse(msg, atUser, false, false, false, 0))
+            | _ when ctx.IsGroup -> x.SendResponse(GroupMessageResponse(msg, atUser, false, false, false, 0))
             | _ when ctx.IsPrivate -> x.SendResponse(PrivateMessageResponse(msg))
             | _ -> raise <| InvalidOperationException("")
         | _ -> raise <| InvalidOperationException("")

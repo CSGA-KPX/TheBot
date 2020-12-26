@@ -30,12 +30,11 @@ type BlueprintCollection private () =
         if a.ContainsKey("manufacturing")
            || a.ContainsKey("reaction") then
             let m, procType =
-                if a.ContainsKey("manufacturing") then
-                    a.GetValue("manufacturing") :?> JObject, ProcessType.Manufacturing
-                elif a.ContainsKey("reaction") then
-                    a.GetValue("reaction") :?> JObject, ProcessType.Reaction
-                else
-                    failwithf ""
+                if a.ContainsKey("manufacturing")
+                then a.GetValue("manufacturing") :?> JObject, ProcessType.Manufacturing
+                elif a.ContainsKey("reaction")
+                then a.GetValue("reaction") :?> JObject, ProcessType.Reaction
+                else failwithf ""
 
             let input, output =
                 List<EveDbMaterial>(), List<EveDbMaterial>()

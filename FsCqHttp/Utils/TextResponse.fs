@@ -101,10 +101,7 @@ type TextResponse(args : CqEventArgs, respType : ResponseType) =
     member private x.FlushImageMessage() =
         let DrawLines (lines : string []) =
             use font =
-                new Font(
-                    KPX.FsCqHttp.Config.Output.ImageOutputFont,
-                    KPX.FsCqHttp.Config.Output.ImageOutputSize
-                )
+                new Font(KPX.FsCqHttp.Config.Output.ImageOutputFont, KPX.FsCqHttp.Config.Output.ImageOutputSize)
 
             let sf =
                 new StringFormat(StringFormat.GenericTypographic)

@@ -44,7 +44,6 @@ type SpecialShopCollection private () =
         seq {
             for row in sht do
                 let index prefix c p = sprintf "%s[%i][%i]" prefix c p
-
                 for page = 0 to 1 do
                     for col = 0 to 59 do
                         let rItem =

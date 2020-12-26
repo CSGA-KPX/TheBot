@@ -55,7 +55,6 @@ type EveRecipeModule() =
             "直接材料总价："
             + System.String.Format("{0:N0}", ceil me0Price)
         )
-
         for me = 0 to 10 do
             let cost =
                 pm
@@ -95,13 +94,7 @@ type EveRecipeModule() =
                 | _ when mr.Quantity < 0.0 ->
                     // 已有材料需要扣除
                     final.Update(mr)
-                | _ ->
-                    cmdArg.AbortExecution(
-                        ModuleError,
-                        "不知道如何处理：{0} * {1}",
-                        mr.Item.Name,
-                        mr.Quantity
-                    )
+                | _ -> cmdArg.AbortExecution(ModuleError, "不知道如何处理：{0} * {1}", mr.Item.Name, mr.Quantity)
 
         for mr in final do
             tt.AddRow(mr.Item.Name, mr.Quantity)
@@ -204,12 +197,7 @@ type EveRecipeModule() =
                     * mr.Quantity
 
                 let mrProc =
-                    pm.TryGetRecipeRecMe(
-                        mr.Item,
-                        ByItem mr.Quantity,
-                        cfg.DerivativetMe,
-                        cfg.DerivativetMe
-                    )
+                    pm.TryGetRecipeRecMe(mr.Item, ByItem mr.Quantity, cfg.DerivativetMe, cfg.DerivativetMe)
 
                 if mrProc.IsNone then
                     optCost <- optCost + price
@@ -229,12 +217,7 @@ type EveRecipeModule() =
                         optCost
                         + (if (mrAll >= price) && (price <> 0.0) then price else mrAll)
 
-                    tt.AddRow(
-                        mr.Item.Name,
-                        mr.Quantity,
-                        HumanReadableSig4Float price,
-                        HumanReadableSig4Float mrAll
-                    )
+                    tt.AddRow(mr.Item.Name, mr.Quantity, HumanReadableSig4Float price, HumanReadableSig4Float mrAll)
 
             let sell =
                 proc.Value.GetTotalProductPrice(PriceFetchMode.Sell)
@@ -242,19 +225,9 @@ type EveRecipeModule() =
             let sellWithTax =
                 proc.Value.GetTotalProductPrice(PriceFetchMode.SellWithTax)
 
-            tt.AddRow(
-                "卖出/税后",
-                numPadStr,
-                HumanReadableSig4Float sell,
-                HumanReadableSig4Float sellWithTax
-            )
+            tt.AddRow("卖出/税后", numPadStr, HumanReadableSig4Float sell, HumanReadableSig4Float sellWithTax)
 
-            tt.AddRow(
-                "材料/最佳",
-                numPadStr,
-                HumanReadableSig4Float allCost,
-                HumanReadableSig4Float optCost
-            )
+            tt.AddRow("材料/最佳", numPadStr, HumanReadableSig4Float allCost, HumanReadableSig4Float optCost)
 
             tt.AddRow(
                 "税后 利润",

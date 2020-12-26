@@ -86,10 +86,7 @@ type CraftableGearCollection private () =
 
     member x.Search(iLv : int, jobCode : string) =
         let query =
-            Query.And(
-                Query.EQ("ItemLv", BsonValue(iLv)),
-                Query.Contains("ClassJobCategory", jobCode)
-            )
+            Query.And(Query.EQ("ItemLv", BsonValue(iLv)), Query.Contains("ClassJobCategory", jobCode))
 
         [| for g in x.DbCollection.Find(query) do
             if g.EquipSlotCategory = 12 then

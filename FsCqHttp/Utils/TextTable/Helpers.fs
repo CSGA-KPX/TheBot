@@ -80,17 +80,11 @@ type TableHelpers =
         if d = 0.0 then
             let zeroString = opts.ZeroString
 
-            if right then
-                TableCell.CreateRightAlign(zeroString)
-            else
-                TableCell.CreateLeftAlign(zeroString)
+            if right then TableCell.CreateRightAlign(zeroString) else TableCell.CreateLeftAlign(zeroString)
         elif Double.IsNaN(d) then
             let nanString = opts.NanString
 
-            if right then
-                TableCell.CreateRightAlign(nanString)
-            else
-                TableCell.CreateLeftAlign(nanString)
+            if right then TableCell.CreateRightAlign(nanString) else TableCell.CreateLeftAlign(nanString)
         else
             let d =
                 TableHelpers.RoundSigDigits(d, opts.SigDigits)

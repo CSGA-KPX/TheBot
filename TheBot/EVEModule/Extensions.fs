@@ -40,9 +40,7 @@ type EveType with
 
     /// 不是所有物品都有市场分类
     member x.MarketGroup =
-        KPX.TheBot.Data.EveData.EveMarketGroup.MarketGroupCollection.Instance.TryGetById(
-            x.MarketGroupId
-        )
+        KPX.TheBot.Data.EveData.EveMarketGroup.MarketGroupCollection.Instance.TryGetById(x.MarketGroupId)
 
     member x.IsBlueprint = x.CategoryId = 9
 

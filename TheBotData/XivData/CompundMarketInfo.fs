@@ -146,8 +146,7 @@ type MarketInfoCollection private () =
         let itemId, worldId = item.Id |> uint32, world.WorldId
 
         let dmfRet =
-            MarketOrder.MarketOrderProxy.callSafely
-                <@ fun server -> server.GetByIdWorld worldId itemId @>
+            MarketOrder.MarketOrderProxy.callSafely <@ fun server -> server.GetByIdWorld worldId itemId @>
             |> Async.RunSynchronously
 
         match dmfRet with
@@ -178,8 +177,7 @@ type MarketInfoCollection private () =
         let itemId, worldId = item.Id |> uint32, world.WorldId
 
         let dmfRet =
-            TradeLog.TradelogProxy.callSafely
-                <@ fun server -> server.GetByIdWorld worldId itemId 20 @>
+            TradeLog.TradelogProxy.callSafely <@ fun server -> server.GetByIdWorld worldId itemId 20 @>
             |> Async.RunSynchronously
 
         match dmfRet with

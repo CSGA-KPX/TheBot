@@ -13,10 +13,7 @@ let hc =
     let hc = new HttpClient(hch)
     hc.DefaultRequestHeaders.Connection.Add("keep-alive")
 
-    hc.DefaultRequestHeaders.TryAddWithoutValidation(
-        "User-Agent",
-        "https://github.com/CSGA-KPX/TheBot"
-    )
+    hc.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "https://github.com/CSGA-KPX/TheBot")
     |> ignore
 
     hc

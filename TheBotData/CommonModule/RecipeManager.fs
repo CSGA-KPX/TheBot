@@ -43,7 +43,6 @@ type RecipeManager<'Item, 'Recipe when 'Item : equality>() =
 
     member x.GetRecipe(item : 'Item) = x.TryGetRecipe(item).Value
 
-    member x.GetRecipe(item : 'Item, quantity : ProcessQuantity) =
-        x.TryGetRecipe(item, quantity).Value
+    member x.GetRecipe(item : 'Item, quantity : ProcessQuantity) = x.TryGetRecipe(item, quantity).Value
 
     member x.GetRecipe(material : RecipeMaterial<'Item>) = x.TryGetRecipe(material).Value

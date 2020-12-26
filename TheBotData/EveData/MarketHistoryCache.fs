@@ -44,9 +44,7 @@ type MarketTradeHistoryCollection private () =
 
     override x.FetchItem(itemId) =
         let url =
-            sprintf
-                "https://esi.evepc.163.com/latest/markets/10000002/history/?datasource=serenity&type_id=%i"
-                itemId
+            sprintf "https://esi.evepc.163.com/latest/markets/10000002/history/?datasource=serenity&type_id=%i" itemId
 
         x.Logger.Info(sprintf "Fetching %s" url)
 

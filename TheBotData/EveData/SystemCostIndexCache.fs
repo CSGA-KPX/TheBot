@@ -76,8 +76,7 @@ type SystemCostIndexCollection private () =
                     match indice.GetValue("activity").ToObject<string>() with
                     | "manufacturing" -> ret <- { ret with Manufacturing = index }
                     | "researching_time_efficiency" -> ret <- { ret with ResearchTime = index }
-                    | "researching_material_efficiency" ->
-                        ret <- { ret with ResearcMaterial = index }
+                    | "researching_material_efficiency" -> ret <- { ret with ResearcMaterial = index }
                     | "copying" -> ret <- { ret with Copying = index }
                     | "invention" -> ret <- { ret with Invention = index }
                     | "reaction" -> ret <- { ret with Reaction = index }

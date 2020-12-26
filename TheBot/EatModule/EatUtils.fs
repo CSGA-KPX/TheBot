@@ -74,10 +74,7 @@ type EatChoices(options : seq<string>, dicer : Dicer, ?prefix : string) =
         options
         |> Seq.map
             (fun opt ->
-                if prefix = "" then
-                    MappedOption.Create(dicer, opt)
-                else
-                    MappedOption.Create(dicer, opt, prefix))
+                if prefix = "" then MappedOption.Create(dicer, opt) else MappedOption.Create(dicer, opt, prefix))
         |> Seq.sortBy (fun opt -> opt.Value)
         |> Seq.cache
 

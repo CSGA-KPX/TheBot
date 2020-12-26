@@ -125,11 +125,7 @@ type CqWsContext(ws : WebSocket) =
                     let cmdArg = CommandEventArgs(args, e, attr)
 
                     if KPX.FsCqHttp.Config.Logging.LogCommandCall then
-                        logger.Info(
-                            "Calling handler {0}\r\n Command Context {1}",
-                            method.Name,
-                            sprintf "%A" e
-                        )
+                        logger.Info("Calling handler {0}\r\n Command Context {1}", method.Name, sprintf "%A" e)
 
                         method.Invoke(cmdModule, [| cmdArg |]) |> ignore
                 else
@@ -172,9 +168,7 @@ type CqWsContext(ws : WebSocket) =
         let logJson = lazy (obj.ToString())
 
         if (obj.ContainsKey("post_type")) then //消息上报
-            if KPX.FsCqHttp.Config.Logging.LogEventPost then logger.Trace(
-                sprintf "%s收到上报：%s" x.SelfId logJson.Value
-            )
+            if KPX.FsCqHttp.Config.Logging.LogEventPost then logger.Trace(sprintf "%s收到上报：%s" x.SelfId logJson.Value)
 
             x.HandleEventPost(CqEventArgs(x, obj))
 
@@ -212,9 +206,7 @@ type CqWsContext(ws : WebSocket) =
                         .ContinueWith(fun t ->
                             if t.IsFaulted then
                                 for inner in t.Exception.InnerExceptions do
-                                    logger.Fatal(
-                                        sprintf "捕获异常%s : %s" (inner.GetType().Name) inner.Message
-                                    ))
+                                    logger.Fatal(sprintf "捕获异常%s : %s" (inner.GetType().Name) inner.Message))
                     |> ignore
             with e ->
                 cts.Cancel()
@@ -242,19 +234,12 @@ type CqWsContext(ws : WebSocket) =
                 if KPX.FsCqHttp.Config.Logging.LogApiCall then
                     logger.Trace(sprintf "%s请求API：%s" x.SelfId req.ActionName)
 
-                    if KPX.FsCqHttp.Config.Logging.LogApiJson then logger.Trace(
-                        sprintf "%s请求API：%s" x.SelfId json
-                    )
+                    if KPX.FsCqHttp.Config.Logging.LogApiJson then logger.Trace(sprintf "%s请求API：%s" x.SelfId json)
 
                 let data = json |> utf8.GetBytes
 
                 do!
-                    ws.SendAsync(
-                        ArraySegment<byte>(data),
-                        WebSocketMessageType.Text,
-                        true,
-                        cts.Token
-                    )
+                    ws.SendAsync(ArraySegment<byte>(data), WebSocketMessageType.Text, true, cts.Token)
                     |> Async.AwaitTask
 
                 let! _ = Async.AwaitWaitHandle(mre :> WaitHandle)
