@@ -3,6 +3,8 @@
 open System
 open LibDmfXiv.Shared
 
+open KPX.FsCqHttp.Handler
+
 open KPX.TheBot.Data.XivData
 
 
@@ -173,15 +175,23 @@ type MarketAnalyzer(item : Item.ItemRecord, world : World.World, data : MarketDa
         )
 
     static member GetTradeLog(world : World.World, item : Item.ItemRecord) =
-        let data =
-            CompundMarketInfo.MarketInfoCollection.Instance.GetTradeLogs(world, item)
-            |> Array.map (MarketData.Trade)
+        try
+            let data =
+                CompundMarketInfo.MarketInfoCollection.Instance.GetTradeLogs(world, item)
+                |> Array.map (MarketData.Trade)
 
-        MarketAnalyzer(item, world, data)
+            MarketAnalyzer(item, world, data)
+        with
+        | CompundMarketInfo.UniversalisAccessException resp ->
+            raise <| ModuleException(ExternalError, sprintf "Universalis访问失败%O" resp.StatusCode)
 
     static member GetMarketListing(world : World.World, item : Item.ItemRecord) =
-        let data =
-            CompundMarketInfo.MarketInfoCollection.Instance.GetMarketListings(world, item)
-            |> Array.map (MarketData.Order)
+        try
+            let data =
+                CompundMarketInfo.MarketInfoCollection.Instance.GetMarketListings(world, item)
+                |> Array.map (MarketData.Order)
 
-        MarketAnalyzer(item, world, data)
+            MarketAnalyzer(item, world, data)
+        with
+        | CompundMarketInfo.UniversalisAccessException resp ->
+            raise <| ModuleException(ExternalError, sprintf "Universalis访问失败%O" resp.StatusCode)

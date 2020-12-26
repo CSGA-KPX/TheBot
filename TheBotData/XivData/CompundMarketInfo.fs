@@ -1,6 +1,5 @@
 ﻿module KPX.TheBot.Data.XivData.CompundMarketInfo
 
-
 open System
 
 open Newtonsoft.Json.Linq
@@ -15,6 +14,9 @@ open KPX.TheBot.Data.Common.Database
 open KPX.TheBot.Data.Common.Network
 
 open KPX.TheBot.Data.XivData
+
+
+exception UniversalisAccessException of Net.Http.HttpResponseMessage
 
 [<CLIMutable>]
 type MarketInfo =
@@ -84,13 +86,13 @@ type MarketInfoCollection private () =
                   LastUploadTime = DateTimeOffset.Now
                   Listings = Array.empty
                   TradeLogs = Array.empty }
-            | other -> failwithf "Universalis API访问异常，请稍后重试：%O" other
+            | _ -> 
+                raise <| UniversalisAccessException resp 
         else
             let json =
                 resp.Content.ReadAsStringAsync()
                 |> Async.AwaitTask
                 |> Async.RunSynchronously
-            //x.Logger.Trace(sprintf "universalis.app返回数据：\r\n%s" json)
             let o = JObject.Parse(json)
 
             let updated =
@@ -129,8 +131,6 @@ type MarketInfoCollection private () =
 
                        yield FableTradeLog.CreateFrom(info.World.WorldId, log) |]
 
-            //x.Logger.Info(sprintf "已解析数据:%O %A %A" updated listings tradelogs)
-
             { Id = info.ToString()
               LastFetchTime = DateTimeOffset.Now
               LastUploadTime = updated
@@ -162,7 +162,7 @@ type MarketInfoCollection private () =
 
             let dmfUpdate = getUpdateDate dmf.Orders
             let uniUpdate = getUpdateDate uniRet.Listings
-            //x.Logger.Info(sprintf "DMF更新时间为:%O, UNI更新时间为%O" dmfUpdate uniUpdate)
+            x.Logger.Info(sprintf "DMF更新时间为:%O, universalis更新时间为%O" dmfUpdate uniUpdate)
             if dmfUpdate >= uniUpdate then dmf.Orders else uniRet.Listings
         | Error exn ->
             x.Logger.Error(sprintf "连接DMF异常：%O" exn)
@@ -193,7 +193,7 @@ type MarketInfoCollection private () =
 
             let dmfUpdate = getUpdateDate dmf
             let uniUpdate = getUpdateDate uniRet.TradeLogs
-            //x.Logger.Info(sprintf "DMF更新时间为:%O, UNI更新时间为%O" dmfUpdate uniUpdate)
+            x.Logger.Info(sprintf "DMF更新时间为:%O, universalis更新时间为%O" dmfUpdate uniUpdate)
             if dmfUpdate >= uniUpdate then dmf else uniRet.TradeLogs
         | Error exn ->
             x.Logger.Error(sprintf "连接DMF异常：%O" exn)
