@@ -1,5 +1,4 @@
-﻿[<AutoOpen>]
-module KPX.FsCqHttp.Utils.TextTable.Implementation
+﻿namespace KPX.FsCqHttp.Utils.TextTable
 
 open System
 open System.Collections.Generic
@@ -63,12 +62,12 @@ and TextTable([<ParamArray>] header : Object []) =
     member x.AddRowFill([<ParamArray>] objs : Object []) =
         if objs.Length > colCount
         then invalidArg (nameof objs) (sprintf "输入过多：需求%i 提供%i" colCount objs.Length)
+
         for i = 0 to objs.Length - 1 do
             cols.[i].Add(TableCell.CreateFrom(objs.[i]))
 
         let def =
             box KPX.FsCqHttp.Config.Output.TextTable.CellPadding
-
         for i = objs.Length to colCount - 1 do
             cols.[i].AddDefaultAlignment(def)
 
@@ -90,10 +89,8 @@ and TextTable([<ParamArray>] header : Object []) =
 
            let interColumnPadding = sprintf " %c " x.ColumnPaddingChar
            let sb = Text.StringBuilder()
-
            for row = 0 to cols.[0].Count - 1 do
                sb.Clear().Append(cols.[0].[row].Value) |> ignore
-
                for col = 1 to colCount - 1 do
                    sb
                        .Append(interColumnPadding)
@@ -106,10 +103,3 @@ and TextTable([<ParamArray>] header : Object []) =
 
 
     override x.ToString() = String.Join("\r\n", x.ToLines())
-
-type KPX.FsCqHttp.Utils.TextResponse.TextResponse with
-    member x.Write(tt : TextTable) =
-        if x.DoSendImage then tt.ColumnPaddingChar <- ' '
-
-        for line in tt.ToLines() do
-            x.WriteLine(line)
