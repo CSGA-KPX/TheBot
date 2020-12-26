@@ -7,7 +7,6 @@ open System.IO
 open System.Text
 
 open KPX.FsCqHttp.Message
-open KPX.FsCqHttp.Api
 open KPX.FsCqHttp.Api.System
 
 open KPX.FsCqHttp.Handler
@@ -60,6 +59,14 @@ type TextResponse(args : CqEventArgs, respType : ResponseType) =
 
     override x.ToString() = String.Join(x.NewLine, buf)
 
+    [<Obsolete>] /// F#使用此指令容易出现错误，已禁用
+    override x.Write(_ : obj) =
+        invalidOp<unit> "已禁用Write(object)，请手动调用Write(object.ToString())。"
+
+    [<Obsolete>] /// F#使用此指令容易出现错误，已禁用
+    override x.WriteLine(_ : obj) =
+        invalidOp<unit> "已禁用WriteLine(object)，请手动调用WriteLine(object.ToString())。"
+
     /// 中断执行过程，中断文本输出
     member x.AbortExecution(level : ErrorLevel, fmt : string, [<ParamArray>] fmtargs : obj []) =
         x.WriteLine()
@@ -94,7 +101,10 @@ type TextResponse(args : CqEventArgs, respType : ResponseType) =
     member private x.FlushImageMessage() =
         let DrawLines (lines : string []) =
             use font =
-                new Font(KPX.FsCqHttp.Config.Output.ImageOutputFont, KPX.FsCqHttp.Config.Output.ImageOutputSize)
+                new Font(
+                    KPX.FsCqHttp.Config.Output.ImageOutputFont,
+                    KPX.FsCqHttp.Config.Output.ImageOutputSize
+                )
 
             let sf =
                 new StringFormat(StringFormat.GenericTypographic)

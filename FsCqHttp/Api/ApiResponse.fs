@@ -42,7 +42,8 @@ type ApiResponse =
 and ApiResponseConverter() =
     inherit JsonConverter<ApiResponse>()
 
-    override x.WriteJson(_ : JsonWriter, _ : ApiResponse, _ : JsonSerializer) = raise<unit> <| NotImplementedException()
+    override x.WriteJson(_ : JsonWriter, _ : ApiResponse, _ : JsonSerializer) =
+        raise<unit> <| NotImplementedException()
 
     override x.ReadJson(r : JsonReader, _ : Type, _ : ApiResponse, _ : bool, _ : JsonSerializer) =
         let obj = JObject.Load(r)

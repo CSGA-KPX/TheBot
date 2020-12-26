@@ -53,7 +53,9 @@ type LoyaltyStoreCollection private () =
 
     override x.FetchItem(corpId) =
         let url =
-            sprintf "https://esi.evepc.163.com/latest/loyalty/stores/%i/offers/?datasource=serenity" corpId
+            sprintf
+                "https://esi.evepc.163.com/latest/loyalty/stores/%i/offers/?datasource=serenity"
+                corpId
 
         x.Logger.Info(sprintf "Fetching %s" url)
 

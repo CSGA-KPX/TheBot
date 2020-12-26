@@ -181,9 +181,9 @@ type MarketAnalyzer(item : Item.ItemRecord, world : World.World, data : MarketDa
                 |> Array.map (MarketData.Trade)
 
             MarketAnalyzer(item, world, data)
-        with
-        | CompundMarketInfo.UniversalisAccessException resp ->
-            raise <| ModuleException(ExternalError, sprintf "Universalis访问失败%O" resp.StatusCode)
+        with CompundMarketInfo.UniversalisAccessException resp ->
+            raise
+            <| ModuleException(ExternalError, sprintf "Universalis访问失败%O" resp.StatusCode)
 
     static member GetMarketListing(world : World.World, item : Item.ItemRecord) =
         try
@@ -192,6 +192,6 @@ type MarketAnalyzer(item : Item.ItemRecord, world : World.World, data : MarketDa
                 |> Array.map (MarketData.Order)
 
             MarketAnalyzer(item, world, data)
-        with
-        | CompundMarketInfo.UniversalisAccessException resp ->
-            raise <| ModuleException(ExternalError, sprintf "Universalis访问失败%O" resp.StatusCode)
+        with CompundMarketInfo.UniversalisAccessException resp ->
+            raise
+            <| ModuleException(ExternalError, sprintf "Universalis访问失败%O" resp.StatusCode)

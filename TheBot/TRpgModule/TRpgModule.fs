@@ -64,7 +64,10 @@ type TRpgModule() =
         let job =
             de.Dicer.GetRandomItem(StringData.ChrJobs)
 
-        if isDotCommand then tt.AddPostTable(sprintf "推荐职业：%s" job) else tt.AddPostTable(sprintf "今日推荐职业：%s" job)
+        if isDotCommand then
+            tt.AddPostTable(sprintf "推荐职业：%s" job)
+        else
+            tt.AddPostTable(sprintf "今日推荐职业：%s" job)
 
         using (cmdArg.OpenResponse()) (fun ret -> ret.Write(tt))
 
@@ -167,7 +170,8 @@ type TRpgModule() =
         let tmpl =
             de.Dicer.GetRandomItem(StringData.GetLines(key))
 
-        let ret = TrpgStringTemplate(de).ParseTemplate(tmpl)
+        let ret =
+            TrpgStringTemplate(de).ParseTemplate(tmpl)
 
         cmdArg.QuickMessageReply(ret)
 
@@ -176,7 +180,9 @@ type TRpgModule() =
 
         let de = DiceExpression(Dicer.RandomDicer)
 
-        let ret = TrpgStringTemplate(de).ParseByKey(StringData.Key_ChrBackground)
+        let ret =
+            TrpgStringTemplate(de)
+                .ParseByKey(StringData.Key_ChrBackground)
 
         cmdArg.QuickMessageReply(ret)
 
@@ -209,7 +215,12 @@ type TRpgModule() =
             CountUserCard(cmdArg.MessageEvent.UserId)
 
         if cardCount > MAX_USER_CARDS
-        then cmdArg.AbortExecution(InputError, "人物卡数量上限，你已经有{0}张，上限为{1}张。", cardCount, MAX_USER_CARDS)
+        then cmdArg.AbortExecution(
+            InputError,
+            "人物卡数量上限，你已经有{0}张，上限为{1}张。",
+            cardCount,
+            MAX_USER_CARDS
+        )
 
         if CardExists(chr) then cmdArg.AbortExecution(InputError, "存在尚未命名的人物卡，请命名后再创建")
 
@@ -287,7 +298,10 @@ type TRpgModule() =
 
             | "show" ->
                 let current = cmdArg.GetChrCard()
-                using (cmdArg.OpenResponse(ForceImage)) (fun ret -> ret.Write(current.ToTextTable()))
+
+                using
+                    (cmdArg.OpenResponse(ForceImage))
+                    (fun ret -> ret.Write(current.ToTextTable()))
 
             | "clr" -> // 删除当前角色卡
                 let current = cmdArg.GetChrCard()

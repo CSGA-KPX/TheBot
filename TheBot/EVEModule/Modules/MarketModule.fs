@@ -115,7 +115,6 @@ type EveMarketModule() =
 
         let rowMax =
             (max (max ice.Length moon.Length) ore.Length) - 1
-
         for i = 0 to rowMax do
             let eon, eop = tryGetRow ore i
             let ein, eip = tryGetRow ice i

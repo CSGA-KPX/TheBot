@@ -74,7 +74,10 @@ type EatChoices(options : seq<string>, dicer : Dicer, ?prefix : string) =
         options
         |> Seq.map
             (fun opt ->
-                if prefix = "" then MappedOption.Create(dicer, opt) else MappedOption.Create(dicer, opt, prefix))
+                if prefix = "" then
+                    MappedOption.Create(dicer, opt)
+                else
+                    MappedOption.Create(dicer, opt, prefix))
         |> Seq.sortBy (fun opt -> opt.Value)
         |> Seq.cache
 
@@ -89,6 +92,7 @@ type EatChoices(options : seq<string>, dicer : Dicer, ?prefix : string) =
     member x.GetBadOptions(threadhold) =
         mapped
         |> Seq.filter (fun opt -> opt.Value >= threadhold)
+        |> Seq.rev
 
 /// 根据早中晚加分别打分
 ///

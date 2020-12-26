@@ -86,13 +86,13 @@ type MarketInfoCollection private () =
                   LastUploadTime = DateTimeOffset.Now
                   Listings = Array.empty
                   TradeLogs = Array.empty }
-            | _ -> 
-                raise <| UniversalisAccessException resp 
+            | _ -> raise <| UniversalisAccessException resp
         else
             let json =
                 resp.Content.ReadAsStringAsync()
                 |> Async.AwaitTask
                 |> Async.RunSynchronously
+
             let o = JObject.Parse(json)
 
             let updated =
@@ -146,7 +146,8 @@ type MarketInfoCollection private () =
         let itemId, worldId = item.Id |> uint32, world.WorldId
 
         let dmfRet =
-            MarketOrder.MarketOrderProxy.callSafely <@ fun server -> server.GetByIdWorld worldId itemId @>
+            MarketOrder.MarketOrderProxy.callSafely
+                <@ fun server -> server.GetByIdWorld worldId itemId @>
             |> Async.RunSynchronously
 
         match dmfRet with
@@ -177,7 +178,8 @@ type MarketInfoCollection private () =
         let itemId, worldId = item.Id |> uint32, world.WorldId
 
         let dmfRet =
-            TradeLog.TradelogProxy.callSafely <@ fun server -> server.GetByIdWorld worldId itemId 20 @>
+            TradeLog.TradelogProxy.callSafely
+                <@ fun server -> server.GetByIdWorld worldId itemId 20 @>
             |> Async.RunSynchronously
 
         match dmfRet with

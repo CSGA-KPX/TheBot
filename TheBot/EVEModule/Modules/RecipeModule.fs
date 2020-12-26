@@ -4,6 +4,8 @@ open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.TextTable
 
+open type KPX.FsCqHttp.Utils.TextTable.TableHelpers
+
 open KPX.TheBot.Data.CommonModule.Recipe
 open KPX.TheBot.Data.EveData.Utils
 open KPX.TheBot.Data.EveData.EveType
@@ -24,6 +26,8 @@ type EveRecipeModule() =
     let pm = EveProcessManager.Default
 
     let er = EveExpression.EveExpression()
+
+    let numPadStr = RightAlignCell "--"
 
     [<CommandHandlerMethodAttribute("eme", "EVE蓝图材料效率计算", "")>]
     member x.HandleME(cmdArg : CommandEventArgs) =
@@ -91,7 +95,13 @@ type EveRecipeModule() =
                 | _ when mr.Quantity < 0.0 ->
                     // 已有材料需要扣除
                     final.Update(mr)
-                | _ -> cmdArg.AbortExecution(ModuleError, "不知道如何处理：{0} * {1}", mr.Item.Name, mr.Quantity)
+                | _ ->
+                    cmdArg.AbortExecution(
+                        ModuleError,
+                        "不知道如何处理：{0} * {1}",
+                        mr.Item.Name,
+                        mr.Quantity
+                    )
 
         for mr in final do
             tt.AddRow(mr.Item.Name, mr.Quantity)
@@ -183,7 +193,7 @@ type EveRecipeModule() =
             tt.AddPreTable("材料：")
 
             let installFee = proc.Value.GetInstallationCost(cfg)
-            tt.AddRow("制造费用", RightAlignCell "--", RightAlignCell(HumanReadableFloat installFee), RightAlignCell "--")
+            tt.AddRow("制造费用", numPadStr, HumanReadableSig4Float installFee, numPadStr)
 
             let mutable optCost = installFee
             let mutable allCost = installFee
@@ -194,12 +204,17 @@ type EveRecipeModule() =
                     * mr.Quantity
 
                 let mrProc =
-                    pm.TryGetRecipeRecMe(mr.Item, ByItem mr.Quantity, cfg.DerivativetMe, cfg.DerivativetMe)
+                    pm.TryGetRecipeRecMe(
+                        mr.Item,
+                        ByItem mr.Quantity,
+                        cfg.DerivativetMe,
+                        cfg.DerivativetMe
+                    )
 
                 if mrProc.IsNone then
                     optCost <- optCost + price
                     allCost <- allCost + price
-                    tt.AddRow(mr.Item.Name, mr.Quantity, RightAlignCell(HumanReadableFloat price), RightAlignCell "--")
+                    tt.AddRow(mr.Item.Name, mr.Quantity, HumanReadableSig4Float price, numPadStr)
                 else
                     let mrInstall =
                         mrProc.Value.FinalProcess.GetInstallationCost(cfg)
@@ -217,8 +232,8 @@ type EveRecipeModule() =
                     tt.AddRow(
                         mr.Item.Name,
                         mr.Quantity,
-                        RightAlignCell(HumanReadableFloat price),
-                        RightAlignCell(HumanReadableFloat mrAll)
+                        HumanReadableSig4Float price,
+                        HumanReadableSig4Float mrAll
                     )
 
             let sell =
@@ -229,23 +244,23 @@ type EveRecipeModule() =
 
             tt.AddRow(
                 "卖出/税后",
-                RightAlignCell "--",
-                RightAlignCell(HumanReadableFloat sell),
-                RightAlignCell(HumanReadableFloat sellWithTax)
+                numPadStr,
+                HumanReadableSig4Float sell,
+                HumanReadableSig4Float sellWithTax
             )
 
             tt.AddRow(
                 "材料/最佳",
-                RightAlignCell "--",
-                RightAlignCell(HumanReadableFloat allCost),
-                RightAlignCell(HumanReadableFloat optCost)
+                numPadStr,
+                HumanReadableSig4Float allCost,
+                HumanReadableSig4Float optCost
             )
 
             tt.AddRow(
                 "税后 利润",
-                RightAlignCell "--",
-                RightAlignCell(HumanReadableFloat(sellWithTax - allCost)),
-                RightAlignCell(HumanReadableFloat(sellWithTax - optCost))
+                numPadStr,
+                HumanReadableSig4Float(sellWithTax - allCost),
+                HumanReadableSig4Float(sellWithTax - optCost)
             )
 
             using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun ret -> ret.Write(tt))
@@ -338,6 +353,9 @@ type EveRecipeModule() =
 
         let pm = EveProcessManager(cfg)
 
+        // 正式开始以前写一个空行
+        ret.WriteEmptyLine()
+
         BlueprintCollection.Instance.GetAllProcesses()
         |> Seq.filter filterFunc
         |> (fun seq ->
@@ -383,10 +401,10 @@ type EveRecipeModule() =
                 for x in data do
                     tt.AddRow(
                         x.Name,
-                        x.Sell |> HumanReadableFloat |> RightAlignCell,
-                        x.Cost |> HumanReadableFloat |> RightAlignCell,
-                        x.Profit |> HumanReadableFloat |> RightAlignCell,
-                        x.Volume |> HumanReadableFloat |> RightAlignCell
+                        HumanReadableSig4Float x.Sell,
+                        HumanReadableSig4Float x.Cost,
+                        HumanReadableSig4Float x.Profit,
+                        HumanReadableInteger x.Volume
                     )
 
                 ret.Write(tt)

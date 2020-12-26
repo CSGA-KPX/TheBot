@@ -93,7 +93,10 @@ type UserOptionParser() =
                     let key = s.[0]
                     let value = if s.Length >= 2 then s.[1] else ""
 
-                    if options.ContainsKey(key) then options.[key] <- options.[key].SetOrAppend(value) else yield str
+                    if options.ContainsKey(key) then
+                        options.[key] <- options.[key].SetOrAppend(value)
+                    else
+                        yield str
                 else
                     yield str |]
 

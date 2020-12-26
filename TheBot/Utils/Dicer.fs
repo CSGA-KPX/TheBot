@@ -31,7 +31,11 @@ type SeedOption =
         [| SeedDate
            SeedCustom(
                let at = msg.Message.TryGetAt()
-               if at.IsNone then raise <| InvalidOperationException("没有用户被At！") else at.Value.ToString()
+
+               if at.IsNone then
+                   raise <| InvalidOperationException("没有用户被At！")
+               else
+                   at.Value.ToString()
            ) |]
 
 [<AbstractClass>]

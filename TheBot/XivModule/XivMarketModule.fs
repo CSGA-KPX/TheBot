@@ -7,6 +7,8 @@ open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.TextTable
 
+open type KPX.FsCqHttp.Utils.TextTable.TableHelpers
+
 open KPX.TheBot.Data.CommonModule.Recipe
 open KPX.TheBot.Data.XivData
 
@@ -24,9 +26,6 @@ type XivMarketModule() =
     let xivExpr = XivExpression.XivExpression()
 
     let padNumber = box <| RightAlignCell "--"
-
-    let padOnNan f =
-        if Double.IsNaN(f) then padNumber else box f
 
     let isNumber (str : string) =
         if str.Length <> 0 then String.forall (Char.IsDigit) str else false
@@ -51,7 +50,10 @@ type XivMarketModule() =
 
             let world = cfg.GetWorld()
             cm.Put(CommandUtils.defaultServerKey, world)
-            cmdArg.QuickMessageReply(sprintf "%s的默认服务器设置为%s" cmdArg.MessageEvent.DisplayName world.WorldName)
+
+            cmdArg.QuickMessageReply(
+                sprintf "%s的默认服务器设置为%s" cmdArg.MessageEvent.DisplayName world.WorldName
+            )
         else
             cmdArg.QuickMessageReply("没有指定服务器或服务器名称不正确")
 
@@ -98,25 +100,19 @@ type XivMarketModule() =
                 let mutable updated = TimeSpan.MaxValue
 
                 let lstAll =
-                    listing.TakeVolume(25).StdEvPrice().Round()
-                        .Average
+                    listing.TakeVolume(25).StdEvPrice().Average
 
                 let lstHq =
-                    listing
-                        .TakeHQ()
-                        .TakeVolume(25)
-                        .StdEvPrice()
-                        .Round()
+                    listing.TakeHQ().TakeVolume(25).StdEvPrice()
                         .Average
 
                 updated <- min updated (listing.LastUpdateTime())
                 sumListingAll <- sumListingAll + lstAll
                 sumListingHq <- sumListingHq + lstHq
 
-                let logAll = tradelog.StdEvPrice().Round().Average
+                let logAll = tradelog.StdEvPrice().Average
 
-                let logHq =
-                    tradelog.TakeHQ().StdEvPrice().Round().Average
+                let logHq = tradelog.TakeHQ().StdEvPrice().Average
 
                 updated <- min updated (tradelog.LastUpdateTime())
                 sumTradeAll <- sumTradeAll + logAll
@@ -128,11 +124,11 @@ type XivMarketModule() =
                 tt.RowBuilder {
                     yield mr.Item.Name
                     yield world.WorldName
-                    yield mr.Quantity
-                    yield padOnNan lstAll
-                    yield padOnNan lstHq
-                    yield padOnNan logAll
-                    yield padOnNan logHq
+                    yield HumanReadableInteger mr.Quantity
+                    yield HumanReadableInteger lstAll
+                    yield HumanReadableInteger lstHq
+                    yield HumanReadableInteger logAll
+                    yield HumanReadableInteger logHq
                     yield updateVal
                 }
                 |> tt.AddRow
@@ -142,10 +138,10 @@ type XivMarketModule() =
                     yield "合计"
                     yield "--"
                     yield padNumber
-                    yield padOnNan sumListingAll
-                    yield padOnNan sumListingHq
-                    yield padOnNan sumTradeAll
-                    yield padOnNan sumTradeHq
+                    yield HumanReadableInteger sumListingAll
+                    yield HumanReadableInteger sumListingHq
+                    yield HumanReadableInteger sumTradeAll
+                    yield HumanReadableInteger sumTradeHq
                     yield padNumber
                 }
                 |> tt.AddRow
@@ -172,7 +168,10 @@ type XivMarketModule() =
         let world = cfg.GetWorld()
 
         let tt =
-            if doCalculateCost then TextTable("物品", "价格", "数量", "小计", "更新时间") else TextTable("物品", "数量")
+            if doCalculateCost then
+                TextTable("物品", "价格", "数量", "小计", "更新时间")
+            else
+                TextTable("物品", "数量")
 
         if doCalculateCost then tt.AddPreTable(sprintf "服务器：%s" world.WorldName)
 
@@ -209,15 +208,17 @@ type XivMarketModule() =
 
             tt.RowBuilder {
                 yield mr.Item |> tryLookupNpcPrice
-                if doCalculateCost then yield padOnNan (market.Value.StdEvPrice().Round().Average)
+
+                if doCalculateCost
+                then yield HumanReadableInteger(market.Value.StdEvPrice().Average)
+
                 yield mr.Quantity
 
                 if doCalculateCost then
-                    let subtotal =
-                        market.Value.StdEvPrice().Round() * mr.Quantity
+                    let subtotal = market.Value.StdEvPrice() * mr.Quantity
 
                     sum <- sum + subtotal
-                    yield padOnNan subtotal.Average
+                    yield HumanReadableInteger subtotal.Average
                     yield market.Value.LastUpdateTime()
             }
             |> tt.AddRow
@@ -235,10 +236,11 @@ type XivMarketModule() =
                                 .GetMarketListing(world, mr.Item)
                                 .TakeVolume()
 
-                        lst.StdEvPrice().Round() * mr.Quantity)
+                        lst.StdEvPrice() * mr.Quantity)
 
-            tt.AddRowFill("卖出价格", totalSell.Average)
-            tt.AddRowFill("税前利润", (totalSell - sum).Average)
+            tt.AddRowFill("卖出价格", HumanReadableInteger totalSell.Average)
+            let profit = (totalSell - sum).Average
+            tt.AddRowFill("税前利润", HumanReadableInteger profit)
 
         using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))
 
@@ -273,10 +275,9 @@ type XivMarketModule() =
                     for item in chunk do
                         yield item.Id
                         yield item.Name
-
                     for _ = 0 to headerCol - chunk.Length - 1 do
-                        yield CellType.CreateRightAlign("--")
-                        yield CellType.CreateLeftAlign("--")
+                        yield TableCell.CreateRightAlign("--")
+                        yield TableCell.CreateLeftAlign("--")
                 }
                 |> tt.AddRow
 
@@ -300,7 +301,9 @@ type XivMarketModule() =
                         RightAlignCell "更新时间"
                     )
 
-                tt.AddPreTable(sprintf "兑换道具:%s 土豆：%s/%s" reqi.Name world.DataCenter world.WorldName)
+                tt.AddPreTable(
+                    sprintf "兑换道具:%s 土豆：%s/%s" reqi.Name world.DataCenter world.WorldName
+                )
 
                 for info in ia do
                     let recv = itemCol.GetByItemId(info.ReceiveItem)
@@ -313,19 +316,20 @@ type XivMarketModule() =
 
                     tt.RowBuilder {
                         yield recv.Name
-                        yield padOnNan (market.StdEvPrice().Round().Average)
-                        yield padOnNan (market.MinPrice())
+                        yield HumanReadableInteger(market.StdEvPrice().Average)
+                        yield HumanReadableInteger(market.MinPrice())
 
                         yield
-                            padOnNan (
-                                (market.StdEvPrice().Round()
-                                 * (float <| info.ReceiveCount)
+                            HumanReadableInteger(
+                                (market.StdEvPrice() * (float <| info.ReceiveCount)
                                  / (float <| info.CostCount))
-                                    .Round()
                                     .Average
                             )
 
-                        if market.IsEmpty then yield CellType.CreateRightAlign("--") else yield market.LastUpdateTime()
+                        if market.IsEmpty then
+                            yield TableCell.CreateRightAlign("--")
+                        else
+                            yield market.LastUpdateTime()
 
                     }
                     |> tt.AddRow

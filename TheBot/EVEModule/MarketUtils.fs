@@ -1,12 +1,12 @@
 ﻿module KPX.TheBot.Module.EveModule.Utils.MarketUtils
 
 open KPX.FsCqHttp.Utils.TextTable
+open type KPX.FsCqHttp.Utils.TextTable.TableHelpers
 
 open KPX.TheBot.Data.CommonModule.Recipe
 open KPX.TheBot.Data.EveData.Utils
 open KPX.TheBot.Data.EveData.EveType
 
-open KPX.TheBot.Module.EveModule.Utils.Helpers
 open KPX.TheBot.Module.EveModule.Utils.Extensions
 
 
@@ -26,29 +26,26 @@ type EveMarketPriceTable() =
             yield q
 
             let nt =
-                t.GetPrice(PriceFetchMode.Sell) * q
-                |> HumanReadableFloat
+                HumanReadableSig4Float(t.GetPrice(PriceFetchMode.Sell) * q)
 
             let st =
-                t.GetPrice(PriceFetchMode.SellWithTax) * q
-                |> HumanReadableFloat
-
-            yield sprintf "%s/%s" nt st |> RightAlignCell
-
-            let nt =
-                t.GetPrice(PriceFetchMode.Buy) * q
-                |> HumanReadableFloat
-
-            let wt =
-                t.GetPrice(PriceFetchMode.BuyWithTax) * q
-                |> HumanReadableFloat
-
-            yield sprintf "%s/%s" nt wt |> RightAlignCell
+                HumanReadableSig4Float(t.GetPrice(PriceFetchMode.SellWithTax) * q)
 
             yield
-                t.GetTradeVolume()
-                |> HumanReadableFloat
+                sprintf "%s/%s" nt.Value st.Value
                 |> RightAlignCell
+
+            let nt =
+                HumanReadableSig4Float(t.GetPrice(PriceFetchMode.Buy) * q)
+
+            let wt =
+                HumanReadableSig4Float(t.GetPrice(PriceFetchMode.BuyWithTax) * q)
+
+            yield
+                sprintf "%s/%s" nt.Value wt.Value
+                |> RightAlignCell
+
+            yield HumanReadableInteger(t.GetTradeVolume())
 
             yield t.GetPriceInfo().Updated
         }

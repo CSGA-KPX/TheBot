@@ -7,7 +7,8 @@ open KPX.TheBot.Utils.GenericRPN
 open KPX.TheBot.Data.CommonModule.Recipe
 
 
-type ItemAccumulator<'Item when 'Item : equality> = KPX.TheBot.Data.CommonModule.Recipe.ItemAccumulator<'Item>
+type ItemAccumulator<'Item when 'Item : equality> =
+    KPX.TheBot.Data.CommonModule.Recipe.ItemAccumulator<'Item>
 
 type RecipeOperand<'Item when 'Item : equality> =
     | Number of float
