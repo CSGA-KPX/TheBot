@@ -26,6 +26,7 @@ type ProcessFlags =
     | QuantityApplied = 1
     | MeApplied = 2
 
+[<CLIMutable>]
 type EveProcess =
     { Process : RecipeProcess<EveType>
       Type : ProcessType

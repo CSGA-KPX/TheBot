@@ -55,6 +55,7 @@ type EveRecipeModule() =
             "直接材料总价："
             + System.String.Format("{0:N0}", ceil me0Price)
         )
+
         for me = 0 to 10 do
             let cost =
                 pm
@@ -263,69 +264,26 @@ type EveRecipeModule() =
 
         ret.WriteLine(sprintf "展开行星材料：%b 展开反应公式：%b" cfg.ExpandPlanet cfg.ExpandReaction)
 
-        let filterFunc : (EveProcess -> bool) =
-            match cmdArg.CommandName with // 注意小写匹配
-            | "eve燃料块" ->
-                fun bp ->
-                    (bp.Type = ProcessType.Manufacturing)
-                    && (bp.Process.GetFirstProduct().Item.Name.Contains("燃料块"))
-            | "eve组件" ->
-                fun bp ->
-                    (bp.Type = ProcessType.Manufacturing)
-                    && ((bp.Process.GetFirstProduct().Item.GroupId = 334) // Tech2ComponentGroupId
-                        || (bp.Process.GetFirstProduct().Item.GroupId = 873)) // CapitalComponentGroupId
-            | "eve种菜" -> fun bp -> (bp.Type = ProcessType.Planet)
-            | "eve舰船" ->
-                fun bp ->
-                    (bp.Type = ProcessType.Manufacturing)
-                    && (bp.Process.GetFirstProduct().Item.CategoryId = 6) // 6 = 舰船
-                    && (bp.Process.GetFirstProduct().Item.MetaGroupId <> 2) // T1
-                    && (let mg =
-                            bp.Process.GetFirstProduct().Item.MarketGroup
-
-                        mg.IsSome && (not <| mg.Value.Name.Contains("特别")))
-            | "eve舰船ii" ->
-                fun bp ->
-                    (bp.Type = ProcessType.Manufacturing)
-                    && (bp.Process.GetFirstProduct().Item.CategoryId = 6) // 6 = 舰船
-                    && (bp.Process.GetFirstProduct().Item.MetaGroupId = 2) // T2
-                    && (let mg =
-                            bp.Process.GetFirstProduct().Item.MarketGroup
-
-                        mg.IsSome && (not <| mg.Value.Name.Contains("特别")))
+        let searchCond =
+            match cmdArg.CommandName with
+            | "eve燃料块" -> PredefinedSearchCond.FuelBlocks
+            | "eve种菜" -> PredefinedSearchCond.Planet
+            | "eve组件" -> PredefinedSearchCond.Components
+            | "eve舰船" -> PredefinedSearchCond.T1Ships
+            | "eve舰船ii" -> PredefinedSearchCond.T2Ships
             | "eve装备ii" ->
                 let isGroup = cfg.GetValue("by") = "group"
-
-                if isGroup then ret.WriteLine("按组名匹配") else ret.WriteLine("按名称匹配，按组名匹配请使用by:group")
 
                 let keyword =
                     if cfg.CommandLine.Length = 0 then ret.AbortExecution(InputError, "需要一个装备名称关键词")
 
                     cfg.CommandLine.[0]
 
-                if keyword.Length < 2 then ret.AbortExecution(InputError, "至少2个字")
+                let cond =
+                    if isGroup then ByGroupName keyword else ByItemName keyword
 
-                if keyword.Contains("I") then ret.AbortExecution(InputError, "emmm 想看全部T2还是别想了")
-
-                let allowCategoryId = [| 7; 18; 8 |] |> Set // 装备，无人机，弹药
-
-                fun bp ->
-                    (bp.Type = ProcessType.Manufacturing)
-                    && (if isGroup then
-                            bp
-                                .Process
-                                .GetFirstProduct()
-                                .Item.TypeGroup.Name.Contains(keyword)
-                        else
-                            bp
-                                .Process
-                                .GetFirstProduct()
-                                .Item.Name.Contains(keyword))
-                    && (allowCategoryId.Contains(bp.Process.GetFirstProduct().Item.CategoryId)) // 装备
-                    && (bp.Process.GetFirstProduct().Item.MetaGroupId = 2) // T2
-
+                PredefinedSearchCond.T2ModulesOf(cond)
             | other -> cmdArg.AbortExecution(ModuleError, "不应发生匹配:{0}", other)
-
 
         let pmStr = cfg.MaterialPriceMode.ToString()
 
@@ -334,56 +292,55 @@ type EveRecipeModule() =
         // 正式开始以前写一个空行
         ret.WriteEmptyLine()
 
-        BlueprintCollection.Instance.GetAllProcesses()
-        |> Seq.filter filterFunc
-        |> (fun seq ->
-            if (Seq.length seq) = 0 then ret.AbortExecution(InputError, "无符合要求的蓝图信息")
+        match EveProcessSearch.Instance.Search(searchCond) with
+        | NoResult -> ret.AbortExecution(InputError, "无符合要求的蓝图信息")
+        | TooManyResults -> ret.AbortExecution(InputError, "蓝图数量超限")
+        | Result result ->
+            result
+            |> Seq.map
+                (fun ps ->
+                    let proc = pm.ApplyProcess(ps, ByRun 1.0)
+                    let product = proc.Process.GetFirstProduct()
 
-            seq)
-        |> Seq.map
-            (fun ps ->
-                let proc = pm.ApplyProcess(ps, ByRun 1.0)
-                let product = proc.Process.GetFirstProduct()
+                    let cost =
+                        proc.GetTotalMaterialPrice(cfg.MaterialPriceMode)
+                        + proc.GetInstallationCost(cfg)
 
-                let cost =
-                    proc.GetTotalMaterialPrice(cfg.MaterialPriceMode)
-                    + proc.GetInstallationCost(cfg)
+                    let sellWithTax =
+                        ps.GetTotalProductPrice(PriceFetchMode.SellWithTax)
 
-                let sellWithTax =
-                    ps.GetTotalProductPrice(PriceFetchMode.SellWithTax)
+                    let volume = data.GetItemTradeVolume(product.Item)
 
-                let volume = data.GetItemTradeVolume(product.Item)
+                    {| Name = product.Item.Name
+                       TypeGroup = product.Item.TypeGroup
+                       Cost = cost
+                       Quantity = product.Quantity
+                       Sell = ps.GetTotalProductPrice(PriceFetchMode.Sell)
+                       Profit = sellWithTax - cost
+                       Volume = volume |})
+            |> Seq.sortByDescending (fun x -> x.Profit)
+            |> Seq.groupBy (fun x -> x.TypeGroup)
+            |> Seq.iter
+                (fun (group, data) ->
+                    ret.WriteLine(">>{0}<<", group.Name)
 
-                {| Name = product.Item.Name
-                   TypeGroup = product.Item.TypeGroup
-                   Cost = cost
-                   Quantity = product.Quantity
-                   Sell = ps.GetTotalProductPrice(PriceFetchMode.Sell)
-                   Profit = sellWithTax - cost
-                   Volume = volume |})
-        |> Seq.sortByDescending (fun x -> x.Profit)
-        |> Seq.groupBy (fun x -> x.TypeGroup)
-        |> Seq.iter
-            (fun (group, data) ->
-                ret.WriteLine(">>{0}<<", group.Name)
+                    let tt =
+                        TextTable(
+                            "方案",
+                            RightAlignCell "出售价格/无税卖出",
+                            RightAlignCell("生产成本/" + pmStr),
+                            RightAlignCell "含税利润",
+                            RightAlignCell "日均交易"
+                        )
 
-                let tt =
-                    TextTable(
-                        "方案",
-                        RightAlignCell "出售价格/无税卖出",
-                        RightAlignCell("生产成本/" + pmStr),
-                        RightAlignCell "含税利润",
-                        RightAlignCell "日均交易"
-                    )
+                    for x in data do
+                        tt.AddRow(
+                            x.Name,
+                            HumanReadableSig4Float x.Sell,
+                            HumanReadableSig4Float x.Cost,
+                            HumanReadableSig4Float x.Profit,
+                            HumanReadableInteger x.Volume
+                        )
 
-                for x in data do
-                    tt.AddRow(
-                        x.Name,
-                        HumanReadableSig4Float x.Sell,
-                        HumanReadableSig4Float x.Cost,
-                        HumanReadableSig4Float x.Profit,
-                        HumanReadableInteger x.Volume
-                    )
-
-                ret.Write(tt)
-                ret.WriteEmptyLine())
+                    ret.Write(tt)
+                    ret.WriteEmptyLine())

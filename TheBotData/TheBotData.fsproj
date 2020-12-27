@@ -40,6 +40,7 @@
     <Compile Include="EveData\EveProcess\PlanetProcess.fs" />
     <Compile Include="EveData\EveProcess\RefineProcess.fs" />
     <Compile Include="EveData\EveProcess\ProcessManager.fs" />
+    <Compile Include="EveData\EveProcess\ProcessSearchCache.fs" />
     <Compile Include="EveData\NpcCorporation.fs" />
     <Compile Include="EveData\LoyaltyStoreOffer.fs" />
     <Compile Include="EveData\MarketPriceCache.fs" />
