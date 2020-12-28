@@ -1,4 +1,4 @@
-﻿namespace KPX.TheBot.Module.EatModule.Instance
+﻿namespace KPX.TheBot.Module.LifestyleModule
 
 open System
 open KPX.FsCqHttp.Api.Group
@@ -6,7 +6,7 @@ open KPX.FsCqHttp.Message
 open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Utils.TextResponse
 
-open KPX.TheBot.Module.EatModule.Utils
+open KPX.TheBot.Module.LifestyleModule.EatUtils
 
 open KPX.TheBot.Utils.Dicer
 

@@ -219,7 +219,7 @@ type XivMarketModule() =
             |> tt.AddRow
 
         if doCalculateCost then
-            tt.AddRowFill("成本总计", sum.Average)
+            tt.AddRowFill("成本总计", HumanReadableInteger sum.Average)
 
             let totalSell =
                 product

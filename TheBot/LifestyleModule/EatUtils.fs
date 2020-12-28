@@ -1,4 +1,4 @@
-﻿module KPX.TheBot.Module.EatModule.Utils
+﻿module KPX.TheBot.Module.LifestyleModule.EatUtils
 
 open System
 

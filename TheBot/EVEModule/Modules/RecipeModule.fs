@@ -245,9 +245,21 @@ type EveRecipeModule() =
     [<CommandHandlerMethodAttribute("EVE种菜", "EVE种菜利润", "")>]
     [<CommandHandlerMethodAttribute("EVE装备II", "EVET2装备利润", "")>]
     [<CommandHandlerMethodAttribute("EVE燃料块", "EVE燃料块", "")>]
+    [<CommandHandlerMethodAttribute("EVE生产", "EVE生产总览", "")>]
     member x.HandleManufacturingOverview(cmdArg : CommandEventArgs) =
         let cfg = EveConfigParser()
         cfg.RegisterOption("by", "")
+        // 生产总览使用
+        cfg.RegisterOption("mgid", "1,2,4,14")
+        cfg.RegisterOption("cid", "")
+        cfg.RegisterOption("gid", "")
+        cfg.RegisterOption("n", "")
+        cfg.RegisterOption("gn", "")
+        cfg.RegisterOption("mgn", "")
+        cfg.RegisterOption("no", "")
+        cfg.RegisterOption("gno", "")
+        cfg.RegisterOption("mgno", "")
+
         cfg.Parse(cmdArg.Arguments)
 
         use ret = cmdArg.OpenResponse(cfg.IsImageOutput)
@@ -283,6 +295,48 @@ type EveRecipeModule() =
                     if isGroup then ByGroupName keyword else ByItemName keyword
 
                 PredefinedSearchCond.T2ModulesOf(cond)
+            | "eve生产" ->
+                let cond =
+                    ProcessSearchCond(ProcessType.Manufacturing)
+
+                let mgid = cfg.GetValue("mgid").Split(',', System.StringSplitOptions.RemoveEmptyEntries)
+
+                if mgid.Length <> 0 then cond.MetaGroupIds <- mgid |> Array.map int
+
+                let gid = cfg.GetValue("gid").Split(',', System.StringSplitOptions.RemoveEmptyEntries)
+
+                if gid.Length <> 0 then cond.GroupIds <- gid |> Array.map int
+
+                let cid = cfg.GetValue("cid").Split(',', System.StringSplitOptions.RemoveEmptyEntries)
+
+                if cid.Length <> 0 then cond.CategoryIds <- cid |> Array.map int
+
+                let nameSearch = ResizeArray<NameSearchCond>()
+
+                let name = cfg.GetValue("n")
+                if name <> "" then nameSearch.Add(ByItemName name)
+
+                let gName = cfg.GetValue("gn")
+                if gName <> "" then nameSearch.Add(ByGroupName gName)
+
+                let mgName = cfg.GetValue("mgn")
+                if mgName <> "" then nameSearch.Add(ByMarketGroupName mgName)
+
+                cond.NameSearch <- nameSearch.ToArray()
+                nameSearch.Clear()
+
+                let name = cfg.GetValue("no")
+                if name <> "" then nameSearch.Add(ByItemName name)
+
+                let gName = cfg.GetValue("gno")
+                if gName <> "" then nameSearch.Add(ByGroupName gName)
+
+                let mgName = cfg.GetValue("mgno")
+                if mgName <> "" then nameSearch.Add(ByMarketGroupName mgName)
+
+                cond.NameExclude <- nameSearch.ToArray()
+
+                cond
             | other -> cmdArg.AbortExecution(ModuleError, "不应发生匹配:{0}", other)
 
         let pmStr = cfg.MaterialPriceMode.ToString()
