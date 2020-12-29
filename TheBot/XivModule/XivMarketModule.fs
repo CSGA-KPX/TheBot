@@ -166,7 +166,9 @@ type XivMarketModule() =
         let world = cfg.GetWorld()
 
         let tt =
-            if doCalculateCost then TextTable("物品", "价格", "数量", "小计", "更新时间") else TextTable("物品", "数量")
+            if doCalculateCost
+            then TextTable("物品", RightAlignCell "价格", RightAlignCell "数量", RightAlignCell "小计", RightAlignCell "更新时间")
+            else TextTable("物品", RightAlignCell "数量")
 
         if doCalculateCost then tt.AddPreTable(sprintf "服务器：%s" world.WorldName)
 
@@ -270,7 +272,6 @@ type XivMarketModule() =
                     for item in chunk do
                         yield item.Id
                         yield item.Name
-
                     for _ = 0 to headerCol - chunk.Length - 1 do
                         yield TableCell.CreateRightAlign("--")
                         yield TableCell.CreateLeftAlign("--")
