@@ -11,6 +11,7 @@ open type KPX.FsCqHttp.Utils.TextTable.TableHelpers
 
 open KPX.TheBot.Data.CommonModule.Recipe
 open KPX.TheBot.Data.XivData
+open KPX.TheBot.Data.XivData.Shops
 
 open KPX.TheBot.Utils.Config
 open KPX.TheBot.Utils.RecipeRPN
@@ -21,8 +22,8 @@ type XivMarketModule() =
     inherit CommandHandlerBase()
 
     let rm = Recipe.XivRecipeManager.Instance
-    let itemCol = Item.ItemCollection.Instance
-    let gilShop = GilShop.GilShopCollection.Instance
+    let itemCol = ItemCollection.Instance
+    let gilShop = GilShopCollection.Instance
     let xivExpr = XivExpression.XivExpression()
 
     let padNumber = box <| RightAlignCell "--"
@@ -36,7 +37,7 @@ type XivMarketModule() =
         else itemCol.TryGetByName(str.TrimEnd(CommandUtils.XivSpecialChars))
 
     /// 给物品名备注上NPC价格
-    let tryLookupNpcPrice (item : Item.ItemRecord) =
+    let tryLookupNpcPrice (item : XivItem) =
         let ret = gilShop.TryLookupByItem(item)
         if ret.IsSome then sprintf "%s(%i)" item.Name ret.Value.Ask else item.Name
 
@@ -99,18 +100,23 @@ type XivMarketModule() =
 
                 let lstAll =
                     listing.TakeVolume(25).StdEvPrice().Average
+                    * mr.Quantity
 
                 let lstHq =
                     listing.TakeHQ().TakeVolume(25).StdEvPrice()
                         .Average
+                    * mr.Quantity
 
                 updated <- min updated (listing.LastUpdateTime())
                 sumListingAll <- sumListingAll + lstAll
                 sumListingHq <- sumListingHq + lstHq
 
-                let logAll = tradelog.StdEvPrice().Average
+                let logAll =
+                    tradelog.StdEvPrice().Average * mr.Quantity
 
-                let logHq = tradelog.TakeHQ().StdEvPrice().Average
+                let logHq =
+                    tradelog.TakeHQ().StdEvPrice().Average
+                    * mr.Quantity
 
                 updated <- min updated (tradelog.LastUpdateTime())
                 sumTradeAll <- sumTradeAll + logAll
@@ -158,9 +164,9 @@ type XivMarketModule() =
         let materialFunc =
             if cmdArg.CommandName = "rr"
                || cmdArg.CommandName = "rrc" then
-                fun (item : Item.ItemRecord) -> rm.TryGetRecipeRec(item, ByItem 1.0)
+                fun (item : XivItem) -> rm.TryGetRecipeRec(item, ByItem 1.0)
             else
-                fun (item : Item.ItemRecord) -> rm.TryGetRecipe(item)
+                fun (item : XivItem) -> rm.TryGetRecipe(item)
 
         let cfg = CommandUtils.XivConfig(cmdArg)
         let world = cfg.GetWorld()
@@ -243,8 +249,7 @@ type XivMarketModule() =
 
     [<CommandHandlerMethodAttribute("ssc", "计算部分道具兑换的价格", "兑换所需道具的名称或ID，只处理1个")>]
     member x.HandleSSS(cmdArg : CommandEventArgs) =
-        let sc =
-            SpecialShop.SpecialShopCollection.Instance
+        let sc = SpecialShopCollection.Instance
 
         let cfg = CommandUtils.XivConfig(cmdArg)
         let world = cfg.GetWorld()
@@ -265,13 +270,16 @@ type XivMarketModule() =
             tt.AddPreTable("可交换道具：")
 
             let chunks =
-                sc.AllCostItems() |> Seq.chunkBySize headerCol
+                sc.AllCostItems()
+                |> Seq.sortBy (fun item -> item.Id)
+                |> Seq.chunkBySize headerCol
 
             for chunk in chunks do
                 tt.RowBuilder {
                     for item in chunk do
                         yield item.Id
                         yield item.Name
+
                     for _ = 0 to headerCol - chunk.Length - 1 do
                         yield TableCell.CreateRightAlign("--")
                         yield TableCell.CreateLeftAlign("--")
@@ -300,30 +308,36 @@ type XivMarketModule() =
 
                 tt.AddPreTable(sprintf "兑换道具:%s 土豆：%s/%s" reqi.Name world.DataCenter world.WorldName)
 
-                for info in ia do
-                    let recv = itemCol.GetByItemId(info.ReceiveItem)
+                ia
+                |> Array.map
+                    (fun info ->
+                        let recv = itemCol.GetByItemId(info.ReceiveItem)
 
-                    let market =
-                        MarketUtils
-                            .MarketAnalyzer
-                            .GetMarketListing(world, recv)
-                            .TakeVolume()
+                        let market =
+                            MarketUtils
+                                .MarketAnalyzer
+                                .GetMarketListing(world, recv)
+                                .TakeVolume()
 
-                    tt.RowBuilder {
-                        yield recv.Name
-                        yield HumanReadableInteger(market.StdEvPrice().Average)
-                        yield HumanReadableInteger(market.MinPrice())
+                        let updated = market.LastUpdateTime()
 
-                        yield
-                            HumanReadableInteger(
-                                (market.StdEvPrice() * (float <| info.ReceiveCount)
-                                 / (float <| info.CostCount))
-                                    .Average
-                            )
+                        (updated,
+                         tt.RowBuilder {
+                             yield recv.Name
+                             yield HumanReadableInteger(market.StdEvPrice().Average)
+                             yield HumanReadableInteger(market.MinPrice())
 
-                        if market.IsEmpty then yield TableCell.CreateRightAlign("--") else yield market.LastUpdateTime()
+                             yield
+                                 HumanReadableInteger(
+                                     (market.StdEvPrice() * (float <| info.ReceiveCount)
+                                      / (float <| info.CostCount))
+                                         .Average
+                                 )
 
-                    }
-                    |> tt.AddRow
+                             if market.IsEmpty then yield padNumber else yield updated
+
+                         }))
+                |> Array.sortBy fst
+                |> Array.iter (fun (_, row) -> tt.AddRow(row))
 
                 using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))

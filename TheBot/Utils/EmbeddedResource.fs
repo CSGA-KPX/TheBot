@@ -40,6 +40,12 @@ type StringResource(resxName : string) =
         x.GetLines(key)
         |> Array.filter (fun line -> not <| line.StartsWith(cmtStart))
 
+    member x.GetWordsWithouComment(key : string, ?cmdStart : string) =
+        [| let cmtStart = defaultArg cmdStart "//"
+
+           for line in x.GetLinesWithoutComment(key, cmtStart) do
+               yield! line.Split(Array.empty<char>, StringSplitOptions.RemoveEmptyEntries) |]
+
 [<AbstractClass>]
 type StringTemplate() =
     // \n \r

@@ -6,6 +6,7 @@ open KPX.TheBot.Data.Common.Database
 
 open LiteDB
 
+
 [<CLIMutable>]
 type XivContent =
     { [<BsonId(false)>]

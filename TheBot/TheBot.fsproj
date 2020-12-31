@@ -23,8 +23,6 @@
     <Compile Include="Utils\RecipeRPN.fs" />
     <Compile Include="LifestyleModule\EatUtils.fs" />
     <Compile Include="LifestyleModule\EatModule.fs" />
-    <Compile Include="LifestyleModule\BuyUtils.fs" />
-    <Compile Include="LifestyleModule\BuyModule.fs" />
     <Compile Include="DiceModule\DiceUtils.fs" />
     <Compile Include="DiceModule\DiceModule.fs" />
     <Compile Include="TRpgModule\Utils.fs" />
@@ -78,9 +76,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Update="Resources\Buy.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-    </EmbeddedResource>
     <EmbeddedResource Update="Resources\Eat.resx">
       <Generator>ResXFileCodeGenerator</Generator>
     </EmbeddedResource>

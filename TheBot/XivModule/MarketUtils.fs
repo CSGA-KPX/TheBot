@@ -63,8 +63,8 @@ type MarketData =
 
     member x.ItemRecord =
         match x with
-        | Order x -> Item.ItemCollection.Instance.GetByItemId(x.ItemId |> int)
-        | Trade x -> Item.ItemCollection.Instance.GetByItemId(x.ItemId |> int)
+        | Order x -> ItemCollection.Instance.GetByItemId(x.ItemId |> int)
+        | Trade x -> ItemCollection.Instance.GetByItemId(x.ItemId |> int)
 
     member x.IsHq =
         match x with
@@ -92,7 +92,7 @@ type MarketData =
             .FromUnixTimeSeconds(ts |> int64)
             .ToOffset(TimeSpan.FromHours(8.0))
 
-type MarketAnalyzer(item : Item.ItemRecord, world : World.World, data : MarketData []) =
+type MarketAnalyzer(item : XivItem, world : World, data : MarketData []) =
 
     member x.World = world
     member x.ItemRecord = item
@@ -174,7 +174,7 @@ type MarketAnalyzer(item : Item.ItemRecord, world : World.World, data : MarketDa
                            yield record |]
         )
 
-    static member GetTradeLog(world : World.World, item : Item.ItemRecord) =
+    static member GetTradeLog(world : World, item : XivItem) =
         try
             let data =
                 CompundMarketInfo.MarketInfoCollection.Instance.GetTradeLogs(world, item)
@@ -185,7 +185,7 @@ type MarketAnalyzer(item : Item.ItemRecord, world : World.World, data : MarketDa
             raise
             <| ModuleException(ExternalError, sprintf "Universalis访问失败%O" resp.StatusCode)
 
-    static member GetMarketListing(world : World.World, item : Item.ItemRecord) =
+    static member GetMarketListing(world : World, item : XivItem) =
         try
             let data =
                 CompundMarketInfo.MarketInfoCollection.Instance.GetMarketListings(world, item)

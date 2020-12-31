@@ -8,10 +8,10 @@ open KPX.TheBot.Utils.GenericRPN
 open KPX.TheBot.Utils.RecipeRPN
 
 
-type ItemAccumulator = ItemAccumulator<Item.ItemRecord>
+type ItemAccumulator = ItemAccumulator<XivItem>
 
 type XivExpression() as x =
-    inherit RecipeExpression<Item.ItemRecord>()
+    inherit RecipeExpression<XivItem>()
 
     do
         let itemOperator =
@@ -22,7 +22,7 @@ type XivExpression() as x =
                     match l with
                     | Number f ->
                         let item =
-                            Item.ItemCollection.Instance.GetByItemId(int f)
+                            ItemCollection.Instance.GetByItemId(int f)
 
                         let acu = ItemAccumulator.SingleItemOf item
                         Accumulator acu
@@ -33,4 +33,4 @@ type XivExpression() as x =
         x.Operatos.Add(itemOperator)
 
     override x.TryGetItemByName(str) =
-        Item.ItemCollection.Instance.TryGetByName(str.TrimEnd(CommandUtils.XivSpecialChars))
+        ItemCollection.Instance.TryGetByName(str.TrimEnd(CommandUtils.XivSpecialChars))

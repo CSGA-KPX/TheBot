@@ -4,7 +4,7 @@ open System
 open System.Collections.Generic
 
 open KPX.TheBot.Data.CommonModule.Recipe
-open KPX.TheBot.Data.XivData.Item
+open KPX.TheBot.Data.XivData
 
 
 [<AutoOpen>]

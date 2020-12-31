@@ -1,6 +1,6 @@
 ﻿module XivRecipeTest2
 
-open KPX.TheBot.Data
+open KPX.TheBot.Data.XivData
 
 open KPX.TheBot.Data.XivData.Recipe
 
@@ -9,7 +9,7 @@ open NUnit.Framework
 [<OneTimeSetUp>]
 let Setup () = InitCollection.Setup()
 
-let ic = XivData.Item.ItemCollection.Instance
+let ic = ItemCollection.Instance
 let rm = XivRecipeManager.Instance
 
 [<Test>]

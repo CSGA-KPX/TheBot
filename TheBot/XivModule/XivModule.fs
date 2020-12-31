@@ -19,7 +19,7 @@ open KPX.TheBot.Utils.Dicer
 type XivModule() =
     inherit CommandHandlerBase()
 
-    let itemCol = Item.ItemCollection.Instance
+    let itemCol = ItemCollection.Instance
 
     let isNumber (str : string) =
         if str.Length <> 0 then String.forall (Char.IsDigit) str else false
@@ -150,7 +150,7 @@ type XivModule() =
             |> Array.map
                 (fun g ->
                     let item =
-                        Item.ItemCollection.Instance.GetByItemId(g.Id)
+                        ItemCollection.Instance.GetByItemId(g.Id)
 
                     if item.Name.Contains(" ") then sprintf "#%i" item.Id else item.Name)
 

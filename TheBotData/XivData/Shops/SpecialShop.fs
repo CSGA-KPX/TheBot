@@ -1,13 +1,11 @@
-﻿namespace KPX.TheBot.Data.XivData.SpecialShop
-
-open System
-open System.Collections.Generic
+﻿namespace KPX.TheBot.Data.XivData.Shops
 
 open LiteDB
 
 open KPX.TheBot.Data.Common.Database
 
-open KPX.TheBot.Data.XivData.Item
+open KPX.TheBot.Data.XivData
+
 
 [<CLIMutable>]
 type SpecialShopInfo =
@@ -30,15 +28,14 @@ type SpecialShopCollection private () =
     override x.IsExpired = false
 
     override x.InitializeCollection() =
-        let db = x.DbCollection
-
-        db.EnsureIndex(LiteDB.BsonExpression.Create("_id"), true)
-        |> ignore
-
-        db.EnsureIndex(LiteDB.BsonExpression.Create("ReceiveItem"))
+        x.DbCollection.EnsureIndex(LiteDB.BsonExpression.Create("ReceiveItem"))
         |> ignore
 
         use col = BotDataInitializer.XivCollectionChs
+
+        col.GetSheet("Item", [|"Name"; "IsUntradable"|])
+        |> ignore //缓存
+
         let sht = col.GetSheet("SpecialShop")
 
         seq {
@@ -68,7 +65,7 @@ type SpecialShopCollection private () =
                             yield r
         }
         |> Seq.distinctBy (fun x -> sprintf "%i%i" x.ReceiveItem x.CostItem)
-        |> db.InsertBulk
+        |> x.DbCollection.InsertBulk
         |> ignore
 
     member x.AllCostItems() =

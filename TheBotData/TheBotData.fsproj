@@ -23,9 +23,11 @@
     <Compile Include="XivData\Recipe\CraftRecipeProvider.fs" />
     <Compile Include="XivData\Recipe\CompanyCraftRecipeProvider.fs" />
     <Compile Include="XivData\Recipe\XivRecipeProvider.fs" />
+    <Compile Include="XivData\Shops\ShopLocation.fs" />
+    <Compile Include="XivData\Shops\GCScriptShop.fs" />
+    <Compile Include="XivData\Shops\GilShop.fs" />
+    <Compile Include="XivData\Shops\SpecialShop.fs" />
     <Compile Include="XivData\World.fs" />
-    <Compile Include="XivData\SpecialShop.fs" />
-    <Compile Include="XivData\GilShop.fs" />
     <Compile Include="XivData\ClassJobMapping.fs" />
     <Compile Include="XivData\CraftGearSet.fs" />
     <Compile Include="XivData\OceanFishing.fs" />

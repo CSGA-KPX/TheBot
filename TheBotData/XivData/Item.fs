@@ -1,11 +1,12 @@
-﻿namespace KPX.TheBot.Data.XivData.Item
+﻿namespace KPX.TheBot.Data.XivData
 
 open System
 
 open KPX.TheBot.Data.Common.Database
 
+
 [<CLIMutable>]
-type ItemRecord =
+type XivItem =
     { [<LiteDB.BsonIdAttribute(false)>]
       Id : int
       Name : string }
@@ -16,7 +17,7 @@ type ItemRecord =
 
 
 type ItemCollection private () =
-    inherit CachedTableCollection<int, ItemRecord>()
+    inherit CachedTableCollection<int, XivItem>()
 
     static let instance = ItemCollection()
     static member Instance = instance

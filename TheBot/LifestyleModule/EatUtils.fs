@@ -16,6 +16,16 @@ module private Data =
     let hotpot_soup = mgr.GetWords("火锅底料") |> Array.distinct
     let hotpot_sauce = mgr.GetWords("火锅蘸料") |> Array.distinct
     let hotpot_dish = mgr.GetWords("火锅配菜") |> Array.distinct
+
+    let snacks =
+        mgr.GetWordsWithouComment("零食") |> Array.distinct
+
+    let drinks =
+        mgr.GetWordsWithouComment("饮料") |> Array.distinct
+
+    let grocery =
+        mgr.GetWordsWithouComment("买菜") |> Array.distinct
+
     let dinnerTypes = [| "早餐"; "午餐"; "晚餐"; "加餐" |]
 
     let saizeriya =
@@ -187,7 +197,10 @@ let eatAlias =
            "晚餐", [| "晚"; "晚饭" |]
            "加餐", [| "加"; "夜宵" |]
            "萨莉亚", [| "萨利亚" |]
-           "火锅", Array.empty |]
+           "火锅", Array.empty
+           "零食", Array.empty
+           "饮料", Array.empty
+           "买菜", [| "自己做"; "自己搓"; "搓" |] |]
 
     seq {
         for (key, aliases) in map do
@@ -203,6 +216,10 @@ let eatFuncs : Collections.Generic.IReadOnlyDictionary<string, Dicer -> IO.TextW
        "加餐", mealsFunc "加餐" breakfast
        "晚餐", mealsFunc "晚餐" dinner
        "午餐", mealsFunc "午餐" dinner
+       "零食", mealsFunc "零食" snacks
+       "饮料", mealsFunc "饮料" drinks
+       "买菜", mealsFunc "买菜" grocery
+
        "火锅", hotpotFunc
        "萨莉亚", saizeriyaFunc |]
     |> readOnlyDict

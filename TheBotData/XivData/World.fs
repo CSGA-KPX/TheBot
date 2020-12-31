@@ -1,4 +1,5 @@
-﻿module KPX.TheBot.Data.XivData.World
+﻿namespace KPX.TheBot.Data.XivData
+
 
 [<AutoOpen>]
 module private WorldConstant =
@@ -36,49 +37,50 @@ type World =
       WorldName : string
       DataCenter : string }
 
-let Worlds =
-    let pyMapping = WorldNamePinyin |> readOnlyDict
+module World = 
+    let Worlds =
+        let pyMapping = WorldNamePinyin |> readOnlyDict
 
-    use col =
-        KPX.TheBot.Data.Common.Database.BotDataInitializer.XivCollectionChs
+        use col =
+            KPX.TheBot.Data.Common.Database.BotDataInitializer.XivCollectionChs
 
-    let worlds =
-        col.GetSheet("World")
-        |> Seq.map (fun row -> row.As<string>("Name"), uint16 row.Key.Main)
+        let worlds =
+            col.GetSheet("World")
+            |> Seq.map (fun row -> row.As<string>("Name"), uint16 row.Key.Main)
+            |> readOnlyDict
+
+        let output = System.Collections.Generic.List<World>()
+
+        for dc, servers in WorldsStr do
+            for server in servers.Split(",") do
+                let id = worlds.[pyMapping.[server]]
+
+                output.Add(
+                    { WorldId = id
+                      WorldName = server
+                      DataCenter = dc }
+                )
+
+        output.ToArray()
+
+    let WorldFromId =
+        Worlds
+        |> Array.map (fun x -> x.WorldId, x)
         |> readOnlyDict
 
-    let output = System.Collections.Generic.List<World>()
+    let WorldFromName =
+        Worlds
+        |> Array.map (fun x -> x.WorldName, x)
+        |> readOnlyDict
 
-    for dc, servers in WorldsStr do
-        for server in servers.Split(",") do
-            let id = worlds.[pyMapping.[server]]
-
-            output.Add(
-                { WorldId = id
-                  WorldName = server
-                  DataCenter = dc }
-            )
-
-    output.ToArray()
-
-let WorldFromId =
-    Worlds
-    |> Array.map (fun x -> x.WorldId, x)
-    |> readOnlyDict
-
-let WorldFromName =
-    Worlds
-    |> Array.map (fun x -> x.WorldName, x)
-    |> readOnlyDict
-
-let DataCenterAlias =
-    [| "一区", "一区,鸟区,陆行鸟区,鸟"
-       "二区", "二区,猪区,莫古力区,猪"
-       "三区", "三区,猫区,猫小胖区,猫" |]
-    |> Seq.collect
-        (fun (x, y) ->
-            seq {
-                for alias in y.Split(',') do
-                    yield alias, x
-            })
-    |> readOnlyDict
+    let DataCenterAlias =
+        [| "一区", "一区,鸟区,陆行鸟区,鸟"
+           "二区", "二区,猪区,莫古力区,猪"
+           "三区", "三区,猫区,猫小胖区,猫" |]
+        |> Seq.collect
+            (fun (x, y) ->
+                seq {
+                    for alias in y.Split(',') do
+                        yield alias, x
+                })
+        |> readOnlyDict

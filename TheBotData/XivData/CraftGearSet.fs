@@ -5,8 +5,8 @@ open System
 open LiteDB
 
 open KPX.TheBot.Data.Common.Database
-open KPX.TheBot.Data.XivData.Item
-open KPX.TheBot.Data.XivData.Recipe
+open KPX.TheBot.Data.XivData
+
 
 [<CLIMutable>]
 type CraftableGear =
@@ -82,7 +82,7 @@ type CraftableGearCollection private () =
         |> db.InsertBulk
         |> ignore
 
-    member x.TryLookupByItem(item : ItemRecord) = x.TryGetByKey(item.Id)
+    member x.TryLookupByItem(item : XivItem) = x.TryGetByKey(item.Id)
 
     member x.Search(iLv : int, jobCode : string) =
         let query =

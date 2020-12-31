@@ -3,7 +3,8 @@
 open KPX.TheBot.Data.Common.Database
 open KPX.TheBot.Data.CommonModule.Recipe
 
-open KPX.TheBot.Data.XivData.Item
+open KPX.TheBot.Data.XivData
+
 
 type CraftRecipeProvider private () =
     inherit CachedTableCollection<int, XivDbRecipe>()
@@ -54,7 +55,7 @@ type CraftRecipeProvider private () =
         |> db.InsertBulk
         |> ignore
 
-    interface IRecipeProvider<ItemRecord, RecipeProcess<ItemRecord>> with
+    interface IRecipeProvider<XivItem, RecipeProcess<XivItem>> with
         override x.TryGetRecipe(item) =
             let id = new LiteDB.BsonValue(item.Id)
 

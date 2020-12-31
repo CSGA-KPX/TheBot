@@ -2,10 +2,11 @@
 
 open KPX.TheBot.Data.CommonModule.Recipe
 
-open KPX.TheBot.Data.XivData.Item
+open KPX.TheBot.Data.XivData
+
 
 type XivRecipeManager private () =
-    inherit RecipeManager<ItemRecord, RecipeProcess<ItemRecord>>()
+    inherit RecipeManager<XivItem, RecipeProcess<XivItem>>()
 
     static let instance =
         let i = XivRecipeManager()
@@ -30,14 +31,14 @@ type XivRecipeManager private () =
                       p.Output
                       |> Array.map (fun m -> { m with Quantity = m.Quantity * runs }) })
 
-    member x.TryGetRecipeRec(material : RecipeMaterial<ItemRecord>) =
+    member x.TryGetRecipeRec(material : RecipeMaterial<XivItem>) =
         x.TryGetRecipeRec(material.Item, ByItem material.Quantity)
 
     member x.TryGetRecipeRec(item, quantity : ProcessQuantity) =
         x.TryGetRecipe(item)
         |> Option.map
             (fun r ->
-                let acc = RecipeProcessAccumulator<ItemRecord>()
+                let acc = RecipeProcessAccumulator<XivItem>()
 
                 let rec Calc i (q : float) =
                     let recipe = x.TryGetRecipe(i, ByItem q)

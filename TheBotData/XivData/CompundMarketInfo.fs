@@ -20,8 +20,8 @@ exception UniversalisAccessException of Net.Http.HttpResponseMessage
 
 [<CLIMutable>]
 type MarketInfo =
-    { World : World.World
-      Item : Item.ItemRecord }
+    { World : World
+      Item : XivItem }
 
     override x.ToString() =
         sprintf "%i/%i" x.World.WorldId x.Item.Id
@@ -32,7 +32,7 @@ type MarketInfo =
         let iid = ret.[1] |> int
 
         { World = World.WorldFromId.[wid]
-          Item = Item.ItemCollection.Instance.GetByItemId(iid) }
+          Item = ItemCollection.Instance.GetByItemId(iid) }
 
 
 [<CLIMutable>]
@@ -137,7 +137,7 @@ type MarketInfoCollection private () =
               Listings = listings
               TradeLogs = tradelogs }
 
-    member x.GetMarketListings(world : World.World, item : Item.ItemRecord) =
+    member x.GetMarketListings(world : World, item : XivItem) =
         // universalis.app
         let info = { World = world; Item = item }
         let uniRet = x.[info.ToString()]
@@ -168,7 +168,7 @@ type MarketInfoCollection private () =
             x.Logger.Error(sprintf "连接DMF异常：%O" exn)
             uniRet.Listings
 
-    member x.GetTradeLogs(world : World.World, item : Item.ItemRecord) =
+    member x.GetTradeLogs(world : World, item : XivItem) =
         // universalis.app
         let info = { World = world; Item = item }
         let uniRet = x.[info.ToString()]

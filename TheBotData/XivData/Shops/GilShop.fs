@@ -1,13 +1,11 @@
-﻿namespace KPX.TheBot.Data.XivData.GilShop
-
-open System
-open System.Collections.Generic
+﻿namespace KPX.TheBot.Data.XivData.Shops
 
 open LiteDB
 
 open KPX.TheBot.Data.Common.Database
 
-open KPX.TheBot.Data.XivData.Item
+open KPX.TheBot.Data.XivData
+
 
 [<CLIMutable>]
 type GilShopInfo =
@@ -15,7 +13,6 @@ type GilShopInfo =
       Id : int
       Ask : int32
       Bid : int32 }
-
 
 type GilShopCollection private () =
     inherit CachedTableCollection<int, GilShopInfo>()
@@ -31,11 +28,6 @@ type GilShopCollection private () =
     override x.IsExpired = false
 
     override x.InitializeCollection() =
-        let db = x.DbCollection
-
-        db.EnsureIndex(LiteDB.BsonExpression.Create("_id"), true)
-        |> ignore
-
         use col = BotDataInitializer.XivCollectionChs
 
         col.GetSheet("Item", [| AskKey; BidKey |])
@@ -51,7 +43,7 @@ type GilShopCollection private () =
                       Bid = item.As<int32>(BidKey) }
         }
         |> Seq.distinctBy (fun x -> x.Id)
-        |> db.InsertBulk
+        |> x.DbCollection.InsertBulk
         |> ignore
 
-    member x.TryLookupByItem(item : ItemRecord) = x.TryGetByKey(item.Id)
+    member x.TryLookupByItem(item : XivItem) = x.TryGetByKey(item.Id)

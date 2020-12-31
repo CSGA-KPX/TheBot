@@ -4,14 +4,15 @@ open System
 
 open KPX.TheBot.Data.Common.Database
 
+
 [<CLIMutable>]
-type Mapping =
+type ClassJobMapping =
     { [<LiteDB.BsonIdAttribute(false)>]
       Id : string
       Value : string }
 
 type ClassJobMappingCollection private () =
-    inherit CachedTableCollection<string, Mapping>()
+    inherit CachedTableCollection<string, ClassJobMapping>()
 
     static let instance = ClassJobMappingCollection()
     static member Instance = instance
