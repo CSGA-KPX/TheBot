@@ -15,6 +15,9 @@ type EatModule() =
     inherit CommandHandlerBase()
 
     [<CommandHandlerMethodAttribute("eat", "吃什么？", "#eat 晚餐")>]
+    [<CommandHandlerMethodAttribute("买菜", "", "")>]
+    //[<CommandHandlerMethodAttribute("零食", "", "")>]
+    [<CommandHandlerMethodAttribute("饮料", "", "")>]
     member x.HandleEat(cmdArg : CommandEventArgs) =
         let at = cmdArg.MessageEvent.Message.TryGetAt()
         use ret = cmdArg.OpenResponse()
@@ -51,6 +54,9 @@ type EatModule() =
         let dicer = Dicer(seed).Freeze()
 
         match cmdArg.Arguments.Length with
+        | _ when eatFuncs.ContainsKey(cmdArg.CommandAttrib.Command) ->
+            let func = eatFuncs.[cmdArg.CommandAttrib.Command]
+            func dicer ret
         | 0 -> ret.AbortExecution(InputError, "自选输菜名，预设套餐：早/中/晚/加/火锅/萨莉亚")
         | 1 when eatAlias.ContainsKey(cmdArg.Arguments.[0]) ->
             let key = eatAlias.[cmdArg.Arguments.[0]]

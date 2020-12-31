@@ -199,8 +199,7 @@ let eatAlias =
            "萨莉亚", [| "萨利亚" |]
            "火锅", Array.empty
            "零食", Array.empty
-           "饮料", Array.empty
-           "买菜", [| "自己做"; "自己搓"; "搓" |] |]
+           "饮料", Array.empty |]
 
     seq {
         for (key, aliases) in map do

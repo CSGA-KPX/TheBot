@@ -8,7 +8,6 @@ open KPX.FsCqHttp.Handler
 
 type RepeatMessage = { RawMessage : string; Count : int }
 
-
 type XivModule() =
     inherit HandlerModuleBase()
     static let repeatLimit = 5
@@ -35,6 +34,7 @@ type XivModule() =
                     let resp =
                         GroupMessageResponse(e.Message, false, false, false, false, 0)
 
+                    x.Logger.Info(sprintf "¸´¶Á»ú´¥·¢£º%A" e)
                     arg.SendResponse(resp)
             else
                 let obj = { RawMessage = e.RawMessage; Count = 1 }
