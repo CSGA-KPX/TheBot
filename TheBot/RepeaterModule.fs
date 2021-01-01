@@ -1,4 +1,4 @@
-namespace KPX.TheBot.Module.RepeaterModule
+ï»¿namespace KPX.TheBot.Module.RepeaterModule
 
 open System.Collections
 
@@ -34,7 +34,7 @@ type XivModule() =
                     let resp =
                         GroupMessageResponse(e.Message, false, false, false, false, 0)
 
-                    x.Logger.Info(sprintf "¸´¶Á»ú´¥·¢£º%A" e)
+                    x.Logger.Info(sprintf "å¤è¯»æœºè§¦å‘ï¼š%A" e)
                     arg.SendResponse(resp)
             else
                 let obj = { RawMessage = e.RawMessage; Count = 1 }
