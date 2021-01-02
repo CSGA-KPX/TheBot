@@ -83,7 +83,7 @@ type XivMarketModule() =
                 for i in a do
                     acc.Update(i)
 
-        if acc.Count * worlds.Length >= 20 then cmdArg.AbortExecution(InputError, "查询数量超过上线")
+        if acc.Count * worlds.Length >= 50 then cmdArg.AbortExecution(InputError, "查询数量超过上线")
 
         for world in worlds do
             let mutable sumListingAll, sumListingHq = 0.0, 0.0

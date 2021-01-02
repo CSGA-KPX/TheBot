@@ -20,7 +20,11 @@ open KPX.TheBot.Module.DiceModule.Utils
 type DiceModule() =
     inherit CommandHandlerBase()
 
-    [<CommandHandlerMethodAttribute("cc", "同#c，但每次结果随机", "A B C D")>]
+    [<CommandHandlerMethodAttribute("cc", "已弃用", "")>]
+    member x.ObsoleteCommand(cmdArg : CommandEventArgs) = 
+        cmdArg.QuickMessageReply("#cc已弃用，请使用.c")
+ 
+    [<CommandHandlerMethodAttribute("c", "同#c，但每次结果随机", "A B C D", AltCommandStart = ".")>]
     [<CommandHandlerMethodAttribute("c", "对多个选项1d100", "A B C D")>]
     member x.HandleChoices(cmdArg : CommandEventArgs) =
         let atUser = cmdArg.MessageEvent.Message.TryGetAt()
