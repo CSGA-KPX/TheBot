@@ -139,8 +139,10 @@ type XivModule() =
 
                 if ret.IsSome then job <- Some(ret.Value.Value)
 
-        if job.IsNone || iLv.IsNone
-        then cmdArg.AbortExecution(InputError, "请提供职业和品级信息。职业可以使用：单字简称/全程/英文简称")
+        if job.IsNone
+        then cmdArg.AbortExecution(InputError, "没有职业信息。职业可以使用：单字简称/全程/英文简称")
+
+        if iLv.IsNone then cmdArg.AbortExecution(InputError, "没有品级信息")
 
         let cgc =
             CraftGearSet.CraftableGearCollection.Instance

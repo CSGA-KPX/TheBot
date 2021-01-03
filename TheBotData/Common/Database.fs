@@ -133,7 +133,7 @@ and BotDataInitializer private () =
         BotDataCacheDb.GetCollection<TableUpdateTime>()
 
     static let xivCollection =
-        new EmbeddedXivCollection(XivLanguage.None) :> IXivCollection
+        new EmbeddedXivCollection(XivLanguage.None)
 
     /// 获得一个全局的中文FF14数据库
     static member internal XivCollectionChs = xivCollection

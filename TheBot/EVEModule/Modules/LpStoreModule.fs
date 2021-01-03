@@ -51,7 +51,9 @@ type EveLpStoreModule() =
         tt.AddPreTable("警告：请参考交易量，利润很高的不一定卖得掉")
 
         let corp =
-            data.GetNpcCorporation(cfg.CmdLineAsString)
+            let cmd = cfg.CmdLineAsString
+            if System.String.IsNullOrWhiteSpace(cmd) then cmdArg.AbortExecution(InputError, "请输入目标军团名称")
+            data.GetNpcCorporation(cmd)
 
         data.GetLpStoreOffersByCorp(corp)
         |> Array.map
