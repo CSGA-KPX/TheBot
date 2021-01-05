@@ -113,7 +113,7 @@ type XivModule() =
         let dicer =
             new Dicer(SeedOption.SeedByUserDay(cmdArg.MessageEvent))
 
-        let tt = TextTable("1D100", "选项")
+        let tt = TextTable(RightAlignCell "D100", "选项")
 
         choices
         |> Array.map (fun str -> str, dicer.GetRandom(100u, str))

@@ -44,7 +44,7 @@ module Output =
     ///
     /// 需要设置RegexOptions.Compiled
     let mutable CharDisplayLengthAdj =
-        Regex(@"\p{IsBasicLatin}|\p{IsGeneralPunctuation}|±", RegexOptions.Compiled)
+        Regex(@"\p{IsBasicLatin}|\p{IsGeneralPunctuation}|±|·", RegexOptions.Compiled)
 
     [<RequireQualifiedAccess>]
     module TextTable =
