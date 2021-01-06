@@ -56,10 +56,10 @@ type XivMarketModule() =
         else
             cmdArg.QuickMessageReply("没有指定服务器或服务器名称不正确")
 
+    [<CommandHandlerMethodAttribute("重建采集", "重建最高特供幻", "")>]
     [<CommandHandlerMethodAttribute("fm", "FF14市场查询", "")>]
     member x.HandleXivMarket(cmdArg : CommandEventArgs) =
         let cfg = CommandUtils.XivConfig(cmdArg)
-        let worlds = cfg.GetWorlds()
 
         let tt =
             TextTable(
@@ -75,15 +75,51 @@ type XivMarketModule() =
 
         let acc = XivExpression.ItemAccumulator()
 
-        for str in cfg.CommandLine do
-            match xivExpr.TryEval(str) with
-            | Error err -> raise err
-            | Ok (Number i) -> tt.AddPreTable(sprintf "计算结果为数字%f，物品Id请加#" i)
-            | Ok (Accumulator a) ->
-                for i in a do
-                    acc.Update(i)
+        let worlds = ResizeArray<World>(cfg.GetWorlds())
 
-        if acc.Count * worlds.Length >= 50 then cmdArg.AbortExecution(InputError, "查询数量超过上线")
+        match cmdArg.CommandAttrib.Command with
+        | "重建采集" ->
+            [ 31252
+              31253
+              31254
+              31255
+              31256
+              31257
+              31258
+              31259
+              31260
+              31261
+              31262
+              31263
+              31264
+              31265
+              31266
+              31267
+              31268
+              31269
+              31270
+              31271
+              31272
+              31273
+              31274
+              31275 ]
+            |> Seq.iter
+                (fun id ->
+                    let item = itemCol.GetByItemId(id)
+                    acc.Update(item))
+
+            if worlds.Count >= 2 then cmdArg.AbortExecution(InputError, "该选项不支持多服务器")
+        | "fm" ->
+            for str in cfg.CommandLine do
+                match xivExpr.TryEval(str) with
+                | Error err -> raise err
+                | Ok (Number i) -> tt.AddPreTable(sprintf "计算结果为数字%f，物品Id请加#" i)
+                | Ok (Accumulator a) ->
+                    for i in a do
+                        acc.Update(i)
+        | other -> cmdArg.AbortExecution(ModuleError, "意外指令{0}", other)
+
+        if acc.Count * worlds.Capacity >= 50 then cmdArg.AbortExecution(InputError, "查询数量超过上线")
 
         for world in worlds do
             let mutable sumListingAll, sumListingHq = 0.0, 0.0
@@ -279,7 +315,6 @@ type XivMarketModule() =
                     for item in chunk do
                         yield item.Id
                         yield item.Name
-
                     for _ = 0 to headerCol - chunk.Length - 1 do
                         yield TableCell.CreateRightAlign("--")
                         yield TableCell.CreateLeftAlign("--")
