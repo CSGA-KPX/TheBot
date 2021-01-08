@@ -32,12 +32,24 @@ module private WorldConstant =
            "柔风海湾", "RouFengHaiWan"
            "琥珀原", "HuPoYuan" |]
 
+    let WorldAlias =
+        [| "拉诺西亚", [| "拉诺" |]
+           "静语庄园", [| "鲸鱼"; "静语" |]
+           "海猫茶屋", [| "海猫" |]
+           "紫水栈桥", [| "紫水" |]
+           "白金幻象", [| "白金" |]
+           "龙巢神殿", [| "龙巢" |]
+           "旅人栈桥", [| "旅人" |]
+           "拂晓之间", [| "拂晓" |]
+           "神意之地", [| "神意" |]
+           "幻影群岛", [| "幻影" |] |]
+
 type World =
     { WorldId : uint16
       WorldName : string
       DataCenter : string }
 
-module World = 
+module World =
     let Worlds =
         let pyMapping = WorldNamePinyin |> readOnlyDict
 
@@ -69,9 +81,12 @@ module World =
         |> readOnlyDict
 
     let WorldFromName =
-        Worlds
-        |> Array.map (fun x -> x.WorldName, x)
-        |> readOnlyDict
+        let dict = System.Collections.Generic.Dictionary<string, World>()
+        for w in Worlds do 
+            dict.Add(w.WorldName, w)
+        for (wName, aliases) in WorldAlias do 
+            for alias in aliases do dict.Add(alias, dict.[wName])
+        dict :> System.Collections.Generic.IReadOnlyDictionary<_, _>
 
     let DataCenterAlias =
         [| "一区", "一区,鸟区,陆行鸟区,鸟"
