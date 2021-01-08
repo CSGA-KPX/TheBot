@@ -1,8 +1,10 @@
-﻿module KPX.FsCqHttp.Utils.UserOption
+﻿namespace KPX.FsCqHttp.Utils.UserOption
 
 open System
-open System.Text
 open System.Collections.Generic
+
+open KPX.FsCqHttp.Utils.AliasMapper
+
 
 [<DefaultAugmentation(false)>]
 type UserOptionValue =
@@ -40,7 +42,6 @@ type UserOptionValue =
         [| for v in x.Values do
             yield Convert.ChangeType(v, typeof<'T>) :?> 'T |]
 
-
 type UserOptionParser() =
     static let seperator = [| ";"; "；"; "："; ":" |]
     let mutable parsed = false
@@ -48,36 +49,38 @@ type UserOptionParser() =
     let options = Dictionary<string, UserOptionValue>()
 
     let values = List<string * UserOptionValue>()
-    //let alias = Dictionary<string, string>()
+    let mapper = AliasMapper()
 
-    member x.RegisterOption(name : string, value : string, ?alias : string []) =
-        let name = name.ToLowerInvariant()
-        let alias = defaultArg alias Array.empty
-
-        if alias.Length <> 0 then raise <| NotImplementedException("alias")
+    member x.RegisterOption(name : string, value : string, ?aliases : string []) =
+        let name =
+            mapper.Add(name, defaultArg aliases Array.empty)
 
         values.Add(name, Default value)
 
     member x.GetValue<'T when 'T :> IConvertible>(key : string) =
         if not parsed then invalidOp "还没解析过"
+        let key = mapper.Map(key)
         options.[key].GetValue<'T>()
 
     member x.GetValue(key : string) = x.GetValue<string>(key)
 
     member x.GetValues<'T when 'T :> IConvertible>(key : string) =
         if not parsed then invalidOp "还没解析过"
+        let key = mapper.Map(key)
         options.[key].GetValues<'T>()
 
     member x.GetValues(key : string) = x.GetValues<string>(key)
 
     member x.IsDefined(key : string) =
         if not parsed then invalidOp "还没解析过"
+        let key = mapper.Map(key)
         options.[key].IsDefined
 
     member x.Parse(input : string []) =
         if parsed then invalidOp "已经解析过了"
 
         for (k, v) in values do
+            // 复制默认选项到options
             options.Add(k, v)
 
         cmdLine <-
@@ -90,7 +93,7 @@ type UserOptionParser() =
                     let s =
                         str.Split(seperator, 2, StringSplitOptions.RemoveEmptyEntries)
 
-                    let key = s.[0]
+                    let key = mapper.Map(s.[0])
                     let value = if s.Length >= 2 then s.[1] else ""
 
                     if options.ContainsKey(key) then options.[key] <- options.[key].SetOrAppend(value) else yield str

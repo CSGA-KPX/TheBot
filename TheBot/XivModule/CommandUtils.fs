@@ -62,6 +62,8 @@ type XivConfig(args : CommandEventArgs) =
 
     member x.CommandLine = opts.CommandLine
 
+    member x.CmdLineAsString = opts.CmdLineAsString
+
     member x.IsImageOutput =
         if opts.IsDefined("text") then ForceText else PreferImage
 

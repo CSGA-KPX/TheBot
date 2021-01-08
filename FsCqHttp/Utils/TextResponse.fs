@@ -1,4 +1,4 @@
-﻿module KPX.FsCqHttp.Utils.TextResponse
+﻿namespace KPX.FsCqHttp.Utils.TextResponse
 
 open System
 open System.Collections.Generic
@@ -167,11 +167,3 @@ type TextResponse(args : CqEventArgs, respType : ResponseType) =
         member x.Dispose() =
             base.Dispose()
             if isUsed then x.Flush()
-
-type CqEventArgs with
-
-    /// 生成一个强制文本输出的TextResponse
-    member x.OpenResponse() = new TextResponse(x, ForceText)
-
-    /// 生成一个按指定ResponseType输出的TextResponse
-    member x.OpenResponse(respType : ResponseType) = new TextResponse(x, respType)

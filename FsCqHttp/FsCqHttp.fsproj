@@ -54,12 +54,14 @@
     <Compile Include="Handler\HandlerBase.fs" />
     <Compile Include="Handler\CommandHandler.fs" />
     <Compile Include="Utils\TextResponse.fs" />
+    <Compile Include="Utils\TextResponseExtension.fs" />
     <Compile Include="Utils\TextTable\CellType.fs" />
     <Compile Include="Utils\TextTable\RowBuilder.fs" />
     <Compile Include="Utils\TextTable\TextColumn.fs" />
     <Compile Include="Utils\TextTable\Helpers.fs" />
     <Compile Include="Utils\TextTable\TextTable.fs" />
     <Compile Include="Utils\TextTable\Extensions.fs" />
+    <Compile Include="Utils\AliasMapper.fs" />
     <Compile Include="Utils\UserOption.fs" />
     <Compile Include="Utils\HelpModule.fs" />
     <Compile Include="Instance\CqWsContext.fs" />
