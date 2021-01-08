@@ -32,6 +32,8 @@ type AliasMapper() =
         let succ, key = dict.TryGetValue(value)
         if succ then Some key else None
 
+    member x.Contains(value : string) = dict.ContainsKey(value)
+
     member x.Keys = dict.Keys |> Seq.cast<string>
 
     member x.GetValueTable() =

@@ -30,6 +30,7 @@
     <Compile Include="TRpgModule\CharacterCard.fs" />
     <Compile Include="TRpgModule\CardManager.fs" />
     <Compile Include="TRpgModule\TRpgModule.fs" />
+    <Compile Include="XivModule\Worlds.fs" />
     <Compile Include="XivModule\MarketUtils.fs" />
     <Compile Include="XivModule\CommandUtils.fs" />
     <Compile Include="XivModule\XivExpression.fs" />
