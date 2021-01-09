@@ -8,20 +8,16 @@ open KPX.FsCqHttp.Utils.TextTable
 
 /// 用于处理别名的集合
 type AliasMapper() =
-    let dict = Dictionary<string, string>()
+    let dict = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
 
     /// 都会小写转化。返回转化后的key
     member x.Add(key : string, [<ParamArray>] aliases : string []) =
-        let key = key.ToLowerInvariant()
         dict.Add(key, key)
 
         for alias in aliases do
-            dict.Add(alias.ToLowerInvariant(), key)
-
-        key
+            dict.Add(alias, key)
 
     member x.Map(value : string) =
-        let value = value.ToLowerInvariant()
         if dict.ContainsKey(value) then
             dict.[value]
         else

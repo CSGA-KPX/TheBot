@@ -46,15 +46,13 @@ type UserOptionParser() =
     static let seperator = [| ";"; "；"; "："; ":" |]
     let mutable parsed = false
     let mutable cmdLine = Array.empty<string>
-    let options = Dictionary<string, UserOptionValue>()
+    let options = Dictionary<string, UserOptionValue>(StringComparer.OrdinalIgnoreCase)
 
     let values = List<string * UserOptionValue>()
     let mapper = AliasMapper()
 
     member x.RegisterOption(name : string, value : string, ?aliases : string []) =
-        let name =
-            mapper.Add(name, defaultArg aliases Array.empty)
-
+        mapper.Add(name, defaultArg aliases Array.empty)
         values.Add(name, Default value)
 
     member x.GetValue<'T when 'T :> IConvertible>(key : string) =
