@@ -274,7 +274,7 @@ type XivMarketModule() =
             |> tt.AddRow
 
         if doCalculateCost then
-            tt.AddRowFill("成本总计", HumanReadableInteger sum.Average)
+            tt.AddRowFill("成本总计", padNumber, padNumber, HumanReadableInteger sum.Average)
 
             let totalSell =
                 product
@@ -288,9 +288,9 @@ type XivMarketModule() =
 
                         lst.StdEvPrice() * mr.Quantity)
 
-            tt.AddRowFill("卖出价格", HumanReadableInteger totalSell.Average)
+            tt.AddRowFill("卖出价格", padNumber, padNumber, HumanReadableInteger totalSell.Average)
             let profit = (totalSell - sum).Average
-            tt.AddRowFill("税前利润", HumanReadableInteger profit)
+            tt.AddRowFill("税前利润", padNumber, padNumber, HumanReadableInteger profit)
 
         using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))
 
@@ -326,7 +326,6 @@ type XivMarketModule() =
                     for item in chunk do
                         yield item.Id
                         yield item.Name
-
                     for _ = 0 to headerCol - chunk.Length - 1 do
                         yield TableCell.CreateRightAlign("--")
                         yield TableCell.CreateLeftAlign("--")
