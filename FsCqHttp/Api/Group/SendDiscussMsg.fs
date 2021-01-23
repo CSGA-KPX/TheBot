@@ -5,6 +5,6 @@ open KPX.FsCqHttp.Api
 
 
 type SendDiscussMsg() =
-    inherit ApiRequestBase("send_discuss_msg")
+    inherit CqHttpApiBase("send_discuss_msg")
 
     do raise <| System.NotImplementedException()

@@ -4,6 +4,6 @@ open KPX.FsCqHttp.Api
 
 
 type SetGroupLeave() =
-    inherit ApiRequestBase("set_group_leave")
+    inherit CqHttpApiBase("set_group_leave")
 
     do raise <| System.NotImplementedException()

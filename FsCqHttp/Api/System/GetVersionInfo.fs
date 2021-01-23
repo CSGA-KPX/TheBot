@@ -5,7 +5,7 @@ open KPX.FsCqHttp.Api
 
 /// 获取 酷Q 及 HTTP API 插件的版本信息
 type GetVersionInfo() =
-    inherit ApiRequestBase("get_version_info")
+    inherit CqHttpApiBase("get_version_info")
 
     let mutable data = [||] |> readOnlyDict
 

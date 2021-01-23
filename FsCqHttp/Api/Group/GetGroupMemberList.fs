@@ -4,6 +4,6 @@ open KPX.FsCqHttp.Api
 
 
 type GetGroupMemberList() =
-    inherit ApiRequestBase("get_group_member_list")
+    inherit CqHttpApiBase("get_group_member_list")
 
     do raise <| System.NotImplementedException()

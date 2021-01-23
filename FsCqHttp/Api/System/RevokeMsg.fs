@@ -4,6 +4,6 @@ open KPX.FsCqHttp.Api
 
 
 type RevokeMsg() =
-    inherit ApiRequestBase("delete_msg")
+    inherit CqHttpApiBase("delete_msg")
 
     do raise <| System.NotImplementedException()

@@ -4,6 +4,6 @@ open KPX.FsCqHttp.Api
 
 
 type SetFriendAddRequest() =
-    inherit ApiRequestBase("set_friend_add_request")
+    inherit CqHttpApiBase("set_friend_add_request")
 
     do raise <| System.NotImplementedException()

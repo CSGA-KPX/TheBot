@@ -4,6 +4,6 @@ open KPX.FsCqHttp.Api
 
 
 type SetGroupAnonymous() =
-    inherit ApiRequestBase("set_group_anonymous")
+    inherit CqHttpApiBase("set_group_anonymous")
 
     do raise <| System.NotImplementedException()

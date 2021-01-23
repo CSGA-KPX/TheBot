@@ -4,6 +4,6 @@ open KPX.FsCqHttp.Api
 
 
 type SendMsg() =
-    inherit ApiRequestBase("send_msg")
+    inherit CqHttpApiBase("send_msg")
 
     do raise <| System.NotImplementedException()

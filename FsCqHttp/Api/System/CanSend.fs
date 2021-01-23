@@ -5,7 +5,7 @@ open KPX.FsCqHttp.Api
 
 /// 检查是否可以发送图片
 type CanSendImage() =
-    inherit ApiRequestBase("can_send_image")
+    inherit CqHttpApiBase("can_send_image")
 
     member val Can = false with get, set
 
@@ -14,7 +14,7 @@ type CanSendImage() =
 
 /// 检查是否可以发送语音
 type CanSendRecord() =
-    inherit ApiRequestBase("can_send_record")
+    inherit CqHttpApiBase("can_send_record")
 
     member val Can = false with get, set
 

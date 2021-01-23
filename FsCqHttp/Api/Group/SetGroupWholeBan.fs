@@ -4,6 +4,6 @@ open KPX.FsCqHttp.Api
 
 
 type SetGroupWholeBan() =
-    inherit ApiRequestBase("set_group_whole_ban")
+    inherit CqHttpApiBase("set_group_whole_ban")
 
     do raise <| System.NotImplementedException()

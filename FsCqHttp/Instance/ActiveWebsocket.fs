@@ -13,12 +13,12 @@ type ActiveWebsocket(url, token) =
     let mutable context : CqWsContext option = None
 
     member x.GetContext() =
-        if context.IsSome && (leftRestartCount <= 0) then failwithf "ActiveWebsocket:%s 超过重连次数上限" context.Value.SelfId
+        if context.IsSome && (leftRestartCount <= 0) then failwithf "ActiveWebsocket:%s 超过重连次数上限" context.Value.BotIdString
 
         if context.IsSome
            && (DateTimeOffset.Now - lastRestart).TotalMinutes
               <= 1.0 then
-            failwithf "ActiveWebsocket:%s 重连间隔过短" context.Value.SelfId
+            failwithf "ActiveWebsocket:%s 重连间隔过短" context.Value.BotIdString
 
         context <- Some(x.StartContext())
         lastRestart <- DateTimeOffset.Now

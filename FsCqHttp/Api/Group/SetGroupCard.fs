@@ -4,6 +4,6 @@ open KPX.FsCqHttp.Api
 
 
 type SetGroupCard() =
-    inherit ApiRequestBase("set_group_card")
+    inherit CqHttpApiBase("set_group_card")
 
     do raise <| System.NotImplementedException()

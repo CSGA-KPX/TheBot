@@ -1,0 +1,31 @@
+﻿// 此命名空间提供访问CqWsContext内信息的API
+//
+// 目前架构上无法通过IApiCallProvider访问CqWsContext的数据
+// 所以使用API的方式实现访问和并发控制
+namespace KPX.FsCqHttp.Instance.Api
+
+open System
+open KPX.FsCqHttp.Instance
+
+
+type GetCtxModules() =
+    inherit WsContextApiBase()
+
+    let mutable m = Array.empty
+
+    member x.Moduldes =
+        x.EnsureExecuted()
+        m
+
+    override x.Invoke(ctx) = m <- ctx.Moduldes |> Seq.toArray
+
+type GetCtxCommands() =
+    inherit WsContextApiBase()
+
+    let mutable c = Array.empty
+
+    member x.Commands =
+        x.EnsureExecuted()
+        c
+
+    override x.Invoke(ctx) = c <- ctx.Commands |> Seq.toArray

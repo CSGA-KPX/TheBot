@@ -4,6 +4,6 @@ open KPX.FsCqHttp.Api
 
 
 type SetDiscussLeave() =
-    inherit ApiRequestBase("set_discuss_leave")
+    inherit CqHttpApiBase("set_discuss_leave")
 
     do raise <| System.NotImplementedException()

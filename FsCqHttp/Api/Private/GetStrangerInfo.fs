@@ -5,7 +5,7 @@ open KPX.FsCqHttp.Api
 
 /// 获取陌生人信息
 type GetStrangerInfo(userid : uint64, ?noCache : bool) =
-    inherit ApiRequestBase("get_stranger_info")
+    inherit CqHttpApiBase("get_stranger_info")
 
     let noCache = defaultArg noCache false
 

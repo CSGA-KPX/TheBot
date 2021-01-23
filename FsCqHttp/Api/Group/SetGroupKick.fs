@@ -4,6 +4,6 @@ open KPX.FsCqHttp.Api
 
 
 type SetGroupKick() =
-    inherit ApiRequestBase("set_group_kick")
+    inherit CqHttpApiBase("set_group_kick")
 
     do raise <| System.NotImplementedException()

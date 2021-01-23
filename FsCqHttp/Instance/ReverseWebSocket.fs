@@ -65,7 +65,7 @@ type CqWebSocketServer(uriPrefix, token : string) =
 
                         context.Start()
 
-                        logger.Info(sprintf "%s 已连接，反向WebSocket" context.SelfId)
+                        logger.Info(sprintf "%s 已连接，反向WebSocket" context.BotIdString)
 
                         CqWsContextPool.Instance.AddContext(context)
 

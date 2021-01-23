@@ -66,9 +66,9 @@ type DummyReverseClient(server, token) as x =
 
         x.AddApiResponse("can_send_image", {| yes = true |})
 
-    member x.AddApiResponse<'T when 'T :> ApiRequestBase>(obj : obj) =
+    member x.AddApiResponse<'T when 'T :> CqHttpApiBase>(obj : obj) =
         let api =
-            Activator.CreateInstance(typeof<'T>) :?> ApiRequestBase
+            Activator.CreateInstance(typeof<'T>) :?> CqHttpApiBase
 
         x.AddApiResponse(api.ActionName, obj)
 

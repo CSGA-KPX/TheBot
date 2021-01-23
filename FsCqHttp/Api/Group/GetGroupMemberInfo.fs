@@ -4,7 +4,7 @@ open KPX.FsCqHttp.Api
 
 
 type GetGroupMemberInfo(groupId : uint64, userId : uint64, ?noCache : bool) =
-    inherit ApiRequestBase("get_group_member_info")
+    inherit CqHttpApiBase("get_group_member_info")
     let noCache = defaultArg noCache false
 
     member val GroupId = 0UL with get, set

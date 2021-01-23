@@ -5,7 +5,7 @@ open KPX.FsCqHttp.Api
 
 /// 获取登录号信息
 type GetLoginInfo() =
-    inherit ApiRequestBase("get_login_info")
+    inherit CqHttpApiBase("get_login_info")
 
     let mutable data = [||] |> readOnlyDict
 

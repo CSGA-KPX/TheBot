@@ -11,7 +11,7 @@ type GroupInfo =
 
 /// 获取群列表
 type GetGroupList() =
-    inherit ApiRequestBase("get_group_list")
+    inherit CqHttpApiBase("get_group_list")
 
     member val Groups : GroupInfo [] = [||] with get, set
 

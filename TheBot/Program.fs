@@ -32,7 +32,7 @@ let main argv =
         let token = parser.GetValue("token")
         let aws = ActiveWebsocket(uri, token)
         let ctx = aws.GetContext()
-        logger.Info(sprintf "已连接:[%i:%s]" ctx.Self.UserId ctx.Self.Nickname)
+        logger.Info(sprintf "已连接:[%i:%s]" ctx.BotUserId ctx.BotNickname)
         CqWsContextPool.Instance.AddContext(ctx)
     else
         printfn "需要定义endpoint&token或者reverse&token"
@@ -46,10 +46,10 @@ let main argv =
 
     for ws in CqWsContextPool.Instance do
         if ws.CheckOnline() then
-            logger.Info(sprintf "向%s发送停止信号" ws.SelfId)
+            logger.Info(sprintf "向%s发送停止信号" ws.BotIdString)
             ws.Stop()
         else
-            logger.Error(sprintf "%s已经停止" ws.SelfId)
+            logger.Error(sprintf "%s已经停止" ws.BotIdString)
 
     Console.ReadLine() |> ignore
     0 // return an integer exit code

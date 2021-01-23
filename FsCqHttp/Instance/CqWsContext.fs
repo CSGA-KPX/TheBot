@@ -1,4 +1,4 @@
-﻿namespace KPX.FsCqHttp.Instance
+﻿namespace rec KPX.FsCqHttp.Instance
 
 open System
 open System.Collections.Generic
@@ -14,6 +14,12 @@ open KPX.FsCqHttp.Handler
 open Newtonsoft.Json.Linq
 
 
+[<AbstractClass>]
+type WsContextApiBase() =
+    inherit ApiBase()
+
+    abstract Invoke : CqWsContext -> unit
+
 type CqWsContext(ws : WebSocket) =
     static let moduleCache = Dictionary<Type, HandlerModuleBase>()
     let cts = new CancellationTokenSource()
@@ -21,7 +27,7 @@ type CqWsContext(ws : WebSocket) =
     let logger = NLog.LogManager.GetCurrentClassLogger()
 
     let apiPending =
-        ConcurrentDictionary<string, ManualResetEvent * ApiRequestBase>()
+        ConcurrentDictionary<string, ManualResetEvent * CqHttpApiBase>()
 
     let started = new ManualResetEvent(false)
     let modules = List<HandlerModuleBase>()
@@ -29,19 +35,32 @@ type CqWsContext(ws : WebSocket) =
     let self = GetLoginInfo()
 
     let rec getRootExn (exn : exn) =
-        if isNull exn.InnerException then exn else getRootExn exn.InnerException
+        if isNull exn.InnerException then
+            exn
+        else
+            getRootExn exn.InnerException
+
+    member x.Moduldes = modules :> IEnumerable<_>
+
+    member x.Commands = cmdCache.Keys |> Seq.cast<string>
 
     /// 发生链接错误时重启服务器的函数
     ///
     /// 值为None时，不再尝试重连
     member val RestartContext : (unit -> CqWsContext) option = None with get, set
 
+    /// 获取登录号昵称
+    member x.BotNickname = self.Nickname
+
     /// 获取登录号信息
-    member x.Self = self
+    member x.BotUserId = self.UserId
 
     /// 获取登录号标识符
-    member x.SelfId =
-        if self.IsExecuted then sprintf "[%i:%s]" self.UserId self.Nickname else "[--:--]"
+    member x.BotIdString =
+        if self.IsExecuted then
+            sprintf "[%i:%s]" self.UserId self.Nickname
+        else
+            "[--:--]"
 
     /// 注册模块
     member x.RegisterModule(t : Type) =
@@ -53,7 +72,8 @@ type CqWsContext(ws : WebSocket) =
                     t.IsSubclassOf(typeof<HandlerModuleBase>)
                     && (not <| t.IsAbstract)
 
-                if not isSubClass then invalidArg "t" "必须是HandlerModuleBase子类"
+                if not isSubClass then
+                    invalidArg "t" "必须是HandlerModuleBase子类"
 
                 let m =
                     Activator.CreateInstance(t) :?> HandlerModuleBase
@@ -140,7 +160,7 @@ type CqWsContext(ws : WebSocket) =
             | :? ModuleException as me ->
                 args.Logger.Warn(
                     "[{0}] -> {1} : {2} \r\n ctx： {3}",
-                    x.SelfId,
+                    x.BotIdString,
                     me.ErrorLevel,
                     sprintf "%A" args.Event,
                     me.Message
@@ -168,13 +188,14 @@ type CqWsContext(ws : WebSocket) =
         let logJson = lazy (obj.ToString())
 
         if (obj.ContainsKey("post_type")) then //消息上报
-            if KPX.FsCqHttp.Config.Logging.LogEventPost then logger.Trace(sprintf "%s收到上报：%s" x.SelfId logJson.Value)
+            if KPX.FsCqHttp.Config.Logging.LogEventPost then
+                logger.Trace(sprintf "%s收到上报：%s" x.BotIdString logJson.Value)
 
             x.HandleEventPost(CqEventArgs(x, obj))
 
         elif obj.ContainsKey("retcode") then //API调用结果
-            if KPX.FsCqHttp.Config.Logging.LogApiCall
-            then logger.Trace(sprintf "%s收到API调用结果： %s" x.SelfId logJson.Value)
+            if KPX.FsCqHttp.Config.Logging.LogApiCall then
+                logger.Trace(sprintf "%s收到API调用结果： %s" x.BotIdString logJson.Value)
 
             x.HandleApiResponse(obj.ToObject<ApiResponse>())
 
@@ -191,7 +212,11 @@ type CqWsContext(ws : WebSocket) =
                     |> Async.RunSynchronously
 
                 ms.Write(seg.Array, seg.Offset, s.Count)
-                if s.EndOfMessage then utf8.GetString(ms.ToArray()) else readMessage (ms)
+
+                if s.EndOfMessage then
+                    utf8.GetString(ms.ToArray())
+                else
+                    readMessage (ms)
 
             try
                 started.Set() |> ignore
@@ -210,11 +235,11 @@ type CqWsContext(ws : WebSocket) =
                     |> ignore
             with e ->
                 cts.Cancel()
-                logger.Fatal(sprintf "%sWS读取捕获异常：%A" x.SelfId e)
+                logger.Fatal(sprintf "%sWS读取捕获异常：%A" x.BotIdString e)
                 CqWsContextPool.Instance.RemoveContext(x)
 
                 if x.RestartContext.IsSome then
-                    logger.Warn(sprintf "%s正在尝试重新连接" x.SelfId)
+                    logger.Warn(sprintf "%s正在尝试重新连接" x.BotIdString)
                     CqWsContextPool.Instance.RemoveContext(x.RestartContext.Value())
         }
         |> Async.Start
@@ -223,35 +248,42 @@ type CqWsContext(ws : WebSocket) =
         member x.CallApi(req) =
             started.WaitOne() |> ignore
 
-            async {
-                let echo = Guid.NewGuid().ToString()
-                let mre = new ManualResetEvent(false)
-                let json = req.GetRequestJson(echo)
+            match req :> ApiBase with
+            | :? WsContextApiBase as ctxApi ->
+                ctxApi.Invoke(x)
+                ctxApi.IsExecuted <- true
+            | :? CqHttpApiBase as httpApi ->
+                async {
+                    let echo = Guid.NewGuid().ToString()
+                    let mre = new ManualResetEvent(false)
+                    let json = httpApi.GetRequestJson(echo)
 
-                let _ =
-                    apiPending.TryAdd(echo, (mre, req :> ApiRequestBase))
+                    apiPending.TryAdd(echo, (mre, httpApi)) |> ignore
 
-                if KPX.FsCqHttp.Config.Logging.LogApiCall then
-                    logger.Trace(sprintf "%s请求API：%s" x.SelfId req.ActionName)
+                    if KPX.FsCqHttp.Config.Logging.LogApiCall then
+                        logger.Trace(sprintf "%s请求API：%s" x.BotIdString httpApi.ActionName)
 
-                    if KPX.FsCqHttp.Config.Logging.LogApiJson then logger.Trace(sprintf "%s请求API：%s" x.SelfId json)
+                        if KPX.FsCqHttp.Config.Logging.LogApiJson then
+                            logger.Trace(sprintf "%s请求API：%s" x.BotIdString json)
 
-                let data = json |> utf8.GetBytes
+                    let data = json |> utf8.GetBytes
 
-                do!
-                    ws.SendAsync(ArraySegment<byte>(data), WebSocketMessageType.Text, true, cts.Token)
-                    |> Async.AwaitTask
+                    do!
+                        ws.SendAsync(ArraySegment<byte>(data), WebSocketMessageType.Text, true, cts.Token)
+                        |> Async.AwaitTask
 
-                let! _ = Async.AwaitWaitHandle(mre :> WaitHandle)
+                    let! _ = Async.AwaitWaitHandle(mre :> WaitHandle)
 
-                apiPending.TryRemove(echo) |> ignore
+                    apiPending.TryRemove(echo) |> ignore
 
-                req.IsExecuted <- true
-                return req
-            }
-            |> Async.RunSynchronously
+                    httpApi.IsExecuted <- true
+                }
+                |> Async.RunSynchronously
+            | _ -> invalidArg (nameof req) "未知API类型"
 
-        member x.CallApi<'T when 'T :> ApiRequestBase and 'T : (new : unit -> 'T)>() =
+            req
+
+        member x.CallApi<'T when 'T :> ApiBase and 'T : (new : unit -> 'T)>() =
             let req = Activator.CreateInstance<'T>()
             (x :> IApiCallProvider).CallApi(req)
 
@@ -266,14 +298,13 @@ and CqWsContextPool private () =
         ConcurrentDictionary<uint64, CqWsContext>()
 
     member x.AddContext(context : CqWsContext) =
-        pool.TryAdd(context.Self.UserId, context)
-        |> ignore
+        pool.TryAdd(context.BotUserId, context) |> ignore
 
-        logger.Info(sprintf "已接受连接:%s" context.SelfId)
+        logger.Info(sprintf "已接受连接:%s" context.BotIdString)
 
     member x.RemoveContext(context : CqWsContext) =
-        pool.TryRemove(context.Self.UserId) |> ignore
-        logger.Info(sprintf "已移除连接:%s" context.SelfId)
+        pool.TryRemove(context.BotUserId) |> ignore
+        logger.Info(sprintf "已移除连接:%s" context.BotIdString)
 
     interface Collections.IEnumerable with
         member x.GetEnumerator() =

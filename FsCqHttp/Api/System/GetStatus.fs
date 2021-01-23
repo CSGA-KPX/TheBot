@@ -5,7 +5,7 @@ open KPX.FsCqHttp.Api
 
 /// 获取插件运行状态
 type GetStatus() =
-    inherit ApiRequestBase("get_status")
+    inherit CqHttpApiBase("get_status")
 
     let mutable data = [||] |> readOnlyDict<string, string>
 
