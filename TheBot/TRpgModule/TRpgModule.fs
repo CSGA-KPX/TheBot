@@ -68,7 +68,7 @@ type TRpgModule() =
 
         using (cmdArg.OpenResponse()) (fun ret -> ret.Write(tt))
 
-    [<CommandHandlerMethodAttribute("sc", "理智检定 a/b san", "", AltCommandStart = ".")>]
+    [<CommandHandlerMethodAttribute("sc", "理智检定 a/b san", "", AltCommandStart = ".", IsHidden = true)>]
     member x.HandleSanCheck(cmdArg : CommandEventArgs) =
         let args = cmdArg.Arguments // 参数检查
 
@@ -104,8 +104,8 @@ type TRpgModule() =
         ret.WriteLine("1D100 = {0}：{1}", check, status)
         ret.WriteLine("San值减少{0}点，当前剩余{1}点。", lose, max 0 (currentSan - lose))
 
-    [<CommandHandlerMethodAttribute("rd", ".r 1D100缩写", "", AltCommandStart = ".")>]
-    [<CommandHandlerMethodAttribute("rh", "常规暗骰", "", AltCommandStart = ".")>]
+    [<CommandHandlerMethodAttribute("rd", ".r 1D100缩写", "", AltCommandStart = ".", IsHidden = true)>]
+    [<CommandHandlerMethodAttribute("rh", "常规暗骰", "", AltCommandStart = ".", IsHidden = true)>]
     [<CommandHandlerMethodAttribute("r", "常规骰点", "", AltCommandStart = ".")>]
     member x.HandleDice(cmdArg : CommandEventArgs) =
         let parser = DiceExpression()
@@ -172,7 +172,7 @@ type TRpgModule() =
 
         cmdArg.QuickMessageReply(ret)
 
-    [<CommandHandlerMethodAttribute("bg", "", "", AltCommandStart = ".")>]
+    [<CommandHandlerMethodAttribute("bg", "人物背景", "", AltCommandStart = ".")>]
     member x.HandleChrBackground(cmdArg : CommandEventArgs) =
 
         let de = DiceExpression(Dicer.RandomDicer)

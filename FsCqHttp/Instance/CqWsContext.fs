@@ -31,7 +31,7 @@ type CqWsContext(ws : WebSocket) =
 
     let started = new ManualResetEvent(false)
     let modules = List<HandlerModuleBase>()
-    let cmdCache = Dictionary<string, _>()
+    let cmdCache = Dictionary<string, CommandInfo>()
     let self = GetLoginInfo()
 
     let rec getRootExn (exn : exn) =
@@ -42,7 +42,8 @@ type CqWsContext(ws : WebSocket) =
 
     member x.Moduldes = modules :> IEnumerable<_>
 
-    member x.Commands = cmdCache.Keys |> Seq.cast<string>
+    /// 返回已经定义的指令，结果无序。
+    member x.Commands = cmdCache.Values |> Seq.cast<CommandInfo>
 
     /// 发生链接错误时重启服务器的函数
     ///
@@ -86,8 +87,8 @@ type CqWsContext(ws : WebSocket) =
         if toAdd :? CommandHandlerBase then
             let cmdBase = toAdd :?> CommandHandlerBase
 
-            for (str, attr, method) in cmdBase.Commands do
-                cmdCache.Add(str, (toAdd, attr, method))
+            for cmd in cmdBase.Commands do
+                cmdCache.Add(cmd.CommandName, cmd)
 
     /// 使用API检查是否在线
     member x.CheckOnline() =
@@ -141,13 +142,16 @@ type CqWsContext(ws : WebSocket) =
                 // 如果和指令有匹配就直接走模块
                 // 没匹配再轮询
                 if cmdCache.ContainsKey(key) then
-                    let (cmdModule, attr, method) = cmdCache.[key]
-                    let cmdArg = CommandEventArgs(args, e, attr)
+                    let cmd = cmdCache.[key]
+
+                    let cmdArg =
+                        CommandEventArgs(args, e, cmd.CommandAttribute)
 
                     if KPX.FsCqHttp.Config.Logging.LogCommandCall then
-                        logger.Info("Calling handler {0}\r\n Command Context {1}", method.Name, sprintf "%A" e)
+                        logger.Info("Calling handler {0}\r\n Command Context {1}", cmd.Method.Name, sprintf "%A" e)
 
-                        method.Invoke(cmdModule, [| cmdArg |]) |> ignore
+                        cmd.Method.Invoke(cmd.OwnerModule, [| cmdArg |])
+                        |> ignore
                 else
                     for m in modules do
                         m.HandleMessage(args, e)

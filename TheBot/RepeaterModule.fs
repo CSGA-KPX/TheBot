@@ -8,7 +8,7 @@ open KPX.FsCqHttp.Handler
 
 type RepeatMessage = { RawMessage : string; Count : int }
 
-type XivModule() =
+type RepeaterModule() =
     inherit HandlerModuleBase()
     static let repeatLimit = 5
 

@@ -68,11 +68,17 @@ type CommandEventArgs(cqArg : CqEventArgs, msg : MessageEvent, attr : CommandHan
     /// 不包含指令的部分
     member val Arguments = cmdLine.[1..]
 
+type CommandInfo =
+    { CommandName : string
+      OwnerModule : HandlerModuleBase
+      CommandAttribute : CommandHandlerMethodAttribute
+      Method : Reflection.MethodInfo }
+
 [<AbstractClass>]
 type CommandHandlerBase() as x =
     inherit HandlerModuleBase()
 
-    let commands = Collections.Generic.List<_>()
+    let commands = ResizeArray<CommandInfo>()
 
     do
         for method in x.GetType().GetMethods() do
@@ -83,6 +89,14 @@ type CommandHandlerBase() as x =
                 let attr = attrib :?> CommandHandlerMethodAttribute
                 let cs = attr.CommandStart
                 let key = (cs + attr.Command).ToLowerInvariant()
-                commands.Add(key, attr, method)
 
-    member x.Commands = commands
+                let cmd =
+                    { CommandName = key
+                      CommandAttribute = attr
+                      Method = method
+                      OwnerModule = x }
+
+                commands.Add(cmd)
+
+    /// 返回该类中定义的指令
+    member x.Commands = commands :> System.Collections.Generic.IEnumerable<_>

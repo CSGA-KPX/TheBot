@@ -2,9 +2,8 @@
 //
 // 目前架构上无法通过IApiCallProvider访问CqWsContext的数据
 // 所以使用API的方式实现访问和并发控制
-namespace KPX.FsCqHttp.Instance.Api
+namespace KPX.FsCqHttp.Api.Context
 
-open System
 open KPX.FsCqHttp.Instance
 
 
@@ -19,6 +18,9 @@ type GetCtxModules() =
 
     override x.Invoke(ctx) = m <- ctx.Moduldes |> Seq.toArray
 
+/// 返回无序的已定义指令。
+///
+/// 需要有序请使用GetCtxModules
 type GetCtxCommands() =
     inherit WsContextApiBase()
 

@@ -63,12 +63,12 @@
     <Compile Include="Utils\TextTable\Extensions.fs" />
     <Compile Include="Utils\AliasMapper.fs" />
     <Compile Include="Utils\UserOption.fs" />
-    <Compile Include="Utils\HelpModule.fs" />
     <Compile Include="Instance\CqWsContext.fs" />
     <Compile Include="Instance\ContextApi.fs" />
     <Compile Include="Instance\ActiveWebsocket.fs" />
     <Compile Include="Instance\ReverseWebSocket.fs" />
     <Compile Include="Instance\DummyReverseClient.fs" />
+    <Compile Include="Modules\HelpModule.fs" />
   </ItemGroup>
 
   <ItemGroup>
