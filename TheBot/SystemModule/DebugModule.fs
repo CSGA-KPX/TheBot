@@ -95,3 +95,5 @@ type DebugModule() =
 
             for log in logs do
                 ret.WriteLine(log)
+
+            logs.Clear()
