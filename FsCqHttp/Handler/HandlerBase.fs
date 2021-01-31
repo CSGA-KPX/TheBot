@@ -1,21 +1,10 @@
 ﻿namespace KPX.FsCqHttp.Handler
 
-open System.Reflection
-
 open KPX.FsCqHttp.Event
+
 
 [<AbstractClass>]
 type HandlerModuleBase() as x =
-    static let allModules =
-        [| yield! Assembly.GetExecutingAssembly().GetTypes()
-           yield! Assembly.GetEntryAssembly().GetTypes() |]
-        |> Array.filter
-            (fun t ->
-                t.IsSubclassOf(typeof<HandlerModuleBase>)
-                && (not <| t.IsAbstract))
-
-    static member AllDefinedModules = allModules
-
     member val Logger = NLog.LogManager.GetLogger(x.GetType().Name)
 
     abstract HandleMessage : CqEventArgs * MessageEvent -> unit

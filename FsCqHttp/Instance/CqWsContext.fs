@@ -5,6 +5,7 @@ open System.Collections.Generic
 open System.Collections.Concurrent
 open System.Threading
 open System.Net.WebSockets
+open System.Reflection
 
 open KPX.FsCqHttp.Event
 open KPX.FsCqHttp.Api
@@ -19,6 +20,58 @@ type WsContextApiBase() =
     inherit ApiBase()
 
     abstract Invoke : CqWsContext -> unit
+
+[<AbstractClass>]
+type ContextModuleLoader() =
+    abstract RegisterFor : CqWsContext -> unit
+
+/// 默认加载FsCqHttp项目和EntryAssembly中的所有模块。
+type DefaultContextModuleLoader() =
+    inherit ContextModuleLoader()
+
+    let logger = NLog.LogManager.GetCurrentClassLogger()
+
+    let allModules =
+        [| yield! Assembly.GetExecutingAssembly().GetTypes()
+           yield! Assembly.GetEntryAssembly().GetTypes() |]
+        |> Array.filter
+            (fun t ->
+                t.IsSubclassOf(typeof<HandlerModuleBase>)
+                && (not <| t.IsAbstract))
+
+    override x.RegisterFor(ctx) =
+        for m in allModules do
+            logger.Debug("加载模块{0}", m.FullName)
+            ctx.RegisterModule(m)
+
+type CqWsContextPool private () =
+    let logger = NLog.LogManager.GetCurrentClassLogger()
+
+    let pool =
+        ConcurrentDictionary<uint64, CqWsContext>()
+
+    member x.AddContext(context : CqWsContext) =
+        pool.TryAdd(context.BotUserId, context) |> ignore
+
+        CqWsContextPool.ModuleLoader.RegisterFor(context)
+
+        logger.Info(sprintf "已接受连接:%s" context.BotIdString)
+
+    member x.RemoveContext(context : CqWsContext) =
+        pool.TryRemove(context.BotUserId) |> ignore
+        logger.Info(sprintf "已移除连接:%s" context.BotIdString)
+
+    interface Collections.IEnumerable with
+        member x.GetEnumerator() =
+            pool.Values.GetEnumerator() :> Collections.IEnumerator
+
+    interface Collections.Generic.IEnumerable<CqWsContext> with
+        member x.GetEnumerator() = pool.Values.GetEnumerator()
+
+    static member val Instance = CqWsContextPool()
+
+    /// 获取或设置为Context添加模块的加载器
+    static member val ModuleLoader : ContextModuleLoader = DefaultContextModuleLoader() :> ContextModuleLoader with get, set
 
 type CqWsContext(ws : WebSocket) =
     static let moduleCache = Dictionary<Type, HandlerModuleBase>()
@@ -293,28 +346,3 @@ type CqWsContext(ws : WebSocket) =
 
     interface IDisposable with
         member x.Dispose() = x.Stop()
-
-and CqWsContextPool private () =
-    static let instance = CqWsContextPool()
-    let logger = NLog.LogManager.GetCurrentClassLogger()
-
-    let pool =
-        ConcurrentDictionary<uint64, CqWsContext>()
-
-    member x.AddContext(context : CqWsContext) =
-        pool.TryAdd(context.BotUserId, context) |> ignore
-
-        logger.Info(sprintf "已接受连接:%s" context.BotIdString)
-
-    member x.RemoveContext(context : CqWsContext) =
-        pool.TryRemove(context.BotUserId) |> ignore
-        logger.Info(sprintf "已移除连接:%s" context.BotIdString)
-
-    interface Collections.IEnumerable with
-        member x.GetEnumerator() =
-            pool.Values.GetEnumerator() :> Collections.IEnumerator
-
-    interface Collections.Generic.IEnumerable<CqWsContext> with
-        member x.GetEnumerator() = pool.Values.GetEnumerator()
-
-    static member Instance : CqWsContextPool = instance

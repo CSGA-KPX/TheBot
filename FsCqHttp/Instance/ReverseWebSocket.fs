@@ -43,7 +43,8 @@ type CqWebSocketServer(uriPrefix, token : string) =
             while not ctsListener.Token.IsCancellationRequested do
                 let! ctx = listener.GetContextAsync() |> Async.AwaitTask
                 // Async()期间可能会被取消
-                if ctsListener.Token.IsCancellationRequested then failwithf "已取消操作"
+                if ctsListener.Token.IsCancellationRequested then
+                    failwithf "已取消操作"
 
                 if not ctx.Request.IsWebSocketRequest then
                     ctx.Response.StatusCode <- 403
@@ -59,9 +60,6 @@ type CqWebSocketServer(uriPrefix, token : string) =
                         if not (role.Contains("Universal")) then failwith ""
 
                         let context = new CqWsContext(wsCtx.WebSocket)
-
-                        for m in HandlerModuleBase.AllDefinedModules do
-                            context.RegisterModule(m)
 
                         context.Start()
 

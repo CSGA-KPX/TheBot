@@ -4,6 +4,8 @@
 // 所以使用API的方式实现访问和并发控制
 namespace KPX.FsCqHttp.Api.Context
 
+open KPX.FsCqHttp.Event
+
 open KPX.FsCqHttp.Instance
 
 

@@ -75,28 +75,34 @@ type CommandInfo =
       Method : Reflection.MethodInfo }
 
 [<AbstractClass>]
-type CommandHandlerBase() as x =
+type CommandHandlerBase() =
     inherit HandlerModuleBase()
+
+    let mutable commandGenerated = false
 
     let commands = ResizeArray<CommandInfo>()
 
-    do
-        for method in x.GetType().GetMethods() do
-            let ret =
-                method.GetCustomAttributes(typeof<CommandHandlerMethodAttribute>, true)
-
-            for attrib in ret do
-                let attr = attrib :?> CommandHandlerMethodAttribute
-                let cs = attr.CommandStart
-                let key = (cs + attr.Command).ToLowerInvariant()
-
-                let cmd =
-                    { CommandName = key
-                      CommandAttribute = attr
-                      Method = method
-                      OwnerModule = x }
-
-                commands.Add(cmd)
-
     /// 返回该类中定义的指令
-    member x.Commands = commands :> System.Collections.Generic.IEnumerable<_>
+    member x.Commands =
+        if not commandGenerated then
+            for method in x.GetType().GetMethods() do
+                let ret =
+                    method.GetCustomAttributes(typeof<CommandHandlerMethodAttribute>, true)
+
+                for attrib in ret do
+                    let attr = attrib :?> CommandHandlerMethodAttribute
+
+                    let key =
+                        (attr.CommandStart + attr.Command)
+                            .ToLowerInvariant()
+
+                    let cmd =
+                        { CommandName = key
+                          CommandAttribute = attr
+                          Method = method
+                          OwnerModule = x }
+
+                    commands.Add(cmd)
+                    commandGenerated <- true
+
+        commands :> Collections.Generic.IEnumerable<_>
