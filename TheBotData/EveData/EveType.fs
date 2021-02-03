@@ -21,7 +21,8 @@ type EveType =
       MetaGroupId : int
       /// 用途不明，可能是最小精炼单位
       PortionSize : int
-      MarketGroupId : int }
+      MarketGroupId : int
+      BasePrice : float}
 
 type EveTypeCollection private () =
     inherit CachedTableCollection<int, EveType>()
@@ -80,6 +81,9 @@ type EveTypeCollection private () =
                     let marketGroupId =
                         if o.ContainsKey("marketGroupID") then o.GetValue("marketGroupID").ToObject<int>() else 0
 
+                    let basePrice = 
+                        if o.ContainsKey("basePrice") then o.GetValue("basePrice").ToObject<float>() else 0.0
+
                     if allow && published then
                         yield
                             { Id = tid
@@ -89,7 +93,8 @@ type EveTypeCollection private () =
                               Volume = vol
                               MetaGroupId = meta
                               PortionSize = portionSize
-                              MarketGroupId = marketGroupId }
+                              MarketGroupId = marketGroupId
+                              BasePrice = basePrice }
         }
         |> x.DbCollection.InsertBulk
         |> ignore

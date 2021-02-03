@@ -25,6 +25,8 @@ type PriceFetchMode =
     | AdjustedPrice
     /// 游戏内部平均价格
     | AveragePrice
+    /// 游戏内部硬编码的价格
+    | BasePrice
 
     override x.ToString() =
         match x with

@@ -20,6 +20,7 @@ type EveType with
         let pi = x.GetPriceInfo()
 
         match pm with
+        | PriceFetchMode.BasePrice -> x.BasePrice
         | PriceFetchMode.Buy -> pi.Buy
         | PriceFetchMode.BuyWithTax -> pi.Buy * (pct <| 100 + EveBuyTax)
         | PriceFetchMode.Sell -> pi.Sell
