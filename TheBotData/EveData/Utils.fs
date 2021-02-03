@@ -30,6 +30,7 @@ type PriceFetchMode =
 
     override x.ToString() =
         match x with
+        | BasePrice -> "BasePrice"
         | Sell -> "税前卖出"
         | SellWithTax -> "税后卖出"
         | Buy -> "税前收购"

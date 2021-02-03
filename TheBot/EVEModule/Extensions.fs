@@ -51,41 +51,60 @@ type EveType with
     member x.IsBlueprint = x.CategoryId = 9
 
 [<Extension>]
-type RecipeMaterialExtensions = 
+type RecipeMaterialExtensions =
     [<Extension>]
-    static member inline GetPrice(this : RecipeMaterial<EveType> [],  pm : PriceFetchMode) =
+    static member inline GetPrice(this : RecipeMaterial<EveType> [], pm : PriceFetchMode) =
         this
         |> Array.sumBy (fun mr -> mr.Item.GetPrice(pm) * mr.Quantity)
 
 type EveProcess with
 
     /// 获取最终制造价格，配方包含数量和材料效率
-    member x.GetPriceInfo(pm : PriceFetchMode) = 
+    member x.GetPriceInfo(pm : PriceFetchMode) =
         let proc = x.ApplyFlags(MeApplied)
 
         {| TotalProductPrice = proc.Output.GetPrice(pm)
            TotalMaterialPrice = proc.Input.GetPrice(pm) |}
 
-    member x.GetTotalProductPrice(pm : PriceFetchMode, flag : ProcessFlag) =
-        x.ApplyFlags(flag).Output.GetPrice(pm)
+    member x.GetTotalProductPrice(pm : PriceFetchMode, flag : ProcessFlag) = x.ApplyFlags(flag).Output.GetPrice(pm)
 
     /// 获取输入材料价格，可能为0
-    member x.GetTotalMaterialPrice(pm : PriceFetchMode, flag : ProcessFlag) =
-        x.ApplyFlags(flag).Input.GetPrice(pm)
+    member x.GetTotalMaterialPrice(pm : PriceFetchMode, flag : ProcessFlag) = x.ApplyFlags(flag).Input.GetPrice(pm)
 
-    /// 获取生产费用。
+    /// 获取生产费用
+    ///
+    /// 行星开发计算材料的进口税和产物的出口税
     member x.GetInstallationCost(cfg : EveConfigParser) =
-        let cost = x.ApplyFlags(QuantityApplied).Input.GetPrice(PriceFetchMode.AdjustedPrice)
-
         match x.Type with
-        | ProcessType.Planet -> 0.0 // 行星生产税率算法麻烦，一般也不大，假定为0
-        | ProcessType.Invalid ->
-            raise
-            <| System.NotImplementedException("非法过程")
+        | ProcessType.Planet ->
+            let getBaseCost (t : EveType) =
+                match t.GroupId with
+                | 1035 -> 5.0 // 行星有机物 - 原始资源
+                | 1042 -> 400.0 // 基础资源物品 - 第一等级
+                | 1034 -> 7_200.0 // 加工过的资源物品 - 第二等级
+                | 1040 -> 60_000.0 // 特种资源物品 - 第三等级
+                | 1041 -> 1_200_000.0 // 高级资源物品 - 第四等级
+                | _ -> invalidArg "EveType" "输入物品不是行星产物"
+
+            let proc = x.ApplyFlags(QuantityApplied)
+
+
+            let importFee =
+                proc.Input
+                |> Array.fold (fun acc mr -> acc + mr.Quantity * (getBaseCost (mr.Item) * 0.5)) 0.0
+
+            let exportFee =
+                proc.Output
+                |> Array.fold (fun acc mr -> acc + mr.Quantity * (getBaseCost (mr.Item))) 0.0
+
+            (importFee + exportFee) * 0.1 // NPC税率10%
+        | ProcessType.Invalid -> raise <| System.NotImplementedException("非法过程")
         | ProcessType.Refine ->
             raise
             <| System.NotImplementedException("不支持计算精炼费用")
         | _ ->
-            cost
+            x
+                .ApplyFlags(QuantityApplied)
+                .Input.GetPrice(PriceFetchMode.AdjustedPrice)
             * (pct cfg.SystemCostIndex)
             * (100 + cfg.StructureTax |> pct)

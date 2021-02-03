@@ -205,11 +205,7 @@ type EveRecipeModule() =
                 let mrProc =
                     pm.TryGetRecipeRecMe(mr.Item, ByItem mr.Quantity, cfg.DerivativetMe, cfg.DerivativetMe)
 
-                if mrProc.IsNone then
-                    optCost <- optCost + price
-                    allCost <- allCost + price
-                    tt.AddRow(mr.Item.Name, mr.Quantity, HumanReadableSig4Float price, numPadStr)
-                else
+                if mrProc.IsSome && pm.CanExpand(mrProc.Value.InputProcess) then
                     let mrInstall =
                         mrProc.Value.IntermediateProcess
                         |> Array.fold (fun acc proc -> acc + proc.GetInstallationCost(cfg) ) 0.0
@@ -225,6 +221,11 @@ type EveRecipeModule() =
                         + (if (mrAll >= price) && (price <> 0.0) then price else mrAll)
 
                     tt.AddRow(mr.Item.Name, mr.Quantity, HumanReadableSig4Float price, HumanReadableSig4Float mrAll)
+                else
+                    optCost <- optCost + price
+                    allCost <- allCost + price
+                    tt.AddRow(mr.Item.Name, mr.Quantity, HumanReadableSig4Float price, numPadStr)
+
 
             let sell = proc.Output.GetPrice(PriceFetchMode.Sell)
             let sellWithTax = proc.Output.GetPrice(PriceFetchMode.SellWithTax)
@@ -282,7 +283,9 @@ type EveRecipeModule() =
         let searchCond =
             match cmdArg.CommandName with
             | "eve燃料块" -> PredefinedSearchCond.FuelBlocks
-            | "eve种菜" -> PredefinedSearchCond.Planet
+            | "eve种菜" ->
+                ret.WriteLine("海关税率10%，按进出口计税。推荐使用p:展开材料到P1。")
+                PredefinedSearchCond.Planet
             | "eve组件" -> PredefinedSearchCond.Components
             | "eve舰船" -> PredefinedSearchCond.T1Ships
             | "eve舰船ii" -> PredefinedSearchCond.T2Ships
@@ -379,8 +382,15 @@ type EveRecipeModule() =
                     // 所有基础材料的报价
                     let materialCost = proc.FinalProcess.Input.GetPrice(cfg.MaterialPriceMode)
                     let installCost = 
-                        proc.IntermediateProcess
-                        |> Array.fold (fun acc proc -> acc + proc.GetInstallationCost(cfg) ) 0.0
+                        if ps.Type = ProcessType.Planet then
+                            // 构造一个临时配方去计算费用
+                            { Original = proc.FinalProcess
+                              TargetQuantity = ByRun 1.0
+                              TargetMe = 0
+                              Type = ProcessType.Planet }.GetInstallationCost(cfg)
+                        else
+                            proc.IntermediateProcess
+                            |> Array.fold (fun acc proc -> acc + proc.GetInstallationCost(cfg) ) 0.0
 
                     let cost = materialCost + installCost
 

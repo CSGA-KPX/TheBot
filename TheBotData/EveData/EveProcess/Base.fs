@@ -35,10 +35,7 @@ type EveProcess =
     member x.ApplyFlags(flag : ProcessFlag) =
         match flag with
         | Original -> x.Original
-        | QuantityApplied ->
-            let runs = x.TargetQuantity.ToRuns(x.Original)
-            x.Original * runs
-        | MeApplied ->
+        | MeApplied when x.Type = ProcessType.Manufacturing ->
             let proc = x.ApplyFlags(QuantityApplied)
             let meFactor = (float (100 - x.TargetMe)) / 100.0
 
@@ -47,9 +44,12 @@ type EveProcess =
                 |> Array.map
                     (fun rm ->
                         { rm with
-                              Quantity = rm.Quantity * meFactor |> ceil })
+                                Quantity = rm.Quantity * meFactor |> ceil })
 
             { proc with Input = input }
+        | QuantityApplied | MeApplied ->
+            let runs = x.TargetQuantity.ToRuns(x.Original)
+            x.Original * runs
 
 [<CLIMutable>]
 type EveDbProcess =

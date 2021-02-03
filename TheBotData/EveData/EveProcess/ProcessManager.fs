@@ -48,23 +48,20 @@ type EveProcessManager(cfg : IEveCalculatorConfig) as x =
     /// 获取1流程，0效率的配方
     override x.TryGetRecipe(item) = x.TryGetRecipe(item, ByRun 1.0, cfg.InputME)
 
+    /// 检查在当前条件下是否可以被展开
+    member x.CanExpand (recipe : EveProcess) = 
+        (recipe.Type = ProcessType.Manufacturing)
+        || (recipe.Type = ProcessType.Planet
+            && cfg.ExpandPlanet)
+        || (recipe.Type = ProcessType.Reaction
+            && cfg.ExpandReaction)
+
     /// 获取指定数量、IMe/DMe效率的递归配方
     member x.TryGetRecipeRecMe(item : EveType, quantity : ProcessQuantity, ?ime : int, ?dme : int) =
         let ime = defaultArg ime cfg.InputME
         let dme = defaultArg dme cfg.DerivedME
 
-        let canExpand (recipe : EveProcess) =
-            (recipe.Type = ProcessType.Manufacturing)
-            || (recipe.Type = ProcessType.Planet
-                && cfg.ExpandPlanet)
-            || (recipe.Type = ProcessType.Reaction
-                && cfg.ExpandReaction)
-
         x.TryGetRecipe(item)
-        |> Option.filter
-            (fun r ->
-                // 如果根据条件不能展开，按没找到处理
-                canExpand (r))
         |> Option.map
             (fun r ->
                 let intermediate = ResizeArray<EveProcess>()
@@ -76,7 +73,7 @@ type EveProcessManager(cfg : IEveCalculatorConfig) as x =
                     if recipe.IsNone then
                         acc.Input.Update(i, q)
                     else
-                        if canExpand (recipe.Value) then
+                        if x.CanExpand(recipe.Value) then
                             intermediate.Add(recipe.Value)
                             let proc = recipe.Value.ApplyFlags(MeApplied)
 
