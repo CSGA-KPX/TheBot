@@ -1,7 +1,5 @@
 ﻿namespace KPX.TheBot.Data.EveData.Process
 
-open System
-
 open KPX.TheBot.Data.CommonModule.Recipe
 
 open KPX.TheBot.Data.EveData.EveType
@@ -31,69 +29,24 @@ type EveProcessManager(cfg : IEveCalculatorConfig) as x =
                 member x.ExpandPlanet = false
                 member x.ExpandReaction = false }
         )
-    /// 0材料，不展开
+
+    /// 0材料，不展开行星和反应衍生
     static member Default = instance
 
-    member private x.ApplyQuantity(recipe : EveProcess, quantity : ProcessQuantity) =
-        if recipe.Flag.HasFlag(ProcessFlags.MeApplied) then invalidOp "已经计算过材料效率"
-
-        if recipe.Flag.HasFlag(ProcessFlags.QuantityApplied) then invalidOp "已经调整过流程数"
-
-        let runs = quantity.ToRuns(recipe.Process)
-
-        { recipe with
-              Process =
-                  { Input =
-                        recipe.Process.Input
-                        |> Array.map
-                            (fun mr ->
-                                { mr with
-                                      Quantity = mr.Quantity * runs })
-                    Output =
-                        recipe.Process.Output
-                        |> Array.map
-                            (fun mr ->
-                                { mr with
-                                      Quantity = mr.Quantity * runs }) }
-              Flag = ProcessFlags.QuantityApplied }
-
-    member private x.ApplyMe(recipe : EveProcess, me) =
-        if recipe.Type = ProcessType.Manufacturing then
-            if recipe.Flag.HasFlag(ProcessFlags.MeApplied) then invalidOp "已经计算过材料效率"
-            // 只有制造项目使用材料效率
-            let meFactor = (float (100 - me)) / 100.0
-
-            let input =
-                recipe.Process.Input
-                |> Array.map
-                    (fun rm ->
-                        { rm with
-                              Quantity = rm.Quantity * meFactor |> ceil })
-
-            let proc = { recipe.Process with Input = input }
-
-            { recipe with
-                  Process = proc
-                  Flag = recipe.Flag ||| ProcessFlags.MeApplied }
-        else
-            recipe
-
-    member x.ApplyProcess(proc : EveProcess, quantity : ProcessQuantity, ?ime : int) =
-        let ime = defaultArg ime cfg.InputME
-        x.ApplyMe(x.ApplyQuantity(proc, quantity), ime)
-
-    /// 获取指定数量和效率配方
-    member x.TryGetRecipeMe(item : EveType, quantity, ?ime : int) =
-        let ime = defaultArg ime cfg.InputME
-
-        x.TryGetRecipe(item)
-        |> Option.map (fun recipe -> x.ApplyMe(x.ApplyQuantity(recipe, quantity), ime))
+    member x.TryGetRecipe(item, quantity : ProcessQuantity, me : int) =
+        x.SearchRecipes(item)
+        |> Seq.tryHead
+        |> Option.map
+            (fun proc ->
+                { proc with
+                      TargetMe = me
+                      TargetQuantity = quantity })
 
     /// 获取指定数量的0效率配方
-    override x.TryGetRecipe(item, quantity) = x.TryGetRecipeMe(item, quantity, 0)
+    override x.TryGetRecipe(item, quantity) = x.TryGetRecipe(item, quantity, cfg.InputME)
 
     /// 获取1流程，0效率的配方
-    override x.TryGetRecipe(item) = x.SearchRecipes(item) |> Seq.tryHead
+    override x.TryGetRecipe(item) = x.TryGetRecipe(item, ByRun 1.0, cfg.InputME)
 
     /// 获取指定数量、IMe/DMe效率的递归配方
     member x.TryGetRecipeRecMe(item : EveType, quantity : ProcessQuantity, ?ime : int, ?dme : int) =
@@ -114,34 +67,30 @@ type EveProcessManager(cfg : IEveCalculatorConfig) as x =
                 canExpand (r))
         |> Option.map
             (fun r ->
-                let intermediate = Collections.Generic.List<EveProcess>()
+                let intermediate = ResizeArray<EveProcess>()
                 let acc = RecipeProcessAccumulator<EveType>()
 
                 let rec Calc i (q : float) me =
-                    let recipe = x.TryGetRecipeMe(i, ByItem q, me)
+                    let recipe = x.TryGetRecipe(i, ByItem q, me)
 
                     if recipe.IsNone then
                         acc.Input.Update(i, q)
                     else
-                        let recipe = recipe.Value
+                        if canExpand (recipe.Value) then
+                            intermediate.Add(recipe.Value)
+                            let proc = recipe.Value.ApplyFlags(MeApplied)
 
-                        if canExpand (recipe) then
-                            intermediate.Add(recipe)
-
-                            for m in recipe.Process.Input do
+                            for m in proc.Input do
                                 Calc m.Item m.Quantity dme
                         else
                             acc.Input.Update(i, q)
 
-                acc.Output.Update(item, quantity.ToItems(r.Process))
-                Calc item (quantity.ToItems(r.Process)) ime
+                let itemQuantity = quantity.ToItems(r.Original)
 
-                let final =
-                    { Process = acc.AsRecipeProcess()
-                      Type = ProcessType.Invalid
-                      Flag =
-                          ProcessFlags.MeApplied
-                          ||| ProcessFlags.QuantityApplied }
+                acc.Output.Update(item, itemQuantity)
+                Calc item (itemQuantity) ime
 
-                {| FinalProcess = final
+                {| InputProcess = r
+                   InputRuns = quantity.ToRuns(r.Original)
+                   FinalProcess = acc.AsRecipeProcess()
                    IntermediateProcess = intermediate.ToArray() |})

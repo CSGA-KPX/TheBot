@@ -6,7 +6,14 @@ open System.Collections.Generic
 
 [<CLIMutable>]
 [<Struct>]
-type RecipeMaterial<'Item> = { Item : 'Item; Quantity : float }
+type RecipeMaterial<'Item> =
+    { Item : 'Item; Quantity : float }
+
+    static member (*) (that : RecipeMaterial<'Item>, c : int) = 
+        {that with Quantity = that.Quantity * (float c)}
+
+    static member (*) (that : RecipeMaterial<'Item>, c : float) = 
+        {that with Quantity = that.Quantity * c}
 
 type ItemAccumulator<'Item when 'Item : equality>() =
     let data =
@@ -78,6 +85,15 @@ and [<CLIMutable>] RecipeProcess<'Item when 'Item : equality> =
     member x.GetFirstProduct() =
         if x.Output.Length <> 1 then invalidOp (sprintf "该过程不止一个产物：%A" x)
         x.Output |> Array.head
+
+    static member (*) (that : RecipeProcess<'Item>, runs : int) = 
+        { Input = that.Input |> Array.map (fun mr -> mr * runs)
+          Output = that.Output |> Array.map (fun mr -> mr * runs) }
+
+    static member (*) (that : RecipeProcess<'Item>, runs : float) = 
+        { Input = that.Input |> Array.map (fun mr -> mr * runs)
+          Output = that.Output |> Array.map (fun mr -> mr * runs) }
+
 
 type IRecipeProvider<'Item, 'Recipe when 'Item : equality> =
     abstract TryGetRecipe : 'Item -> 'Recipe option

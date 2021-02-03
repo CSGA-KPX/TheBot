@@ -136,7 +136,7 @@ type EveProcessSearch private () =
                     let proc = proc.AsEveProcess()
                     let mutable ret = true
 
-                    let product = proc.Process.GetFirstProduct()
+                    let product = proc.Original.GetFirstProduct()
 
                     if not gids.IsEmpty then ret <- ret && gids.Contains(product.Item.GroupId)
                     if not cids.IsEmpty then ret <- ret && cids.Contains(product.Item.CategoryId)
@@ -185,11 +185,12 @@ module PredefinedSearchCond =
         ProcessSearchCond(
             ProcessType.Manufacturing,
             "T1Ships",
-            GroupIds = [| ships |],
+            CategoryIds = [| ships |],
             MetaGroupIds =
                 [| MetaGroup.Tech1 |> int
                    MetaGroup.Faction |> int |],
-            NameExclude = [| ByMarketGroupName "特别" |]
+            NameExclude = [| ByMarketGroupName "特别" |],
+            ResultCountLimit = Int32.MaxValue
         )
 
     let T2Ships =
@@ -198,9 +199,10 @@ module PredefinedSearchCond =
         ProcessSearchCond(
             ProcessType.Manufacturing,
             "T2Ships",
-            GroupIds = [| ships |],
+            CategoryIds = [| ships |],
             MetaGroupIds = [| MetaGroup.Tech2 |> int |],
-            NameExclude = [| ByMarketGroupName "特别" |]
+            NameExclude = [| ByMarketGroupName "特别" |],
+            ResultCountLimit = Int32.MaxValue
         )
 
 

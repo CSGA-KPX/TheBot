@@ -1,5 +1,9 @@
 ﻿module KPX.TheBot.Module.EveModule.Utils.Extensions
 
+open System.Runtime.CompilerServices
+
+open KPX.TheBot.Data.CommonModule.Recipe
+
 open KPX.TheBot.Data.EveData.Utils
 open KPX.TheBot.Data.EveData.EveType
 open KPX.TheBot.Data.EveData.Process
@@ -9,6 +13,7 @@ open KPX.TheBot.Data.EveData.GameInternalPriceCache
 open KPX.TheBot.Module.EveModule.Utils.Helpers
 open KPX.TheBot.Module.EveModule.Utils.Data
 open KPX.TheBot.Module.EveModule.Utils.Config
+
 
 type EveType with
     member x.GetPrice(pm : PriceFetchMode) =
@@ -44,23 +49,38 @@ type EveType with
 
     member x.IsBlueprint = x.CategoryId = 9
 
+[<Extension>]
+type RecipeMaterialExtensions = 
+    [<Extension>]
+    static member inline GetPrice(this : RecipeMaterial<EveType> [],  pm : PriceFetchMode) =
+        this
+        |> Array.sumBy (fun mr -> mr.Item.GetPrice(pm) * mr.Quantity)
+
 type EveProcess with
 
-    member x.GetTotalProductPrice(pm : PriceFetchMode) =
-        x.Process.Output
-        |> Array.sumBy (fun mr -> mr.Item.GetPrice(pm) * mr.Quantity)
+    /// 获取最终制造价格，配方包含数量和材料效率
+    member x.GetPriceInfo(pm : PriceFetchMode) = 
+        let proc = x.ApplyFlags(MeApplied)
 
-    member x.GetTotalMaterialPrice(pm : PriceFetchMode) =
-        x.Process.Input
-        |> Array.sumBy (fun mr -> mr.Item.GetPrice(pm) * mr.Quantity)
+        {| TotalProductPrice = proc.Output.GetPrice(pm)
+           TotalMaterialPrice = proc.Input.GetPrice(pm) |}
 
-    /// 获取生产费用（近似）。正确结果需要在ime=0的情况下进行
+    member x.GetTotalProductPrice(pm : PriceFetchMode, flag : ProcessFlag) =
+        x.ApplyFlags(flag).Output.GetPrice(pm)
+
+    /// 获取输入材料价格，可能为0
+    member x.GetTotalMaterialPrice(pm : PriceFetchMode, flag : ProcessFlag) =
+        x.ApplyFlags(flag).Input.GetPrice(pm)
+
+    /// 获取生产费用。
     member x.GetInstallationCost(cfg : EveConfigParser) =
-        let cost =
-            x.GetTotalMaterialPrice(PriceFetchMode.AdjustedPrice)
+        let cost = x.ApplyFlags(QuantityApplied).Input.GetPrice(PriceFetchMode.AdjustedPrice)
 
         match x.Type with
         | ProcessType.Planet -> 0.0 // 行星生产税率算法麻烦，一般也不大，假定为0
+        | ProcessType.Invalid ->
+            raise
+            <| System.NotImplementedException("非法过程")
         | ProcessType.Refine ->
             raise
             <| System.NotImplementedException("不支持计算精炼费用")

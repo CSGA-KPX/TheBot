@@ -20,17 +20,36 @@ type ProcessType =
     | Reaction = 3
     | Refine = 4
 
-[<Flags>]
-type ProcessFlags =
-    | None = 0
-    | QuantityApplied = 1
-    | MeApplied = 2
+type ProcessFlag =
+    | Original
+    | QuantityApplied
+    | MeApplied
 
 [<CLIMutable>]
 type EveProcess =
-    { Process : RecipeProcess<EveType>
-      Type : ProcessType
-      Flag : ProcessFlags }
+    { Original : RecipeProcess<EveType>
+      TargetQuantity : ProcessQuantity
+      TargetMe : int
+      Type : ProcessType }
+
+    member x.ApplyFlags(flag : ProcessFlag) =
+        match flag with
+        | Original -> x.Original
+        | QuantityApplied ->
+            let runs = x.TargetQuantity.ToRuns(x.Original)
+            x.Original * runs
+        | MeApplied ->
+            let proc = x.ApplyFlags(QuantityApplied)
+            let meFactor = (float (100 - x.TargetMe)) / 100.0
+
+            let input =
+                proc.Input
+                |> Array.map
+                    (fun rm ->
+                        { rm with
+                              Quantity = rm.Quantity * meFactor |> ceil })
+
+            { proc with Input = input }
 
 [<CLIMutable>]
 type EveDbProcess =
@@ -44,11 +63,14 @@ type EveDbProcess =
             { Item = EveTypeCollection.Instance.GetById(m.Item)
               Quantity = m.Quantity }
 
-        { Process =
-              { Input = x.Process.Input |> Array.map convertMaterial
-                Output = x.Process.Output |> Array.map convertMaterial }
+        let proc =
+            { Input = x.Process.Input |> Array.map convertMaterial
+              Output = x.Process.Output |> Array.map convertMaterial }
+
+        { Original = proc
           Type = x.Type
-          Flag = ProcessFlags.None }
+          TargetQuantity = ByRun 1.0
+          TargetMe = 0 }
 
 [<AbstractClass>]
 type EveProcessCollection() =

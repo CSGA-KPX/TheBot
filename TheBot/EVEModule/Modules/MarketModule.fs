@@ -82,7 +82,7 @@ type EveMarketModule() =
                         RefineProcessCollection
                             .Instance
                             .GetProcessFor(item)
-                            .Process
+                            .Original
 
                     let input = proc.Input.[0]
 

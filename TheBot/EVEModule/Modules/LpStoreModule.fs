@@ -52,7 +52,10 @@ type EveLpStoreModule() =
 
         let corp =
             let cmd = cfg.CmdLineAsString
-            if System.String.IsNullOrWhiteSpace(cmd) then cmdArg.AbortExecution(InputError, "请输入目标军团名称")
+
+            if System.String.IsNullOrWhiteSpace(cmd) then
+                cmdArg.AbortExecution(InputError, "请输入目标军团名称")
+
             data.GetNpcCorporation(cmd)
 
         data.GetLpStoreOffersByCorp(corp)
@@ -73,13 +76,14 @@ type EveLpStoreModule() =
 
                 let dailyVolume, sellPrice =
                     if itemOffer.Item.IsBlueprint then
-                        let proc = pm.GetRecipe(itemOffer)
+                        let recipe = pm.GetRecipe(itemOffer)
+                        let proc = recipe.ApplyFlags(Original)
 
                         let price =
-                            proc.GetTotalProductPrice(PriceFetchMode.SellWithTax)
-                            - proc.GetInstallationCost(cfg)
+                            proc.Input.GetPrice(PriceFetchMode.SellWithTax)
+                            - recipe.GetInstallationCost(cfg)
 
-                        data.GetItemTradeVolume(proc.Process.GetFirstProduct().Item), price
+                        data.GetItemTradeVolume(proc.GetFirstProduct().Item), price
                     else
                         let price =
                             proc.Output
