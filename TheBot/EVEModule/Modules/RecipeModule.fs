@@ -25,8 +25,6 @@ type EveRecipeModule() =
 
     let er = EveExpression.EveExpression()
 
-    let numPadStr = RightAlignCell "--"
-
     [<CommandHandlerMethodAttribute("eme", "EVE蓝图材料效率计算", "")>]
     member x.HandleME(cmdArg : CommandEventArgs) =
         let cfg = EveConfigParser()
@@ -190,7 +188,7 @@ type EveRecipeModule() =
             tt.AddPreTable("材料：")
 
             let installFee = recipe.Value.GetInstallationCost(cfg)
-            tt.AddRow("制造费用", numPadStr, HumanReadableSig4Float installFee, numPadStr)
+            tt.AddRow("制造费用", PaddingRight, HumanReadableSig4Float installFee, PaddingRight)
 
             let mutable optCost = installFee
             let mutable allCost = installFee
@@ -222,19 +220,19 @@ type EveRecipeModule() =
                 else
                     optCost <- optCost + price
                     allCost <- allCost + price
-                    tt.AddRow(mr.Item.Name, mr.Quantity, HumanReadableSig4Float price, numPadStr)
+                    tt.AddRow(mr.Item.Name, mr.Quantity, HumanReadableSig4Float price, PaddingRight)
 
 
             let sell = proc.Output.GetPrice(PriceFetchMode.Sell)
             let sellWithTax = proc.Output.GetPrice(PriceFetchMode.SellWithTax)
 
-            tt.AddRow("卖出/税后", numPadStr, HumanReadableSig4Float sell, HumanReadableSig4Float sellWithTax)
+            tt.AddRow("卖出/税后", PaddingRight, HumanReadableSig4Float sell, HumanReadableSig4Float sellWithTax)
 
-            tt.AddRow("材料/最佳", numPadStr, HumanReadableSig4Float allCost, HumanReadableSig4Float optCost)
+            tt.AddRow("材料/最佳", PaddingRight, HumanReadableSig4Float allCost, HumanReadableSig4Float optCost)
 
             tt.AddRow(
                 "税后 利润",
-                numPadStr,
+                PaddingRight,
                 HumanReadableSig4Float(sellWithTax - allCost),
                 HumanReadableSig4Float(sellWithTax - optCost)
             )

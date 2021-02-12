@@ -31,7 +31,7 @@ type EveMarketPriceTable() =
                 HumanReadableSig4Float(t.GetPrice(PriceFetchMode.SellWithTax) * q)
 
             yield
-                sprintf "%s/%s" nt.Value st.Value
+                sprintf "%s/%s" nt.Text st.Text
                 |> RightAlignCell
 
             let nt =
@@ -41,7 +41,7 @@ type EveMarketPriceTable() =
                 HumanReadableSig4Float(t.GetPrice(PriceFetchMode.BuyWithTax) * q)
 
             yield
-                sprintf "%s/%s" nt.Value wt.Value
+                sprintf "%s/%s" nt.Text wt.Text
                 |> RightAlignCell
 
             yield HumanReadableInteger(t.GetTradeVolume())

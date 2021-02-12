@@ -49,8 +49,7 @@ type NumberFormatOptions =
 
 [<Sealed>]
 [<AutoOpen>]
-/// 提供一些排版用的辅助函数
-type TableHelpers =
+type NumbericHelpers =
     /// 进位到指定有效数字， 默认4位，如果为0返回原始值
     static member RoundSigDigits(value : float, ?sigDigits : int) =
         let sigDigits = defaultArg sigDigits 4
@@ -68,7 +67,7 @@ type TableHelpers =
     /// 进位到指定有效数字， 默认4位
     static member RoundSigDigits(value : int, ?sigDigits : int) =
         let sigDigits = defaultArg sigDigits 4
-        TableHelpers.RoundSigDigits(float value, sigDigits)
+        NumbericHelpers.RoundSigDigits(float value, sigDigits)
 
     /// 格式化为人类友好的显示方式。默认使用NumberFormatOptions.DefaultFloat
     /// 含千分位，大于一亿按亿计算
@@ -76,19 +75,13 @@ type TableHelpers =
         let opts =
             defaultArg opts NumberFormatOptions.DefaultFloat
 
-        let right = opts.RightAlign
-
         if d = 0.0 then
-            let zeroString = opts.ZeroString
-
-            if right then TableCell.CreateRightAlign(zeroString) else TableCell.CreateLeftAlign(zeroString)
+            if opts.RightAlign then RightAlignCell opts.ZeroString else LeftAlignCell opts.ZeroString
         elif Double.IsNaN(d) then
-            let nanString = opts.NanString
-
-            if right then TableCell.CreateRightAlign(nanString) else TableCell.CreateLeftAlign(nanString)
+            if opts.RightAlign then RightAlignCell opts.NanString else LeftAlignCell opts.NanString
         else
             let d =
-                TableHelpers.RoundSigDigits(d, opts.SigDigits)
+                NumbericHelpers.RoundSigDigits(d, opts.SigDigits)
 
             let s =
                 10.0 ** ((d |> abs |> log10 |> floor) + 1.0)
@@ -102,7 +95,7 @@ type TableHelpers =
                 else
                     String.Format("{0:N2}{1}", d / 10.0 ** scale, postfix)
 
-            if right then TableCell.CreateRightAlign(str) else TableCell.CreateLeftAlign(str)
+            if opts.RightAlign then RightAlignCell str else LeftAlignCell str
 
     /// 格式化为人类友好的显示方式。默认使用NumberFormatOptions.Default
     /// 含千分位，大于一亿按亿计算
@@ -110,28 +103,28 @@ type TableHelpers =
         let opts =
             defaultArg opts NumberFormatOptions.DefaultFloat
 
-        TableHelpers.HumanReadable(float d, opts)
+        NumbericHelpers.HumanReadable(float d, opts)
 
     static member HumanReadableInteger(d : float) =
-        TableHelpers.HumanReadable(d, NumberFormatOptions.DefaultInteger)
+        NumbericHelpers.HumanReadable(d, NumberFormatOptions.DefaultInteger)
 
     static member HumanReadableInteger(d : int) =
-        TableHelpers.HumanReadable(d, NumberFormatOptions.DefaultInteger)
+        NumbericHelpers.HumanReadable(d, NumberFormatOptions.DefaultInteger)
 
     static member HumanReadableFloat(d : float) =
-        TableHelpers.HumanReadable(d, NumberFormatOptions.DefaultFloat)
+        NumbericHelpers.HumanReadable(d, NumberFormatOptions.DefaultFloat)
 
     static member HumanReadableFloat(d : int) =
-        TableHelpers.HumanReadable(d, NumberFormatOptions.DefaultFloat)
+        NumbericHelpers.HumanReadable(d, NumberFormatOptions.DefaultFloat)
 
     static member HumanReadableSig4Float(d : float) =
-        TableHelpers.HumanReadable(d, NumberFormatOptions.Sig4Float)
+        NumbericHelpers.HumanReadable(d, NumberFormatOptions.Sig4Float)
 
     static member HumanReadableSig4Float(d : int) =
-        TableHelpers.HumanReadable(d, NumberFormatOptions.Sig4Float)
+        NumbericHelpers.HumanReadable(d, NumberFormatOptions.Sig4Float)
 
     static member HumanReadableSig4Int(d : float) =
-        TableHelpers.HumanReadable(d, NumberFormatOptions.Sig4Integer)
+        NumbericHelpers.HumanReadable(d, NumberFormatOptions.Sig4Integer)
 
     static member HumanReadableSig4Int(d : int) =
-        TableHelpers.HumanReadable(d, NumberFormatOptions.Sig4Integer)
+        NumbericHelpers.HumanReadable(d, NumberFormatOptions.Sig4Integer)

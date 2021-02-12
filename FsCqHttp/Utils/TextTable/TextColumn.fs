@@ -19,23 +19,21 @@ type internal TextColumn() =
     /// 添加为默认对齐方式
     member x.AddDefaultAlignment(o : obj) =
         let add =
-            if defaultLeftAlignment then TableCell.CreateLeftAlign(o) else TableCell.CreateRightAlign(o)
+            if defaultLeftAlignment then LeftAlignCell o else RightAlignCell o
 
         x.Add(add)
 
     /// 将列内所有单元格重置为左对齐
     member x.ForceLeftAlign() =
         x.SetLeftAlignment()
-
         for i = 0 to x.Count - 1 do
-            x.[i] <- LeftAlignCell x.[i].Value
+            x.[i] <- LeftAlignCell x.[i].Text
 
     /// 将列内所有单元格重置为右对齐
     member x.ForceRightAlign() =
         x.SetRightAlignment()
-
         for i = 0 to x.Count - 1 do
-            x.[i] <- RightAlignCell x.[i].Value
+            x.[i] <- RightAlignCell x.[i].Text
 
     member x.GetMaxDisplayWidth() =
         x
@@ -48,18 +46,19 @@ type internal TextColumn() =
 
         let padCharLen =
             KPX.FsCqHttp.Config.Output.TextTable.CharLen(padChar)
-
         for i = 0 to x.Count - 1 do
             let cell = x.[i]
             let width = cell.DisplayWidth
             let padLen = (max - width) / padCharLen // 整数部分用padChar补齐
             let rstLen = (max - width) % padCharLen // 非整数部分用空格补齐
 
+            // printfn "max:%i cell:%s width:%i padLen:%i rstLen:%i" max cell.Text width padLen rstLen
             if padLen <> 0 || rstLen <> 0 then
                 let padding =
                     String(padChar, padLen) + String(' ', rstLen)
-
+                // 为了不影响上游的公用单元格
+                // 这里创建新的
                 x.[i] <- if cell.IsLeftAlign then
-                             LeftAlignCell(cell.Value + padding)
+                             LeftAlignCell(cell.Text + padding)
                          else
-                             RightAlignCell(padding + cell.Value)
+                             RightAlignCell(padding + cell.Text)

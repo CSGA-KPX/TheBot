@@ -132,14 +132,13 @@ type EveLpStoreModule() =
         if offer.IsNone
         then cmdArg.AbortExecution(InputError, "不能在{0}的中找到兑换{1}的交易", corp.CorporationName, item.Name)
 
-        let numPad = RightAlignCell "--"
         let mutable materialPriceSum = offer.Value.IskCost
 
         let tt =
             TextTable("物品", RightAlignCell "数量", RightAlignCell <| cfg.MaterialPriceMode.ToString())
 
-        tt.AddRow("忠诚点", offer.Value.LpCost, numPad)
-        tt.AddRow("星币", numPad, HumanReadableSig4Float offer.Value.IskCost)
+        tt.AddRow("忠诚点", offer.Value.LpCost, PaddingRight)
+        tt.AddRow("星币", PaddingRight, HumanReadableSig4Float offer.Value.IskCost)
 
         let mProc = offer.Value.CastProcess()
 
@@ -208,7 +207,7 @@ type EveLpStoreModule() =
 
         tt.AddPreTable(profitTable)
         tt.AddPreTable("材料：")
-        tt.AddRow("合计", numPad, HumanReadableSig4Float materialPriceSum)
+        tt.AddRow("合计", PaddingRight, HumanReadableSig4Float materialPriceSum)
 
         using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))
 

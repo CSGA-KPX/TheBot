@@ -3,38 +3,27 @@
 open System
 
 
-/// 用于区分显示细节
-[<DefaultAugmentation(false)>]
-type TableCell =
-    /// 左对齐单元格，用于文本类型
-    | LeftAlignCell of string
-    /// 右对齐单元格，用于数字类型
-    | RightAlignCell of string
+[<RequireQualifiedAccess>]
+[<Struct>]
+type CellAlign =
+    | Left
+    | Right
 
-    member x.IsRightAlign =
-        match x with
-        | RightAlignCell _ -> true
-        | _ -> false
+type TableCell(text : string) =
+    member val Text = text with get, set
+    member val Align = CellAlign.Left with get, set
 
-    member x.IsLeftAlign =
-        match x with
-        | RightAlignCell _ -> false
-        | _ -> true
+    member x.IsLeftAlign = x.Align = CellAlign.Left
+    member x.IsRightAlign = x.Align = CellAlign.Right
 
-    /// 获取单元格的原始内容
-    member x.Value =
-        match x with
-        | RightAlignCell v -> v
-        | LeftAlignCell v -> v
-
-    /// 文本显示长度
     member x.DisplayWidth =
-        KPX.FsCqHttp.Config.Output.TextTable.StrDispLen(x.Value)
+        KPX.FsCqHttp.Config.Output.TextTable.StrDispLen(x.Text)
 
-    static member private IsObjectRightAlign(o : obj) =
+    static member private GetDefaultAlign(o : obj) =
         match o with
-        | :? TimeSpan -> true
+        | :? TimeSpan -> CellAlign.Right
         | _ ->
+            // 检查TypeCode比类型检查要快
             match Type.GetTypeCode(o.GetType()) with
             | TypeCode.Byte
             | TypeCode.SByte
@@ -47,44 +36,28 @@ type TableCell =
             | TypeCode.Decimal
             | TypeCode.Double
             | TypeCode.Single
-            | TypeCode.DateTime -> true
-            | _ -> false
+            | TypeCode.DateTime -> CellAlign.Right
+            | _ -> CellAlign.Left
 
     static member private ConvertToString(o : obj) =
         match o with
         | :? string as str -> str
-        | :? int32 as i -> System.String.Format("{0:N0}", i)
-        | :? uint32 as i -> System.String.Format("{0:N0}", i)
-        | :? float as f ->
-            let fmt =
-                if (f % 1.0) <> 0.0 then "{0:N2}" else "{0:N0}"
-
-            System.String.Format(fmt, f)
+        | :? int32 as i -> String.Format("{0:N0}", i)
+        | :? uint32 as i -> String.Format("{0:N0}", i)
+        | :? float as f -> String.Format("{0:N2}", f)
         | :? TimeSpan as ts ->
             if ts.TotalDays >= 1.0 then sprintf "%.0f天前" ts.TotalDays
             elif ts.TotalHours >= 1.0 then sprintf "%.0f时前" ts.TotalHours
-            elif ts.TotalMinutes >= 1.0 then sprintf "%.0f分前" ts.TotalMinutes
-            else "刚刚"
+            else sprintf "%.0f分前" ts.TotalMinutes
         | :? DateTimeOffset as dto -> TableCell.ConvertToString(DateTimeOffset.Now - dto)
         | :? DateTime as dt -> TableCell.ConvertToString(DateTime.Now - dt)
         | _ -> o.ToString()
 
     /// 根据对象类型，创建适合的单元格
-    static member CreateFrom(o : obj) =
+    static member CreateFrom(o : obj, ?align : CellAlign) =
         if o :? TableCell then
             o :?> TableCell
         else
-            let str = TableCell.ConvertToString(o)
-            if TableCell.IsObjectRightAlign(o) then RightAlignCell str else LeftAlignCell str
-
-    /// 强制为左对齐
-    static member CreateLeftAlign(o : obj) =
-        match TableCell.CreateFrom(o) with
-        | RightAlignCell x -> LeftAlignCell x
-        | x -> x
-
-    /// 强制为右对齐
-    static member CreateRightAlign(o : obj) =
-        match TableCell.CreateFrom(o) with
-        | LeftAlignCell x -> RightAlignCell x
-        | x -> x
+            let cell = TableCell(TableCell.ConvertToString(o))
+            cell.Align <- defaultArg align (TableCell.GetDefaultAlign(o))
+            cell

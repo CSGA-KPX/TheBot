@@ -111,7 +111,7 @@ type EveMarketModule() =
                 let n, p = arr.[id]
                 (box n, box p)
             else
-                (box "--", box <| RightAlignCell "--")
+                (box "--", box <| PaddingRight)
 
         let rowMax =
             (max (max ice.Length moon.Length) ore.Length) - 1

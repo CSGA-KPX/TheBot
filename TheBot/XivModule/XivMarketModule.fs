@@ -25,8 +25,6 @@ type XivMarketModule() =
     let gilShop = GilShopCollection.Instance
     let xivExpr = XivExpression.XivExpression()
 
-    let padNumber = box <| RightAlignCell "--"
-
     let isNumber (str : string) =
         if str.Length <> 0 then String.forall (Char.IsDigit) str else false
 
@@ -169,7 +167,7 @@ type XivMarketModule() =
                 sumTradeHq <- sumTradeHq + logHq
 
                 let updateVal =
-                    if updated = TimeSpan.MaxValue then padNumber else box updated
+                    if updated = TimeSpan.MaxValue then box PaddingRight else box updated
 
                 tt.RowBuilder {
                     yield mr.Item.Name
@@ -187,12 +185,12 @@ type XivMarketModule() =
                 tt.RowBuilder {
                     yield "合计"
                     yield "--"
-                    yield padNumber
+                    yield PaddingRight
                     yield HumanReadableInteger sumListingAll
                     yield HumanReadableInteger sumListingHq
                     yield HumanReadableInteger sumTradeAll
                     yield HumanReadableInteger sumTradeHq
-                    yield padNumber
+                    yield PaddingRight
                 }
                 |> tt.AddRow
 
@@ -273,7 +271,7 @@ type XivMarketModule() =
             |> tt.AddRow
 
         if doCalculateCost then
-            tt.AddRowFill("成本总计", padNumber, padNumber, HumanReadableInteger sum.Average)
+            tt.AddRowFill("成本总计", PaddingRight, PaddingRight, HumanReadableInteger sum.Average)
 
             let totalSell =
                 product
@@ -287,9 +285,9 @@ type XivMarketModule() =
 
                         lst.StdEvPrice() * mr.Quantity)
 
-            tt.AddRowFill("卖出价格", padNumber, padNumber, HumanReadableInteger totalSell.Average)
+            tt.AddRowFill("卖出价格", PaddingRight, PaddingRight, HumanReadableInteger totalSell.Average)
             let profit = (totalSell - sum).Average
-            tt.AddRowFill("税前利润", padNumber, padNumber, HumanReadableInteger profit)
+            tt.AddRowFill("税前利润", PaddingRight, PaddingRight, HumanReadableInteger profit)
 
         using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))
 
@@ -326,8 +324,8 @@ type XivMarketModule() =
                         yield item.Id
                         yield item.Name
                     for _ = 0 to headerCol - chunk.Length - 1 do
-                        yield TableCell.CreateRightAlign("--")
-                        yield TableCell.CreateLeftAlign("--")
+                        yield PaddingRight
+                        yield PaddingLeft
                 }
                 |> tt.AddRow
 
@@ -379,7 +377,7 @@ type XivMarketModule() =
                                          .Average
                                  )
 
-                             if market.IsEmpty then yield padNumber else yield updated
+                             if market.IsEmpty then yield PaddingRight else yield updated
 
                          }))
                 |> Array.sortBy fst
