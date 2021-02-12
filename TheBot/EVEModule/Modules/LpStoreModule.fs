@@ -1,5 +1,7 @@
 ﻿namespace KPX.TheBot.Module.EveModule
 
+open System
+
 open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.TextTable
@@ -35,11 +37,7 @@ type EveLpStoreModule() =
     let data = DataBundle.Instance
     let pm = EveProcessManager.Default
 
-    [<CommandHandlerMethodAttribute("eveLp", "EVE LP兑换计算", "#evelp 军团名")>]
-    member x.HandleEveLp(cmdArg : CommandEventArgs) =
-        let cfg = LpConfigParser()
-        cfg.Parse(cmdArg.Arguments)
-
+    member x.ShowOverview(cmdArg : CommandEventArgs, cfg : LpConfigParser) =
         let tt =
             TextTable("兑换", RightAlignCell "利润", RightAlignCell "利润/LP", RightAlignCell "日均交易")
 
@@ -53,8 +51,7 @@ type EveLpStoreModule() =
         let corp =
             let cmd = cfg.CmdLineAsString
 
-            if System.String.IsNullOrWhiteSpace(cmd) then
-                cmdArg.AbortExecution(InputError, "请输入目标军团名称")
+            if System.String.IsNullOrWhiteSpace(cmd) then cmdArg.AbortExecution(InputError, "请输入目标军团名称")
 
             data.GetNpcCorporation(cmd)
 
@@ -115,3 +112,112 @@ type EveLpStoreModule() =
         |> Array.iter (fun r -> tt.AddRow(r.Name, r.Profit |> floor, r.ProfitPerLp |> floor, r.Volume |> floor))
 
         using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))
+
+    member x.ShowSingleItem(cmdArg : CommandEventArgs, cfg : LpConfigParser) =
+        let corp =
+            let cmd = cfg.CommandLine.[0]
+            if String.IsNullOrWhiteSpace(cmd) then cmdArg.AbortExecution(InputError, "目标军团名称不正确")
+            data.GetNpcCorporation(cmd)
+
+        let item =
+            let name = String.Join(' ', cfg.CommandLine.[1..])
+            let ret = data.TryGetItem(name)
+            if ret.IsNone then cmdArg.AbortExecution(InputError, "{0} 不是有效道具名", name)
+            ret.Value
+
+        let offer =
+            data.GetLpStoreOffersByCorp(corp)
+            |> Array.tryFind (fun offer -> offer.Process.GetFirstProduct().Item = item.Id)
+
+        if offer.IsNone
+        then cmdArg.AbortExecution(InputError, "不能在{0}的中找到兑换{1}的交易", corp.CorporationName, item.Name)
+
+        let numPad = RightAlignCell "--"
+        let mutable materialPriceSum = offer.Value.IskCost
+
+        let tt =
+            TextTable("物品", RightAlignCell "数量", RightAlignCell <| cfg.MaterialPriceMode.ToString())
+
+        tt.AddRow("忠诚点", offer.Value.LpCost, numPad)
+        tt.AddRow("星币", numPad, HumanReadableSig4Float offer.Value.IskCost)
+
+        let mProc = offer.Value.CastProcess()
+
+        for mr in mProc.Input do
+            let price = mr.Item.GetPrice(cfg.MaterialPriceMode)
+            let total = price * mr.Quantity
+            materialPriceSum <- materialPriceSum + total
+            tt.AddRow(mr.Item.Name, mr.Quantity, HumanReadableSig4Float total)
+
+        let product = mProc.GetFirstProduct()
+
+        let profitTable =
+            TextTable(
+                "名称",
+                RightAlignCell "数量",
+                RightAlignCell "税后卖出",
+                RightAlignCell "交易量",
+                RightAlignCell "利润",
+                RightAlignCell "单LP价值"
+            )
+
+
+        if product.Item.IsBlueprint then
+            let proc =
+                { pm.GetRecipe(product.Item) with
+                      TargetQuantity = ByRun product.Quantity }
+
+            let recipe = proc.ApplyFlags(MeApplied)
+
+            for mr in recipe.Input do
+                let price = mr.Item.GetPrice(cfg.MaterialPriceMode)
+                let total = price * mr.Quantity
+                materialPriceSum <- materialPriceSum + total
+                tt.AddRow(mr.Item.Name, mr.Quantity, HumanReadableSig4Float total)
+
+            materialPriceSum <- materialPriceSum + proc.GetInstallationCost(cfg)
+
+            let sellPrice =
+                recipe.Output.GetPrice(PriceFetchMode.SellWithTax)
+
+            let profit = sellPrice - materialPriceSum
+            let bpProduct = recipe.GetFirstProduct()
+
+            profitTable.AddRow(
+                bpProduct.Item.Name,
+                bpProduct.Quantity,
+                HumanReadableSig4Float sellPrice,
+                bpProduct.Item.GetTradeVolume() |> HumanReadableSig4Float,
+                HumanReadableSig4Float profit,
+                profit / offer.Value.LpCost  |> HumanReadableSig4Float 
+            )
+        else
+            let sellPrice =
+                mProc.Output.GetPrice(PriceFetchMode.SellWithTax)
+
+            let profit = sellPrice - materialPriceSum
+
+            profitTable.AddRow(
+                product.Item.Name,
+                product.Quantity,
+                HumanReadableSig4Float sellPrice,
+                product.Item.GetTradeVolume() |> HumanReadableSig4Float,
+                HumanReadableSig4Float profit,
+                profit / offer.Value.LpCost |> HumanReadableSig4Float
+            )
+
+        tt.AddPreTable(profitTable)
+        tt.AddPreTable("材料：")
+        tt.AddRow("合计", numPad, HumanReadableSig4Float materialPriceSum)
+
+        using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))
+
+    [<CommandHandlerMethodAttribute("eveLp", "EVE LP兑换计算", "#evelp 军团名 (可选 道具名）")>]
+    member x.HandleEveLp(cmdArg : CommandEventArgs) =
+        let cfg = LpConfigParser()
+        cfg.Parse(cmdArg.Arguments)
+
+        match cfg.CommandLine.Length with
+        | 0 -> cmdArg.AbortExecution(InputError, "请输入目标军团名称")
+        | 1 -> x.ShowOverview(cmdArg, cfg)
+        | _ -> x.ShowSingleItem(cmdArg, cfg)

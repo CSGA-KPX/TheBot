@@ -48,6 +48,7 @@ type NumberFormatOptions =
           NanString = "NaN" }
 
 [<Sealed>]
+[<AutoOpen>]
 /// 提供一些排版用的辅助函数
 type TableHelpers =
     /// 进位到指定有效数字， 默认4位，如果为0返回原始值

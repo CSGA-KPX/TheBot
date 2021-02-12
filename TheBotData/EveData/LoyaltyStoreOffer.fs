@@ -33,6 +33,7 @@ type LoyaltyStoreOffer =
                       { Item = ec.GetById(mr.Item)
                         Quantity = mr.Quantity }) }
 
+[<CLIMutable>]
 type LpStore =
     { [<LiteDB.BsonId(false)>]
       /// 军团Id

@@ -7,8 +7,6 @@ open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.TextTable
 
-open type KPX.FsCqHttp.Utils.TextTable.TableHelpers
-
 open KPX.TheBot.Data.CommonModule.Recipe
 open KPX.TheBot.Data.XivData
 open KPX.TheBot.Data.XivData.Shops
@@ -17,6 +15,7 @@ open KPX.TheBot.Utils.Config
 open KPX.TheBot.Utils.RecipeRPN
 
 open KPX.TheBot.Module.XivModule.Utils
+
 
 type XivMarketModule() =
     inherit CommandHandlerBase()

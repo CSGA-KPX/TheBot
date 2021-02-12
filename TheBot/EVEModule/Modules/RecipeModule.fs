@@ -4,8 +4,6 @@ open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.TextTable
 
-open type KPX.FsCqHttp.Utils.TextTable.TableHelpers
-
 open KPX.TheBot.Data.CommonModule.Recipe
 open KPX.TheBot.Data.EveData.Utils
 open KPX.TheBot.Data.EveData.EveType
@@ -396,6 +394,7 @@ type EveRecipeModule() =
 
                     let sellWithTax = proc.FinalProcess.Output.GetPrice(PriceFetchMode.SellWithTax)
                     let volume = data.GetItemTradeVolume(product.Item)
+                    let sortIdx = (sellWithTax - cost) / cost * 100.0 |> int
 
                     {| Name = product.Item.Name
                        TypeGroup = product.Item.TypeGroup
@@ -403,8 +402,9 @@ type EveRecipeModule() =
                        Quantity = product.Quantity
                        Sell = proc.FinalProcess.Output.GetPrice(PriceFetchMode.Sell)
                        Profit = sellWithTax - cost
-                       Volume = volume |})
-            |> Seq.sortByDescending (fun x -> x.Profit)
+                       Volume = volume
+                       SortIndex = sortIdx|})
+            |> Seq.sortByDescending (fun x -> x.SortIndex)
             |> Seq.groupBy (fun x -> x.TypeGroup)
             |> Seq.iter
                 (fun (group, data) ->
@@ -416,6 +416,7 @@ type EveRecipeModule() =
                             RightAlignCell "出售价格/税前卖出",
                             RightAlignCell("生产成本/" + pmStr),
                             RightAlignCell "含税利润",
+                            RightAlignCell "利润率",
                             RightAlignCell "日均交易"
                         )
 
@@ -425,6 +426,7 @@ type EveRecipeModule() =
                             HumanReadableSig4Float x.Sell,
                             HumanReadableSig4Float x.Cost,
                             HumanReadableSig4Float x.Profit,
+                            RightAlignCell (sprintf "%i%%" x.SortIndex),
                             HumanReadableInteger x.Volume
                         )
 

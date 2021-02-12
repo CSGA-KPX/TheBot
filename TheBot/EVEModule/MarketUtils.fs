@@ -1,7 +1,6 @@
 ﻿module KPX.TheBot.Module.EveModule.Utils.MarketUtils
 
 open KPX.FsCqHttp.Utils.TextTable
-open type KPX.FsCqHttp.Utils.TextTable.TableHelpers
 
 open KPX.TheBot.Data.CommonModule.Recipe
 open KPX.TheBot.Data.EveData.Utils
