@@ -29,7 +29,7 @@ type TableCell =
 
     /// 文本显示长度
     member x.DisplayWidth =
-        KPX.FsCqHttp.Config.Output.TextTable.StrDispLen(x.ToString())
+        KPX.FsCqHttp.Config.Output.TextTable.StrDispLen(x.Value)
 
     static member private IsObjectRightAlign(o : obj) =
         match o with
