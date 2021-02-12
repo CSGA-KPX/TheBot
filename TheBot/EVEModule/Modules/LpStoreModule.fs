@@ -20,7 +20,7 @@ type LpConfigParser() as x =
     inherit EveConfigParser()
 
     do
-        x.RegisterOption("vol", "10")
+        x.RegisterOption("vol", "2")
         x.RegisterOption("val", "2000")
         x.RegisterOption("count", "50")
 
@@ -39,12 +39,18 @@ type EveLpStoreModule() =
 
     member x.ShowOverview(cmdArg : CommandEventArgs, cfg : LpConfigParser) =
         let tt =
-            TextTable("兑换", RightAlignCell "利润", RightAlignCell "利润/LP", RightAlignCell "日均交易")
+            TextTable(
+                "兑换",
+                RightAlignCell "出售价格",
+                RightAlignCell "利润",
+                RightAlignCell "利润/LP",
+                RightAlignCell "交易量比"
+            )
 
         let minVol = cfg.MinimalVolume
         let minVal = cfg.MinimalValue
 
-        tt.AddPreTable(sprintf "最低交易量(vol)：%g 最低LP价值(val)：%g 结果上限(count)：%i" minVol minVal cfg.RecordCount)
+        tt.AddPreTable(sprintf "最低交易量比(vol)：%g 最低LP价值(val)：%g 结果上限(count)：%i" minVol minVal cfg.RecordCount)
 
         tt.AddPreTable("警告：请参考交易量，利润很高的不一定卖得掉")
 
@@ -74,13 +80,15 @@ type EveLpStoreModule() =
                     + oProc.Input.GetPrice(cfg.MaterialPriceMode)
                     + lpOffer.IskCost
 
-                if itemOffer.Item.IsBlueprint then 
+                if itemOffer.Item.IsBlueprint then
                     let recipe = pm.GetRecipe(itemOffer)
                     let rProc = recipe.ApplyFlags(MeApplied)
-                    totalCost <- 
-                        totalCost 
-                          + rProc.Input.GetPrice(cfg.MaterialPriceMode)
-                          + recipe.GetInstallationCost(cfg)
+
+                    totalCost <-
+                        totalCost
+                        + rProc.Input.GetPrice(cfg.MaterialPriceMode)
+                        + recipe.GetInstallationCost(cfg)
+
                     sellPrice <- rProc.Output.GetPrice(PriceFetchMode.SellWithTax)
                     dailyVolume <- data.GetItemTradeVolume(rProc.GetFirstProduct().Item)
                 else
@@ -88,21 +96,28 @@ type EveLpStoreModule() =
                     dailyVolume <- data.GetItemTradeVolume(oProc.GetFirstProduct().Item)
 
                 {| Name = offerStr
+                   OfferItem = itemOffer.Item
+                   OfferQuantity = itemOffer.Quantity
                    TotalCost = totalCost
                    SellPrice = sellPrice
                    Profit = sellPrice - totalCost
                    ProfitPerLp = (sellPrice - totalCost) / lpOffer.LpCost
                    Volume = dailyVolume
-                   LpCost = lpOffer.LpCost
-                   Offer = itemOffer |})
-        |> Array.filter (fun r -> (r.ProfitPerLp >= minVal) && (r.Volume >= minVol))
-        |> Array.sortByDescending
-            (fun r ->
-                //let weightedVolume = r.Volume / r.Offer.Quantity
-                //r.ProfitPerLp * weightedVolume)
-                r.ProfitPerLp)
+                   DailyOfferVolume = dailyVolume / itemOffer.Quantity
+                   LpCost = lpOffer.LpCost |})
+        |> Array.filter (fun r -> (r.ProfitPerLp >= minVal) && (r.DailyOfferVolume >= minVol))
+        |> Array.sortByDescending (fun r -> r.ProfitPerLp)
         |> Array.truncate cfg.RecordCount
-        |> Array.iter (fun r -> tt.AddRow(r.Name, r.Profit |> floor, r.ProfitPerLp |> floor, r.Volume |> floor))
+        |> Array.iter
+            (fun r ->
+                tt.RowBuilder {
+                    yield r.Name
+                    yield HumanReadableSig4Float r.SellPrice
+                    yield HumanReadableSig4Float r.Profit
+                    yield HumanReadableInteger r.ProfitPerLp
+                    yield HumanReadableInteger r.DailyOfferVolume
+                }
+                |> tt.AddRow)
 
         using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))
 
