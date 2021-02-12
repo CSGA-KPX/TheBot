@@ -51,48 +51,41 @@ type EveLpStoreModule() =
         let corp =
             let cmd = cfg.CmdLineAsString
 
-            if System.String.IsNullOrWhiteSpace(cmd) then cmdArg.AbortExecution(InputError, "请输入目标军团名称")
+            if String.IsNullOrWhiteSpace(cmd) then cmdArg.AbortExecution(InputError, "请输入目标军团名称")
 
             data.GetNpcCorporation(cmd)
 
         data.GetLpStoreOffersByCorp(corp)
         |> Array.map
             (fun lpOffer ->
-                let proc = lpOffer.CastProcess()
-                let itemOffer = proc.GetFirstProduct()
-
-                let totalCost =
-                    let inputCost =
-                        proc.Input
-                        |> Array.sumBy
-                            (fun mr ->
-                                mr.Item.GetPrice(cfg.MaterialPriceMode)
-                                * mr.Quantity)
-
-                    inputCost + lpOffer.IskCost
-
-                let dailyVolume, sellPrice =
-                    if itemOffer.Item.IsBlueprint then
-                        let recipe = pm.GetRecipe(itemOffer)
-                        let proc = recipe.ApplyFlags(Original)
-
-                        let price =
-                            proc.Input.GetPrice(PriceFetchMode.SellWithTax)
-                            - recipe.GetInstallationCost(cfg)
-
-                        data.GetItemTradeVolume(proc.GetFirstProduct().Item), price
-                    else
-                        let price =
-                            proc.Output
-                            |> Array.sumBy
-                                (fun mr ->
-                                    mr.Item.GetPrice(PriceFetchMode.SellWithTax)
-                                    * mr.Quantity)
-
-                        data.GetItemTradeVolume(itemOffer.Item), price
+                let oProc = lpOffer.CastProcess()
+                let itemOffer = oProc.GetFirstProduct()
 
                 let offerStr =
                     sprintf "%s*%g" itemOffer.Item.Name itemOffer.Quantity
+
+                let mutable totalCost = 0.0 // 所有ISK开销（如果是蓝图，还有材料开销）
+                let mutable dailyVolume = 0.0 // 日均交易量
+                let mutable sellPrice = 0.0 // 产物卖出价格
+
+                // LP交换
+                totalCost <-
+                    totalCost
+                    + oProc.Input.GetPrice(cfg.MaterialPriceMode)
+                    + lpOffer.IskCost
+
+                if itemOffer.Item.IsBlueprint then 
+                    let recipe = pm.GetRecipe(itemOffer)
+                    let rProc = recipe.ApplyFlags(MeApplied)
+                    totalCost <- 
+                        totalCost 
+                          + rProc.Input.GetPrice(cfg.MaterialPriceMode)
+                          + recipe.GetInstallationCost(cfg)
+                    sellPrice <- rProc.Output.GetPrice(PriceFetchMode.SellWithTax)
+                    dailyVolume <- data.GetItemTradeVolume(rProc.GetFirstProduct().Item)
+                else
+                    sellPrice <- oProc.Output.GetPrice(PriceFetchMode.SellWithTax)
+                    dailyVolume <- data.GetItemTradeVolume(oProc.GetFirstProduct().Item)
 
                 {| Name = offerStr
                    TotalCost = totalCost
@@ -186,9 +179,11 @@ type EveLpStoreModule() =
                 bpProduct.Item.Name,
                 bpProduct.Quantity,
                 HumanReadableSig4Float sellPrice,
-                bpProduct.Item.GetTradeVolume() |> HumanReadableSig4Float,
+                bpProduct.Item.GetTradeVolume()
+                |> HumanReadableSig4Float,
                 HumanReadableSig4Float profit,
-                profit / offer.Value.LpCost  |> HumanReadableSig4Float 
+                profit / offer.Value.LpCost
+                |> HumanReadableSig4Float
             )
         else
             let sellPrice =
@@ -200,9 +195,11 @@ type EveLpStoreModule() =
                 product.Item.Name,
                 product.Quantity,
                 HumanReadableSig4Float sellPrice,
-                product.Item.GetTradeVolume() |> HumanReadableSig4Float,
+                product.Item.GetTradeVolume()
+                |> HumanReadableSig4Float,
                 HumanReadableSig4Float profit,
-                profit / offer.Value.LpCost |> HumanReadableSig4Float
+                profit / offer.Value.LpCost
+                |> HumanReadableSig4Float
             )
 
         tt.AddPreTable(profitTable)
