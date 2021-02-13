@@ -1,39 +1,18 @@
 ﻿namespace KPX.FsCqHttp.Utils.TextTable
 
-open System.Collections.Generic
 
+type RowBuilder private () =
+    member _.Bind(m : seq<'a>, f : 'a -> seq<TableCell>) = m |> Seq.collect f
 
-[<Struct>]
-type RowBuilderType = internal B of (List<TableCell> -> unit)
-
-/// 行生成器，方便复杂表生成行
-type RowBuilder internal () =
-    let (!) =
-        function
-        | B f -> f
+    member _.Zero() = Seq.empty
 
     member _.Yield(value : obj) =
-        B(fun b -> b.Add(TableCell.CreateFrom(value)))
+        Seq.singleton <| TableCell.CreateFrom(value)
 
-    member _.Combine(f, g) =
-        B
-            (fun b ->
-                ! f b
-                ! g b)
+    member x.For(m, f) = x.Bind(m, f)
 
-    member _.Delay f = B(fun b -> ! (f ()) b)
-    member _.Zero() = B(fun _ -> ())
+    member _.Combine(a, b) = b |> Seq.append a
 
-    member _.For(xs : 'a seq, f : 'a -> RowBuilderType) =
-        B
-            (fun b ->
-                let e = xs.GetEnumerator()
+    member _.Delay(f) = f ()
 
-                while e.MoveNext() do
-                    ! (f e.Current) b)
-
-    member _.While(p : unit -> bool, f : RowBuilderType) =
-        B
-            (fun b ->
-                while p () do
-                    ! f b)
+    static member val Instance = RowBuilder()

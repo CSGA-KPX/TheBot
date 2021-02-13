@@ -10,8 +10,6 @@ type private DelayedTableItem =
     | TableItem of TextTable
 
 and TextTable([<ParamArray>] header : Object []) =
-    static let builder = RowBuilder()
-
     let preTableLines = List<DelayedTableItem>()
     let postTableLines = List<DelayedTableItem>()
 
@@ -39,15 +37,12 @@ and TextTable([<ParamArray>] header : Object []) =
     member x.AddPostTable(tt : TextTable) = postTableLines.Add(TableItem tt)
 
     /// 获取用于行构造器的对象
-    member x.RowBuilder = builder
+    member x.RowBuilder = RowBuilder.Instance
 
-    member x.AddRow(builderType : RowBuilderType) =
-        let (B builder) = builderType
-        let fields = List<_>()
-        builder fields
-
-        if fields.Count <> colCount
-        then invalidArg (nameof builder) (sprintf "数量不足：需求%i 提供%i" colCount fields.Count)
+    member x.AddRow(fields : IEnumerable<TableCell>) =
+        let fCount = Seq.length fields
+        if fCount <> colCount
+        then invalidArg (nameof fields) (sprintf "数量不足：需求%i 提供%i" colCount fCount)
 
         fields |> Seq.iteri (fun i c -> cols.[i].Add(c))
 

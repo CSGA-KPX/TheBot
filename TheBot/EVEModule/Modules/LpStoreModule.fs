@@ -62,7 +62,7 @@ type EveLpStoreModule() =
             data.GetNpcCorporation(cmd)
 
         data.GetLpStoreOffersByCorp(corp)
-        |> Array.map
+        |> Seq.map
             (fun lpOffer ->
                 let oProc = lpOffer.CastProcess()
                 let itemOffer = oProc.GetFirstProduct()
@@ -105,10 +105,10 @@ type EveLpStoreModule() =
                    Volume = dailyVolume
                    DailyOfferVolume = dailyVolume / itemOffer.Quantity
                    LpCost = lpOffer.LpCost |})
-        |> Array.filter (fun r -> (r.ProfitPerLp >= minVal) && (r.DailyOfferVolume >= minVol))
-        |> Array.sortByDescending (fun r -> r.ProfitPerLp)
-        |> Array.truncate cfg.RecordCount
-        |> Array.iter
+        |> Seq.filter (fun r -> (r.ProfitPerLp >= minVal) && (r.DailyOfferVolume >= minVol))
+        |> Seq.sortByDescending (fun r -> r.ProfitPerLp)
+        |> Seq.truncate cfg.RecordCount
+        |> Seq.iter
             (fun r ->
                 tt.RowBuilder {
                     yield r.Name
