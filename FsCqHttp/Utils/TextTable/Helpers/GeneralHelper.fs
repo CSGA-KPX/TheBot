@@ -2,6 +2,7 @@
 
 open System
 
+
 [<Sealed>]
 [<AutoOpen>]
 type GeneralHelpers() =
@@ -16,8 +17,6 @@ type GeneralHelpers() =
 
     /// 预定义的右对齐填充单元格 Config.Output.TextTable.CellPadding
     static member PaddingRight = padRight
-
-    static member AutoCell(value : obj) = TableCell.CreateFrom(value)
 
     static member LeftAlignCell(value : obj) =
         TableCell.CreateFrom(value, CellAlign.Left)

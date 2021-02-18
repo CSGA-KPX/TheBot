@@ -12,6 +12,7 @@ open KPX.FsCqHttp.Handler
 open KPX.TheBot.Module.TRpgModule.TRpgUtils
 open KPX.TheBot.Module.TRpgModule.TRpgCharacterCard
 
+
 [<Literal>]
 let MAX_USER_CARDS = 16
 

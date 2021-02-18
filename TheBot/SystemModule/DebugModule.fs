@@ -11,6 +11,7 @@ open KPX.FsCqHttp.Utils.UserOption
 
 open KPX.TheBot.Utils.HandlerUtils
 
+
 type DebugModule() =
     inherit CommandHandlerBase()
 

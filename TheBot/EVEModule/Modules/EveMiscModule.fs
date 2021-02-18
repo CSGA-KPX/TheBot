@@ -8,6 +8,7 @@ open KPX.TheBot.Module.EveModule.Utils.Config
 
 open KPX.TheBot.Data.EveData
 
+
 type EveMiscModule() =
     inherit CommandHandlerBase()
 

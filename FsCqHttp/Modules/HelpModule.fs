@@ -10,7 +10,7 @@ open KPX.FsCqHttp.Api.Context
 
 [<Literal>]
 let private helpHelp = "不加选项用来查看所有命令，加命令名查看命令帮助
-如#help help"
+如#help #help"
 
 type HelpModule() =
     inherit CommandHandlerBase()

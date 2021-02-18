@@ -5,6 +5,7 @@ open System.Collections.Generic
 open System.Text.RegularExpressions
 open System.Reflection
 
+
 let GetResourceManager (str) =
     Resources.ResourceManager("TheBot.Resources." + str, Assembly.GetExecutingAssembly())
 

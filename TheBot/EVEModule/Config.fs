@@ -5,6 +5,7 @@ open KPX.FsCqHttp.Utils.UserOption
 
 open KPX.TheBot.Data.EveData.Utils
 
+
 type EveConfigParser() as x =
     inherit UserOptionParser()
 

@@ -3,6 +3,7 @@
 open System
 open System.Collections.Generic
 
+
 type IOperand<'T when 'T :> IOperand<'T>> =
     abstract Add : 'T -> 'T
     abstract Div : 'T -> 'T

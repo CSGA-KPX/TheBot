@@ -18,9 +18,9 @@ type DateTimeHelpers =
         DateTimeHelpers.HumanTimeSpan(DateTimeOffset.Now - dto)
 
     static member ToDate(dt : DateTime) = 
-        dt.ToString("yyyy/MM/dd HH:mm:ss")
+        dt.ToString("yyyy/MM/dd HH:mm")
         |> RightAlignCell
 
     static member ToDate(dto : DateTimeOffset) = 
-        dto.ToLocalTime().ToString("yyyy/MM/dd HH:mm:ss")
+        dto.ToLocalTime().ToString("yyyy/MM/dd HH:mm")
         |> RightAlignCell

@@ -9,6 +9,7 @@ type CellAlign =
     | Left
     | Right
 
+// TODO: 还是改成immutable的
 type TableCell(text : string) =
     member val Text = text with get, set
     member val Align = CellAlign.Left with get, set

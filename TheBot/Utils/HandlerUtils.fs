@@ -6,6 +6,7 @@ open KPX.FsCqHttp.Handler
 
 open KPX.TheBot.Utils.Config
 
+
 [<Literal>]
 let private instanceOwnerKey = "InstanceOwner"
 

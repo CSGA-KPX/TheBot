@@ -7,6 +7,7 @@ open KPX.FsCqHttp.Utils.TextTable
 
 open KPX.TheBot.Module.TRpgModule.TRpgUtils
 
+
 [<CLIMutable>]
 type CharacterCard =
     { Id : int64

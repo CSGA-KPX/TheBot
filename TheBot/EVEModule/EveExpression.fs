@@ -4,6 +4,7 @@ open KPX.TheBot.Utils.RecipeRPN
 open KPX.TheBot.Data.EveData.EveType
 open KPX.TheBot.Module.EveModule.Utils.Data
 
+
 type ItemAccumulator = ItemAccumulator<EveType>
 
 type EveExpression() =
