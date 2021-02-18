@@ -39,13 +39,7 @@ type EveLpStoreModule() =
 
     member x.ShowOverview(cmdArg : CommandEventArgs, cfg : LpConfigParser) =
         let tt =
-            TextTable(
-                "兑换",
-                RightAlignCell "出售价格",
-                RightAlignCell "利润",
-                RightAlignCell "利润/LP",
-                RightAlignCell "交易量比"
-            )
+            TextTable("兑换", RightAlignCell "出售价格", RightAlignCell "利润", RightAlignCell "利润/LP", RightAlignCell "交易量比")
 
         let minVol = cfg.MinimalVolume
         let minVal = cfg.MinimalValue
@@ -105,7 +99,10 @@ type EveLpStoreModule() =
                    Volume = dailyVolume
                    DailyOfferVolume = dailyVolume / itemOffer.Quantity
                    LpCost = lpOffer.LpCost |})
-        |> Seq.filter (fun r -> (r.ProfitPerLp >= minVal) && (r.DailyOfferVolume >= minVol))
+        |> Seq.filter
+            (fun r ->
+                (r.ProfitPerLp >= minVal)
+                && (r.DailyOfferVolume >= minVol))
         |> Seq.sortByDescending (fun r -> r.ProfitPerLp)
         |> Seq.truncate cfg.RecordCount
         |> Seq.iter
@@ -192,7 +189,7 @@ type EveLpStoreModule() =
 
             profitTable.AddRow(
                 bpProduct.Item.Name,
-                bpProduct.Quantity,
+                HumanReadableInteger bpProduct.Quantity,
                 HumanReadableSig4Float sellPrice,
                 bpProduct.Item.GetTradeVolume()
                 |> HumanReadableSig4Float,
@@ -208,7 +205,7 @@ type EveLpStoreModule() =
 
             profitTable.AddRow(
                 product.Item.Name,
-                product.Quantity,
+                HumanReadableInteger product.Quantity,
                 HumanReadableSig4Float sellPrice,
                 product.Item.GetTradeVolume()
                 |> HumanReadableSig4Float,

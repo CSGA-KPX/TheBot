@@ -109,7 +109,7 @@ type EveMarketModule() =
         let tryGetRow (arr : (string * float) []) (id : int) =
             if id <= arr.Length - 1 then
                 let n, p = arr.[id]
-                (box n, box p)
+                (box n, box <| HumanReadableSig4Int p)
             else
                 (box "--", box <| PaddingRight)
 

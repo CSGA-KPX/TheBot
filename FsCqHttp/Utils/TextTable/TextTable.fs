@@ -1,4 +1,4 @@
-﻿namespace KPX.FsCqHttp.Utils.TextTable
+﻿namespace rec KPX.FsCqHttp.Utils.TextTable
 
 open System
 open System.Collections.Generic
@@ -9,7 +9,7 @@ type private DelayedTableItem =
     | StringItem of string
     | TableItem of TextTable
 
-and TextTable([<ParamArray>] header : Object []) =
+type TextTable([<ParamArray>] header : Object []) =
     let preTableLines = List<DelayedTableItem>()
     let postTableLines = List<DelayedTableItem>()
 
@@ -97,6 +97,5 @@ and TextTable([<ParamArray>] header : Object []) =
                yield sb.ToString()
 
            yield! expand postTableLines |]
-
 
     override x.ToString() = String.Join("\r\n", x.ToLines())
