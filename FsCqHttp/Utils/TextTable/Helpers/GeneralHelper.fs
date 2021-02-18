@@ -24,7 +24,10 @@ type GeneralHelpers() =
     static member RightAlignCell(value : obj) =
         TableCell.CreateFrom(value, CellAlign.Right)
 
-    static member LeftAlignCell(value : string) = TableCell(value, Align = CellAlign.Left)
+    static member LeftAlignCell(value : string) =
+        { TableCell.Text = value
+          TableCell.Align = CellAlign.Left }
 
     static member RightAlignCell(value : string) =
-        TableCell(value, Align = CellAlign.Right)
+        { TableCell.Text = value
+          TableCell.Align = CellAlign.Right }

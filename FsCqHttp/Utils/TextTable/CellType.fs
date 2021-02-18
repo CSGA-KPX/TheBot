@@ -9,10 +9,10 @@ type CellAlign =
     | Left
     | Right
 
-// TODO: 还是改成immutable的
-type TableCell(text : string) =
-    member val Text = text with get, set
-    member val Align = CellAlign.Left with get, set
+[<Struct>]
+type TableCell =
+    { Text : string
+      Align : CellAlign }
 
     member x.IsLeftAlign = x.Align = CellAlign.Left
     member x.IsRightAlign = x.Align = CellAlign.Right
@@ -41,6 +41,5 @@ type TableCell(text : string) =
         if o :? TableCell then
             o :?> TableCell
         else
-            let cell = TableCell(o.ToString())
-            cell.Align <- defaultArg align (TableCell.GetDefaultAlign(o))
-            cell
+            { Text = o.ToString()
+              Align = defaultArg align (TableCell.GetDefaultAlign(o)) }
