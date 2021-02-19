@@ -111,7 +111,7 @@ type SudoModule() =
         let tt = TextTable("群号", "名称")
 
         for g in api.Groups do
-            tt.AddRow(g.GroupId.ToString(), g.GroupName)
+            tt.AddRow(g.GroupId, g.GroupName)
 
         cmdArg.QuickMessageReply(tt.ToString())
 

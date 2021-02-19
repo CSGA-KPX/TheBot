@@ -129,11 +129,11 @@ type XivMarketModule() =
 
         if acc.Count * worlds.Capacity >= 50 then cmdArg.AbortExecution(InputError, "查询数量超过上线")
 
-        for world in worlds do
-            let mutable sumListingAll, sumListingHq = 0.0, 0.0
-            let mutable sumTradeAll, sumTradeHq = 0.0, 0.0
+        let mutable sumListingAll, sumListingHq = 0.0, 0.0
+        let mutable sumTradeAll, sumTradeHq = 0.0, 0.0
 
-            for mr in acc do
+        for mr in acc do
+            for world in worlds do
                 let tradelog =
                     MarketUtils.MarketAnalyzer.GetTradeLog(world, mr.Item)
 
@@ -166,9 +166,6 @@ type XivMarketModule() =
                 sumTradeAll <- sumTradeAll + logAll
                 sumTradeHq <- sumTradeHq + logHq
 
-                let updateVal =
-                    if updated = TimeSpan.MaxValue then box PaddingRight else box updated
-
                 tt.RowBuilder {
                     yield mr.Item.Name
                     yield world.WorldName
@@ -177,11 +174,14 @@ type XivMarketModule() =
                     yield HumanReadableInteger lstHq
                     yield HumanReadableInteger logAll
                     yield HumanReadableInteger logHq
-                    yield updateVal
+                    if updated = TimeSpan.MaxValue then
+                        yield PaddingRight
+                    else
+                        yield HumanTimeSpan updated
                 }
                 |> tt.AddRow
 
-            if acc.Count >= 2 then
+        if worlds.Count = 1 && acc.Count >= 2 then
                 tt.RowBuilder {
                     yield "合计"
                     yield "--"
@@ -259,14 +259,14 @@ type XivMarketModule() =
                 if doCalculateCost
                 then yield HumanReadableInteger(market.Value.StdEvPrice().Average)
 
-                yield mr.Quantity
+                yield HumanReadableInteger mr.Quantity
 
                 if doCalculateCost then
                     let subtotal = market.Value.StdEvPrice() * mr.Quantity
 
                     sum <- sum + subtotal
                     yield HumanReadableInteger subtotal.Average
-                    yield market.Value.LastUpdateTime()
+                    yield HumanTimeSpan(market.Value.LastUpdateTime())
             }
             |> tt.AddRow
 
@@ -323,6 +323,7 @@ type XivMarketModule() =
                     for item in chunk do
                         yield item.Id
                         yield item.Name
+
                     for _ = 0 to headerCol - chunk.Length - 1 do
                         yield PaddingRight
                         yield PaddingLeft
@@ -377,7 +378,7 @@ type XivMarketModule() =
                                          .Average
                                  )
 
-                             if market.IsEmpty then yield PaddingRight else yield updated
+                             if market.IsEmpty then yield PaddingRight else yield HumanTimeSpan updated
 
                          }))
                 |> Array.sortBy fst

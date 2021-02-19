@@ -142,7 +142,7 @@ type EveLpStoreModule() =
         let tt =
             TextTable("物品", RightAlignCell "数量", RightAlignCell <| cfg.MaterialPriceMode.ToString())
 
-        tt.AddRow("忠诚点", offer.Value.LpCost, PaddingRight)
+        tt.AddRow("忠诚点", HumanReadableInteger offer.Value.LpCost, PaddingRight)
         tt.AddRow("星币", PaddingRight, HumanReadableSig4Float offer.Value.IskCost)
 
         let mProc = offer.Value.CastProcess()
@@ -191,11 +191,9 @@ type EveLpStoreModule() =
                 bpProduct.Item.Name,
                 HumanReadableInteger bpProduct.Quantity,
                 HumanReadableSig4Float sellPrice,
-                bpProduct.Item.GetTradeVolume()
-                |> HumanReadableSig4Float,
+                HumanReadableSig4Float(bpProduct.Item.GetTradeVolume()),
                 HumanReadableSig4Float profit,
-                profit / offer.Value.LpCost
-                |> HumanReadableSig4Float
+                HumanReadableSig4Float(profit / offer.Value.LpCost)
             )
         else
             let sellPrice =
@@ -207,11 +205,9 @@ type EveLpStoreModule() =
                 product.Item.Name,
                 HumanReadableInteger product.Quantity,
                 HumanReadableSig4Float sellPrice,
-                product.Item.GetTradeVolume()
-                |> HumanReadableSig4Float,
+                HumanReadableSig4Float(product.Item.GetTradeVolume()),
                 HumanReadableSig4Float profit,
-                profit / offer.Value.LpCost
-                |> HumanReadableSig4Float
+                HumanReadableSig4Float(profit / offer.Value.LpCost)
             )
 
         tt.AddPreTable(profitTable)

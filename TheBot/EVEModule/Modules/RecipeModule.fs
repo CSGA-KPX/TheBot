@@ -59,7 +59,7 @@ type EveRecipeModule() =
                     .Value.GetTotalMaterialPrice(PriceFetchMode.Sell, MeApplied)
 
             let save = me0Price - cost |> ceil
-            tt.AddRow(me, save)
+            tt.AddRow(me, HumanReadableInteger save)
 
         using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))
 
@@ -95,7 +95,7 @@ type EveRecipeModule() =
                 | _ -> cmdArg.AbortExecution(ModuleError, "不知道如何处理：{0} * {1}", mr.Item.Name, mr.Quantity)
 
         for mr in final do
-            tt.AddRow(mr.Item.Name, mr.Quantity)
+            tt.AddRow(mr.Item.Name, HumanReadableInteger mr.Quantity)
 
         using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))
 
@@ -125,13 +125,13 @@ type EveRecipeModule() =
                 let finalProc = proc.Value.FinalProcess
                 let product = finalProc.GetFirstProduct()
 
-                tt.AddRow("产出：" + product.Item.Name, product.Quantity)
+                tt.AddRow("产出：" + product.Item.Name, HumanReadableInteger product.Quantity)
 
                 for m in finalProc.Input do
                     final.Update(m)
 
         for mr in final do
-            tt.AddRow(mr.Item.Name, mr.Quantity)
+            tt.AddRow(mr.Item.Name, HumanReadableInteger mr.Quantity)
 
         using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))
 
@@ -216,11 +216,11 @@ type EveRecipeModule() =
                         optCost
                         + (if (mrAll >= price) && (price <> 0.0) then price else mrAll)
 
-                    tt.AddRow(mr.Item.Name, mr.Quantity, HumanReadableSig4Float price, HumanReadableSig4Float mrAll)
+                    tt.AddRow(mr.Item.Name, HumanReadableInteger mr.Quantity, HumanReadableSig4Float price, HumanReadableSig4Float mrAll)
                 else
                     optCost <- optCost + price
                     allCost <- allCost + price
-                    tt.AddRow(mr.Item.Name, mr.Quantity, HumanReadableSig4Float price, PaddingRight)
+                    tt.AddRow(mr.Item.Name, HumanReadableInteger mr.Quantity, HumanReadableSig4Float price, PaddingRight)
 
 
             let sell = proc.Output.GetPrice(PriceFetchMode.Sell)

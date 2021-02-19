@@ -46,7 +46,7 @@ type EveMarketPriceTable() =
 
             yield HumanReadableInteger(t.GetTradeVolume())
 
-            yield t.GetPriceInfo().Updated
+            yield HumanTimeSpan(t.GetPriceInfo().Updated)
         }
         |> x.AddRow
 

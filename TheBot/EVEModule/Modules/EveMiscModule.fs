@@ -41,12 +41,12 @@ type EveMiscModule() =
 
                     tt.AddRow(
                         arg,
-                        100.0 * sci.Manufacturing,
-                        100.0 * sci.ResearcMaterial,
-                        100.0 * sci.ResearchTime,
-                        100.0 * sci.Copying,
-                        100.0 * sci.Invention,
-                        100.0 * sci.Reaction
+                        HumanReadableInteger(100.0 * sci.Manufacturing),
+                        HumanReadableInteger(100.0 * sci.ResearcMaterial),
+                        HumanReadableInteger(100.0 * sci.ResearchTime),
+                        HumanReadableInteger(100.0 * sci.Copying),
+                        HumanReadableInteger(100.0 * sci.Invention),
+                        HumanReadableInteger(100.0 * sci.Reaction)
                     )
 
         using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun ret -> ret.Write(tt))
