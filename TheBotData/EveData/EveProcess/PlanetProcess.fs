@@ -1,6 +1,5 @@
 ﻿namespace KPX.TheBot.Data.EveData.Process
 
-open System
 open System.Collections.Generic
 open System.IO
 
@@ -9,6 +8,7 @@ open Newtonsoft.Json.Linq
 
 open KPX.TheBot.Data.CommonModule.Recipe
 open KPX.TheBot.Data.EveData.EveType
+
 
 /// 行星材料配方
 type PlanetProcessCollection private () =

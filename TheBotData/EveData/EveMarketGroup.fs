@@ -17,7 +17,7 @@ type MarketGroup =
       ParentGroupId : int }
 
 type MarketGroupCollection private () =
-    inherit CachedTableCollection<int, MarketGroup>()
+    inherit CachedTableCollection<int, MarketGroup>(DefaultDB)
 
     static let instance = MarketGroupCollection()
 
@@ -64,9 +64,9 @@ type MarketGroupCollection private () =
 
 
     member x.GetById(id : int) =
-        x.PassOrRaise(x.TryGetByKey(id), "找不到市场类别{0}", id)
+        x.PassOrRaise(x.DbCollection.TryFindById(id), "找不到市场类别{0}", id)
 
-    member x.TryGetById(id : int) = x.TryGetByKey(id)
+    member x.TryGetById(id : int) = x.DbCollection.TryFindById(id)
 
     member x.TryGetByName(name : string) =
         let bson = LiteDB.BsonValue(name)

@@ -1,16 +1,13 @@
 ﻿namespace KPX.TheBot.Data.EveData.MarketHistoryCache
 
 open System
-open System.IO
-
-open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 
 open KPX.TheBot.Data.Common.Database
 open KPX.TheBot.Data.Common.Network
 
-open KPX.TheBot.Data.EveData.Utils
 open KPX.TheBot.Data.EveData.EveType
+
 
 [<CLIMutable>]
 type MarketHistoryRecord =
@@ -29,7 +26,7 @@ type MarketTradeHistory =
       Updated : DateTimeOffset }
 
 type MarketTradeHistoryCollection private () =
-    inherit CachedItemCollection<int, MarketTradeHistory>()
+    inherit CachedItemCollection<int, MarketTradeHistory>(DefaultDB)
 
     static let threshold = TimeSpan.FromDays(2.0)
 
@@ -42,7 +39,7 @@ type MarketTradeHistoryCollection private () =
 
     override x.Depends = [| typeof<EveTypeCollection> |]
 
-    override x.FetchItem(itemId) =
+    override x.DoFetchItem(itemId) =
         let url =
             sprintf "https://esi.evepc.163.com/latest/markets/10000002/history/?datasource=serenity&type_id=%i" itemId
 

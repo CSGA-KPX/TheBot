@@ -31,7 +31,7 @@ type SystemCostIndex =
           Reaction = 0.0 }
 
 type SystemCostIndexCollection private () =
-    inherit CachedTableCollection<int, SystemCostIndex>()
+    inherit CachedTableCollection<int, SystemCostIndex>(DefaultDB)
 
     static let instance = SystemCostIndexCollection()
 
@@ -89,7 +89,7 @@ type SystemCostIndexCollection private () =
 
     member x.TryGetBySystem(system : KPX.TheBot.Data.EveData.SolarSystems.SolarSystem) =
         x.CheckUpdate()
-        x.TryGetByKey(system.Id)
+        x.DbCollection.TryFindById(system.Id)
 
     member x.GetBySystem(system : KPX.TheBot.Data.EveData.SolarSystems.SolarSystem) =
-        x.PassOrRaise(x.TryGetByKey(system.Id), "没有{0}的工业指数资料", system.Name)
+        x.PassOrRaise(x.DbCollection.TryFindById(system.Id), "没有{0}的工业指数资料", system.Name)

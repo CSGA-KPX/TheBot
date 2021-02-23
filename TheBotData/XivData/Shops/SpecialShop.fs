@@ -18,7 +18,7 @@ type SpecialShopInfo =
       CostCount : int32 }
 
 type SpecialShopCollection private () =
-    inherit CachedTableCollection<int, SpecialShopInfo>()
+    inherit CachedTableCollection<int, SpecialShopInfo>(DefaultDB)
 
     static let instance = SpecialShopCollection()
     static member Instance = instance
@@ -74,7 +74,7 @@ type SpecialShopCollection private () =
         x.DbCollection.FindAll()
         |> Seq.map (fun r -> r.CostItem)
         |> Seq.distinct
-        |> Seq.map (fun id -> ic.GetByKey(id))
+        |> Seq.map (fun id -> ic.GetByItemId(id))
         |> Seq.toArray
 
     member x.SearchByCostItemId(id : int) =

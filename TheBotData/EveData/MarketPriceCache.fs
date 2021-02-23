@@ -1,16 +1,14 @@
 ﻿namespace KPX.TheBot.Data.EveData.MarketPriceCache
 
 open System
-open System.IO
 
-open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 
 open KPX.TheBot.Data.Common.Database
 open KPX.TheBot.Data.Common.Network
 
-open KPX.TheBot.Data.EveData.Utils
 open KPX.TheBot.Data.EveData.EveType
+
 
 [<CLIMutable>]
 type PriceCache =
@@ -21,7 +19,7 @@ type PriceCache =
       Updated : DateTimeOffset }
 
 type PriceCacheCollection private () =
-    inherit CachedItemCollection<int, PriceCache>()
+    inherit CachedItemCollection<int, PriceCache>(DefaultDB)
 
     static let threshold = TimeSpan.FromHours(2.0)
 
@@ -34,7 +32,7 @@ type PriceCacheCollection private () =
 
     override x.Depends = [| typeof<EveTypeCollection> |]
 
-    override x.FetchItem(itemId) =
+    override x.DoFetchItem(itemId) =
         let url =
             sprintf @"https://www.ceve-market.org/api/market/region/10000002/system/30000142/type/%i.json" itemId
 

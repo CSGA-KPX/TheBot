@@ -9,6 +9,7 @@ open KPX.TheBot.Data.EveData.EveType
 
 open LiteDB
 
+
 type MetaGroup =
     | Tech1 = 1
     | Tech2 = 2
@@ -83,7 +84,7 @@ type ProcessSearchCache =
       Processes : EveProcess [] }
 
 type EveProcessSearch private () =
-    inherit CachedTableCollection<string, ProcessSearchCache>()
+    inherit CachedTableCollection<string, ProcessSearchCache>(DefaultDB)
 
     static let instance = EveProcessSearch()
 
@@ -109,7 +110,7 @@ type EveProcessSearch private () =
     member x.Search(cond : ProcessSearchCond) =
         let results =
             if cond.CacheResult then
-                let ret = x.TryGetByKey(cond.CacheName)
+                let ret = x.DbCollection.TryFindById(cond.CacheName)
 
                 if ret.IsSome then ret.Value.Processes else x.SearchCore(cond)
             else

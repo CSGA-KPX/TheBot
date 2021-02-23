@@ -24,7 +24,7 @@ type XivContent =
       IsMentorRoulette : bool }
 
 type XivContentCollection private () =
-    inherit CachedTableCollection<int, XivContent>()
+    inherit CachedTableCollection<int, XivContent>(DefaultDB)
 
     static let instance = XivContentCollection()
     static member Instance = instance

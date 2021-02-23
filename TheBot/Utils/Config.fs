@@ -6,6 +6,8 @@ open LiteDB
 
 open Newtonsoft.Json
 
+open KPX.TheBot.Data.Common.Database
+
 
 type Int64JsonConverter() =
     inherit JsonConverter<uint64>()
@@ -15,8 +17,7 @@ type Int64JsonConverter() =
     override x.ReadJson(reader : JsonReader, _ : Type, _ : uint64, _ : bool, _ : JsonSerializer) =
         reader.Value |> string |> uint64
 
-let private Db =
-    KPX.TheBot.Data.Common.Database.DataBase.getLiteDB ("thebot_config.db")
+let private Db = getLiteDB "thebot_config.db"
 
 [<RequireQualifiedAccess>]
 type ConfigOwner =

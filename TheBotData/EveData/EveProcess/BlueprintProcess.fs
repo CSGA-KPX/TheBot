@@ -1,12 +1,12 @@
 ﻿namespace KPX.TheBot.Data.EveData.Process
 
-open System
 open System.Collections.Generic
 open System.IO
 
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 
+open KPX.TheBot.Data.Common.Database
 open KPX.TheBot.Data.CommonModule.Recipe
 open KPX.TheBot.Data.EveData.EveType
 
@@ -109,7 +109,7 @@ type BlueprintCollection private () =
         override x.TryGetRecipe(item) =
 
             let internalProc =
-                let tryAsBp = x.TryGetByKey(item.Id)
+                let tryAsBp = x.DbCollection.TryFindById(item.Id)
 
                 if tryAsBp.IsSome then
                     tryAsBp

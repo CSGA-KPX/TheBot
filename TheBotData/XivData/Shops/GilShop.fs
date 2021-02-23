@@ -15,7 +15,7 @@ type GilShopInfo =
       Bid : int32 }
 
 type GilShopCollection private () =
-    inherit CachedTableCollection<int, GilShopInfo>()
+    inherit CachedTableCollection<int, GilShopInfo>(DefaultDB)
 
     static let AskKey = "Price{Mid}"
     static let BidKey = "Price{Low}"
@@ -46,4 +46,4 @@ type GilShopCollection private () =
         |> x.DbCollection.InsertBulk
         |> ignore
 
-    member x.TryLookupByItem(item : XivItem) = x.TryGetByKey(item.Id)
+    member x.TryLookupByItem(item : XivItem) = x.DbCollection.TryFindById(item.Id)

@@ -1,7 +1,5 @@
 ﻿namespace KPX.TheBot.Data.XivData
 
-open System
-
 open KPX.TheBot.Data.Common.Database
 
 
@@ -17,7 +15,7 @@ type XivItem =
 
 
 type ItemCollection private () =
-    inherit CachedTableCollection<int, XivItem>()
+    inherit CachedTableCollection<int, XivItem>(DefaultDB)
 
     static let instance = ItemCollection()
     static member Instance = instance
@@ -48,9 +46,9 @@ type ItemCollection private () =
         |> ignore
 
     member x.GetByItemId(id : int) =
-        x.PassOrRaise(x.TryGetByKey(id), "找不到物品:{0}", id)
+        x.PassOrRaise(x.DbCollection.TryFindById(id), "找不到物品:{0}", id)
 
-    member x.TryGetByItemId(id : int) = x.TryGetByKey(id)
+    member x.TryGetByItemId(id : int) = x.DbCollection.TryFindById(id)
 
     member x.TryGetByName(name : string) =
         let ret =

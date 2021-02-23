@@ -1,7 +1,5 @@
 ﻿namespace KPX.TheBot.Data.XivData.Shops
 
-open System
-
 open LiteDB
 
 open KPX.TheBot.Data.Common.Database
@@ -17,7 +15,7 @@ type GCScriptExchange =
       ReceiveQuantity : int }
 
 type GCScriptShop private () =
-    inherit CachedTableCollection<int, GCScriptExchange>()
+    inherit CachedTableCollection<int, GCScriptExchange>(DefaultDB)
 
     static let instance = GCScriptShop()
 

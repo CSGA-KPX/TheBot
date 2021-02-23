@@ -12,12 +12,10 @@
   <ItemGroup>
     <EmbeddedResource Include="EVEData.zip" />
     <Compile Include="Common\Resource.fs" />
-    <Compile Include="Common\LiteDBHelpers.fs" />
     <Compile Include="Common\Database.fs" />
     <Compile Include="Common\Network.fs" />
     <Compile Include="CommonModule\RecipeProvider.fs" />
     <Compile Include="CommonModule\RecipeManager.fs" />
-    <Compile Include="XivData\Utils.fs" />
     <Compile Include="XivData\Item.fs" />
     <Compile Include="XivData\Recipe\XivRecipe.fs" />
     <Compile Include="XivData\Recipe\CraftRecipeProvider.fs" />

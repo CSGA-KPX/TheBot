@@ -7,7 +7,7 @@ open KPX.TheBot.Data.XivData
 
 
 type CompanyCraftRecipeProvider private () =
-    inherit CachedTableCollection<int, XivDbRecipe>()
+    inherit CachedTableCollection<int, XivDbRecipe>(DefaultDB)
 
     static let instance = CompanyCraftRecipeProvider()
     static member Instance = instance

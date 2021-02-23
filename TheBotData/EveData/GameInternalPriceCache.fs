@@ -1,7 +1,6 @@
 ﻿namespace KPX.TheBot.Data.EveData.GameInternalPriceCache
 
 open System
-open System.IO
 
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
@@ -9,8 +8,8 @@ open Newtonsoft.Json.Linq
 open KPX.TheBot.Data.Common.Database
 open KPX.TheBot.Data.Common.Network
 
-open KPX.TheBot.Data.EveData.Utils
 open KPX.TheBot.Data.EveData.EveType
+
 
 [<CLIMutable>]
 type GameInternalPrice =
@@ -23,7 +22,7 @@ type GameInternalPrice =
       AveragePrice : float }
 
 type GameInternalPriceCollection private () =
-    inherit CachedTableCollection<int, GameInternalPrice>()
+    inherit CachedTableCollection<int, GameInternalPrice>(DefaultDB)
 
     static let instance = GameInternalPriceCollection()
 
@@ -57,7 +56,7 @@ type GameInternalPriceCollection private () =
     /// 返回物品内部价格，如果不存在，返回0.0
     member x.GetByItem(id : int) =
         x.CheckUpdate()
-        let ret = x.TryGetByKey(id)
+        let ret = x.DbCollection.TryFindById(id)
 
         if ret.IsNone then
             { Id = id

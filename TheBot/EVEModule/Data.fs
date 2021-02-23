@@ -19,10 +19,6 @@ type DataBundle private () =
     let lpStoreCache =
         LoyaltyStoreOffer.LoyaltyStoreCollection.Instance
 
-    static let instance =
-        let i = DataBundle()
-        i
-
     member x.GetGroup(groupId : int) =
         Group.EveGroupCollection.Instance.GetByGroupId(groupId)
 
@@ -32,15 +28,16 @@ type DataBundle private () =
 
     member x.GetItem(id : int) = itemCol.GetById(id)
 
-    member x.GetItemPrice(t : EveType) = x.GetItemPrice(t.Id)
-    member x.GetItemPrice(id : int) = priceCache.Force(id)
-    member x.GetItemPriceCached(t : EveType) = x.GetItemPriceCached(t.Id)
-    member x.GetItemPriceCached(id : int) = priceCache.[id]
+    member x.GetItemPrice(t : EveType) = priceCache.FetchItem(t.Id)
+    member x.GetItemPrice(id : int) = priceCache.FetchItem(id)
+
+    member x.GetItemPriceCached(t : EveType) = priceCache.GetItem(t.Id)
+    member x.GetItemPriceCached(id : int) = priceCache.GetItem(id)
 
     member x.GetNpcCorporation(name : string) = npcCorpNames.GetByName(name)
 
     member x.GetItemTradeVolume(t : EveType) =
-        let data = volumeCache.[t.Id].History
+        let data = volumeCache.GetItem(t.Id).History
 
         if data.Length <> 0 then
             data
@@ -48,6 +45,6 @@ type DataBundle private () =
         else
             0.0
 
-    member x.GetLpStoreOffersByCorp(c : NpcCorporation) = lpStoreCache.[c.Id].Offers
+    member x.GetLpStoreOffersByCorp(c : NpcCorporation) = lpStoreCache.GetItem(c.Id).Offers
 
-    static member val Instance = instance
+    static member val Instance = DataBundle()

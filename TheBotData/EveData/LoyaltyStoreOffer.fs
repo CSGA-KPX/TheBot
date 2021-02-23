@@ -9,6 +9,7 @@ open KPX.TheBot.Data.CommonModule.Recipe
 open KPX.TheBot.Data.EveData.Process
 open KPX.TheBot.Data.EveData.NpcCorporation
 
+
 [<CLIMutable>]
 type LoyaltyStoreOffer =
     { OfferId : int
@@ -41,7 +42,7 @@ type LpStore =
       Offers : LoyaltyStoreOffer [] }
 
 type LoyaltyStoreCollection private () =
-    inherit CachedItemCollection<int, LpStore>()
+    inherit CachedItemCollection<int, LpStore>(DefaultDB)
 
     static let instance = LoyaltyStoreCollection()
 
@@ -52,7 +53,7 @@ type LoyaltyStoreCollection private () =
 
     override x.Depends = [| typeof<NpcCorporationoCollection> |]
 
-    override x.FetchItem(corpId) =
+    override x.DoFetchItem(corpId) =
         let url =
             sprintf "https://esi.evepc.163.com/latest/loyalty/stores/%i/offers/?datasource=serenity" corpId
 

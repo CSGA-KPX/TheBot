@@ -1,7 +1,5 @@
 ﻿namespace KPX.TheBot.Data.EveData.Process
 
-open System
-
 open KPX.TheBot.Data.Common.Database
 
 open KPX.TheBot.Data.CommonModule.Recipe
@@ -74,7 +72,7 @@ type EveDbProcess =
 
 [<AbstractClass>]
 type EveProcessCollection() =
-    inherit CachedTableCollection<int, EveDbProcess>()
+    inherit CachedTableCollection<int, EveDbProcess>(DefaultDB)
 
     override x.IsExpired = false
 

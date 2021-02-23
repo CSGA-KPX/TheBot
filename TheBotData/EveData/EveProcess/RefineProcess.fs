@@ -1,12 +1,11 @@
 ﻿namespace KPX.TheBot.Data.EveData.Process
 
-open System
-open System.Collections.Generic
 open System.IO
 
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 
+open KPX.TheBot.Data.Common.Database
 open KPX.TheBot.Data.CommonModule.Recipe
 open KPX.TheBot.Data.EveData.EveType
 
@@ -65,4 +64,4 @@ type RefineProcessCollection private () =
         |> x.DbCollection.InsertBulk
         |> ignore
 
-    member x.GetProcessFor(item : EveType) = x.GetByKey(item.Id).AsEveProcess()
+    member x.GetProcessFor(item : EveType) = x.DbCollection.SafeFindById(item.Id).AsEveProcess()

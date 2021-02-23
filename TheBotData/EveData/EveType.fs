@@ -25,7 +25,7 @@ type EveType =
       BasePrice : float}
 
 type EveTypeCollection private () =
-    inherit CachedTableCollection<int, EveType>()
+    inherit CachedTableCollection<int, EveType>(DefaultDB)
 
     static let instance = EveTypeCollection()
 
@@ -102,9 +102,9 @@ type EveTypeCollection private () =
     member x.Item(typeId : int) = x.GetById(typeId)
 
     member x.GetById(tid : int) =
-        x.PassOrRaise(x.TryGetByKey(tid), "找不到物品:{0}", tid)
+        x.PassOrRaise(x.DbCollection.TryFindById(tid), "找不到物品:{0}", tid)
 
-    member x.TryGetById(tid : int) = x.TryGetByKey(tid)
+    member x.TryGetById(tid : int) = x.DbCollection.TryFindById(tid)
 
     member x.GetByName(name : string) =
         x.PassOrRaise(x.TryGetByName(name), "找不到物品:{0}", name)

@@ -47,7 +47,7 @@ type UniversalisRecord =
       TradeLogs : FableTradeLog [] }
 
 type MarketInfoCollection private () =
-    inherit CachedItemCollection<string, UniversalisRecord>()
+    inherit CachedItemCollection<string, UniversalisRecord>(DefaultDB)
 
     static let threshold = TimeSpan.FromHours(2.0)
 
@@ -61,7 +61,7 @@ type MarketInfoCollection private () =
 
     override x.Depends = Array.empty
 
-    override x.FetchItem(info) =
+    override x.DoFetchItem(info) =
         let info = MarketInfo.FromString(info)
 
         let url =
@@ -140,7 +140,7 @@ type MarketInfoCollection private () =
     member x.GetMarketListings(world : World, item : XivItem) =
         // universalis.app
         let info = { World = world; Item = item }
-        let uniRet = x.[info.ToString()]
+        let uniRet = x.GetItem(info.ToString())
 
         // 必须在<@ @>外定义
         let itemId, worldId = item.Id |> uint32, world.WorldId
@@ -171,7 +171,7 @@ type MarketInfoCollection private () =
     member x.GetTradeLogs(world : World, item : XivItem) =
         // universalis.app
         let info = { World = world; Item = item }
-        let uniRet = x.[info.ToString()]
+        let uniRet = x.GetItem(info.ToString())
 
         // 必须在<@ @>外定义
         let itemId, worldId = item.Id |> uint32, world.WorldId

@@ -18,7 +18,7 @@ type CraftableGear =
       ClassJobCategory : string }
 
 type CraftableGearCollection private () =
-    inherit CachedTableCollection<int, CraftableGear>()
+    inherit CachedTableCollection<int, CraftableGear>(DefaultDB)
 
     static let instance = CraftableGearCollection()
     static member Instance = instance
@@ -82,7 +82,7 @@ type CraftableGearCollection private () =
         |> db.InsertBulk
         |> ignore
 
-    member x.TryLookupByItem(item : XivItem) = x.TryGetByKey(item.Id)
+    member x.TryLookupByItem(item : XivItem) = x.DbCollection.TryFindById(item.Id)
 
     member x.Search(iLv : int, jobCode : string) =
         let query =

@@ -1,53 +1,69 @@
-﻿namespace KPX.TheBot.Data.Common.Database
-// 此命名空间提供一个统一的数据库接口供数据缓存使用
-
+﻿namespace rec KPX.TheBot.Data.Common.Database
 
 open System
 open System.Collections.Generic
 open System.Reflection
 
-open KPX.TheBot.Data.Common.LiteDBHelpers
-
 open LibFFXIV.GameData.Raw
+
+open LiteDB
+
+
+[<AutoOpen>]
+module Helpers =
+    let private dbCache = Dictionary<string, LiteDatabase>()
+    
+    type ILiteCollection<'T> with
+        member x.SafeFindById(id : obj) =
+            let ret = x.FindById(BsonValue(id))
+            if isNull (box ret) then
+                let msg = sprintf "不能在%s中找到%A" x.Name id
+                raise <| KeyNotFoundException(msg)
+            ret
+
+        member x.TryFindById(id : obj) =
+            let ret = x.FindById(BsonValue(id))
+            if isNull (box ret) then None else Some ret
+
+    let getLiteDB (name : string) =
+        if not <| dbCache.ContainsKey(name) then
+            let path =
+                IO.Path.Combine([| ".."; "static"; name |])
+
+            let dbFile = sprintf "Filename=%s;" path
+            let db = new LiteDatabase(dbFile)
+            dbCache.Add(name, db)
+
+        dbCache.[name]
+
+    let internal DefaultDB = "BotDataCache.db"
+
+    do
+        BsonMapper.Global.EmptyStringToNull <- false
+        BsonMapper.Global.EnumAsInteger <- true
 
 type IInitializationInfo =
     abstract Depends : Type []
 
-[<AutoOpen>]
-module DataBase =
-    let getLiteDB (filename : string) =
-        let path =
-            IO.Path.Combine([| ".."; "static"; filename |])
-
-        let dbFile = sprintf "Filename=%s;" path
-        new LiteDB.LiteDatabase(dbFile)
-
-    // 警告：不要把数据库作为static let放入泛型类
-    // static let不在每种泛型中共享
-    let internal BotDataCacheDb = getLiteDB ("BotDataCache.db")
-
-    do
-        LiteDB.BsonMapper.Global.EmptyStringToNull <- false
-        LiteDB.BsonMapper.Global.EnumAsInteger <- true
-
 [<AbstractClass>]
-type BotDataCollection<'Key, 'Value>() as x =
+type BotDataCollection<'Key, 'Item>(dbName) as x =
+    
+    let colName = x.GetType().Name
 
-    let col =
-        BotDataCacheDb.GetCollection<'Value>(x.GetType().Name)
-
-    let logger =
-        NLog.LogManager.GetLogger(x.GetType().Name)
-
-    /// 调用InitializeCollection时的依赖项
+    /// 调用InitializeCollection时的依赖项，
+    /// 对在TheBotData外定义的项目无效
     abstract Depends : Type []
 
-    member internal x.Logger = logger
+    member val Logger = NLog.LogManager.GetLogger(sprintf "%s:%s" dbName colName)
+
+    /// 获取数据库集合供复杂操作
+    member x.DbCollection =
+        getLiteDB(dbName).GetCollection<'Item>(colName)
 
     /// 清空当前集合，不释放空间
-    member x.Clear() = col.DeleteAll() |> ignore
+    member x.Clear() = x.DbCollection.DeleteAll() |> ignore
 
-    member x.Count() = col.Count()
+    member x.Count() = x.DbCollection.Count()
 
     /// 辅助方法：如果input为Some，返回值。如果为None，根据fmt和args生成KeyNotFoundException
     member internal x.PassOrRaise(input : option<'T>, fmt : string, [<ParamArray>] args : obj []) =
@@ -57,53 +73,47 @@ type BotDataCollection<'Key, 'Value>() as x =
 
         input.Value
 
-    member internal x.GetByKey(key : 'Key) =
-        x.PassOrRaise(x.TryGetByKey(key), "BotDataCollection内部错误：找不到键{0}", key)
-
-    member internal x.TryGetByKey(key : 'Key) = col.TryFindById(LiteDB.BsonValue(key))
-
-    /// 获取数据库集合供复杂操作
-    member internal x.DbCollection = col
-
     interface Collections.IEnumerable with
         member x.GetEnumerator() =
-            col.FindAll().GetEnumerator() :> Collections.IEnumerator
+            x.DbCollection.FindAll().GetEnumerator() :> Collections.IEnumerator
 
 
-    interface Collections.Generic.IEnumerable<'Value> with
-        member x.GetEnumerator() = col.FindAll().GetEnumerator()
+    interface Collections.Generic.IEnumerable<'Item> with
+        member x.GetEnumerator() = x.DbCollection.FindAll().GetEnumerator()
 
     interface IInitializationInfo with
         member x.Depends = x.Depends
 
 [<AbstractClass>]
-type CachedItemCollection<'Key, 'Value>() =
-    inherit BotDataCollection<'Key, 'Value>()
+type CachedItemCollection<'Key, 'Item>(dbName) =
+    inherit BotDataCollection<'Key, 'Item>(dbName)
 
     /// 获取一个'Value，不经过不写入缓存
-    abstract FetchItem : 'Key -> 'Value
+    abstract DoFetchItem : 'Key -> 'Item
 
-    abstract IsExpired : 'Value -> bool
+    abstract IsExpired : 'Item -> bool
 
-    /// 强制获得一个'Value，然后写入缓存
-    member x.Force(key) =
-        let item = x.FetchItem(key)
+    /// 强制获得一个'Item，然后写入缓存
+    member x.FetchItem(key : 'Key) =
+        let item = x.DoFetchItem(key)
         x.DbCollection.Upsert(item) |> ignore
         item
 
-    member x.Item(key) =
-        let item = x.TryGetByKey(key)
-        if item.IsNone || x.IsExpired(item.Value) then x.Force(key) else item.Value
+    /// 获得一个'Item，如果有缓存优先拿缓存
+    member x.GetItem(key : 'Key) =
+        x.DbCollection.TryFindById(BsonValue(key))
+        |> Option.filter (fun item -> x.IsExpired(item))
+        |> Option.defaultWith (fun () -> x.FetchItem(key))
 
 [<CLIMutable>]
 type TableUpdateTime =
-    { [<LiteDB.BsonId(false)>]
+    { [<BsonId(false)>]
       Id : string
       Updated : DateTimeOffset }
 
 [<AbstractClass>]
-type CachedTableCollection<'Key, 'Value>() =
-    inherit BotDataCollection<'Key, 'Value>()
+type CachedTableCollection<'Key, 'Item>(dbName) =
+    inherit BotDataCollection<'Key, 'Item>(dbName)
 
     let updateLock = obj ()
 
@@ -127,10 +137,11 @@ type CachedTableCollection<'Key, 'Value>() =
     member x.GetLastUpdateTime() =
         BotDataInitializer.GetCollectionUpdateTime(x.GetType().Name)
 
-and BotDataInitializer private () =
+type BotDataInitializer private () =
 
     static let updateCol =
-        BotDataCacheDb.GetCollection<TableUpdateTime>()
+        getLiteDB(DefaultDB)
+            .GetCollection<TableUpdateTime>()
 
     static let xivCollection =
         new EmbeddedXivCollection(XivLanguage.None)
@@ -147,8 +158,7 @@ and BotDataInitializer private () =
         updateCol.Upsert(record) |> ignore
 
     static member GetCollectionUpdateTime(name : string) =
-        let ret =
-            updateCol.FindById(LiteDB.BsonValue(name))
+        let ret = updateCol.FindById(BsonValue(name))
 
         if isNull (box ret) then DateTimeOffset.MinValue else ret.Updated
 
@@ -203,7 +213,8 @@ and BotDataInitializer private () =
 
         check (toCheck)
 
-    /// 初始化该Assembly定义的所有数据集
+    /// 初始化该THeBotData定义的所有数据集，
+    /// 对在TheBotData外定义的项目无效
     static member InitializeAllCollections() =
         Assembly.GetExecutingAssembly().GetTypes()
         |> Array.filter
@@ -240,8 +251,10 @@ and BotDataInitializer private () =
 
     /// 删除所有数据，不释放空间
     static member ClearCache() =
-        for name in BotDataCacheDb.GetCollectionNames() |> Seq.toArray do
-            BotDataCacheDb.DropCollection(name) |> ignore
+        let db = getLiteDB (DefaultDB)
+        // 避免删除以后影响之后的序列
+        for name in db.GetCollectionNames() |> Seq.cache do
+            db.DropCollection(name) |> ignore
 
     /// 整理数据库文件，释放多余空间
-    static member ShrinkCache() = BotDataCacheDb.Rebuild() |> ignore
+    static member ShrinkCache() = getLiteDB(DefaultDB).Rebuild() |> ignore

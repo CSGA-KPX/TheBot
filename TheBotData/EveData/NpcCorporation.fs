@@ -1,12 +1,12 @@
 ﻿namespace KPX.TheBot.Data.EveData.NpcCorporation
 
-open System
 open System.IO
 
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 
 open KPX.TheBot.Data.Common.Database
+
 
 [<CLIMutable>]
 type NpcCorporation =
@@ -15,7 +15,7 @@ type NpcCorporation =
       CorporationName : string }
 
 type NpcCorporationoCollection private () =
-    inherit CachedTableCollection<int, NpcCorporation>()
+    inherit CachedTableCollection<int, NpcCorporation>(DefaultDB)
 
     static let instance = NpcCorporationoCollection()
 

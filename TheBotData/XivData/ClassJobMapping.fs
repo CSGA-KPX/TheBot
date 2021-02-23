@@ -12,7 +12,7 @@ type ClassJobMapping =
       Value : string }
 
 type ClassJobMappingCollection private () =
-    inherit CachedTableCollection<string, ClassJobMapping>()
+    inherit CachedTableCollection<string, ClassJobMapping>(DefaultDB)
 
     static let instance = ClassJobMappingCollection()
     static member Instance = instance
@@ -40,5 +40,5 @@ type ClassJobMappingCollection private () =
         |> db.InsertBulk
         |> ignore
 
-    member x.SearchByName(name) = x.GetByKey(name)
-    member x.TrySearchByName(name) = x.TryGetByKey(name)
+    member x.SearchByName(name) = x.DbCollection.SafeFindById(name)
+    member x.TrySearchByName(name) = x.DbCollection.TryFindById(name)

@@ -3,16 +3,14 @@
 open System
 open System.IO
 
-open Newtonsoft.Json
-open Newtonsoft.Json.Linq
-
 open KPX.TheBot.Data.Common.Database
+
 
 [<CLIMutable>]
 type SolarSystem = { Id : int; Name : string }
 
 type SolarSystemCollection private () =
-    inherit CachedTableCollection<int, SolarSystem>()
+    inherit CachedTableCollection<int, SolarSystem>(DefaultDB)
 
     static let instance = SolarSystemCollection()
 
@@ -46,10 +44,10 @@ type SolarSystemCollection private () =
         |> x.DbCollection.InsertBulk
         |> ignore
 
-    member x.TryGetBySolarSystem(id : int) = x.TryGetByKey(id)
+    member x.TryGetBySolarSystem(id : int) = x.DbCollection.TryFindById(id)
 
     member x.GetBySolarSystem(id : int) =
-        x.PassOrRaise(x.TryGetByKey(id), "找不到星系id:{0}", id)
+        x.PassOrRaise(x.DbCollection.TryFindById(id), "找不到星系id:{0}", id)
 
     member x.TryGetBySolarSystem(name : string) =
         let bson = LiteDB.BsonValue(name)

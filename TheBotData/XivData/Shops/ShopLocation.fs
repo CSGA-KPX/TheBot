@@ -1,6 +1,5 @@
 ﻿namespace KPX.TheBot.Data.XivData.Shops
 
-open System
 open System.Collections.Generic
 
 open LiteDB
@@ -16,7 +15,7 @@ type ShopLocation =
 
 /// 提供ShopPropId（即部分ENpcData）到商店位置的缓存
 type ShopLocationCollection private () =
-    inherit CachedTableCollection<int, ShopLocation>()
+    inherit CachedTableCollection<int, ShopLocation>(DefaultDB)
 
     static let instance = ShopLocationCollection()
 
@@ -95,4 +94,4 @@ type ShopLocationCollection private () =
         x.DbCollection.Exists(Query.EQ("_id", BsonValue(id)))
 
     member x.GetByShopPropId(id : int) = 
-        x.GetByKey(id)
+        x.DbCollection.SafeFindById(id)

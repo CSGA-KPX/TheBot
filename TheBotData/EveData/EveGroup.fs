@@ -17,7 +17,7 @@ type EveGroup =
       IsPublished : bool }
 
 type EveGroupCollection private () =
-    inherit CachedTableCollection<int, EveGroup>()
+    inherit CachedTableCollection<int, EveGroup>(DefaultDB)
 
     static let instance = EveGroupCollection()
     static member Instance = instance
@@ -51,5 +51,7 @@ type EveGroupCollection private () =
         |> x.DbCollection.InsertBulk
         |> ignore
 
-    member x.Item gid = x.GetByKey(gid)
-    member x.GetByGroupId gid = x.GetByKey(gid)
+    [<Obsolete>]
+    member x.Item gid = x.DbCollection.TryFindById(gid)
+
+    member x.GetByGroupId gid = x.DbCollection.SafeFindById(gid)
