@@ -12,7 +12,7 @@ open KPX.TheBot.Data.Common.Database
 open KPX.TheBot.Module.TRpgModule.TRpgUtils
 open KPX.TheBot.Module.TRpgModule.TRpgCharacterCard
 
-
+(*
 [<Literal>]
 let MAX_USER_CARDS = 16
 
@@ -94,3 +94,4 @@ type CommandEventArgs with
         if card.IsNone then raise <| ModuleException(InputError, "没有设置当前角色卡")
 
         card.Value
+*)

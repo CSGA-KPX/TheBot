@@ -12,13 +12,11 @@ open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.TextTable
 
 open KPX.TheBot.Utils.Dicer
-open KPX.TheBot.Utils.HandlerUtils
 
 open KPX.TheBot.Module.DiceModule.Utils.DiceExpression
 
 open KPX.TheBot.Module.TRpgModule.TRpgUtils
-open KPX.TheBot.Module.TRpgModule.TRpgCharacterCard
-open KPX.TheBot.Module.TRpgModule.CardManager
+open KPX.TheBot.Module.TRpgModule
 
 
 type TRpgModule() =
@@ -28,17 +26,6 @@ type TRpgModule() =
     [<CommandHandlerMethodAttribute("coc7", "coc第七版", "", IsHidden = true)>]
     member x.HandleCoc7(cmdArg : CommandEventArgs) =
         let isDotCommand = cmdArg.CommandAttrib.CommandStart = "."
-
-        let attrs =
-            [| "力量", "3D6*5"
-               "体质", "3D6*5"
-               "体型", "(2D6+6)*5"
-               "敏捷", "3D6*5"
-               "外貌", "3D6*5"
-               "智力", "(2D6+6)*5"
-               "意志", "3D6*5"
-               "教育", "(2D6+6)*5"
-               "幸运", "3D6*5" |]
 
         let tt = TextTable("属性", "值")
 
@@ -52,7 +39,7 @@ type TRpgModule() =
 
         let mutable sum = 0
 
-        for (name, expr) in attrs do
+        for (name, expr) in Coc7.Coc7AttrExpr do
             let d = de.Eval(expr).Sum |> int
             sum <- sum + d
             tt.AddRow(name, d)
@@ -68,17 +55,23 @@ type TRpgModule() =
 
         using (cmdArg.OpenResponse()) (fun ret -> ret.Write(tt))
 
-    [<CommandHandlerMethodAttribute("sc", "理智检定 a/b san", "", AltCommandStart = ".", IsHidden = true)>]
+    [<CommandHandlerMethodAttribute("sc", "理智检定 .sc 成功/失败 [当前san]", "", AltCommandStart = ".", IsHidden = true)>]
     member x.HandleSanCheck(cmdArg : CommandEventArgs) =
         let args = cmdArg.Arguments // 参数检查
 
-        if args.Length <> 2 then cmdArg.AbortExecution(InputError, "此指令需要2个参数")
+        if args.Length = 0 || args.Length > 2 then cmdArg.AbortExecution(InputError, "此指令需要1/2个参数 .sc 成功/失败 [当前san]")
 
-        if not <| args.[0].Contains("/") then cmdArg.AbortExecution(InputError, "参数1错误")
+        if not <| args.[0].Contains("/") then cmdArg.AbortExecution(InputError, "成功/失败 表达式错误")
 
-        let parseSucc, currentSan = Int32.TryParse(args.[1])
-
-        if not parseSucc then cmdArg.AbortExecution(InputError, "参数2错误")
+        let isDaily, currentSan = 
+            if args.Length = 2 then
+                let parseSucc, currentSan = Int32.TryParse(args.[1])
+                if parseSucc then
+                    false, currentSan
+                else
+                    true, Coc7.DailySanCacheCollection.Instance.GetValue(cmdArg)
+            else
+                true, Coc7.DailySanCacheCollection.Instance.GetValue(cmdArg)
 
         let succ, fail =
             let s = args.[0].Split("/")
@@ -102,7 +95,13 @@ type TRpgModule() =
 
         use ret = cmdArg.OpenResponse(ForceText)
         ret.WriteLine("1D100 = {0}：{1}", check, status)
-        ret.WriteLine("San值减少{0}点，当前剩余{1}点。", lose, max 0 (currentSan - lose))
+        
+        let finalSan = max 0 (currentSan - lose)
+        if isDaily then
+            Coc7.DailySanCacheCollection.Instance.SetValue(cmdArg, finalSan)
+            ret.WriteLine("今日San值减少{0}点，当前剩余{1}点。", lose, finalSan)
+        else
+            ret.WriteLine("San值减少{0}点，当前剩余{1}点。", lose, finalSan)
 
     [<CommandHandlerMethodAttribute("rd", ".r 1D100缩写", "", AltCommandStart = ".", IsHidden = true)>]
     [<CommandHandlerMethodAttribute("rh", "常规暗骰", "", AltCommandStart = ".", IsHidden = true)>]
@@ -183,7 +182,7 @@ type TRpgModule() =
 
         cmdArg.QuickMessageReply(ret)
 
-
+(*
     [<CommandHandlerMethodAttribute("st", "设置人物卡", "", AltCommandStart = ".", IsHidden = true)>]
     member x.HandleDiceST(cmdArg : CommandEventArgs) =
         cmdArg.EnsureSenderOwner()
@@ -305,3 +304,4 @@ type TRpgModule() =
                 cmdArg.QuickMessageReply("Booom!")
 
             | _ -> cmdArg.QuickMessageReply("未知子命令")
+*)

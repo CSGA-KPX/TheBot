@@ -7,7 +7,7 @@ open KPX.FsCqHttp.Utils.TextTable
 
 open KPX.TheBot.Module.TRpgModule.TRpgUtils
 
-
+(*
 [<CLIMutable>]
 type CharacterCard =
     { Id : int64
@@ -69,3 +69,4 @@ module Coc7 =
     /// 将输入转换为Coc7技能名，处理别名等
     let MapCoc7SkillName (name : string) =
         if SkillNameAlias.ContainsKey(name) then SkillNameAlias.[name] else name
+*)

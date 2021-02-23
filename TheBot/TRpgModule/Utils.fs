@@ -2,7 +2,6 @@
 
 open System
 open System.Collections.Generic
-open System.Text.RegularExpressions
 
 open KPX.TheBot.Data.Common.Database
 
@@ -11,7 +10,7 @@ open KPX.TheBot.Utils.EmbeddedResource
 open KPX.TheBot.Module.DiceModule.Utils.DiceExpression
 
 
-let TRpgDb = getLiteDB ("trpg.db")
+//let TRpgDb = getLiteDB ("trpg.db")
 
 [<RequireQualifiedAccess>]
 module StringData =
