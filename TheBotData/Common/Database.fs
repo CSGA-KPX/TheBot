@@ -101,9 +101,11 @@ type CachedItemCollection<'Key, 'Item>(dbName) =
 
     /// 获得一个'Item，如果有缓存优先拿缓存
     member x.GetItem(key : 'Key) =
-        x.DbCollection.TryFindById(BsonValue(key))
-        |> Option.filter (fun item -> x.IsExpired(item))
-        |> Option.defaultWith (fun () -> x.FetchItem(key))
+        let ret = x.DbCollection.TryFindById(BsonValue(key))
+        if ret.IsNone || x.IsExpired(ret.Value) then
+            x.FetchItem(key)
+        else
+            ret.Value
 
 [<CLIMutable>]
 type TableUpdateTime =
