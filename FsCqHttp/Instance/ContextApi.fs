@@ -33,3 +33,20 @@ type GetCtxCommands() =
         c
 
     override x.Invoke(ctx) = c <- ctx.Commands |> Seq.toArray
+
+/// 根据名称（含CommandStart）查找模块内指令
+type TryGetCommand(cmdName : string) =
+    inherit WsContextApiBase()
+
+    let mutable cmd = None
+
+    member x.CommandInfo =
+        x.EnsureExecuted()
+        cmd
+
+    override x.Invoke(ctx) =
+        cmd <-
+            let cmp = System.StringComparer.OrdinalIgnoreCase
+
+            ctx.Commands
+            |> Seq.tryFind (fun cmd -> cmp.Equals(cmd.CommandName, cmdName))

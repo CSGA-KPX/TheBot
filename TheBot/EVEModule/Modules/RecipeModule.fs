@@ -32,14 +32,14 @@ type EveRecipeModule() =
 
         let item = data.TryGetItem(cfg.CmdLineAsString)
 
-        if item.IsNone then
-            cmdArg.AbortExecution(InputError, "找不到物品：{0}", cfg.CmdLineAsString)
+        if item.IsNone
+        then cmdArg.AbortExecution(InputError, "找不到物品：{0}", cfg.CmdLineAsString)
 
         let recipe =
             pm.TryGetRecipe(item.Value, ByRun 1.0, 0)
 
-        if recipe.IsNone then
-            cmdArg.AbortExecution(InputError, "找不到蓝图：{0}", cfg.CmdLineAsString)
+        if recipe.IsNone
+        then cmdArg.AbortExecution(InputError, "找不到蓝图：{0}", cfg.CmdLineAsString)
 
         let me0Price =
             recipe.Value.GetTotalMaterialPrice(PriceFetchMode.Sell, MeApplied)
@@ -63,7 +63,10 @@ type EveRecipeModule() =
 
         using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))
 
-    [<CommandHandlerMethodAttribute("er", "EVE蓝图材料计算（可用表达式）", "")>]
+    [<CommandHandlerMethodAttribute("er",
+                                    "EVE蓝图材料计算",
+                                    "可以使用表达式，多个物品需用+连接。可选参数见#evehelp。如：
+#r 帝国海军散热槽*10+机器人技术*9999")>]
     member x.HandleR(cmdArg : CommandEventArgs) =
         let cfg = EveConfigParser()
         cfg.Parse(cmdArg.Arguments)
@@ -92,14 +95,23 @@ type EveRecipeModule() =
                 | _ when mr.Quantity < 0.0 ->
                     // 已有材料需要扣除
                     final.Update(mr)
-                | _ -> cmdArg.AbortExecution(ModuleError, "不知道如何处理：{0} * {1}", mr.Item.Name, mr.Quantity)
+                | _ ->
+                    cmdArg.AbortExecution(
+                        ModuleError,
+                        "不知道如何处理：{0} * {1}",
+                        mr.Item.Name,
+                        mr.Quantity
+                    )
 
         for mr in final do
             tt.AddRow(mr.Item.Name, HumanReadableInteger mr.Quantity)
 
         using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))
 
-    [<CommandHandlerMethodAttribute("err", "EVE蓝图材料计算（可用表达式）", "")>]
+    [<CommandHandlerMethodAttribute("err",
+                                    "EVE蓝图基础材料计算",
+                                    "可以使用表达式，多个物品需用+连接。可选参数见#evehelp。如：
+#rr 帝国海军散热槽*10+机器人技术*9999")>]
     member x.HandleRR(cmdArg : CommandEventArgs) =
         let cfg = EveConfigParser()
         cfg.Parse(cmdArg.Arguments)
@@ -119,8 +131,7 @@ type EveRecipeModule() =
                 let proc =
                     pm.TryGetRecipeRecMe(mr.Item, ByRun mr.Quantity)
 
-                if proc.IsNone then
-                    cmdArg.AbortExecution(InputError, "找不到配方：{0}", mr.Item.Name)
+                if proc.IsNone then cmdArg.AbortExecution(InputError, "找不到配方：{0}", mr.Item.Name)
 
                 let finalProc = proc.Value.FinalProcess
                 let product = finalProc.GetFirstProduct()
@@ -135,7 +146,8 @@ type EveRecipeModule() =
 
         using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))
 
-    [<CommandHandlerMethodAttribute("errc", "EVE蓝图成本计算（只计算一个物品）", "", IsHidden = true)>]
+    [<CommandHandlerMethodAttribute("errc", "EVE蓝图成本计算", "不支持表达式，但仅限一个物品。可选参数见#evehelp。如：
+#errc 帝国海军散热槽*10")>]
     member x.HandleERRCV2(cmdArg : CommandEventArgs) =
         let cfg = EveConfigParser()
         cfg.Parse(cmdArg.Arguments)
@@ -145,16 +157,15 @@ type EveRecipeModule() =
         | Accumulator a ->
             let mr = a |> Seq.tryHead
 
-            if mr.IsNone then
-                cmdArg.AbortExecution(InputError, "没有可供计算的物品")
+            if mr.IsNone then cmdArg.AbortExecution(InputError, "没有可供计算的物品")
 
             let pm = EveProcessManager(cfg)
 
             let recipe =
                 pm.TryGetRecipe(mr.Value.Item, ByRun mr.Value.Quantity)
 
-            if recipe.IsNone then
-                cmdArg.AbortExecution(InputError, "找不到配方:{0}", mr.Value.Item.Name)
+            if recipe.IsNone
+            then cmdArg.AbortExecution(InputError, "找不到配方:{0}", mr.Value.Item.Name)
 
             let tt =
                 TextTable(
@@ -199,12 +210,18 @@ type EveRecipeModule() =
                     * mr.Quantity
 
                 let mrProc =
-                    pm.TryGetRecipeRecMe(mr.Item, ByItem mr.Quantity, cfg.DerivativetMe, cfg.DerivativetMe)
+                    pm.TryGetRecipeRecMe(
+                        mr.Item,
+                        ByItem mr.Quantity,
+                        cfg.DerivativetMe,
+                        cfg.DerivativetMe
+                    )
 
-                if mrProc.IsSome && pm.CanExpand(mrProc.Value.InputProcess) then
+                if mrProc.IsSome
+                   && pm.CanExpand(mrProc.Value.InputProcess) then
                     let mrInstall =
                         mrProc.Value.IntermediateProcess
-                        |> Array.fold (fun acc proc -> acc + proc.GetInstallationCost(cfg) ) 0.0
+                        |> Array.fold (fun acc proc -> acc + proc.GetInstallationCost(cfg)) 0.0
 
                     let mrCost =
                         mrProc.Value.FinalProcess.Input.GetPrice(cfg.MaterialPriceMode)
@@ -216,19 +233,43 @@ type EveRecipeModule() =
                         optCost
                         + (if (mrAll >= price) && (price <> 0.0) then price else mrAll)
 
-                    tt.AddRow(mr.Item.Name, HumanReadableInteger mr.Quantity, HumanReadableSig4Float price, HumanReadableSig4Float mrAll)
+                    tt.AddRow(
+                        mr.Item.Name,
+                        HumanReadableInteger mr.Quantity,
+                        HumanReadableSig4Float price,
+                        HumanReadableSig4Float mrAll
+                    )
                 else
                     optCost <- optCost + price
                     allCost <- allCost + price
-                    tt.AddRow(mr.Item.Name, HumanReadableInteger mr.Quantity, HumanReadableSig4Float price, PaddingRight)
+
+                    tt.AddRow(
+                        mr.Item.Name,
+                        HumanReadableInteger mr.Quantity,
+                        HumanReadableSig4Float price,
+                        PaddingRight
+                    )
 
 
-            let sell = proc.Output.GetPrice(PriceFetchMode.Sell)
-            let sellWithTax = proc.Output.GetPrice(PriceFetchMode.SellWithTax)
+            let sell =
+                proc.Output.GetPrice(PriceFetchMode.Sell)
 
-            tt.AddRow("卖出/税后", PaddingRight, HumanReadableSig4Float sell, HumanReadableSig4Float sellWithTax)
+            let sellWithTax =
+                proc.Output.GetPrice(PriceFetchMode.SellWithTax)
 
-            tt.AddRow("材料/最佳", PaddingRight, HumanReadableSig4Float allCost, HumanReadableSig4Float optCost)
+            tt.AddRow(
+                "卖出/税后",
+                PaddingRight,
+                HumanReadableSig4Float sell,
+                HumanReadableSig4Float sellWithTax
+            )
+
+            tt.AddRow(
+                "材料/最佳",
+                PaddingRight,
+                HumanReadableSig4Float allCost,
+                HumanReadableSig4Float optCost
+            )
 
             tt.AddRow(
                 "税后 利润",
@@ -239,13 +280,23 @@ type EveRecipeModule() =
 
             using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun ret -> ret.Write(tt))
 
-    [<CommandHandlerMethodAttribute("EVE舰船II", "T2舰船制造总览", "")>]
-    [<CommandHandlerMethodAttribute("EVE舰船", "T1舰船制造总览", "")>]
-    [<CommandHandlerMethodAttribute("EVE组件", "T2和旗舰组件制造总览", "")>]
-    [<CommandHandlerMethodAttribute("EVE种菜", "EVE种菜利润", "")>]
-    [<CommandHandlerMethodAttribute("EVE装备II", "EVET2装备利润", "")>]
-    [<CommandHandlerMethodAttribute("EVE燃料块", "EVE燃料块", "")>]
-    [<CommandHandlerMethodAttribute("EVE生产", "EVE生产总览", "")>]
+    [<CommandHandlerMethodAttribute("EVE舰船II", "T2舰船制造总览", "可选参数见#evehelp。")>]
+    [<CommandHandlerMethodAttribute("EVE舰船", "T1舰船制造总览", "可选参数见#evehelp。")>]
+    [<CommandHandlerMethodAttribute("EVE组件", "T2和旗舰组件制造总览", "可选参数见#evehelp。")>]
+    [<CommandHandlerMethodAttribute("EVE种菜", "EVE种菜利润", "可选参数见#evehelp。")>]
+    [<CommandHandlerMethodAttribute("EVE装备II", "EVET2装备利润", "可以使用by:搜索物品组名称。其他可选参数见#evehelp。")>]
+    [<CommandHandlerMethodAttribute("EVE燃料块", "EVE燃料块", "可选参数见#evehelp。")>]
+    [<CommandHandlerMethodAttribute("EVE生产", "EVE生产总览", "可选参数：
+mgid 匹配metaGroupId
+cid 匹配categoryId
+gid 匹配groupId
+n 匹配物品名称
+gn 匹配组名称
+mgn 匹配metagroup名称
+no 排除物品名称
+gno 排除组名称
+mgno 排除metagroup名称
+其他可选参数见#evehelp。")>]
     member x.HandleManufacturingOverview(cmdArg : CommandEventArgs) =
         let cfg = EveConfigParser()
         cfg.RegisterOption("by", "")
@@ -289,8 +340,7 @@ type EveRecipeModule() =
                 let isGroup = cfg.GetValue("by") = "group"
 
                 let keyword =
-                    if cfg.CommandLine.Length = 0 then
-                        ret.AbortExecution(InputError, "需要一个装备名称关键词")
+                    if cfg.CommandLine.Length = 0 then ret.AbortExecution(InputError, "需要一个装备名称关键词")
 
                     cfg.CommandLine.[0]
 
@@ -307,24 +357,21 @@ type EveRecipeModule() =
                         .GetValue("mgid")
                         .Split(',', System.StringSplitOptions.RemoveEmptyEntries)
 
-                if mgid.Length <> 0 then
-                    cond.MetaGroupIds <- mgid |> Array.map int
+                if mgid.Length <> 0 then cond.MetaGroupIds <- mgid |> Array.map int
 
                 let gid =
                     cfg
                         .GetValue("gid")
                         .Split(',', System.StringSplitOptions.RemoveEmptyEntries)
 
-                if gid.Length <> 0 then
-                    cond.GroupIds <- gid |> Array.map int
+                if gid.Length <> 0 then cond.GroupIds <- gid |> Array.map int
 
                 let cid =
                     cfg
                         .GetValue("cid")
                         .Split(',', System.StringSplitOptions.RemoveEmptyEntries)
 
-                if cid.Length <> 0 then
-                    cond.CategoryIds <- cid |> Array.map int
+                if cid.Length <> 0 then cond.CategoryIds <- cid |> Array.map int
 
                 let nameSearch = ResizeArray<NameSearchCond>()
 
@@ -336,8 +383,7 @@ type EveRecipeModule() =
 
                 let mgName = cfg.GetValue("mgn")
 
-                if mgName <> "" then
-                    nameSearch.Add(ByMarketGroupName mgName)
+                if mgName <> "" then nameSearch.Add(ByMarketGroupName mgName)
 
                 cond.NameSearch <- nameSearch.ToArray()
                 nameSearch.Clear()
@@ -350,8 +396,7 @@ type EveRecipeModule() =
 
                 let mgName = cfg.GetValue("mgno")
 
-                if mgName <> "" then
-                    nameSearch.Add(ByMarketGroupName mgName)
+                if mgName <> "" then nameSearch.Add(ByMarketGroupName mgName)
 
                 cond.NameExclude <- nameSearch.ToArray()
 
@@ -373,26 +418,40 @@ type EveRecipeModule() =
             |> Seq.map
                 (fun ps ->
                     let product = ps.Original.GetFirstProduct()
-                    let proc = pm.TryGetRecipeRecMe(product.Item, ByRun 1.0, cfg.InputMe, cfg.DerivativetMe).Value
-                    
+
+                    let proc =
+                        pm
+                            .TryGetRecipeRecMe(product.Item,
+                                               ByRun 1.0,
+                                               cfg.InputMe,
+                                               cfg.DerivativetMe)
+                            .Value
+
                     // 所有基础材料的报价
-                    let materialCost = proc.FinalProcess.Input.GetPrice(cfg.MaterialPriceMode)
-                    let installCost = 
+                    let materialCost =
+                        proc.FinalProcess.Input.GetPrice(cfg.MaterialPriceMode)
+
+                    let installCost =
                         if ps.Type = ProcessType.Planet then
                             // 构造一个临时配方去计算费用
                             { Original = proc.FinalProcess
                               TargetQuantity = ByRun 1.0
                               TargetMe = 0
-                              Type = ProcessType.Planet }.GetInstallationCost(cfg)
+                              Type = ProcessType.Planet }
+                                .GetInstallationCost(cfg)
                         else
                             proc.IntermediateProcess
-                            |> Array.fold (fun acc proc -> acc + proc.GetInstallationCost(cfg) ) 0.0
+                            |> Array.fold (fun acc proc -> acc + proc.GetInstallationCost(cfg)) 0.0
 
                     let cost = materialCost + installCost
 
-                    let sellWithTax = proc.FinalProcess.Output.GetPrice(PriceFetchMode.SellWithTax)
+                    let sellWithTax =
+                        proc.FinalProcess.Output.GetPrice(PriceFetchMode.SellWithTax)
+
                     let volume = data.GetItemTradeVolume(product.Item)
-                    let sortIdx = (sellWithTax - cost) / cost * 100.0 |> int
+
+                    let sortIdx =
+                        (sellWithTax - cost) / cost * 100.0 |> int
 
                     {| Name = product.Item.Name
                        TypeGroup = product.Item.TypeGroup
@@ -401,7 +460,7 @@ type EveRecipeModule() =
                        Sell = proc.FinalProcess.Output.GetPrice(PriceFetchMode.Sell)
                        Profit = sellWithTax - cost
                        Volume = volume
-                       SortIndex = sortIdx|})
+                       SortIndex = sortIdx |})
             |> Seq.sortByDescending (fun x -> x.SortIndex)
             |> Seq.groupBy (fun x -> x.TypeGroup)
             |> Seq.iter
@@ -424,7 +483,7 @@ type EveRecipeModule() =
                             HumanReadableSig4Float x.Sell,
                             HumanReadableSig4Float x.Cost,
                             HumanReadableSig4Float x.Profit,
-                            RightAlignCell (sprintf "%i%%" x.SortIndex),
+                            RightAlignCell(sprintf "%i%%" x.SortIndex),
                             HumanReadableInteger x.Volume
                         )
 

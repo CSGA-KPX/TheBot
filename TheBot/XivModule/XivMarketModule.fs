@@ -38,7 +38,7 @@ type XivMarketModule() =
         let ret = gilShop.TryLookupByItem(item)
         if ret.IsSome then sprintf "%s(%i)" item.Name ret.Value.Ask else item.Name
 
-    [<CommandHandlerMethodAttribute("xivsrv", "设置默认查询的服务器", "")>]
+    [<CommandHandlerMethodAttribute("ffsrv", "设置默认查询的服务器", "")>]
     member x.HandleXivDefSrv(cmdArg : CommandEventArgs) =
         let cfg = CommandUtils.XivConfig(cmdArg)
 
@@ -49,15 +49,25 @@ type XivMarketModule() =
             let world = cfg.GetWorld()
             cm.Put(CommandUtils.defaultServerKey, world)
 
-            cmdArg.QuickMessageReply(sprintf "%s的默认服务器设置为%s" cmdArg.MessageEvent.DisplayName world.WorldName)
+            cmdArg.QuickMessageReply(
+                sprintf "%s的默认服务器设置为%s" cmdArg.MessageEvent.DisplayName world.WorldName
+            )
         else
             cmdArg.QuickMessageReply("没有指定服务器或服务器名称不正确")
 
-    [<CommandHandlerMethodAttribute("重建采集", "", "", IsHidden = true)>]
-    member x.ObsoleteCommand(cmdArg : CommandEventArgs) =
-        cmdArg.QuickMessageReply("已废弃。请使用#fm 重建采集")
+    [<CommandHandlerMethodAttribute("ffhelp", "FF14指令帮助", "")>]
+    member x.HandleFFCmdHelp(cmdArg : CommandEventArgs) =
+        use ret = cmdArg.OpenResponse(ForceText)
+        ret.WriteLine("当前可使用服务器及缩写有：{0}", String.Join(" ", World.WorldFromName.Keys))
+        ret.WriteLine("当前可使用大区及缩写有：{0}", String.Join(" ", World.DataCenterAlias.Keys))
 
-    [<CommandHandlerMethodAttribute("fm", "FF14市场查询。可以使用 采集重建/魔晶石/水晶 快捷组", "")>]
+    [<CommandHandlerMethodAttribute("fm",
+                                    "FF14市场查询。可以使用 采集重建/魔晶石/水晶 快捷组",
+                                    "接受以下参数：
+text 以文本格式输出结果
+分区/服务器名 调整查询分区下的所有服务器。见#ff14help
+#fm 一区 风之水晶 text:
+#fm 拉诺 紫水 风之水晶")>]
     member x.HandleXivMarket(cmdArg : CommandEventArgs) =
         let cfg = CommandUtils.XivConfig(cmdArg)
 
@@ -174,6 +184,7 @@ type XivMarketModule() =
                     yield HumanReadableInteger lstHq
                     yield HumanReadableInteger logAll
                     yield HumanReadableInteger logHq
+
                     if updated = TimeSpan.MaxValue then
                         yield PaddingRight
                     else
@@ -182,24 +193,30 @@ type XivMarketModule() =
                 |> tt.AddRow
 
         if worlds.Count = 1 && acc.Count >= 2 then
-                tt.RowBuilder {
-                    yield "合计"
-                    yield "--"
-                    yield PaddingRight
-                    yield HumanReadableInteger sumListingAll
-                    yield HumanReadableInteger sumListingHq
-                    yield HumanReadableInteger sumTradeAll
-                    yield HumanReadableInteger sumTradeHq
-                    yield PaddingRight
-                }
-                |> tt.AddRow
+            tt.RowBuilder {
+                yield "合计"
+                yield "--"
+                yield PaddingRight
+                yield HumanReadableInteger sumListingAll
+                yield HumanReadableInteger sumListingHq
+                yield HumanReadableInteger sumTradeAll
+                yield HumanReadableInteger sumTradeHq
+                yield PaddingRight
+            }
+            |> tt.AddRow
 
         using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun ret -> ret.Write(tt))
 
-    [<CommandHandlerMethodAttribute("r", "根据表达式汇总多个物品的材料，不查询价格", "")>]
-    [<CommandHandlerMethodAttribute("rr", "根据表达式汇总多个物品的基础材料，不查询价格", "")>]
-    [<CommandHandlerMethodAttribute("rc", "计算物品基础材料成本", "物品Id或全名...")>]
-    [<CommandHandlerMethodAttribute("rrc", "计算物品基础材料成本", "物品Id或全名...")>]
+    [<CommandHandlerMethodAttribute("r", "根据表达式汇总多个物品的材料，不查询价格", "可以使用text:选项返回文本。如#r 白钢锭 text:")>]
+    [<CommandHandlerMethodAttribute("rr", "根据表达式汇总多个物品的基础材料，不查询价格", "可以使用text:选项返回文本。如#rr 白钢锭 text:")>]
+    [<CommandHandlerMethodAttribute("rc",
+                                    "计算物品基础材料成本",
+                                    "可以使用text:选项返回文本。
+可以设置查询服务器，已有服务器见#ff14help")>]
+    [<CommandHandlerMethodAttribute("rrc",
+                                    "计算物品基础材料成本",
+                                    "可以使用text:选项返回文本。
+可以设置查询服务器，已有服务器见#ff14help")>]
     member _.GeneralRecipeCalculator(cmdArg : CommandEventArgs) =
         let doCalculateCost =
             cmdArg.CommandName = "rrc"
@@ -216,9 +233,16 @@ type XivMarketModule() =
         let world = cfg.GetWorld()
 
         let tt =
-            if doCalculateCost
-            then TextTable("物品", RightAlignCell "价格", RightAlignCell "数量", RightAlignCell "小计", RightAlignCell "更新时间")
-            else TextTable("物品", RightAlignCell "数量")
+            if doCalculateCost then
+                TextTable(
+                    "物品",
+                    RightAlignCell "价格",
+                    RightAlignCell "数量",
+                    RightAlignCell "小计",
+                    RightAlignCell "更新时间"
+                )
+            else
+                TextTable("物品", RightAlignCell "数量")
 
         if doCalculateCost then tt.AddPreTable(sprintf "服务器：%s" world.WorldName)
 
@@ -285,13 +309,22 @@ type XivMarketModule() =
 
                         lst.StdEvPrice() * mr.Quantity)
 
-            tt.AddRowFill("卖出价格", PaddingRight, PaddingRight, HumanReadableInteger totalSell.Average)
+            tt.AddRowFill(
+                "卖出价格",
+                PaddingRight,
+                PaddingRight,
+                HumanReadableInteger totalSell.Average
+            )
+
             let profit = (totalSell - sum).Average
             tt.AddRowFill("税前利润", PaddingRight, PaddingRight, HumanReadableInteger profit)
 
         using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))
 
-    [<CommandHandlerMethodAttribute("ssc", "计算部分道具兑换的价格", "兑换所需道具的名称或ID，只处理1个")>]
+    [<CommandHandlerMethodAttribute("ssc",
+                                    "计算部分道具兑换的价格",
+                                    "兑换所需道具的名称或ID，只处理1个
+可以设置查询服务器，已有服务器见#ff14help")>]
     member x.HandleSSS(cmdArg : CommandEventArgs) =
         let sc = SpecialShopCollection.Instance
 
@@ -350,7 +383,9 @@ type XivMarketModule() =
                         RightAlignCell "更新时间"
                     )
 
-                tt.AddPreTable(sprintf "兑换道具:%s 土豆：%s/%s" reqi.Name world.DataCenter world.WorldName)
+                tt.AddPreTable(
+                    sprintf "兑换道具:%s 土豆：%s/%s" reqi.Name world.DataCenter world.WorldName
+                )
 
                 ia
                 |> Array.map
@@ -378,10 +413,13 @@ type XivMarketModule() =
                                          .Average
                                  )
 
-                             if market.IsEmpty then yield PaddingRight else yield HumanTimeSpan updated
+                             if market.IsEmpty then
+                                 yield PaddingRight
+                             else
+                                 yield HumanTimeSpan updated
 
                          }))
                 |> Array.sortBy fst
                 |> Array.iter (fun (_, row) -> tt.AddRow(row))
 
-                using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))
+                using (cmdArg.OpenResponse(ForceImage)) (fun x -> x.Write(tt))

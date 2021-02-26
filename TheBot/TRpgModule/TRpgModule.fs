@@ -22,8 +22,8 @@ open KPX.TheBot.Module.TRpgModule
 type TRpgModule() =
     inherit CommandHandlerBase()
 
-    [<CommandHandlerMethodAttribute("coc7", "coc第七版", "", AltCommandStart = ".")>]
-    [<CommandHandlerMethodAttribute("coc7", "coc第七版", "", IsHidden = true)>]
+    [<CommandHandlerMethodAttribute("coc7", "coc第七版属性值，随机", "", AltCommandStart = ".")>]
+    [<CommandHandlerMethodAttribute("coc7", "coc第七版属性值，每日更新", "", IsHidden = true)>]
     member x.HandleCoc7(cmdArg : CommandEventArgs) =
         let isDotCommand = cmdArg.CommandAttrib.CommandStart = "."
 
@@ -51,21 +51,30 @@ type TRpgModule() =
         let job =
             de.Dicer.GetRandomItem(StringData.ChrJobs)
 
-        if isDotCommand then tt.AddPostTable(sprintf "推荐职业：%s" job) else tt.AddPostTable(sprintf "今日推荐职业：%s" job)
+        if isDotCommand then
+            tt.AddPostTable(sprintf "推荐职业：%s" job)
+        else
+            tt.AddPostTable(sprintf "今日推荐职业：%s" job)
 
         using (cmdArg.OpenResponse()) (fun ret -> ret.Write(tt))
 
-    [<CommandHandlerMethodAttribute("sc", "理智检定 .sc 成功/失败 [当前san]", "", AltCommandStart = ".", IsHidden = true)>]
+    [<CommandHandlerMethodAttribute("sc",
+                                    "理智检定 .sc 成功/失败 [当前san]",
+                                    "如果没有定义当前san，则从#coc7结果车卡计算。",
+                                    AltCommandStart = ".",
+                                    IsHidden = true)>]
     member x.HandleSanCheck(cmdArg : CommandEventArgs) =
         let args = cmdArg.Arguments // 参数检查
 
-        if args.Length = 0 || args.Length > 2 then cmdArg.AbortExecution(InputError, "此指令需要1/2个参数 .sc 成功/失败 [当前san]")
+        if args.Length = 0 || args.Length > 2
+        then cmdArg.AbortExecution(InputError, "此指令需要1/2个参数 .sc 成功/失败 [当前san]")
 
         if not <| args.[0].Contains("/") then cmdArg.AbortExecution(InputError, "成功/失败 表达式错误")
 
-        let isDaily, currentSan = 
+        let isDaily, currentSan =
             if args.Length = 2 then
                 let parseSucc, currentSan = Int32.TryParse(args.[1])
+
                 if parseSucc then
                     false, currentSan
                 else
@@ -95,8 +104,9 @@ type TRpgModule() =
 
         use ret = cmdArg.OpenResponse(ForceText)
         ret.WriteLine("1D100 = {0}：{1}", check, status)
-        
+
         let finalSan = max 0 (currentSan - lose)
+
         if isDaily then
             Coc7.DailySanCacheCollection.Instance.SetValue(cmdArg, finalSan)
             ret.WriteLine("今日San值减少{0}点，当前剩余{1}点。", lose, finalSan)
@@ -171,7 +181,7 @@ type TRpgModule() =
 
         cmdArg.QuickMessageReply(ret)
 
-    [<CommandHandlerMethodAttribute("bg", "人物背景", "", AltCommandStart = ".")>]
+    [<CommandHandlerMethodAttribute("bg", "生成人物背景", "", AltCommandStart = ".")>]
     member x.HandleChrBackground(cmdArg : CommandEventArgs) =
 
         let de = DiceExpression(Dicer.RandomDicer)

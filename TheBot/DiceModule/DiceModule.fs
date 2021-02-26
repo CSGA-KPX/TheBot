@@ -20,8 +20,10 @@ open KPX.TheBot.Module.DiceModule.Utils
 type DiceModule() =
     inherit CommandHandlerBase()
 
-    [<CommandHandlerMethodAttribute("c", "同#c，但每次结果随机", "A B C D", AltCommandStart = ".")>]
-    [<CommandHandlerMethodAttribute("c", "对多个选项1d100", "A B C D")>]
+    [<CommandHandlerMethodAttribute("c", "同#c，但每次结果随机", "", AltCommandStart = ".")>]
+    [<CommandHandlerMethodAttribute("c", "对多个选项1d100", "#c 选项1 选项2 选项3
+可以使用X不X类的短语。如'#c 能不能吃肉'等同于'#c 能吃肉 不能吃肉'
+可以@一个群友帮他选")>]
     member x.HandleChoices(cmdArg : CommandEventArgs) =
         let atUser = cmdArg.MessageEvent.Message.TryGetAt()
         use sw = cmdArg.OpenResponse(ForceText)
@@ -81,7 +83,8 @@ type DiceModule() =
         let jrrp = dicer.GetRandom(100u)
         cmdArg.QuickMessageReply(sprintf "%s今日人品值是：%i" cmdArg.MessageEvent.DisplayName jrrp)
 
-    [<CommandHandlerMethodAttribute("cal", "计算器", "")>]
+    [<CommandHandlerMethodAttribute("cal", "计算器", "支持加减乘除操作和DK操作符，可以测试骰子表达式。
+如#c (1D2+5D5K3)/2*3D6")>]
     member x.HandleCalculator(cmdArg : CommandEventArgs) =
         let sb = Text.StringBuilder()
         let parser = DiceExpression.DiceExpression()
@@ -124,7 +127,9 @@ type DiceModule() =
 
         cmdArg.QuickMessageReply(String.Join("\r\n", chunks))
 
-    [<CommandHandlerMethodAttribute("gacha", "抽10连 概率3%", "")>]
+    [<CommandHandlerMethodAttribute("gacha", "抽10连 概率3%", "接受数字参数。
+小于10的记为概率，大于等于10记为抽数，以最后一次出现的为准。
+如#gacha 6 300或#gacha 300 6")>]
     member x.HandleGacha(cmdArg : CommandEventArgs) =
         let mutable cutoff = 3
         let mutable count = 10

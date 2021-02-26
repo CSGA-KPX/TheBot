@@ -1,26 +1,20 @@
-﻿module KPX.FsCqHttp.Utils.HelpModule
+﻿namespace KPX.FsCqHttp.Utils.HelpModule
+
+open System
 
 open KPX.FsCqHttp.Handler
 
-open KPX.FsCqHttp.Utils.TextResponse
-open KPX.FsCqHttp.Utils.TextTable
-
 open KPX.FsCqHttp.Api.Context
 
+open KPX.FsCqHttp.Utils.TextResponse
+open KPX.FsCqHttp.Utils.TextTable
+open KPX.FsCqHttp.Utils.UserOption
 
-[<Literal>]
-let private helpHelp = "不加选项用来查看所有命令，加命令名查看命令帮助
-如#help #help"
 
 type HelpModule() =
     inherit CommandHandlerBase()
 
-    [<CommandHandlerMethodAttribute("help", "显示已知命令或显示命令文档", helpHelp)>]
-    member x.HandleHelp(cmdArg : CommandEventArgs) =
-        let cfg = UserOption.UserOptionParser()
-        cfg.RegisterOption("hidden", "")
-        cfg.Parse(cmdArg.Arguments)
-
+    member _.ShowCommandList(cfg : UserOptionParser, cmdArg : CommandEventArgs) =
         let tt = TextTable("命令", "说明")
 
         let nonCommandModules = ResizeArray<string>()
@@ -36,9 +30,8 @@ type HelpModule() =
                        || cfg.IsDefined("hidden") then
                         tt.AddRow(cmd.CommandName, cmd.CommandAttribute.HelpDesc)
             | _ ->
-                // TODO: 增加描述性词汇
-                // nonCommandModules.Add(item.GetType().Name)
-                ()
+                // TODO: 为非命令模块增加描述性词汇
+                nonCommandModules.Add(item.GetType().Name)
 
         if nonCommandModules.Count <> 0 then
             tt.AddPostTable("已启用非指令模块：")
@@ -48,22 +41,30 @@ type HelpModule() =
 
         using (cmdArg.OpenResponse(PreferImage)) (fun ret -> ret.Write(tt))
 
-(*
-    // 因为LongHelp基本没写。所以放弃了
-    member x.HandleHelpUnused(cmdArg : CommandEventArgs) =
-        if cmdArg.Arguments.Length = 0 then
-            ()
+    member _.ShowCommandInfo(cfg : UserOptionParser, cmdArg : CommandEventArgs) =
+        let cmd = cfg.CommandLine.[0]
+
+        let api =
+            cmdArg.ApiCaller.CallApi(TryGetCommand(cmd))
+
+        match api.CommandInfo with
+        | None -> cmdArg.QuickMessageReply(sprintf "该模块没有定义或不存在指令%s" cmd)
+        | Some ci when String.IsNullOrEmpty(ci.CommandAttribute.LongHelp) ->
+            cmdArg.QuickMessageReply(sprintf "%s没有定义说明文本" cmd)
+        | Some ci ->
+            use ret = cmdArg.OpenResponse(ForceText)
+            ret.WriteLine("{0} ： {1}", ci.CommandName, ci.CommandAttribute.HelpDesc)
+            ret.Write(ci.CommandAttribute.LongHelp)
+
+    [<CommandHandlerMethodAttribute("help",
+                                    "显示已知命令或显示命令文档详见#help #help",
+                                    "没有参数显示已有指令。加指令名查看指令帮助如#help #help")>]
+    member x.HandleHelp(cmdArg : CommandEventArgs) =
+        let cfg = UserOptionParser()
+        cfg.RegisterOption("hidden", "")
+        cfg.Parse(cmdArg.Arguments)
+
+        if cfg.CommandLine.Length = 0 then
+            x.ShowCommandList(cfg, cmdArg)
         else
-            for arg in cmdArg.Arguments do
-                let arg = arg.ToLowerInvariant()
-
-                let ret =
-                    attribs
-                    |> Array.tryFind (fun (cmd, _) -> cmd.Command = arg)
-
-                if ret.IsSome then
-                    let (cmd, _) = ret.Value
-                    cmdArg.QuickMessageReply(cmd.LongHelp)
-                else
-                    cmdArg.QuickMessageReply(sprintf "找不到命令%s" arg)
-*)
+            x.ShowCommandInfo(cfg, cmdArg)
