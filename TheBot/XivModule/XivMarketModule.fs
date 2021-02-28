@@ -58,8 +58,8 @@ type XivMarketModule() =
     [<CommandHandlerMethodAttribute("ffhelp", "FF14指令帮助", "")>]
     member x.HandleFFCmdHelp(cmdArg : CommandEventArgs) =
         use ret = cmdArg.OpenResponse(ForceText)
-        ret.WriteLine("当前可使用服务器及缩写有：{0}", String.Join(" ", World.WorldFromName.Keys))
-        ret.WriteLine("当前可使用大区及缩写有：{0}", String.Join(" ", World.DataCenterAlias.Keys))
+        ret.WriteLine("当前可使用服务器及缩写有：{0}", String.Join(" ", World.WorldNames))
+        ret.WriteLine("当前可使用大区及缩写有：{0}", String.Join(" ", World.DataCenterNames))
 
     [<CommandHandlerMethodAttribute("fm",
                                     "FF14市场查询。可以使用 采集重建/魔晶石/水晶 快捷组",

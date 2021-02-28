@@ -20,22 +20,21 @@ type XivConfig(args : CommandEventArgs) =
         ConfigManager(ConfigOwner.User(args.MessageEvent.UserId))
 
     let defaultServerName = "拉诺西亚"
-    let defaultServer = World.WorldFromName.[defaultServerName]
+    let defaultServer = World.GetWorldByName(defaultServerName)
 
     do
         opts.RegisterOption("text", "")
         opts.RegisterOption("server", defaultServerName)
 
         [| for arg in args.Arguments do
-            if World.WorldFromName.ContainsKey(arg) then
+            if World.DefinedWorld(arg) then
                 yield "server:" + arg
-            elif World.DataCenterAlias.ContainsKey(arg) then
-                let dc = World.DataCenterAlias.[arg]
+            elif World.DefinedDC(arg) then
+                let dc = World.GetDCByName(arg)
 
                 let ss =
-                    World.Worlds
-                    |> Array.filter (fun x -> x.DataCenter = dc)
-                    |> Array.map (fun x -> sprintf "server:%s" x.WorldName)
+                    World.GetWorldsByDC(dc)
+                    |> Seq.map (fun x -> sprintf "server:%s" x.WorldName)
 
                 yield! ss
             else
@@ -49,14 +48,14 @@ type XivConfig(args : CommandEventArgs) =
     /// 用户指定 -> 用户配置 -> 默认（拉诺西亚）
     member x.GetWorld() =
         if x.IsWorldDefined then
-            World.WorldFromName.[opts.GetValue("server")]
+            World.GetWorldByName(opts.GetValue("server"))
         else
             cm.Get(defaultServerKey, defaultServer)
 
     member x.GetWorlds() =
         if x.IsWorldDefined then
             opts.GetValues("server")
-            |> Array.map (fun str -> World.WorldFromName.[str])
+            |> Array.map (fun str -> World.GetWorldByName(str))
         else
             Array.singleton (cm.Get(defaultServerKey, defaultServer))
 

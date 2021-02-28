@@ -88,7 +88,7 @@ type EveRecipeModule() =
                 | Some recipe when mr.Quantity > 0.0 ->
                     let proc = recipe.ApplyFlags(MeApplied)
                     let product = proc.GetFirstProduct()
-                    tt.AddRow("产出：" + product.Item.Name, product.Quantity)
+                    tt.AddRow("产出：" + product.Item.Name, HumanReadableInteger product.Quantity)
 
                     for m in proc.Input do
                         final.Update(m)

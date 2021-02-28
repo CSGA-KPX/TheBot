@@ -31,7 +31,7 @@ type MarketInfo =
         let wid = ret.[0] |> uint16
         let iid = ret.[1] |> int
 
-        { World = World.WorldFromId.[wid]
+        { World = World.GetWorldById(wid)
           Item = ItemCollection.Instance.GetByItemId(iid) }
 
 
