@@ -55,7 +55,7 @@ type XivMarketModule() =
         else
             cmdArg.QuickMessageReply("没有指定服务器或服务器名称不正确")
 
-    [<CommandHandlerMethodAttribute("ffhelp", "FF14指令帮助", "")>]
+    //[<CommandHandlerMethodAttribute("ffhelp", "FF14指令帮助", "")>]
     member x.HandleFFCmdHelp(cmdArg : CommandEventArgs) =
         use ret = cmdArg.OpenResponse(ForceText)
         ret.WriteLine("当前可使用服务器及缩写有：{0}", String.Join(" ", World.WorldNames))
@@ -356,7 +356,6 @@ text 以文本格式输出结果
                     for item in chunk do
                         yield item.Id
                         yield item.Name
-
                     for _ = 0 to headerCol - chunk.Length - 1 do
                         yield PaddingRight
                         yield PaddingLeft
@@ -423,3 +422,39 @@ text 以文本格式输出结果
                 |> Array.iter (fun (_, row) -> tt.AddRow(row))
 
                 using (cmdArg.OpenResponse(ForceImage)) (fun x -> x.Write(tt))
+
+    [<CommandHandlerMethodAttribute("理符",
+                                    "计算制作理符利润（只查询70级以上的基础材料）",
+                                    "#理符 [职业名] [服务器名]",
+                                    Disabled = true)>]
+    member x.HandleCraftLeve(cmdArg : CommandEventArgs) =
+        let cfg = CommandUtils.XivConfig(cmdArg)
+        //let world = cfg.GetWorld()
+
+        let leves =
+            cfg.CommandLine
+            |> Array.tryHead
+            |> Option.map
+                (fun x -> ClassJobMapping.ClassJobMappingCollection.Instance.TrySearchByName(x))
+            |> Option.flatten
+            |> Option.map (fun job -> CraftLeve.CraftLeveInfoCollection.Instance.GetByClassJob(job))
+
+        if leves.IsNone then cmdArg.AbortExecution(InputError, "未设置职业或职业无效")
+
+        let leves =
+            leves.Value
+            |> Array.filter (fun leve -> leve.Level >= 60)
+            |> Array.sortBy (fun leve -> leve.Level)
+
+        //let tt =TextTable("名称", "等级", "制作价格", "金币奖励", "利润率", "最旧更新")
+
+        for leve in leves do
+            for item in leve.Items do
+                let quantity = ByItem item.Quantity
+                let item = itemCol.GetByItemId(item.Item)
+                // 生产理符都能搓
+                let materials = rm.TryGetRecipeRec(item, quantity).Value
+                materials |> ignore //屏蔽警告用
+                ()
+
+            ()

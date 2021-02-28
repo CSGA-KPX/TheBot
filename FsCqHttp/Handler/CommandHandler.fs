@@ -23,6 +23,9 @@ type CommandHandlerMethodAttribute(command : string, desc, lh) =
     /// 完整帮助文本
     member x.LongHelp : string = lh
 
+    /// 如果为true则不会被CommandHandlerBase.Commands加载
+    member val Disabled = false with get, set
+
     /// 指示改指令是否在help等指令中隐藏
     member val IsHidden = false with get, set
 
@@ -102,7 +105,8 @@ type CommandHandlerBase() =
                           Method = method
                           OwnerModule = x }
 
-                    commands.Add(cmd)
+                    if not attr.Disabled then
+                        commands.Add(cmd)
                     commandGenerated <- true
 
         commands :> Collections.Generic.IEnumerable<_>

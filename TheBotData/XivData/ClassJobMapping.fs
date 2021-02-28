@@ -40,5 +40,5 @@ type ClassJobMappingCollection private () =
         |> db.InsertBulk
         |> ignore
 
-    member x.SearchByName(name) = x.DbCollection.SafeFindById(name)
-    member x.TrySearchByName(name) = x.DbCollection.TryFindById(name)
+    member x.SearchByName(name : string) = x.DbCollection.SafeFindById(name)
+    member x.TrySearchByName(name : string) = x.DbCollection.TryFindById(name)

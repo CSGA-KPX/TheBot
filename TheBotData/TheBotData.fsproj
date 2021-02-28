@@ -26,12 +26,12 @@
     <Compile Include="XivData\Shops\GilShop.fs" />
     <Compile Include="XivData\Shops\SpecialShop.fs" />
     <Compile Include="XivData\World.fs" />
-    <Compile Include="XivData\WorldV2.fs" />
     <Compile Include="XivData\ClassJobMapping.fs" />
     <Compile Include="XivData\CraftGearSet.fs" />
     <Compile Include="XivData\OceanFishing.fs" />
     <Compile Include="XivData\CompundMarketInfo.fs" />
     <Compile Include="XivData\ContentFinderCondition.fs" />
+    <Compile Include="XivData\CraftLeve.fs" />
     <Compile Include="EveData\Utils.fs" />
     <Compile Include="EveData\EveGroup.fs" />
     <Compile Include="EveData\EveMarketGroup.fs" />
