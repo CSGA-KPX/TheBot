@@ -10,7 +10,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="EVEData.zip" />
     <Compile Include="Common\Resource.fs" />
     <Compile Include="Common\Database.fs" />
     <Compile Include="Common\Network.fs" />

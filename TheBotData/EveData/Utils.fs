@@ -1,18 +1,12 @@
 ﻿module KPX.TheBot.Data.EveData.Utils
 
 open System
+open System.IO
 
 
 let internal GetEveDataArchive () =
-    let ResName = "TheBotData.EVEData.zip"
-
-    let assembly =
-        Reflection.Assembly.GetExecutingAssembly()
-
-    let stream =
-        assembly.GetManifestResourceStream(ResName)
-
-    new IO.Compression.ZipArchive(stream, IO.Compression.ZipArchiveMode.Read)
+    let path = Path.Combine(KPX.TheBot.Data.Common.Resource.StaticDataPath, "EVEData.zip")
+    new Compression.ZipArchive(File.OpenRead(path), Compression.ZipArchiveMode.Read)
 
 let inline pct (i : int) = (float i) / 100.0
 

@@ -1,6 +1,8 @@
 ﻿namespace rec KPX.TheBot.Data.Common.Database
 
 open System
+open System.IO
+open System.IO.Compression
 open System.Collections.Generic
 open System.Reflection
 
@@ -12,13 +14,15 @@ open LiteDB
 [<AutoOpen>]
 module Helpers =
     let private dbCache = Dictionary<string, LiteDatabase>()
-    
+
     type ILiteCollection<'T> with
         member x.SafeFindById(id : obj) =
             let ret = x.FindById(BsonValue(id))
+
             if isNull (box ret) then
                 let msg = sprintf "不能在%s中找到%A" x.Name id
                 raise <| KeyNotFoundException(msg)
+
             ret
 
         member x.TryFindById(id : obj) =
@@ -47,7 +51,7 @@ type IInitializationInfo =
 
 [<AbstractClass>]
 type BotDataCollection<'Key, 'Item>(dbName) as x =
-    
+
     let colName = x.GetType().Name
 
     /// 调用InitializeCollection时的依赖项，
@@ -101,11 +105,10 @@ type CachedItemCollection<'Key, 'Item>(dbName) =
 
     /// 获得一个'Item，如果有缓存优先拿缓存
     member x.GetItem(key : 'Key) =
-        let ret = x.DbCollection.TryFindById(BsonValue(key))
-        if ret.IsNone || x.IsExpired(ret.Value) then
-            x.FetchItem(key)
-        else
-            ret.Value
+        let ret =
+            x.DbCollection.TryFindById(BsonValue(key))
+
+        if ret.IsNone || x.IsExpired(ret.Value) then x.FetchItem(key) else ret.Value
 
 [<CLIMutable>]
 type TableUpdateTime =
@@ -145,11 +148,35 @@ type BotDataInitializer private () =
         getLiteDB(DefaultDB)
             .GetCollection<TableUpdateTime>()
 
-    static let xivCollection =
-        new EmbeddedXivCollection(XivLanguage.None)
+    static let mutable xivArchive : ZipArchive option = None
+
+    static let mutable xivCollection : ZippedXivCollection option = None
+
+    static member FreshXivCollection() =
+        if xivArchive.IsSome then xivArchive.Value.Dispose()
+
+        let archivePath =
+            Path.Combine(
+                KPX.TheBot.Data.Common.Resource.StaticDataPath,
+                "ffxiv-datamining-cn-master.zip"
+            )
+
+        xivArchive <-
+            Some
+            <| new ZipArchive(File.OpenRead(archivePath), ZipArchiveMode.Read)
+
+        xivCollection <-
+            Some
+            <| new ZippedXivCollection(
+                XivLanguage.None,
+                xivArchive.Value,
+                "ffxiv-datamining-cn-master/"
+            )
 
     /// 获得一个全局的中文FF14数据库
-    static member internal XivCollectionChs = xivCollection
+    static member internal XivCollectionChs =
+        if xivCollection.IsNone then BotDataInitializer.FreshXivCollection()
+        xivCollection.Value
 
     /// 记录CachedTableCollection<>的更新时间
     static member RegisterCollectionUpdate(name : string) =
