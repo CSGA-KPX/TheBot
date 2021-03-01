@@ -194,6 +194,8 @@ module World =
         // 添加国服服务器名称
         for (chs, eng) in ChsWorldName do
             let w = GetWorldByName(eng)
+            // 引用传值，字典里面原本的也修改了
+            w.WorldName <- chs
             nameMapping.Add(chs, w)
 
         // 重写国服服务器的大区信息
