@@ -52,8 +52,6 @@
     <Compile Include="Program.fs" />
   </ItemGroup>
 
-  <ItemGroup />
-
   <ItemGroup>
     <None Include="NLog.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -71,6 +69,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\LibFFXIV\LibFFXIV.GameData.Raw\LibFFXIV.GameData.fsproj" />
     <ProjectReference Include="..\FsCqHttp\FsCqHttp.fsproj" />
     <ProjectReference Include="..\TheBotData\TheBotData.fsproj" />
     <ProjectReference Include="..\..\FFXIVNetwork\LibXIVServerFable\LibDmfXivShared.fsproj" />

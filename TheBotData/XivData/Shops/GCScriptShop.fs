@@ -26,17 +26,18 @@ type GCScriptShop private () =
     override x.Depends = Array.empty
 
     override x.InitializeCollection() =
-        use col = BotDataInitializer.XivCollectionChs
         x.DbCollection.EnsureIndex(LiteDB.BsonExpression.Create("ReceiveItem"))
         |> ignore
 
+        use col = BotDataInitializer.XivCollectionChs
+
         seq {
-            for row in col.GetSheet("GCScripShopItem") do
+            for row in col.GCScripShopItem.TypedRows do
                 let key = row.Key.Main
-                let item = row.As<int>("Item")
+                let item = row.Item.AsInt()
 
                 if key >= 34 && item <> 0 then
-                    let seals = row.As<int>("Cost{GCSeals}")
+                    let seals = row.``Cost{GCSeals}``.AsInt()
                     let dbKey = row.Key.Main * 100 + row.Key.Alt
 
                     yield
@@ -48,5 +49,5 @@ type GCScriptShop private () =
         |> x.DbCollection.InsertBulk
         |> ignore
 
-    member x.GetByItem(item : XivItem) = 
+    member x.GetByItem(item : XivItem) =
         x.DbCollection.Find(Query.EQ("ReceiveItem", BsonValue(item.Id)))

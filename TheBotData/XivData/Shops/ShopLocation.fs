@@ -37,18 +37,21 @@ type ShopLocationCollection private () =
 
         let level =
             seq {
-                for item in col.GetSheet("Level") do
-                    let o = item.As<int>("Object")
-                    let map = item.AsRow("Map")
-                    let sf = map.As<uint16>("SizeFactor") |> int
-                    let offsetX = map.As<int16>("Offset{X}") |> int
-                    let offsetY = map.As<int16>("Offset{Y}") |> int
+                for row in col.Level.TypedRows do
+                    let map = row.Map.AsRow()
+                    let sf = map.SizeFactor.AsInt()
 
                     let x =
-                        toMapCoordinate3d (sf, item.As<float>("X"), offsetX)
+                        let x = row.X.AsDouble()
+                        let offsetX = map.``Offset{X}``.AsInt()
+                        toMapCoordinate3d (sf, x, offsetX)
 
                     let y =
-                        toMapCoordinate3d (sf, item.As<float>("Y"), offsetY)
+                        let y = row.Y.AsDouble()
+                        let offsetY = map.``Offset{Y}``.AsInt()
+                        toMapCoordinate3d (sf, y, offsetY)
+
+                    let o = row.Object.AsInt()
 
                     if o <> 0 then
                         yield
@@ -56,31 +59,32 @@ type ShopLocationCollection private () =
                             {| X = x
                                Y = y
                                Object = o
-                               Territory = map.AsRow("PlaceName").As<string>("Name") |}
+                               Territory = map.PlaceName.AsRow().Name.AsString() |}
             }
             |> readOnlyDict
 
-        let eNpcRes = col.GetSheet("ENpcResident")
-
         let data = Dictionary<int, ResizeArray<string>>()
 
-        for item in col.GetSheet("ENpcBase") do
-            let npc = item.Key.Main
+        let eNpcRes = col.ENpcResident
+
+        for row in col.ENpcBase.TypedRows do
+            let npcId = row.Key.Main
             let mutable npcInfo = ""
 
-            if level.ContainsKey(npc) then
-                let npcPos = level.[npc]
-                let npcName = eNpcRes.[npc].As<string>("Singular")
+            if level.ContainsKey(npcId) then
+                let npcPos = level.[npcId]
+
+                let npcName =
+                    eNpcRes.GetItemTyped(npcId).Singular.AsString()
+
                 npcInfo <- sprintf "%s: %s(%.1f, %.1f)" npcName npcPos.Territory npcPos.X npcPos.Y
 
-            let propIds =
-                item.AsArray<int>("ENpcData", 32)
-                |> Array.filter ((<>) 0)
+            for propId in row.ENpcData.AsInts() do
+                if propId <> 0 then
+                    if not <| data.ContainsKey(propId) then
+                        data.Add(propId, ResizeArray<string>())
 
-            for prop in propIds do
-                if not <| data.ContainsKey(prop) then data.Add(prop, ResizeArray<string>())
-
-                if npcInfo <> "" then data.[prop].Add(npcInfo)
+                    if npcInfo <> "" then data.[propId].Add(npcInfo)
 
         data
         |> Seq.map
@@ -90,8 +94,7 @@ type ShopLocationCollection private () =
         |> x.DbCollection.InsertBulk
         |> ignore
 
-    member x.ShopPropIdExists(id : int) = 
+    member x.ShopPropIdExists(id : int) =
         x.DbCollection.Exists(Query.EQ("_id", BsonValue(id)))
 
-    member x.GetByShopPropId(id : int) = 
-        x.DbCollection.SafeFindById(id)
+    member x.GetByShopPropId(id : int) = x.DbCollection.SafeFindById(id)

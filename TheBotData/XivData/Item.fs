@@ -34,13 +34,12 @@ type ItemCollection private () =
         |> ignore
 
         use col = BotDataInitializer.XivCollectionChs
-        let chs = col.GetSheet("Item", [| "Name" |])
 
         seq {
-            for row in chs do
+            for row in col.Item.TypedRows do
                 yield
                     { Id = row.Key.Main
-                      Name = row.As<string>("Name") }
+                      Name = row.Name.AsString() }
         }
         |> db.InsertBulk
         |> ignore

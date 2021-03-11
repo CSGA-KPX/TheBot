@@ -59,7 +59,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\FFXIVNetwork\LibDmfXivClient\LibDmfXivClient.fsproj" />
     <ProjectReference Include="..\..\FFXIVNetwork\LibXIVServerFable\LibDmfXivShared.fsproj" />
-    <ProjectReference Include="..\..\LibFFXIV\LibFFXIV.GameData.Raw\LibFFXIV.GameData.Raw.fsproj" />
+    <ProjectReference Include="..\..\LibFFXIV\LibFFXIV.GameData.Raw\LibFFXIV.GameData.fsproj" />
     <ProjectReference Include="..\..\LibFFXIV\LibFFXIV.Network\LibFFXIV.Network.fsproj" />
   </ItemGroup>
 

@@ -25,39 +25,35 @@ type CompanyCraftRecipeProvider private () =
         db.EnsureIndex(LiteDB.BsonExpression.Create("Process.Output[0].Item"))
         |> ignore
 
-        use col = BotDataInitializer.XivCollectionChs
-        let chs = col.GetSheet("CompanyCraftSequence")
-
         seq {
-            for ccs in chs do
-                let materials =
-                    [| for part in ccs.AsRowArray("CompanyCraftPart", 8) do
-                        for proc in part.AsRowArray("CompanyCraftProcess", 3) do
-                            let itemsKeys =
-                                proc.AsRowArray("SupplyItem", 12)
-                                |> Array.map (fun r -> r.As<int>("Item"))
+            use col = BotDataInitializer.XivCollectionChs
+            let ia = ItemAccumulator<int>()
 
-                            let amounts =
-                                let setAmount = proc.AsArray<uint16>("SetQuantity", 12)
-                                let setCount = proc.AsArray<uint16>("SetsRequired", 12)
+            for ccs in col.CompanyCraftSequence.TypedRows do
+                ia.Clear()
 
-                                setAmount
-                                |> Array.map2 (fun a b -> a * b |> float) setCount
+                let output =
+                    [| { Item = ccs.ResultItem.AsInt()
+                         Quantity = 1.0 } |]
 
-                            let materials =
-                                Array.zip itemsKeys amounts
-                                |> Array.filter (fun (id, _) -> id > 0)
-                                |> Array.map (fun (id, runs) -> { Item = id; Quantity = runs })
+                for part in ccs.CompanyCraftPart.AsRows() do
+                    for proc in part.CompanyCraftProcess.AsRows() do
+                        let items =
+                            proc.SupplyItem.AsRows()
+                            |> Array.map (fun row -> row.Item.AsInt())
 
-                            yield! materials |]
+                        let amounts = proc.SetQuantity.AsDoubles()
+                        let sets = proc.SetsRequired.AsDoubles()
+
+                        for i = 0 to items.Length - 1 do
+                            if items.[i] <> 0 then ia.Update(i, amounts.[i] * sets.[i])
 
                 yield
                     { Id = 0
                       Process =
-                          { Output =
-                                [| { Item = ccs.As<int>("ResultItem")
-                                     Quantity = 1.0 } |]
-                            Input = materials } }
+                          { Output = output
+                            Input = ia.AsMaterials() } }
+
         }
         |> db.InsertBulk
         |> ignore

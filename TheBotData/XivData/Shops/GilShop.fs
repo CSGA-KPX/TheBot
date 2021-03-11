@@ -17,9 +17,6 @@ type GilShopInfo =
 type GilShopCollection private () =
     inherit CachedTableCollection<int, GilShopInfo>(DefaultDB)
 
-    static let AskKey = "Price{Mid}"
-    static let BidKey = "Price{Low}"
-
     static let instance = GilShopCollection()
     static member Instance = instance
 
@@ -30,17 +27,16 @@ type GilShopCollection private () =
     override x.InitializeCollection() =
         use col = BotDataInitializer.XivCollectionChs
 
-        col.GetSheet("Item", [| AskKey; BidKey |])
-        |> ignore
+        // col.GetSheet("Item", [| AskKey; BidKey |])
 
         seq {
-            for record in col.GetSheet("GilShopItem") do
-                let item = record.AsRow("Item")
+            for row in col.GilShopItem.TypedRows do
+                let item = row.Item.AsRow()
 
                 yield
                     { Id = item.Key.Main
-                      Ask = item.As<int32>(AskKey)
-                      Bid = item.As<int32>(BidKey) }
+                      Ask = item.``Price{Mid}``.AsInt()
+                      Bid = item.``Price{Low}``.AsInt() }
         }
         |> Seq.distinctBy (fun x -> x.Id)
         |> x.DbCollection.InsertBulk

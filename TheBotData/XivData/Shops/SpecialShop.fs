@@ -33,38 +33,41 @@ type SpecialShopCollection private () =
 
         use col = BotDataInitializer.XivCollectionChs
 
-        col.GetSheet("Item", [|"Name"; "IsUntradable"|])
-        |> ignore //缓存
-
-        let sht = col.GetSheet("SpecialShop")
+        //col.GetSheet("Item", [| "Name"; "IsUntradable" |])
+        //|> ignore // 缓存
 
         seq {
-            for row in sht do
-                let index prefix c p = sprintf "%s[%i][%i]" prefix c p
-                for page = 0 to 1 do
-                    for col = 0 to 59 do
-                        let rItem =
-                            row.AsRow(index "Item{Receive}" col page)
+            let existed =
+                System.Collections.Generic.HashSet<string>()
 
-                        let cItem = row.As<int>(index "Item{Cost}" col page)
+            for row in col.SpecialShop.TypedRows do
+                let rItem = row.``Item{Receive}``.AsRows()
+                let rCount = row.``Count{Receive}``.AsInts()
+                let rHq = row.``HQ{Receive}``.AsBools()
 
-                        let r =
-                            { Id = 0
-                              ReceiveItem = rItem.Key.Main
-                              ReceiveCount = row.As<int32>(index "Count{Receive}" col page)
-                              ReceiveHQ = row.As<bool>(index "HQ{Receive}" col page)
-                              CostItem = cItem
-                              CostCount = row.As<int32>(index "Count{Cost}" col page) }
+                let cItem = row.``Item{Cost}``.AsInts()
+                let cCount = row.``Count{Cost}``.AsInts()
 
-                        if rItem.Key.Main > 0
-                           && r.ReceiveCount > 0
-                           && cItem > 0
-                           && r.ReceiveHQ = false
-                           && rItem.As<bool>("IsUntradable") = false
-                           && rItem.As<string>("Name") <> "" then
-                            yield r
+                for i = rItem.GetLowerBound(0) to rItem.GetUpperBound(0) do
+                    for j = rItem.GetLowerBound(1) to rItem.GetUpperBound(1) do
+                        let key =
+                            sprintf "%i%i" rItem.[i, j].Key.Main cItem.[i, j]
+                        if not <| (existed.Contains(key))
+                           && cItem.[i, j] > 0
+                           && rItem.[i, j].Key.Main > 0
+                           && rCount.[i, j] > 0
+                           && rHq.[i, j] = false
+                           && rItem.[i, j].IsUntradable.AsBool() = false
+                           && rItem.[i, j].Name.AsString() <> "" then
+                            existed.Add(key) |> ignore
+                            yield
+                                { Id = 0
+                                  ReceiveItem = rItem.[i, j].Key.Main
+                                  ReceiveCount = rCount.[i, j]
+                                  ReceiveHQ = rHq.[i, j]
+                                  CostItem = cItem.[i, j]
+                                  CostCount = cCount.[i, j] }
         }
-        |> Seq.distinctBy (fun x -> sprintf "%i%i" x.ReceiveItem x.CostItem)
         |> x.DbCollection.InsertBulk
         |> ignore
 

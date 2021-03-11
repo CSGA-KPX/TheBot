@@ -35,23 +35,21 @@ type XivContentCollection private () =
 
     override x.InitializeCollection() =
         use col = BotDataInitializer.XivCollectionChs
-        let sht = col.GetSheet("ContentFinderCondition")
-
         seq {
-            for row in sht do
+            for row in col.ContentFinderCondition.TypedRows do
                 yield
                     { Id = row.Key.Main
-                      Name = row.As<string>("Name")
-                      IsHighEndDuty = row.As<bool>("HighEndDuty")
-                      IsLevelingRoulette = row.As<bool>("LevelingRoulette")
-                      IsLevel5060Roulette = row.As<bool>("Level50/60Roulette")
-                      IsMSQRoulette = row.As<bool>("MSQRoulette")
-                      IsGuildHestRoulette = row.As<bool>("GuildHestRoulette")
-                      IsExpertRoulette = row.As<bool>("ExpertRoulette")
-                      IsTrialRoulette = row.As<bool>("TrialRoulette")
-                      IsDailyFrontlineChallengeRoulette = row.As<bool>("DailyFrontlineChallenge")
-                      IsLevel70Roulette = row.As<bool>("Level70Roulette")
-                      IsMentorRoulette = row.As<bool>("MentorRoulette") }
+                      Name = row.Name.AsString()
+                      IsHighEndDuty = row.HighEndDuty.AsBool()
+                      IsLevelingRoulette = row.LevelingRoulette.AsBool()
+                      IsLevel5060Roulette = row.``Level50/60Roulette``.AsBool()
+                      IsMSQRoulette = row.MSQRoulette.AsBool()
+                      IsGuildHestRoulette = row.GuildHestRoulette.AsBool()
+                      IsExpertRoulette = row.ExpertRoulette.AsBool()
+                      IsTrialRoulette = row.TrialRoulette.AsBool()
+                      IsDailyFrontlineChallengeRoulette = row.DailyFrontlineChallenge.AsBool()
+                      IsLevel70Roulette = row.Level70Roulette.AsBool()
+                      IsMentorRoulette = row.MentorRoulette.AsBool() }
         }
         |> x.DbCollection.InsertBulk
         |> ignore

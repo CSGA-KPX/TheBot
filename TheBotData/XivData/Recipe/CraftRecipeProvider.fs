@@ -26,30 +26,24 @@ type CraftRecipeProvider private () =
         |> ignore
 
         use col = BotDataInitializer.XivCollectionChs
-        let chs = col.GetSheet("Recipe")
 
         seq {
-            for row in chs do
-                let itemsKeys = row.AsArray<int>("Item{Ingredient}", 10)
-
-                let amounts =
-                    row.AsArray<byte>("Amount{Ingredient}", 10)
-                    |> Array.map (fun x -> float x)
-
+            for row in col.Recipe.TypedRows do
                 let materials =
-                    Array.zip itemsKeys amounts
+                    let items = row.``Item{Ingredient}``.AsInts()
+                    let amounts = row.``Amount{Ingredient}``.AsDoubles()
+
+                    Array.zip items amounts
                     |> Array.filter (fun (id, _) -> id > 0)
                     |> Array.map (fun (id, runs) -> { Item = id; Quantity = runs })
 
-                let resultItem = row.As<int>("Item{Result}")
-                let resultAmount = row.As<byte>("Amount{Result}")
+                let retItem = row.``Item{Result}``.AsInt()
+                let retAmount = row.``Amount{Result}``.AsDouble()
 
                 yield
                     { Id = 0
                       Process =
-                          { Output =
-                                [| { Item = resultItem
-                                     Quantity = resultAmount |> float } |]
+                          { Output = [| { Item = retItem; Quantity = retAmount } |]
                             Input = materials } }
         }
         |> db.InsertBulk

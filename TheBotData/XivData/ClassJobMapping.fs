@@ -24,14 +24,13 @@ type ClassJobMappingCollection private () =
     override x.InitializeCollection() =
         let db = x.DbCollection
         use col = BotDataInitializer.XivCollectionChs
-        let sht = col.GetSheet("ClassJob")
 
         seq {
-            for row in sht do
-                let abbr = row.As<string>("Abbreviation")
-                yield row.As<string>("Name"), abbr
-                yield row.As<string>("Abbreviation"), abbr
-                yield row.As<string>(2), abbr
+            for row in col.ClassJob.TypedRows do
+                let abbr = row.Abbreviation.AsString()
+                yield abbr, abbr
+                yield row.Name.AsString(), abbr
+                yield row.UNK_2.AsString(), abbr
 
             yield! [| "占星", "AST"; "诗人", "BRD" |]
         }

@@ -6,10 +6,14 @@ open System.IO.Compression
 open System.Collections.Generic
 open System.Reflection
 
-open LibFFXIV.GameData.Raw
+open LibFFXIV.GameData
+open LibFFXIV.GameData.Provided
 
 open LiteDB
 
+
+type TypedXivCollection =
+    XivCollectionProvider< @"K:\Source\Repos\TheBot\TheBot\bin\Debug\staticData\ffxiv-datamining-cn-master.zip", "none", "ffxiv-datamining-cn-master/" >
 
 [<AutoOpen>]
 module Helpers =
@@ -40,6 +44,7 @@ module Helpers =
 
         dbCache.[name]
 
+    [<Literal>]
     let internal DefaultDB = "BotDataCache.db"
 
     do
@@ -83,7 +88,8 @@ type BotDataCollection<'Key, 'Item>(dbName) as x =
 
 
     interface Collections.Generic.IEnumerable<'Item> with
-        member x.GetEnumerator() = x.DbCollection.FindAll().GetEnumerator()
+        member x.GetEnumerator() =
+            x.DbCollection.FindAll().GetEnumerator()
 
     interface IInitializationInfo with
         member x.Depends = x.Depends
@@ -108,7 +114,10 @@ type CachedItemCollection<'Key, 'Item>(dbName) =
         let ret =
             x.DbCollection.TryFindById(BsonValue(key))
 
-        if ret.IsNone || x.IsExpired(ret.Value) then x.FetchItem(key) else ret.Value
+        if ret.IsNone || x.IsExpired(ret.Value) then
+            x.FetchItem(key)
+        else
+            ret.Value
 
 [<CLIMutable>]
 type TableUpdateTime =
@@ -150,7 +159,7 @@ type BotDataInitializer private () =
 
     static let mutable xivArchive : ZipArchive option = None
 
-    static let mutable xivCollection : ZippedXivCollection option = None
+    static let mutable xivCollection : TypedXivCollection option = None
 
     static member FreshXivCollection() =
         if xivArchive.IsSome then xivArchive.Value.Dispose()
@@ -167,7 +176,7 @@ type BotDataInitializer private () =
 
         xivCollection <-
             Some
-            <| new ZippedXivCollection(
+            <| new TypedXivCollection(
                 XivLanguage.None,
                 xivArchive.Value,
                 "ffxiv-datamining-cn-master/"
@@ -175,7 +184,9 @@ type BotDataInitializer private () =
 
     /// 获得一个全局的中文FF14数据库
     static member internal XivCollectionChs =
-        if xivCollection.IsNone then BotDataInitializer.FreshXivCollection()
+        if xivCollection.IsNone then
+            BotDataInitializer.FreshXivCollection()
+
         xivCollection.Value
 
     /// 记录CachedTableCollection<>的更新时间
@@ -189,7 +200,10 @@ type BotDataInitializer private () =
     static member GetCollectionUpdateTime(name : string) =
         let ret = updateCol.FindById(BsonValue(name))
 
-        if isNull (box ret) then DateTimeOffset.MinValue else ret.Updated
+        if isNull (box ret) then
+            DateTimeOffset.MinValue
+        else
+            ret.Updated
 
     /// 输入BotDataCollection数组，按照依赖顺序排序
     static member private SolveDependency(modules : IInitializationInfo []) =
@@ -248,7 +262,7 @@ type BotDataInitializer private () =
         Assembly.GetExecutingAssembly().GetTypes()
         |> Array.filter
             (fun t ->
-                (typeof<IInitializationInfo>.IsAssignableFrom(t)
+                (typeof<IInitializationInfo>.IsAssignableFrom (t)
                  && (not (t.IsAbstract))))
         |> Array.map
             (fun t ->
@@ -286,4 +300,5 @@ type BotDataInitializer private () =
             db.DropCollection(name) |> ignore
 
     /// 整理数据库文件，释放多余空间
-    static member ShrinkCache() = getLiteDB(DefaultDB).Rebuild() |> ignore
+    static member ShrinkCache() =
+        getLiteDB(DefaultDB).Rebuild() |> ignore

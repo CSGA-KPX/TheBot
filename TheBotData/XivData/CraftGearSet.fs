@@ -36,7 +36,9 @@ type CraftableGearCollection private () =
         db.EnsureIndex(LiteDB.BsonExpression.Create("ItemLv"), false)
         |> ignore
 
-        let fields =
+        use col = BotDataInitializer.XivCollectionChs
+
+        (*let fields =
             [| "EquipSlotCategory"
                "IsUntradable"
                "Level{Equip}"
@@ -45,39 +47,40 @@ type CraftableGearCollection private () =
                "CanBeHq"
                "IsAdvancedMeldingPermitted" |]
 
-        use col = BotDataInitializer.XivCollectionChs
-        let chs = col.GetSheet("Item", fields)
+        let chs = col.GetSheet("Item", fields)*)
 
         let ClassJobCategory =
-            [| let sheet = col.GetSheet("ClassJobCategory")
+            seq {
+                let sheet = col.GetSheet("ClassJobCategory")
 
-               let jobs =
-                   sheet.Header.Headers.[2..]
-                   |> Array.map (fun x -> x.ColumnName)
+                let jobs =
+                    sheet.Header.Headers.[2..]
+                    |> Array.map (fun x -> x.ColumnName)
 
-               for row in sheet do
-                   let j =
-                       jobs
-                       |> Array.filter (fun job -> row.As<bool>(job))
+                for row in sheet do
+                    let j =
+                        jobs
+                        |> Array.filter (fun job -> row.As<bool>(job))
 
-                   yield row.Key.Main, String.Join(" ", j) |]
+                    yield row.Key.Main, String.Join(" ", j)
+            }
             |> readOnlyDict
 
         seq {
-            for item in chs do
-                let elv = item.As<int>("Level{Equip}")
+            for item in col.Item.TypedRows do
+                let elv = item.``Level{Equip}``.AsInt()
 
                 if (elv >= 80)
                    && ((elv % 10) = 0)
-                   && (not <| item.As<bool>("IsUntradable"))
-                   && (item.As<int>("Level{Item}") >= 340)
-                   && (item.As<bool>("CanBeHq"))
-                   && (item.As<bool>("IsAdvancedMeldingPermitted")) then // 部分装备天书能给个5孔的华美型，此时会禁用禁断
+                   && (not <| item.IsUntradable.AsBool())
+                   && (item.``Level{Item}``.AsInt() >= 340)
+                   && (item.CanBeHq.AsBool())
+                   && (item.IsAdvancedMeldingPermitted.AsBool()) then // 部分装备天书能给个5孔的华美型，此时会禁用禁断
                     yield
                         { Id = item.Key.Main
-                          ItemLv = item.As<int>("Level{Item}")
-                          EquipSlotCategory = item.As<int>("EquipSlotCategory")
-                          ClassJobCategory = ClassJobCategory.[item.As<int>("ClassJobCategory")] }
+                          ItemLv = item.``Level{Item}``.AsInt()
+                          EquipSlotCategory = item.EquipSlotCategory.AsInt()
+                          ClassJobCategory = ClassJobCategory.[item.ClassJobCategory.AsInt()] }
         }
         |> db.InsertBulk
         |> ignore
@@ -86,11 +89,14 @@ type CraftableGearCollection private () =
 
     member x.Search(iLv : int, jobCode : string) =
         let query =
-            Query.And(Query.EQ("ItemLv", BsonValue(iLv)), Query.Contains("ClassJobCategory", jobCode))
+            Query.And(
+                Query.EQ("ItemLv", BsonValue(iLv)),
+                Query.Contains("ClassJobCategory", jobCode)
+            )
 
         [| for g in x.DbCollection.Find(query) do
-            if g.EquipSlotCategory = 12 then
-                //戒指要多一个
-                yield g
+               if g.EquipSlotCategory = 12 then
+                   //戒指要多一个
+                   yield g
 
-            yield g |]
+               yield g |]
