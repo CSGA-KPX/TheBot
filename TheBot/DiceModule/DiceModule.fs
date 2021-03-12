@@ -63,7 +63,7 @@ type DiceModule() =
         |> Array.map
             (fun c ->
                 let seed =
-                    if cmdArg.CommandName = "cc" then Array.singleton SeedOption.SeedRandom
+                    if cmdArg.CommandAttrib.FullCommand= ".c" then Array.singleton SeedOption.SeedRandom
                     else if atUser.IsSome then SeedOption.SeedByAtUserDay(cmdArg.MessageEvent)
                     else SeedOption.SeedByUserDay(cmdArg.MessageEvent)
 

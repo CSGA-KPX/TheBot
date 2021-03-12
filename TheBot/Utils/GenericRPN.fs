@@ -3,6 +3,8 @@
 open System
 open System.Collections.Generic
 
+open KPX.FsCqHttp.Handler
+
 
 type IOperand<'T when 'T :> IOperand<'T>> =
     abstract Add : 'T -> 'T
@@ -46,7 +48,7 @@ type GenericRPNParser<'Operand when 'Operand :> IOperand<'Operand>>(?OperatorEsc
                GenericOperator<'Operand>('/', 3, (fun l r -> l.Div(r))) |]
 
         let col =
-            { new System.Collections.ObjectModel.KeyedCollection<char, GenericOperator<'Operand>>() with
+            { new Collections.ObjectModel.KeyedCollection<char, GenericOperator<'Operand>>() with
                 member x.GetKeyForItem(item) = item.Char }
 
         for op in defaultOps do
@@ -68,14 +70,17 @@ type GenericRPNParser<'Operand when 'Operand :> IOperand<'Operand>>(?OperatorEsc
     member private x.SplitString(str : string) =
         let ret = List<_>()
         let sb = Text.StringBuilder()
+
         for i = 0 to str.Length - 1 do
             let c = str.[i]
 
             if x.Operatos.Contains(c) then
                 let isEscaped =
                     // 前一个字符还不能是转义符号
-                    if i = 0 then false // 第一个字符不可能被转义
-                    else str.[i - 1] = x.OperatorEscape
+                    if i = 0 then
+                        false // 第一个字符不可能被转义
+                    else
+                        str.[i - 1] = x.OperatorEscape
 
                 if isEscaped then
                     // 删掉转义字符，然后添加
@@ -84,7 +89,8 @@ type GenericRPNParser<'Operand when 'Operand :> IOperand<'Operand>>(?OperatorEsc
                     let token = sb.ToString()
                     sb.Clear() |> ignore
 
-                    if not <| String.IsNullOrWhiteSpace(token) then ret.Add(x.Tokenize(token))
+                    if not <| String.IsNullOrWhiteSpace(token) then
+                        ret.Add(x.Tokenize(token))
 
                     ret.Add(Operator x.Operatos.[c])
             else
@@ -92,7 +98,8 @@ type GenericRPNParser<'Operand when 'Operand :> IOperand<'Operand>>(?OperatorEsc
 
         let last = sb.ToString()
 
-        if not <| String.IsNullOrWhiteSpace(last) then ret.Add(x.Tokenize(last))
+        if not <| String.IsNullOrWhiteSpace(last) then
+            ret.Add(x.Tokenize(last))
 
         ret.ToArray()
 
@@ -125,19 +132,34 @@ type GenericRPNParser<'Operand when 'Operand :> IOperand<'Operand>>(?OperatorEsc
     member x.Eval(str) =
         let rpn = str |> x.SplitString |> x.InfixToPostfix
 
-        let stack = Stack<'Operand>()
+        if rpn.Length = 0 then
+            raise <| ModuleException(InputError, "输入错误：表达式为空")
 
-        for token in rpn do
-            match token with
-            | Operand i -> stack.Push(i)
-            | Operator o when not o.IsBinary ->
-                let l = stack.Pop()
-                stack.Push(o.Func l l)
-            | Operator o ->
-                let r, l = stack.Pop(), stack.Pop()
-                stack.Push(o.Func l r)
+        try
+            let stack = Stack<'Operand>()
 
-        stack.Pop()
+            for token in rpn do
+                match token with
+                | Operand i -> stack.Push(i)
+                | Operator o when not o.IsBinary ->
+                    let l = stack.Pop()
+                    stack.Push(o.Func l l)
+                | Operator o ->
+                    let r, l = stack.Pop(), stack.Pop()
+                    stack.Push(o.Func l r)
+
+            stack.Pop()
+        with :? InvalidOperationException ->
+            let operators =
+                x.Operatos |> Seq.map (fun op -> op.Char)
+
+            raise
+            <| ModuleException(
+                InputError,
+                "计算错误：表达式未配平。如果表达式中出现{0}等运算符请使用{1}进行转义。",
+                String.Join("", operators),
+                x.OperatorEscape
+            )
 
     member x.TryEval(str : string) =
         try
