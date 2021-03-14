@@ -9,7 +9,7 @@ open KPX.FsCqHttp.Handler
 
 open KPX.TheBot.Data.Common.Database
 
-open KPX.TheBot.Module.TRpgModule.TRpgUtils
+open KPX.TheBot.Module.TRpgModule.Strings
 open KPX.TheBot.Module.TRpgModule.TRpgCharacterCard
 
 (*

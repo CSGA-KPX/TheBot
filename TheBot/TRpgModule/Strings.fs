@@ -1,16 +1,12 @@
-﻿module KPX.TheBot.Module.TRpgModule.TRpgUtils
+﻿module KPX.TheBot.Module.TRpgModule.Strings
 
 open System
 open System.Collections.Generic
-
-open KPX.TheBot.Data.Common.Database
 
 open KPX.TheBot.Utils.EmbeddedResource
 
 open KPX.TheBot.Module.DiceModule.Utils.DiceExpression
 
-
-//let TRpgDb = getLiteDB ("trpg.db")
 
 [<RequireQualifiedAccess>]
 module StringData =
@@ -71,11 +67,3 @@ type TrpgStringTemplate(de : DiceExpression) =
                 String.Join(" ", items)
             with e -> failwithf "找不到请求的数据集 %s : %s" name e.Message
         | other -> invalidArg (nameof name) ("未知指令名称" + other)
-
-type Difficulty =
-    | Critical
-    | Extreme
-    | Hard
-    | Regular
-    | Fail
-    | Fumble

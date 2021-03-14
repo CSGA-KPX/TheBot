@@ -1,63 +1,49 @@
-﻿module KPX.TheBot.Module.TRpgModule.Coc7
-
-open System
-open System.Collections.Concurrent
-
-open KPX.FsCqHttp.Message
-open KPX.FsCqHttp.Event
-open KPX.FsCqHttp.Handler
-
-open KPX.TheBot.Utils.Dicer
-
-open KPX.TheBot.Module.DiceModule.Utils.DiceExpression
+﻿namespace rec KPX.TheBot.Module.TRpgModule.Coc7
 
 
-let Coc7AttrExpr =
-    [| "力量", "3D6*5"
-       "体质", "3D6*5"
-       "体型", "(2D6+6)*5"
-       "敏捷", "3D6*5"
-       "外貌", "3D6*5"
-       "智力", "(2D6+6)*5"
-       "意志", "3D6*5"
-       "教育", "(2D6+6)*5"
-       "幸运", "3D6*5" |]
+module Coc7Utils =
 
-type DailySanCacheItem = { Key : string; San : int }
+    let Coc7AttrExpr =
+        [| "力量", "3D6*5"
+           "体质", "3D6*5"
+           "体型", "(2D6+6)*5"
+           "敏捷", "3D6*5"
+           "外貌", "3D6*5"
+           "智力", "(2D6+6)*5"
+           "意志", "3D6*5"
+           "教育", "(2D6+6)*5"
+           "幸运", "3D6*5" |]
 
-type DailySanCacheCollection private () =
-    let cache =
-        ConcurrentDictionary<uint64, DailySanCacheItem>()
+[<Struct>]
+type RollResult =
+    | Critical
+    | Extreme
+    | Hard
+    | Regular
+    | Fail
+    | Fumble
 
-    member x.SetValue(cmdArg : CommandEventArgs, newVal : int) =
-        let uid = cmdArg.MessageEvent.UserId
-        let current = cache.[uid]
-        cache.TryUpdate(uid, {current with San = newVal}, current) |> ignore
+    override x.ToString() =
+        match x with
+        | Critical -> "大成功"
+        | Extreme -> "成功：极难"
+        | Hard -> "成功：艰难"
+        | Regular -> "成功：一般"
+        | Fail -> "失败"
+        | Fumble -> "大失败"
 
-    member x.GetValue(cmdArg : CommandEventArgs) =
-        let seed =
-            SeedOption.SeedByUserDay(cmdArg.MessageEvent)
+[<Struct>]
+/// 创建指定房规的规则
+///
+/// 大成功：0+offset 大失败：101-offset
+type RollResultRule(offset : int) =
 
-        let uid = cmdArg.MessageEvent.UserId
-        let seedString = SeedOption.GetSeedString(seed)
-
-        let succ, item = cache.TryGetValue(uid)
-
-        // 不存在或者不匹配都需要更新
-        if not succ || (item.Key <> seedString) then
-            let de = seed |> Dicer |> DiceExpression
-
-            let initSan =
-                Coc7AttrExpr
-                |> Array.map (fun (attr, expr) -> attr, de.Eval(expr).Sum |> int)
-                |> Array.find (fun (attr, _) -> attr = "意志")
-                |> snd
-
-            let newItem = { Key = seedString; San = initSan }
-
-            cache.AddOrUpdate(uid, newItem, (fun _ _ -> newItem))
-            |> ignore
-
-        cache.[uid].San
-
-    static member val Instance = DailySanCacheCollection()
+    member x.Descript(i : int, threshold : int) =
+        match i with
+        | _ when i <= 0 + offset -> Critical
+        | _ when i <= threshold / 5 -> Extreme
+        | _ when i <= threshold / 2 -> Hard
+        | _ when i <= threshold -> Regular
+        | _ when i >= 101 - offset -> Fumble
+        | _ when i > threshold -> Fail
+        | _ -> invalidArg "dice" (sprintf "骰值%i不再允许范围内" i)

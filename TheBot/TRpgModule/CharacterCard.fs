@@ -5,7 +5,7 @@ open System.Collections.Generic
 
 open KPX.FsCqHttp.Utils.TextTable
 
-open KPX.TheBot.Module.TRpgModule.TRpgUtils
+open KPX.TheBot.Module.TRpgModule.Strings
 
 (*
 [<CLIMutable>]

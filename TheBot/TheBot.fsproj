@@ -26,8 +26,9 @@
     <Compile Include="LifestyleModule\EatModule.fs" />
     <Compile Include="DiceModule\DiceUtils.fs" />
     <Compile Include="DiceModule\DiceModule.fs" />
-    <Compile Include="TRpgModule\Utils.fs" />
+    <Compile Include="TRpgModule\Strings.fs" />
     <Compile Include="TRpgModule\Coc7.fs" />
+    <Compile Include="TRpgModule\DailySanCache.fs" />
     <Compile Include="TRpgModule\CharacterCard.fs" />
     <Compile Include="TRpgModule\CardManager.fs" />
     <Compile Include="TRpgModule\TRpgModule.fs" />
@@ -69,7 +70,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\LibFFXIV\LibFFXIV.GameData.Raw\LibFFXIV.GameData.fsproj" />
+    <ProjectReference Include="..\..\LibFFXIV\LibFFXIV.GameData\LibFFXIV.GameData.fsproj" />
     <ProjectReference Include="..\FsCqHttp\FsCqHttp.fsproj" />
     <ProjectReference Include="..\TheBotData\TheBotData.fsproj" />
     <ProjectReference Include="..\..\FFXIVNetwork\LibXIVServerFable\LibDmfXivShared.fsproj" />

@@ -64,6 +64,7 @@ module DiceExpression =
             x.Operatos.Add(GenericOperator<_>('k', 4, kFunc))
             x.Operatos.Add(GenericOperator<_>('K', 4, kFunc))
 
+        /// 创建一个随机骰子
         new() = DiceExpression(Dicer.RandomDicer)
 
         /// 获取创建DiceExpression所用的Dicer

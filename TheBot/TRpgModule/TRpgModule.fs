@@ -11,12 +11,15 @@ open KPX.FsCqHttp.Api.Private
 open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.TextTable
 
+open KPX.TheBot.Utils.Config
 open KPX.TheBot.Utils.Dicer
 
 open KPX.TheBot.Module.DiceModule.Utils.DiceExpression
 
-open KPX.TheBot.Module.TRpgModule.TRpgUtils
 open KPX.TheBot.Module.TRpgModule
+open KPX.TheBot.Module.TRpgModule.Strings
+open KPX.TheBot.Module.TRpgModule.Coc7
+open KPX.TheBot.Module.TRpgModule.Coc7.DailySan
 
 
 type TRpgModule() =
@@ -39,7 +42,7 @@ type TRpgModule() =
 
         let mutable sum = 0
 
-        for (name, expr) in Coc7.Coc7AttrExpr do
+        for (name, expr) in Coc7Utils.Coc7AttrExpr do
             let d = de.Eval(expr).Sum |> int
             sum <- sum + d
             tt.AddRow(name, d)
@@ -66,10 +69,11 @@ type TRpgModule() =
     member x.HandleSanCheck(cmdArg : CommandEventArgs) =
         let args = cmdArg.Arguments // 参数检查
 
-        if args.Length = 0 || args.Length > 2
-        then cmdArg.AbortExecution(InputError, "此指令需要1/2个参数 .sc 成功/失败 [当前san]")
+        if args.Length = 0 || args.Length > 2 then
+            cmdArg.AbortExecution(InputError, "此指令需要1/2个参数 .sc 成功/失败 [当前san]")
 
-        if not <| args.[0].Contains("/") then cmdArg.AbortExecution(InputError, "成功/失败 表达式错误")
+        if not <| args.[0].Contains("/") then
+            cmdArg.AbortExecution(InputError, "成功/失败 表达式错误")
 
         let isDaily, currentSan =
             if args.Length = 2 then
@@ -78,9 +82,9 @@ type TRpgModule() =
                 if parseSucc then
                     false, currentSan
                 else
-                    true, Coc7.DailySanCacheCollection.Instance.GetValue(cmdArg)
+                    true, DailySanCacheCollection.Instance.GetValue(cmdArg)
             else
-                true, Coc7.DailySanCacheCollection.Instance.GetValue(cmdArg)
+                true, DailySanCacheCollection.Instance.GetValue(cmdArg)
 
         let succ, fail =
             let s = args.[0].Split("/")
@@ -108,15 +112,17 @@ type TRpgModule() =
         let finalSan = max 0 (currentSan - lose)
 
         if isDaily then
-            Coc7.DailySanCacheCollection.Instance.SetValue(cmdArg, finalSan)
+            DailySanCacheCollection.Instance.SetValue(cmdArg, finalSan)
             ret.WriteLine("今日San值减少{0}点，当前剩余{1}点。", lose, finalSan)
         else
             ret.WriteLine("San值减少{0}点，当前剩余{1}点。", lose, finalSan)
 
-    [<CommandHandlerMethodAttribute("rd", ".r 1D100缩写", "", AltCommandStart = ".", IsHidden = true)>]
-    [<CommandHandlerMethodAttribute("rh", "常规暗骰", "", AltCommandStart = ".", IsHidden = true)>]
+    [<CommandHandlerMethodAttribute("ra", "检定", "", AltCommandStart = ".")>]
+    [<CommandHandlerMethodAttribute("rc", "检定", "", AltCommandStart = ".")>]
+    [<CommandHandlerMethodAttribute("rd", ".r 1D100缩写", "", AltCommandStart = ".")>]
+    [<CommandHandlerMethodAttribute("rh", "常规暗骰", "", AltCommandStart = ".")>]
     [<CommandHandlerMethodAttribute("r", "常规骰点", "", AltCommandStart = ".")>]
-    member x.HandleDice(cmdArg : CommandEventArgs) =
+    member x.HandleRoll(cmdArg : CommandEventArgs) =
         let parser = DiceExpression()
 
         let operators =
@@ -126,32 +132,63 @@ type TRpgModule() =
             }
             |> set
 
-        let expr, reason =
-            match cmdArg.CommandName, cmdArg.Arguments.Length with
-            | "rd", 0 -> "1D100", "--"
-            | "rd", _ -> "1D100", String.Join(" ", cmdArg.Arguments)
+        let mutable expr = "1D100"
+        let mutable needDescript = None
+        let mutable isPrivate = false
+        let mutable reason = "--"
+        let mutable offset = 1
 
-            | "r", 0
-            | "rh", 0 -> "1D100", "--"
-            | "r", 1
-            | "rh", 1 ->
-                let arg = cmdArg.Arguments.[0]
+        match cmdArg.CommandName with
+        // rd [原因]
+        | "rd" ->
+            let args = cmdArg.Arguments
+            if args.Length <> 0 then reason <- String.Join(" ", args)
 
-                if arg
-                   |> String.forall (fun c -> operators.Contains(c)) then
-                    arg, "--"
-                else
-                    "1D100", arg
+        // rh/r [表达式] [原因]
+        | "rh"
+        | "r" ->
+            if cmdArg.CommandName = "rh" then isPrivate <- true
 
-            | _ -> cmdArg.Arguments.[0], String.Join(" ", cmdArg.Arguments.[1..])
+            match cmdArg.Arguments with
+            | [||] -> ()
+            | [| arg |] when String.forall (fun c -> operators.Contains(c)) arg -> expr <- arg
+            | [| arg |] -> reason <- arg
+            | args ->
+                expr <- args.[0]
+                reason <- String.Join(" ", args.[1..])
+
+        // ra/rc [原因] [阈值]
+        | "ra"
+        | "rc" ->
+            let t = ref 0
+            if cmdArg.CommandName = "ra" then offset <- 5
+
+            match cmdArg.Arguments with
+            | [| attName; value |] when Int32.TryParse(value, t) ->
+                reason <- attName
+                needDescript <- Some !t
+            | _ -> cmdArg.AbortExecution(InputError, "参数错误：.rc/.rc 属性/技能名 属性/技能值")
+
+        // 其他指令（不存在）
+        | _ -> cmdArg.AbortExecution(ModuleError, "指令错误")
 
         match parser.TryEval(expr) with
         | Error e -> cmdArg.QuickMessageReply(sprintf "对 %s 求值失败：%s" expr e.Message)
         | Ok i ->
-            let msg =
-                sprintf "%s 对 %s 投掷出%s = %O" cmdArg.MessageEvent.DisplayName reason expr i
+            let rolled = i.Sum |> int
+            let usrName = cmdArg.MessageEvent.DisplayName
 
-            if cmdArg.CommandName = "rh" then
+            let msg =
+                if needDescript.IsSome then
+                    let desc =
+                        RollResultRule(offset)
+                            .Descript(rolled, needDescript.Value)
+
+                    sprintf "%s 对 %s 投掷出了{%s = %i} -> %O" usrName reason expr rolled desc
+                else
+                    sprintf "%s 对 %s 投掷出了{%s = %i}" usrName reason expr rolled
+
+            if isPrivate then
                 let ret = Message()
                 ret.Add(msg)
 
@@ -161,10 +198,31 @@ type TRpgModule() =
             else
                 cmdArg.QuickMessageReply(msg)
 
+    [<CommandHandlerMethodAttribute("crule",
+                                    "查询/设置当前房规区间（不稳定）",
+                                    "",
+                                    AltCommandStart = ".",
+                                    Disabled = true)>]
+    member x.HandleRollRule(cmdArg : CommandEventArgs) =
+        if cmdArg.MessageEvent.IsPrivate then
+            cmdArg.AbortExecution(InputError, "此指令仅私聊无效")
+
+
+        // 属性/技能名 属性/技能值
+        let test = ref 1
+
+        match cmdArg.Arguments with
+        | [||] -> ()
+        | [| value |] when Int32.TryParse(value, test) ->
+
+            ()
+        | _ -> cmdArg.AbortExecution(InputError, "参数错误：.crule 区间偏移值")
+
+        ()
 
     [<CommandHandlerMethodAttribute("li", "总结疯狂症状", "", AltCommandStart = ".")>]
     [<CommandHandlerMethodAttribute("ti", "临时疯狂症状", "", AltCommandStart = ".")>]
-    member x.HandleTemporaryInsanity(cmdArg : CommandEventArgs) =
+    member x.HandleInsanity(cmdArg : CommandEventArgs) =
         let key =
             match cmdArg.CommandName with
             | "li" -> StringData.Key_LI
