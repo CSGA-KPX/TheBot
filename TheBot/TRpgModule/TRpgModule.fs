@@ -117,8 +117,8 @@ type TRpgModule() =
         else
             ret.WriteLine("San值减少{0}点，当前剩余{1}点。", lose, finalSan)
 
-    [<CommandHandlerMethodAttribute("ra", "检定", "", AltCommandStart = ".")>]
-    [<CommandHandlerMethodAttribute("rc", "检定", "", AltCommandStart = ".")>]
+    [<CommandHandlerMethodAttribute("ra", "检定（房规）", "", AltCommandStart = ".")>]
+    [<CommandHandlerMethodAttribute("rc", "检定（规则书）", "", AltCommandStart = ".")>]
     [<CommandHandlerMethodAttribute("rd", ".r 1D100缩写", "", AltCommandStart = ".")>]
     [<CommandHandlerMethodAttribute("rh", "常规暗骰", "", AltCommandStart = ".")>]
     [<CommandHandlerMethodAttribute("r", "常规骰点", "", AltCommandStart = ".")>]
@@ -167,7 +167,7 @@ type TRpgModule() =
             | [| attName; value |] when Int32.TryParse(value, t) ->
                 reason <- attName
                 needDescript <- Some !t
-            | _ -> cmdArg.AbortExecution(InputError, "参数错误：.rc/.rc 属性/技能名 属性/技能值")
+            | _ -> cmdArg.AbortExecution(InputError, "参数错误：.ra/.rc 属性/技能名 属性/技能值")
 
         // 其他指令（不存在）
         | _ -> cmdArg.AbortExecution(ModuleError, "指令错误")
