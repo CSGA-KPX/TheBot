@@ -11,11 +11,8 @@ open KPX.FsCqHttp.Handler
 type CommandHandlerMethodAttribute(command : string, desc, lh) =
     inherit Attribute()
 
-    /// 指令名称（转化为小写），不含CommandStart字符串
-    member x.Command : string = command.ToLowerInvariant()
-
-    /// 指令名称（转化为小写），含CommandStart字符串
-    member x.FullCommand = x.CommandStart + x.Command
+    /// 指令名称
+    member x.Command : string = command
 
     /// 指令概述
     member x.HelpDesc : string = desc
@@ -29,16 +26,6 @@ type CommandHandlerMethodAttribute(command : string, desc, lh) =
     /// 指示改指令是否在help等指令中隐藏
     member val IsHidden = false with get, set
 
-    /// 使用自定义的指令起始符，默认为""，使用配置文件
-    member val AltCommandStart = "" with get, set
-
-    /// 获取该指令的指令起始符
-    member x.CommandStart =
-        if String.IsNullOrWhiteSpace(x.AltCommandStart) then
-            KPX.FsCqHttp.Config.Command.CommandStart
-        else
-            x.AltCommandStart
-
 [<Sealed>]
 type CommandEventArgs(cqArg : CqEventArgs, msg : MessageEvent, attr : CommandHandlerMethodAttribute) =
     inherit CqEventArgs(cqArg)
@@ -47,12 +34,6 @@ type CommandEventArgs(cqArg : CqEventArgs, msg : MessageEvent, attr : CommandHan
 
     let cmdLine =
         rawMsg.Split([| ' ' |], StringSplitOptions.RemoveEmptyEntries)
-
-    let cmdName =
-        let cmd = cmdLine.[0].ToLowerInvariant()
-        let idx = cmd.IndexOf(attr.CommandStart)
-        let len = attr.CommandStart.Length
-        cmd.[idx + len..]
 
     /// 原始消息对象
     member x.MessageEvent = msg
@@ -63,17 +44,21 @@ type CommandEventArgs(cqArg : CqEventArgs, msg : MessageEvent, attr : CommandHan
     /// 空格拆分后的所有字符串
     member x.CommandLine = cmdLine
 
-    /// 小写转化后的命令名称，不含CommandStart字符
-    member x.CommandName = cmdName
+    /// 命令名称
+    member x.CommandName = attr.Command
 
     member x.CommandAttrib = attr
 
     /// 不包含指令的部分
     member val Arguments = cmdLine.[1..]
 
+    /// 从字符串获取可能的指令名
+    static member TryGetCommand(str : string) =
+        let idx = str.IndexOf(' ')
+        if idx = -1 then str else str.[0..idx - 1]
+
 type CommandInfo =
-    { CommandName : string
-      OwnerModule : HandlerModuleBase
+    { OwnerModule : HandlerModuleBase
       CommandAttribute : CommandHandlerMethodAttribute
       Method : Reflection.MethodInfo }
 
@@ -95,18 +80,12 @@ type CommandHandlerBase() =
                 for attrib in ret do
                     let attr = attrib :?> CommandHandlerMethodAttribute
 
-                    let key =
-                        (attr.CommandStart + attr.Command)
-                            .ToLowerInvariant()
-
                     let cmd =
-                        { CommandName = key
-                          CommandAttribute = attr
+                        { CommandAttribute = attr
                           Method = method
                           OwnerModule = x }
 
-                    if not attr.Disabled then
-                        commands.Add(cmd)
+                    if not attr.Disabled then commands.Add(cmd)
                     commandGenerated <- true
 
         commands :> Collections.Generic.IEnumerable<_>

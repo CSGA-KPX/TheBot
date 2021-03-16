@@ -216,7 +216,7 @@ type EveLpStoreModule() =
 
         using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))
 
-    [<CommandHandlerMethodAttribute("eveLp", "EVE LP兑换计算。", "#evelp 军团名 [道具名] [vol:2] [val:2000] [count:50] [buy:]
+    [<CommandHandlerMethodAttribute("#eveLp", "EVE LP兑换计算。", "#evelp 军团名 [道具名] [vol:2] [val:2000] [count:50] [buy:]
 []内为可选参数。如果指定道具名则查询目标军团指定兑换的详细信息。
 参数说明：vol 最低交易量比，val 最低LP价值，count 结果数量上限，buy 更改为买单价格")>]
     member x.HandleEveLp(cmdArg : CommandEventArgs) =

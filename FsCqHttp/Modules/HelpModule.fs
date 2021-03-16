@@ -11,7 +11,10 @@ open KPX.FsCqHttp.Utils.TextTable
 open KPX.FsCqHttp.Utils.UserOption
 
 
-type HelpModule() =
+/// 提供基础的帮助指令实现
+/// 需要在应用中继承并调用HelpCommandImpl
+[<AbstractClass>]
+type HelpModuleBase() =
     inherit CommandHandlerBase()
 
     member _.ShowCommandList(cfg : UserOptionParser, cmdArg : CommandEventArgs) =
@@ -26,9 +29,11 @@ type HelpModule() =
             match item with
             | :? CommandHandlerBase as cmdModule ->
                 for cmd in cmdModule.Commands do
-                    if not cmd.CommandAttribute.IsHidden
-                       || cfg.IsDefined("hidden") then
-                        tt.AddRow(cmd.CommandName, cmd.CommandAttribute.HelpDesc)
+                    if
+                        not cmd.CommandAttribute.IsHidden
+                        || cfg.IsDefined("hidden")
+                    then
+                        tt.AddRow(cmd.CommandAttribute.Command, cmd.CommandAttribute.HelpDesc)
             | _ ->
                 // TODO: 为非命令模块增加描述性词汇
                 nonCommandModules.Add(item.GetType().Name)
@@ -53,13 +58,10 @@ type HelpModule() =
             cmdArg.QuickMessageReply(sprintf "%s没有定义说明文本" cmd)
         | Some ci ->
             use ret = cmdArg.OpenResponse(ForceText)
-            ret.WriteLine("{0} ： {1}", ci.CommandName, ci.CommandAttribute.HelpDesc)
+            ret.WriteLine("{0} ： {1}", ci.CommandAttribute.Command, ci.CommandAttribute.HelpDesc)
             ret.Write(ci.CommandAttribute.LongHelp)
 
-    [<CommandHandlerMethodAttribute("help",
-                                    "显示已知命令或显示命令文档详见#help #help",
-                                    "没有参数显示已有指令。加指令名查看指令帮助如#help #help")>]
-    member x.HandleHelp(cmdArg : CommandEventArgs) =
+    member x.HelpCommandImpl(cmdArg : CommandEventArgs) =
         let cfg = UserOptionParser()
         cfg.RegisterOption("hidden", "")
         cfg.Parse(cmdArg.Arguments)

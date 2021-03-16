@@ -27,7 +27,7 @@ type SudoModule() =
 
     let mutable isSuUsed = false
 
-    [<CommandHandlerMethodAttribute("#selftest", "(超管) 返回系统信息", "", IsHidden = true)>]
+    [<CommandHandlerMethodAttribute("##selftest", "(超管) 返回系统信息", "", IsHidden = true)>]
     member x.HandleSelfTest(cmdArg : CommandEventArgs) =
         cmdArg.EnsureSenderOwner()
         let caller = cmdArg.ApiCaller
@@ -42,7 +42,7 @@ type SudoModule() =
 
         cmdArg.QuickMessageReply(info)
 
-    [<CommandHandlerMethodAttribute("#rebuilddatacache", "(超管) 重建数据缓存", "", IsHidden = true)>]
+    [<CommandHandlerMethodAttribute("##rebuilddatacache", "(超管) 重建数据缓存", "", IsHidden = true)>]
     member x.HandleRebuildXivDb(cmdArg : CommandEventArgs) =
         cmdArg.EnsureSenderOwner()
         BotDataInitializer.ClearCache()
@@ -51,7 +51,7 @@ type SudoModule() =
         BotDataInitializer.InitializeAllCollections()
         cmdArg.QuickMessageReply("重建数据库完成")
 
-    [<CommandHandlerMethodAttribute("#su", "提交凭据，添加当前用户为超管", "", IsHidden = true)>]
+    [<CommandHandlerMethodAttribute("##su", "提交凭据，添加当前用户为超管", "", IsHidden = true)>]
     member x.HandleSu(cmdArg : CommandEventArgs) =
         if isSuUsed then
             cmdArg.QuickMessageReply("本次认证已被使用")
@@ -76,7 +76,7 @@ type SudoModule() =
 
             isSuUsed <- true
 
-    [<CommandHandlerMethodAttribute("#grant", "（超管）添加用户为管理员", "", IsHidden = true)>]
+    [<CommandHandlerMethodAttribute("##grant", "（超管）添加用户为管理员", "", IsHidden = true)>]
     member x.HandleGrant(cmdArg : CommandEventArgs) =
         cmdArg.EnsureSenderOwner()
 
@@ -96,14 +96,14 @@ type SudoModule() =
 
         cmdArg.QuickMessageReply(sb.ToString())
 
-    [<CommandHandlerMethodAttribute("#admins", "（超管）显示当前机器人管理账号", "", IsHidden = true)>]
+    [<CommandHandlerMethodAttribute("##admins", "（超管）显示当前机器人管理账号", "", IsHidden = true)>]
     member x.HandleShowBotAdmins(cmdArg : CommandEventArgs) =
         cmdArg.EnsureSenderOwner()
         let admins = cmdArg.GetBotAdmins()
         let ret = String.Join("\r\n", admins)
         cmdArg.QuickMessageReply(ret)
 
-    [<CommandHandlerMethodAttribute("#showgroups", "（超管）检查加群信息", "", IsHidden = true)>]
+    [<CommandHandlerMethodAttribute("##showgroups", "（超管）检查加群信息", "", IsHidden = true)>]
     member x.HandleShowGroups(cmdArg : CommandEventArgs) =
         cmdArg.EnsureSenderOwner()
         let api = cmdArg.ApiCaller.CallApi<GetGroupList>()
@@ -115,14 +115,14 @@ type SudoModule() =
 
         cmdArg.QuickMessageReply(tt.ToString())
 
-    [<CommandHandlerMethodAttribute("#abortall", "（超管）断开所有WS连接", "", IsHidden = true)>]
+    [<CommandHandlerMethodAttribute("##abortall", "（超管）断开所有WS连接", "", IsHidden = true)>]
     member x.HandleShowAbortAll(cmdArg : CommandEventArgs) =
         cmdArg.EnsureSenderOwner()
 
         for ctx in KPX.FsCqHttp.Instance.CqWsContextPool.Instance do
             ctx.Stop()
 
-    [<CommandHandlerMethodAttribute("#allow", "(管理) 允许好友、加群请求", "", IsHidden = true)>]
+    [<CommandHandlerMethodAttribute("##allow", "(管理) 允许好友、加群请求", "", IsHidden = true)>]
     member x.HandleAllow(cmdArg : CommandEventArgs) =
         let cfg = UserOptionParser()
         cfg.RegisterOption("group", "0")

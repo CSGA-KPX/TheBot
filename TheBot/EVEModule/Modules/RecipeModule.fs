@@ -25,7 +25,7 @@ type EveRecipeModule() =
 
     let er = EveExpression.EveExpression()
 
-    [<CommandHandlerMethodAttribute("eme", "EVE蓝图材料效率计算", "")>]
+    [<CommandHandlerMethodAttribute("#eme", "EVE蓝图材料效率计算", "")>]
     member x.HandleME(cmdArg : CommandEventArgs) =
         let cfg = EveConfigParser()
         cfg.Parse(cmdArg.Arguments)
@@ -63,7 +63,7 @@ type EveRecipeModule() =
 
         using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))
 
-    [<CommandHandlerMethodAttribute("er",
+    [<CommandHandlerMethodAttribute("#er",
                                     "EVE蓝图材料计算",
                                     "可以使用表达式，多个物品需用+连接。可选参数见#evehelp。如：
 #r 帝国海军散热槽*10+机器人技术*9999")>]
@@ -108,7 +108,7 @@ type EveRecipeModule() =
 
         using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))
 
-    [<CommandHandlerMethodAttribute("err",
+    [<CommandHandlerMethodAttribute("#err",
                                     "EVE蓝图基础材料计算",
                                     "可以使用表达式，多个物品需用+连接。可选参数见#evehelp。如：
 #rr 帝国海军散热槽*10+机器人技术*9999")>]
@@ -146,7 +146,7 @@ type EveRecipeModule() =
 
         using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))
 
-    [<CommandHandlerMethodAttribute("errc", "EVE蓝图成本计算", "不支持表达式，但仅限一个物品。可选参数见#evehelp。如：
+    [<CommandHandlerMethodAttribute("#errc", "EVE蓝图成本计算", "不支持表达式，但仅限一个物品。可选参数见#evehelp。如：
 #errc 帝国海军散热槽*10")>]
     member x.HandleERRCV2(cmdArg : CommandEventArgs) =
         let cfg = EveConfigParser()
@@ -280,13 +280,13 @@ type EveRecipeModule() =
 
             using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun ret -> ret.Write(tt))
 
-    [<CommandHandlerMethodAttribute("EVE舰船II", "T2舰船制造总览", "可选参数见#evehelp。")>]
-    [<CommandHandlerMethodAttribute("EVE舰船", "T1舰船制造总览", "可选参数见#evehelp。")>]
-    [<CommandHandlerMethodAttribute("EVE组件", "T2和旗舰组件制造总览", "可选参数见#evehelp。")>]
-    [<CommandHandlerMethodAttribute("EVE种菜", "EVE种菜利润", "可选参数见#evehelp。")>]
-    [<CommandHandlerMethodAttribute("EVE装备II", "EVET2装备利润", "可以使用by:搜索物品组名称。其他可选参数见#evehelp。")>]
-    [<CommandHandlerMethodAttribute("EVE燃料块", "EVE燃料块", "可选参数见#evehelp。")>]
-    [<CommandHandlerMethodAttribute("EVE生产", "EVE生产总览", "可选参数：
+    [<CommandHandlerMethodAttribute("#EVE舰船II", "T2舰船制造总览", "可选参数见#evehelp。")>]
+    [<CommandHandlerMethodAttribute("#EVE舰船", "T1舰船制造总览", "可选参数见#evehelp。")>]
+    [<CommandHandlerMethodAttribute("#EVE组件", "T2和旗舰组件制造总览", "可选参数见#evehelp。")>]
+    [<CommandHandlerMethodAttribute("#EVE种菜", "EVE种菜利润", "可选参数见#evehelp。")>]
+    [<CommandHandlerMethodAttribute("#EVE装备II", "EVET2装备利润", "可以使用by:搜索物品组名称。其他可选参数见#evehelp。")>]
+    [<CommandHandlerMethodAttribute("#EVE燃料块", "EVE燃料块", "可选参数见#evehelp。")>]
+    [<CommandHandlerMethodAttribute("#EVE生产", "EVE生产总览", "可选参数：
 mgid 匹配metaGroupId
 cid 匹配categoryId
 gid 匹配groupId
@@ -329,14 +329,14 @@ mgno 排除metagroup名称
 
         let searchCond =
             match cmdArg.CommandName with
-            | "eve燃料块" -> PredefinedSearchCond.FuelBlocks
-            | "eve种菜" ->
+            | "#EVE燃料块" -> PredefinedSearchCond.FuelBlocks
+            | "#EVE种菜" ->
                 ret.WriteLine("海关税率10%，按进出口计税。推荐使用p:展开材料到P1。")
                 PredefinedSearchCond.Planet
-            | "eve组件" -> PredefinedSearchCond.Components
-            | "eve舰船" -> PredefinedSearchCond.T1Ships
-            | "eve舰船ii" -> PredefinedSearchCond.T2Ships
-            | "eve装备ii" ->
+            | "#EVE组件" -> PredefinedSearchCond.Components
+            | "#EVE舰船" -> PredefinedSearchCond.T1Ships
+            | "#EVE舰船ii" -> PredefinedSearchCond.T2Ships
+            | "#EVE装备ii" ->
                 let isGroup = cfg.GetValue("by") = "group"
 
                 let keyword =
@@ -348,7 +348,7 @@ mgno 排除metagroup名称
                     if isGroup then ByGroupName keyword else ByItemName keyword
 
                 PredefinedSearchCond.T2ModulesOf(cond)
-            | "eve生产" ->
+            | "#EVE生产" ->
                 let cond =
                     ProcessSearchCond(ProcessType.Manufacturing)
 

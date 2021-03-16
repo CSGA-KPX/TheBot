@@ -12,7 +12,7 @@ open KPX.TheBot.Data.EveData
 type EveMiscModule() =
     inherit CommandHandlerBase()
 
-    [<CommandHandlerMethodAttribute("evehelp", "EVE星系成本指数查询", "")>]
+    [<CommandHandlerMethodAttribute("#evehelp", "EVE星系成本指数查询", "")>]
     member x.HandleEvehelp(cmdArg : CommandEventArgs) =
         let cfg = EveConfigParser()
         cfg.Parse(Array.empty)
@@ -31,7 +31,7 @@ type EveMiscModule() =
         
         using (cmdArg.OpenResponse(ForceImage)) (fun ret -> ret.Write(tt))
 
-    [<CommandHandlerMethodAttribute("evesci", "EVE星系成本指数查询", "")>]
+    [<CommandHandlerMethodAttribute("#evesci", "EVE星系成本指数查询", "")>]
     member x.HandleSci(cmdArg : CommandEventArgs) =
         let sc =
             SolarSystems.SolarSystemCollection.Instance

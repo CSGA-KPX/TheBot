@@ -20,8 +20,10 @@ open KPX.TheBot.Module.DiceModule.Utils
 type DiceModule() =
     inherit CommandHandlerBase()
 
-    [<CommandHandlerMethodAttribute("c", "同#c，但每次结果随机", "", AltCommandStart = ".")>]
-    [<CommandHandlerMethodAttribute("c", "对多个选项1d100", "#c 选项1 选项2 选项3
+    [<CommandHandlerMethodAttribute(".c", "同#c，但每次结果随机", "")>]
+    [<CommandHandlerMethodAttribute("#c",
+                                    "对多个选项1d100",
+                                    "#c 选项1 选项2 选项3
 可以使用X不X类的短语。如'#c 能不能吃肉'等同于'#c 能吃肉 不能吃肉'
 可以@一个群友帮他选")>]
     member x.HandleChoices(cmdArg : CommandEventArgs) =
@@ -33,39 +35,47 @@ type DiceModule() =
 
             match atUser.Value with
             | AtUserType.All -> sw.AbortExecution(InputError, "公共事件请at bot账号")
-            | AtUserType.User x when x = cmdArg.BotUserId
-                                     && not
-                                        <| cmdArg.RawMessage.Contains(loginInfo.Nickname) -> sw.WriteLine("公投：")
+            | AtUserType.User x when
+                x = cmdArg.BotUserId
+                && not
+                   <| cmdArg.RawMessage.Contains(loginInfo.Nickname) -> sw.WriteLine("公投：")
             | AtUserType.User x ->
                 let atUserInfo =
                     GetGroupMemberInfo(cmdArg.MessageEvent.GroupId, x)
                     |> cmdArg.ApiCaller.CallApi
 
-                sw.WriteLine("{0} 为 {1} 投掷：", cmdArg.MessageEvent.DisplayName, atUserInfo.DisplayName)
+                sw.WriteLine(
+                    "{0} 为 {1} 投掷：",
+                    cmdArg.MessageEvent.DisplayName,
+                    atUserInfo.DisplayName
+                )
 
         let tt = TextTable("1D100", "选项")
 
         [| for arg in cmdArg.Arguments do
-            let m = ChoiceHelper.YesOrNoRegex.Match(arg)
+               let m = ChoiceHelper.YesOrNoRegex.Match(arg)
 
-            if m.Success then
-                yield
-                    m.Groups.[1].Value
-                    + m.Groups.[2].Value
-                    + m.Groups.[4].Value
+               if m.Success then
+                   yield
+                       m.Groups.[1].Value
+                       + m.Groups.[2].Value
+                       + m.Groups.[4].Value
 
-                yield
-                    m.Groups.[1].Value
-                    + m.Groups.[3].Value
-                    + m.Groups.[4].Value
-            else
-                yield arg |]
+                   yield
+                       m.Groups.[1].Value
+                       + m.Groups.[3].Value
+                       + m.Groups.[4].Value
+               else
+                   yield arg |]
         |> Array.map
             (fun c ->
                 let seed =
-                    if cmdArg.CommandAttrib.FullCommand= ".c" then Array.singleton SeedOption.SeedRandom
-                    else if atUser.IsSome then SeedOption.SeedByAtUserDay(cmdArg.MessageEvent)
-                    else SeedOption.SeedByUserDay(cmdArg.MessageEvent)
+                    if cmdArg.CommandAttrib.Command = ".c" then
+                        Array.singleton SeedOption.SeedRandom
+                    else if atUser.IsSome then
+                        SeedOption.SeedByAtUserDay(cmdArg.MessageEvent)
+                    else
+                        SeedOption.SeedByUserDay(cmdArg.MessageEvent)
 
                 let dicer = Dicer(seed).Freeze()
                 (c, dicer.GetRandom(100u, c)))
@@ -74,8 +84,8 @@ type DiceModule() =
 
         sw.Write(tt)
 
-    [<CommandHandlerMethodAttribute("jrrp", "（兼容）今日人品值", "", AltCommandStart = ".")>]
-    [<CommandHandlerMethodAttribute("jrrp", "今日人品值", "")>]
+    [<CommandHandlerMethodAttribute(".jrrp", "（兼容）今日人品值", "")>]
+    [<CommandHandlerMethodAttribute("#jrrp", "今日人品值", "")>]
     member x.HandleJrrp(cmdArg : CommandEventArgs) =
         let dicer =
             Dicer(SeedOption.SeedByUserDay(cmdArg.MessageEvent))
@@ -83,7 +93,9 @@ type DiceModule() =
         let jrrp = dicer.GetRandom(100u)
         cmdArg.QuickMessageReply(sprintf "%s今日人品值是：%i" cmdArg.MessageEvent.DisplayName jrrp)
 
-    [<CommandHandlerMethodAttribute("cal", "计算器", "支持加减乘除操作和DK操作符，可以测试骰子表达式。
+    [<CommandHandlerMethodAttribute("#cal",
+                                    "计算器",
+                                    "支持加减乘除操作和DK操作符，可以测试骰子表达式。
 如#c (1D2+5D5K3)/2*3D6")>]
     member x.HandleCalculator(cmdArg : CommandEventArgs) =
         let sb = Text.StringBuilder()
@@ -103,7 +115,7 @@ type DiceModule() =
 
         cmdArg.QuickMessageReply(sb.ToString())
 
-    [<CommandHandlerMethodAttribute("选择题", "考试专用", "")>]
+    [<CommandHandlerMethodAttribute("#选择题", "考试专用", "")>]
     member x.HandleChoice(cmdArg : CommandEventArgs) =
         let mutable count = 10
 
@@ -113,7 +125,10 @@ type DiceModule() =
             if succ then
                 let i = int (i)
 
-                if i > 100 then cmdArg.AbortExecution(InputError, "最多100道") else count <- i
+                if i > 100 then
+                    cmdArg.AbortExecution(InputError, "最多100道")
+                else
+                    count <- i
 
         let choices = [| "A"; "B"; "C"; "D" |]
 
@@ -127,7 +142,9 @@ type DiceModule() =
 
         cmdArg.QuickMessageReply(String.Join("\r\n", chunks))
 
-    [<CommandHandlerMethodAttribute("gacha", "抽10连 概率3%", "接受数字参数。
+    [<CommandHandlerMethodAttribute("#gacha",
+                                    "抽10连 概率3%",
+                                    "接受数字参数。
 小于10的记为概率，大于等于10记为抽数，以最后一次出现的为准。
 如#gacha 6 300或#gacha 300 6")>]
     member x.HandleGacha(cmdArg : CommandEventArgs) =
@@ -140,9 +157,12 @@ type DiceModule() =
             if succ then
                 let i = int (i)
 
-                if i > 300 then cmdArg.AbortExecution(InputError, "一井还不够你用？")
-                elif i >= 10 then count <- i
-                else cutoff <- i
+                if i > 300 then
+                    cmdArg.AbortExecution(InputError, "一井还不够你用？")
+                elif i >= 10 then
+                    count <- i
+                else
+                    cutoff <- i
 
         let ret =
             Array.init count (fun _ -> Dicer.RandomDicer.GetRandom(100u))

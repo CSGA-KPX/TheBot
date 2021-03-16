@@ -19,7 +19,7 @@ type DebugModule() =
     static let nlogMemoryTarget =
         NLog.LogManager.Configuration.FindTargetByName("memory") :?> NLog.Targets.MemoryTarget
 
-    [<CommandHandlerMethodAttribute("#showconfig", "(超管) 返回配置信息", "", IsHidden = true)>]
+    [<CommandHandlerMethodAttribute("##showconfig", "(超管) 返回配置信息", "", IsHidden = true)>]
     member x.HandleShowConfig(cmdArg : CommandEventArgs) =
         cmdArg.EnsureSenderOwner()
 
@@ -49,7 +49,7 @@ type DebugModule() =
 
         using (cmdArg.OpenResponse(PreferImage)) (fun ret -> ret.Write(tt))
 
-    [<CommandHandlerMethodAttribute("#setlog", "(超管) 设置日志设置", "event, api, command", IsHidden = true)>]
+    [<CommandHandlerMethodAttribute("##setlog", "(超管) 设置日志设置", "event, api, command", IsHidden = true)>]
     member x.HandleSetLogging(cmdArg : CommandEventArgs) =
         cmdArg.EnsureSenderOwner()
 
@@ -81,7 +81,7 @@ type DebugModule() =
 
         cmdArg.QuickMessageReply(ret)
 
-    [<CommandHandlerMethodAttribute("#showlog", "(超管) 显示日志", "", IsHidden = true)>]
+    [<CommandHandlerMethodAttribute("##showlog", "(超管) 显示日志", "", IsHidden = true)>]
     member x.HandleShowLogging(cmdArg : CommandEventArgs) =
         cmdArg.EnsureSenderOwner()
 

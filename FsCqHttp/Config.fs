@@ -18,11 +18,6 @@ module Logging =
     let mutable LogCommandCall = true
 
 [<RequireQualifiedAccess>]
-module Command =
-    /// 主指令起始符
-    let CommandStart = "#"
-
-[<RequireQualifiedAccess>]
 module Output =
     open System.Text.RegularExpressions
 

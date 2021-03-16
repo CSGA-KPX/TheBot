@@ -26,13 +26,13 @@ type EveMarketModule() =
 
     let er = EveExpression.EveExpression()
 
-    [<CommandHandlerMethodAttribute("eve矿物", "查询矿物价格", "")>]
-    [<CommandHandlerMethodAttribute("em", "查询物品价格", "可以使用表达式，多个物品需要用+连接。
+    [<CommandHandlerMethodAttribute("#eve矿物", "查询矿物价格", "")>]
+    [<CommandHandlerMethodAttribute("#em", "查询物品价格", "可以使用表达式，多个物品需要用+连接。
 #em 帝国海军散热槽*5+帝国海军多频晶体 L*1000")>]
     member x.HandleEveMarket(cmdArg : CommandEventArgs) =
         let mutable argOverride = None
 
-        if cmdArg.CommandName = "eve矿物" then argOverride <- Some(MineralNames.Replace(',', '+'))
+        if cmdArg.CommandName = "#eve矿物" then argOverride <- Some(MineralNames.Replace(',', '+'))
 
         let t =
             let str =
@@ -52,8 +52,8 @@ type EveMarketModule() =
         cfg.Parse(cmdArg.Arguments)
         using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(att))
 
-    [<CommandHandlerMethodAttribute("EVE采矿", "EVE挖矿利润，仅供参考", "")>]
-    [<CommandHandlerMethodAttribute("EVE挖矿", "EVE挖矿利润，仅供参考", "")>]
+    [<CommandHandlerMethodAttribute("#EVE采矿", "EVE挖矿利润，仅供参考", "")>]
+    [<CommandHandlerMethodAttribute("#EVE挖矿", "EVE挖矿利润，仅供参考", "")>]
     member x.HandleOreMining(cmdArg : CommandEventArgs) =
         let mineSpeed = 10.0 // m^3/s
         let refineYield = 0.70

@@ -38,7 +38,7 @@ type XivMarketModule() =
         let ret = gilShop.TryLookupByItem(item)
         if ret.IsSome then sprintf "%s(%i)" item.Name ret.Value.Ask else item.Name
 
-    [<CommandHandlerMethodAttribute("ffsrv", "设置默认查询的服务器", "")>]
+    [<CommandHandlerMethodAttribute("#ffsrv", "设置默认查询的服务器", "")>]
     member x.HandleXivDefSrv(cmdArg : CommandEventArgs) =
         let cfg = CommandUtils.XivConfig(cmdArg)
 
@@ -61,7 +61,7 @@ type XivMarketModule() =
         ret.WriteLine("当前可使用服务器及缩写有：{0}", String.Join(" ", World.WorldNames))
         ret.WriteLine("当前可使用大区及缩写有：{0}", String.Join(" ", World.DataCenterNames))
 
-    [<CommandHandlerMethodAttribute("fm",
+    [<CommandHandlerMethodAttribute("#fm",
                                     "FF14市场查询。可以使用 采集重建/魔晶石/水晶 快捷组",
                                     "接受以下参数：
 text 以文本格式输出结果
@@ -207,24 +207,24 @@ text 以文本格式输出结果
 
         using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun ret -> ret.Write(tt))
 
-    [<CommandHandlerMethodAttribute("r", "根据表达式汇总多个物品的材料，不查询价格", "可以使用text:选项返回文本。如#r 白钢锭 text:")>]
-    [<CommandHandlerMethodAttribute("rr", "根据表达式汇总多个物品的基础材料，不查询价格", "可以使用text:选项返回文本。如#rr 白钢锭 text:")>]
-    [<CommandHandlerMethodAttribute("rc",
+    [<CommandHandlerMethodAttribute("#r", "根据表达式汇总多个物品的材料，不查询价格", "可以使用text:选项返回文本。如#r 白钢锭 text:")>]
+    [<CommandHandlerMethodAttribute("#rr", "根据表达式汇总多个物品的基础材料，不查询价格", "可以使用text:选项返回文本。如#rr 白钢锭 text:")>]
+    [<CommandHandlerMethodAttribute("#rc",
                                     "计算物品基础材料成本",
                                     "可以使用text:选项返回文本。
 可以设置查询服务器，已有服务器见#ff14help")>]
-    [<CommandHandlerMethodAttribute("rrc",
+    [<CommandHandlerMethodAttribute("#rrc",
                                     "计算物品基础材料成本",
                                     "可以使用text:选项返回文本。
 可以设置查询服务器，已有服务器见#ff14help")>]
     member _.GeneralRecipeCalculator(cmdArg : CommandEventArgs) =
         let doCalculateCost =
-            cmdArg.CommandName = "rrc"
-            || cmdArg.CommandName = "rc"
+            cmdArg.CommandName = "#rrc"
+            || cmdArg.CommandName = "#rc"
 
         let materialFunc =
-            if cmdArg.CommandName = "rr"
-               || cmdArg.CommandName = "rrc" then
+            if cmdArg.CommandName = "#rr"
+               || cmdArg.CommandName = "#rrc" then
                 fun (item : XivItem) -> rm.TryGetRecipeRec(item, ByItem 1.0)
             else
                 fun (item : XivItem) -> rm.TryGetRecipe(item)
@@ -321,7 +321,7 @@ text 以文本格式输出结果
 
         using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))
 
-    [<CommandHandlerMethodAttribute("ssc",
+    [<CommandHandlerMethodAttribute("#ssc",
                                     "计算部分道具兑换的价格",
                                     "兑换所需道具的名称或ID，只处理1个
 可以设置查询服务器，已有服务器见#ff14help")>]
@@ -423,7 +423,7 @@ text 以文本格式输出结果
 
                 using (cmdArg.OpenResponse(ForceImage)) (fun x -> x.Write(tt))
 
-    [<CommandHandlerMethodAttribute("理符",
+    [<CommandHandlerMethodAttribute("#理符",
                                     "计算制作理符利润（只查询70级以上的基础材料）",
                                     "#理符 [职业名] [服务器名]",
                                     Disabled = true)>]

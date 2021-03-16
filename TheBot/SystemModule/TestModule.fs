@@ -13,5 +13,5 @@ open KPX.FsCqHttp.Utils.TextTable
 type TestModule() =
     inherit CommandHandlerBase()
 
-    [<CommandHandlerMethodAttribute("test", "", "", IsHidden = true)>]
+    [<CommandHandlerMethodAttribute("#test", "", "", IsHidden = true, Disabled = true)>]
     member x.HandleTest(cmdArg : CommandEventArgs) = ()

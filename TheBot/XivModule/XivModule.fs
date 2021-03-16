@@ -32,7 +32,7 @@ type XivModule() =
 
     let mutable dfcRoulettes = buildDfc ()
 
-    [<CommandHandlerMethodAttribute("纷争前线", "今日轮转查询", "")>]
+    [<CommandHandlerMethodAttribute("#纷争前线", "今日轮转查询", "")>]
     member x.HandleDailyFrontlineChallenge(cmdArg : CommandEventArgs) =
         let uo = UserOptionParser()
         uo.RegisterOption("list", "7")
@@ -88,7 +88,7 @@ type XivModule() =
 
             using (cmdArg.OpenResponse(ForceImage)) (fun ret -> ret.Write(tt))
 
-    [<CommandHandlerMethodAttribute("幻想药", "洗个啥？", "")>]
+    [<CommandHandlerMethodAttribute("#幻想药", "洗个啥？", "")>]
     member x.HandleFantasia(cmdArg : CommandEventArgs) =
         let choices =
             [| "屯着别用"
@@ -126,7 +126,7 @@ type XivModule() =
 
         cmdArg.QuickMessageReply(tt.ToString())
 
-    [<CommandHandlerMethodAttribute("cgss",
+    [<CommandHandlerMethodAttribute("#cgss",
                                     "查找指定职业和品级的套装。用于#r/rr/rc/rrc计算",
                                     "#cgss 职业 品级
 勉强能用。也不打算改")>]
@@ -168,7 +168,7 @@ type XivModule() =
         else
             cmdArg.QuickMessageReply("没找到")
 
-    [<CommandHandlerMethodAttribute("is", "（FF14）查找名字包含字符的物品", "关键词（大小写敏感）")>]
+    [<CommandHandlerMethodAttribute("#is", "（FF14）查找名字包含字符的物品", "关键词（大小写敏感）")>]
     member x.HandleItemSearch(cmdArg : CommandEventArgs) =
         let tt = TextTable(RightAlignCell "Id", "物品名")
         let i = String.Join(" ", cmdArg.Arguments)
@@ -190,7 +190,7 @@ type XivModule() =
 
         using (cmdArg.OpenResponse()) (fun r -> r.Write(tt))
 
-    [<CommandHandlerMethodAttribute("gate", "挖宝选门", "")>]
+    [<CommandHandlerMethodAttribute("#gate", "挖宝选门", "")>]
     member x.HandleGate(cmdArg : CommandEventArgs) =
         let tt = TextTable("1D100", "门")
 
@@ -201,7 +201,7 @@ type XivModule() =
 
         cmdArg.QuickMessageReply(tt.ToString())
 
-    [<CommandHandlerMethodAttribute("仙人彩", "仙人彩周常", "")>]
+    [<CommandHandlerMethodAttribute("#仙人彩", "仙人彩周常", "")>]
     member x.HandleCactpot(cmdArg : CommandEventArgs) =
         let nums =
             Seq.initInfinite (fun _ -> sprintf "%04i" (Dicer.RandomDicer.GetRandom(10000u) - 1))
@@ -210,8 +210,8 @@ type XivModule() =
 
         cmdArg.QuickMessageReply(sprintf "%s" (String.Join(" ", nums)))
 
-    [<CommandHandlerMethodAttribute("nuannuan", "暖暖", "")>]
-    [<CommandHandlerMethodAttribute("nrnr", "暖暖", "")>]
+    [<CommandHandlerMethodAttribute("#nuannuan", "暖暖", "")>]
+    [<CommandHandlerMethodAttribute("#nrnr", "暖暖", "")>]
     member x.HandleNrnr(cmdArg : CommandEventArgs) =
         let handler = new Net.Http.HttpClientHandler()
         handler.AutomaticDecompression <- Net.DecompressionMethods.GZip
@@ -274,7 +274,7 @@ type XivModule() =
                 ret.Write("\r\n")
                 ret.Write(n.InnerText))
 
-    [<CommandHandlerMethodAttribute("海钓",
+    [<CommandHandlerMethodAttribute("#海钓",
                                     "FF14海钓攻略",
                                     "next:查阅n个CD后的信息，list:查阅n个时间窗的信息。如：
 #海钓 next:2

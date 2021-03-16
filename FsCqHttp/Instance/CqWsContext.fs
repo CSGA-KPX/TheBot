@@ -32,12 +32,15 @@ type DefaultContextModuleLoader() =
     let logger = NLog.LogManager.GetCurrentClassLogger()
 
     let allModules =
-        [| yield! Assembly.GetExecutingAssembly().GetTypes()
-           yield! Assembly.GetEntryAssembly().GetTypes() |]
-        |> Array.filter
+        seq {
+            yield! Assembly.GetExecutingAssembly().GetTypes()
+            yield! Assembly.GetEntryAssembly().GetTypes()
+        }
+        |> Seq.filter
             (fun t ->
                 t.IsSubclassOf(typeof<HandlerModuleBase>)
                 && (not <| t.IsAbstract))
+        |> Seq.toArray
 
     override x.RegisterFor(ctx) =
         for m in allModules do
@@ -85,7 +88,10 @@ type CqWsContext(ws : WebSocket) =
 
     let started = new ManualResetEvent(false)
     let modules = List<HandlerModuleBase>()
-    let cmdCache = Dictionary<string, CommandInfo>(StringComparer.OrdinalIgnoreCase)
+
+    let cmdCache =
+        Dictionary<string, CommandInfo>(StringComparer.OrdinalIgnoreCase)
+
     let self = GetLoginInfo()
 
     let rec getRootExn (exn : exn) =
@@ -142,7 +148,7 @@ type CqWsContext(ws : WebSocket) =
             let cmdBase = toAdd :?> CommandHandlerBase
 
             for cmd in cmdBase.Commands do
-                cmdCache.Add(cmd.CommandName, cmd)
+                cmdCache.Add(cmd.CommandAttribute.Command, cmd)
 
     /// 使用API检查是否在线
     member x.CheckOnline() =
@@ -189,13 +195,9 @@ type CqWsContext(ws : WebSocket) =
                 // 只匹配第一个文本段
                 let key =
                     e.Message.TryGetSection<KPX.FsCqHttp.Message.Sections.TextSection>()
-                    |> Option.map (fun text ->
-                        let str = text.Text
-                        let idx = str.IndexOf(' ')
-                        if idx = -1 then str
-                        else str.[0 .. idx - 1])
+                    |> Option.map (fun ts -> CommandEventArgs.TryGetCommand(ts.Text))
 
-                if key.IsSome &&  cmdCache.ContainsKey(key.Value) then
+                if key.IsSome && cmdCache.ContainsKey(key.Value) then
                     let cmd = cmdCache.[key.Value]
 
                     let cmdArg =

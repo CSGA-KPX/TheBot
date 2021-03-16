@@ -49,4 +49,4 @@ type TryGetCommand(cmdName : string) =
             let cmp = System.StringComparer.OrdinalIgnoreCase
 
             ctx.Commands
-            |> Seq.tryFind (fun cmd -> cmp.Equals(cmd.CommandName, cmdName))
+            |> Seq.tryFind (fun cmd -> cmp.Equals(cmd.CommandAttribute.Command, cmdName))

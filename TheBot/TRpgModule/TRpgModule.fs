@@ -25,10 +25,10 @@ open KPX.TheBot.Module.TRpgModule.Coc7.DailySan
 type TRpgModule() =
     inherit CommandHandlerBase()
 
-    [<CommandHandlerMethodAttribute("coc7", "coc第七版属性值，随机", "", AltCommandStart = ".")>]
-    [<CommandHandlerMethodAttribute("coc7", "coc第七版属性值，每日更新", "", IsHidden = true)>]
+    [<CommandHandlerMethodAttribute(".coc7", "coc第七版属性值，随机", "")>]
+    [<CommandHandlerMethodAttribute("#coc7", "coc第七版属性值，每日更新", "", IsHidden = true)>]
     member x.HandleCoc7(cmdArg : CommandEventArgs) =
-        let isDotCommand = cmdArg.CommandAttrib.CommandStart = "."
+        let isDotCommand = cmdArg.CommandAttrib.Command = ".coc7"
 
         let tt = TextTable("属性", "值")
 
@@ -61,10 +61,9 @@ type TRpgModule() =
 
         using (cmdArg.OpenResponse()) (fun ret -> ret.Write(tt))
 
-    [<CommandHandlerMethodAttribute("sc",
+    [<CommandHandlerMethodAttribute(".sc",
                                     "理智检定 .sc 成功/失败 [当前san]",
                                     "如果没有定义当前san，则从#coc7结果车卡计算。",
-                                    AltCommandStart = ".",
                                     IsHidden = true)>]
     member x.HandleSanCheck(cmdArg : CommandEventArgs) =
         let args = cmdArg.Arguments // 参数检查
@@ -117,7 +116,7 @@ type TRpgModule() =
         else
             ret.WriteLine("San值减少{0}点，当前剩余{1}点。", lose, finalSan)
 
-    [<CommandHandlerMethodAttribute("en", "技能/属性成长检定 .en 技能 成功率", "", AltCommandStart = ".")>]
+    [<CommandHandlerMethodAttribute(".en", "技能/属性成长检定 .en 技能 成功率", "")>]
     member x.HandleEn(cmdArg : CommandEventArgs) =
         let current = ref 0
 
@@ -149,11 +148,11 @@ type TRpgModule() =
                 ret.WriteLine("{0} 对 {1} 的增强或成长鉴定： {{1D100 = {2}}} -> 失败", usrName, attr, roll0)
         | _ -> cmdArg.AbortExecution(InputError, "参数错误：.ra/.rc 属性/技能名 属性/技能值")
 
-    [<CommandHandlerMethodAttribute("ra", "检定（房规）", "", AltCommandStart = ".")>]
-    [<CommandHandlerMethodAttribute("rc", "检定（规则书）", "", AltCommandStart = ".")>]
-    [<CommandHandlerMethodAttribute("rd", ".r 1D100缩写", "", AltCommandStart = ".")>]
-    [<CommandHandlerMethodAttribute("rh", "常规暗骰", "", AltCommandStart = ".")>]
-    [<CommandHandlerMethodAttribute("r", "常规骰点", "", AltCommandStart = ".")>]
+    [<CommandHandlerMethodAttribute(".ra", "检定（房规）", "")>]
+    [<CommandHandlerMethodAttribute(".rc", "检定（规则书）", "")>]
+    [<CommandHandlerMethodAttribute(".rd", ".r 1D100缩写", "")>]
+    [<CommandHandlerMethodAttribute(".rh", "常规暗骰", "")>]
+    [<CommandHandlerMethodAttribute(".r", "常规骰点", "")>]
     member x.HandleRoll(cmdArg : CommandEventArgs) =
         let parser = DiceExpression()
 
@@ -172,14 +171,14 @@ type TRpgModule() =
 
         match cmdArg.CommandName with
         // rd [原因]
-        | "rd" ->
+        | ".rd" ->
             let args = cmdArg.Arguments
             if args.Length <> 0 then reason <- String.Join(" ", args)
 
         // rh/r [表达式] [原因]
-        | "rh"
-        | "r" ->
-            if cmdArg.CommandName = "rh" then isPrivate <- true
+        | ".rh"
+        | ".r" ->
+            if cmdArg.CommandName = ".rh" then isPrivate <- true
 
             match cmdArg.Arguments with
             | [||] -> ()
@@ -190,10 +189,10 @@ type TRpgModule() =
                 reason <- String.Join(" ", args.[1..])
 
         // ra/rc [原因] [阈值]
-        | "ra"
-        | "rc" ->
+        | ".ra"
+        | ".rc" ->
             let t = ref 0
-            if cmdArg.CommandName = "ra" then offset <- 5
+            if cmdArg.CommandName = ".ra" then offset <- 5
 
             match cmdArg.Arguments with
             | [| attName; value |] when Int32.TryParse(value, t) ->
@@ -230,10 +229,9 @@ type TRpgModule() =
             else
                 cmdArg.QuickMessageReply(msg)
 
-    [<CommandHandlerMethodAttribute("crule",
+    [<CommandHandlerMethodAttribute(".crule",
                                     "查询/设置当前房规区间（不稳定）",
                                     "",
-                                    AltCommandStart = ".",
                                     Disabled = true)>]
     member x.HandleRollRule(cmdArg : CommandEventArgs) =
         if cmdArg.MessageEvent.IsPrivate then
@@ -252,13 +250,13 @@ type TRpgModule() =
 
         ()
 
-    [<CommandHandlerMethodAttribute("li", "总结疯狂症状", "", AltCommandStart = ".")>]
-    [<CommandHandlerMethodAttribute("ti", "临时疯狂症状", "", AltCommandStart = ".")>]
+    [<CommandHandlerMethodAttribute(".li", "总结疯狂症状", "")>]
+    [<CommandHandlerMethodAttribute(".ti", "临时疯狂症状", "")>]
     member x.HandleInsanity(cmdArg : CommandEventArgs) =
         let key =
             match cmdArg.CommandName with
-            | "li" -> StringData.Key_LI
-            | "ti" -> StringData.Key_TI
+            | ".li" -> StringData.Key_LI
+            | ".ti" -> StringData.Key_TI
             | unk -> failwithf "不应匹配到的命令名:%s" unk
 
         let de = DiceExpression(Dicer.RandomDicer)
@@ -271,7 +269,7 @@ type TRpgModule() =
 
         cmdArg.QuickMessageReply(ret)
 
-    [<CommandHandlerMethodAttribute("bg", "生成人物背景", "", AltCommandStart = ".")>]
+    [<CommandHandlerMethodAttribute(".bg", "生成人物背景", "")>]
     member x.HandleChrBackground(cmdArg : CommandEventArgs) =
 
         let de = DiceExpression(Dicer.RandomDicer)

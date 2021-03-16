@@ -50,6 +50,7 @@
     <Compile Include="SystemModule\DebugModule.fs" />
     <Compile Include="SystemModule\TestModule.fs" />
     <Compile Include="SystemModule\SudoModule.fs" />
+    <Compile Include="SystemModule\HelpModule.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
