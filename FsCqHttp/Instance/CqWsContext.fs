@@ -71,7 +71,8 @@ type CqWsContextPool private () =
     static member val Instance = CqWsContextPool()
 
     /// 获取或设置为Context添加模块的加载器
-    static member val ModuleLoader : ContextModuleLoader = DefaultContextModuleLoader() :> ContextModuleLoader with get, set
+    static member val ModuleLoader : ContextModuleLoader =
+        DefaultContextModuleLoader() :> ContextModuleLoader with get, set
 
 type CqWsContext(ws : WebSocket) =
     static let moduleCache = Dictionary<Type, HandlerModuleBase>()
@@ -84,7 +85,7 @@ type CqWsContext(ws : WebSocket) =
 
     let started = new ManualResetEvent(false)
     let modules = List<HandlerModuleBase>()
-    let cmdCache = Dictionary<string, CommandInfo>()
+    let cmdCache = Dictionary<string, CommandInfo>(StringComparer.OrdinalIgnoreCase)
     let self = GetLoginInfo()
 
     let rec getRootExn (exn : exn) =
@@ -185,23 +186,27 @@ type CqWsContext(ws : WebSocket) =
                 for m in modules do
                     m.HandleRequest(args, e)
             | MessageEvent e ->
-                let str = e.Message.ToString()
+                // 只匹配第一个文本段
+                let key =
+                    e.Message.TryGetSection<KPX.FsCqHttp.Message.Sections.TextSection>()
+                    |> Option.map (fun text ->
+                        let str = text.Text
+                        let idx = str.IndexOf(' ')
+                        if idx = -1 then str
+                        else str.[0 .. idx - 1])
 
-                let endIdx =
-                    let idx = str.IndexOf(" ")
-                    if idx = -1 then str.Length else idx
-                // 空格-1，msg.Length变换为idx也需要-1
-                let key = str.[0..endIdx - 1].ToLowerInvariant()
-                // 如果和指令有匹配就直接走模块
-                // 没匹配再轮询
-                if cmdCache.ContainsKey(key) then
-                    let cmd = cmdCache.[key]
+                if key.IsSome &&  cmdCache.ContainsKey(key.Value) then
+                    let cmd = cmdCache.[key.Value]
 
                     let cmdArg =
                         CommandEventArgs(args, e, cmd.CommandAttribute)
 
                     if KPX.FsCqHttp.Config.Logging.LogCommandCall then
-                        logger.Info("Calling handler {0}\r\n Command Context {1}", cmd.Method.Name, sprintf "%A" e)
+                        logger.Info(
+                            "Calling handler {0}\r\n Command Context {1}",
+                            cmd.Method.Name,
+                            sprintf "%A" e
+                        )
 
                         cmd.Method.Invoke(cmd.OwnerModule, [| cmdArg |])
                         |> ignore
@@ -288,7 +293,9 @@ type CqWsContext(ws : WebSocket) =
                         .ContinueWith(fun t ->
                             if t.IsFaulted then
                                 for inner in t.Exception.InnerExceptions do
-                                    logger.Fatal(sprintf "捕获异常%s : %s" (inner.GetType().Name) inner.Message))
+                                    logger.Fatal(
+                                        sprintf "捕获异常%s : %s" (inner.GetType().Name) inner.Message
+                                    ))
                     |> ignore
             with e ->
                 cts.Cancel()
@@ -326,7 +333,12 @@ type CqWsContext(ws : WebSocket) =
                     let data = json |> utf8.GetBytes
 
                     do!
-                        ws.SendAsync(ArraySegment<byte>(data), WebSocketMessageType.Text, true, cts.Token)
+                        ws.SendAsync(
+                            ArraySegment<byte>(data),
+                            WebSocketMessageType.Text,
+                            true,
+                            cts.Token
+                        )
                         |> Async.AwaitTask
 
                     let! _ = Async.AwaitWaitHandle(mre :> WaitHandle)
