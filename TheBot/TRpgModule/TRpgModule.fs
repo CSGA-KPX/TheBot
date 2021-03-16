@@ -117,6 +117,38 @@ type TRpgModule() =
         else
             ret.WriteLine("San值减少{0}点，当前剩余{1}点。", lose, finalSan)
 
+    [<CommandHandlerMethodAttribute("en", "技能/属性成长检定 .en 技能 成功率", "", AltCommandStart = ".")>]
+    member x.HandleEn(cmdArg : CommandEventArgs) =
+        let current = ref 0
+
+        match cmdArg.Arguments with
+        | [| attr; value |] when Int32.TryParse(value, current) ->
+            use ret = cmdArg.OpenResponse()
+
+            let dice = DiceExpression()
+            let roll0 = dice.Eval("1D100").Sum |> int
+            let usrName = cmdArg.MessageEvent.DisplayName
+
+
+            if roll0 > !current then // 成功
+                ret.WriteLine("{0} 对 {1} 的增强或成长鉴定： {{1D100 = {2}}} -> 成功", usrName, attr, roll0)
+                let add = dice.Eval("1D10").Sum |> int
+
+                ret.WriteLine(
+                    "其 {1} 增加了 {{1D10 = {2}}} 点，当前为{3} 点",
+                    usrName,
+                    attr,
+                    add,
+                    !current + add
+                )
+
+                if !current < 90 && !current + add >= 90 then
+                    let sanAdd = dice.Eval("2D6").Sum |> int
+                    ret.WriteLine("（可选）并为恢复了 {{2D6 = {0}}} 点理智", sanAdd)
+            else
+                ret.WriteLine("{0} 对 {1} 的增强或成长鉴定： {{1D100 = {2}}} -> 失败", usrName, attr, roll0)
+        | _ -> cmdArg.AbortExecution(InputError, "参数错误：.ra/.rc 属性/技能名 属性/技能值")
+
     [<CommandHandlerMethodAttribute("ra", "检定（房规）", "", AltCommandStart = ".")>]
     [<CommandHandlerMethodAttribute("rc", "检定（规则书）", "", AltCommandStart = ".")>]
     [<CommandHandlerMethodAttribute("rd", ".r 1D100缩写", "", AltCommandStart = ".")>]
