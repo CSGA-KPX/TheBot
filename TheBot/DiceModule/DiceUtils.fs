@@ -27,10 +27,10 @@ module DiceExpression =
             (l.Sum - r.Sum) |> Array.singleton |> DicerOperand
 
         static member (*)(l : DicerOperand, r : DicerOperand) =
-            (l.Sum / r.Sum) |> Array.singleton |> DicerOperand
+            (l.Sum * r.Sum) |> Array.singleton |> DicerOperand
 
         static member (/)(l : DicerOperand, r : DicerOperand) =
-            (l.Sum * r.Sum) |> Array.singleton |> DicerOperand
+            (l.Sum / r.Sum) |> Array.singleton |> DicerOperand
 
         override x.ToString() =
             String.Format("{0:N2}", x.Sum).Replace(".00", "")
