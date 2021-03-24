@@ -15,6 +15,7 @@ open KPX.TheBot.Utils.Config
 open KPX.TheBot.Utils.RecipeRPN
 
 open KPX.TheBot.Module.XivModule.Utils
+open KPX.TheBot.Module.XivModule.Utils.MarketUtils
 
 
 type XivMarketModule() =
@@ -24,6 +25,8 @@ type XivMarketModule() =
     let itemCol = ItemCollection.Instance
     let gilShop = GilShopCollection.Instance
     let xivExpr = XivExpression.XivExpression()
+    let universalis = UniversalisMarketCache.MarketInfoCollection.Instance
+
 
     let isNumber (str : string) =
         if str.Length <> 0 then String.forall (Char.IsDigit) str else false
@@ -144,12 +147,9 @@ text 以文本格式输出结果
 
         for mr in acc do
             for world in worlds do
-                let tradelog =
-                    MarketUtils.MarketAnalyzer.GetTradeLog(world, mr.Item)
-
-                let listing =
-                    MarketUtils.MarketAnalyzer.GetMarketListing(world, mr.Item)
-
+                let uni = universalis.GetMarketInfo(world, mr.Item)
+                let tradelog = uni.GetTradeLogAnalyzer()
+                let listing = uni.GetListingAnalyzer()
                 let mutable updated = TimeSpan.MaxValue
 
                 let lstAll =
@@ -269,9 +269,8 @@ text 以文本格式输出结果
         for mr in acc |> Seq.sortBy (fun kv -> kv.Item.Id) do
             let market =
                 if doCalculateCost then
-                    MarketUtils
-                        .MarketAnalyzer
-                        .GetMarketListing(world, mr.Item)
+                    universalis.GetMarketInfo(world, mr.Item)
+                        .GetListingAnalyzer()
                         .TakeVolume()
                     |> Some
                 else
@@ -302,9 +301,8 @@ text 以文本格式输出结果
                 |> Seq.sumBy
                     (fun mr ->
                         let lst =
-                            MarketUtils
-                                .MarketAnalyzer
-                                .GetMarketListing(world, mr.Item)
+                            universalis.GetMarketInfo(world, mr.Item)
+                                .GetListingAnalyzer()
                                 .TakeVolume()
 
                         lst.StdEvPrice() * mr.Quantity)
@@ -392,9 +390,8 @@ text 以文本格式输出结果
                         let recv = itemCol.GetByItemId(info.ReceiveItem)
 
                         let market =
-                            MarketUtils
-                                .MarketAnalyzer
-                                .GetMarketListing(world, recv)
+                            universalis.GetMarketInfo(world, recv)
+                                .GetListingAnalyzer()
                                 .TakeVolume()
 
                         let updated = market.LastUpdateTime()

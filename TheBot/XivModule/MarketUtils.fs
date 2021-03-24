@@ -1,12 +1,11 @@
 ﻿module KPX.TheBot.Module.XivModule.Utils.MarketUtils
 
 open System
-open LibDmfXiv.Shared
 
-open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Utils.AliasMapper
 
 open KPX.TheBot.Data.XivData
+open KPX.TheBot.Data.XivData.UniversalisMarketCache
 
 
 type StdEv =
@@ -58,35 +57,31 @@ type StdEv =
             let ev = sum / (float data.Length)
             { Average = avg; Deviation = sqrt ev }
 
+[<Struct>]
 type MarketData =
-    | Order of MarketOrder.FableMarketOrder
-    | Trade of TradeLog.FableTradeLog
-
-    member x.ItemRecord =
-        match x with
-        | Order x -> ItemCollection.Instance.GetByItemId(x.ItemId |> int)
-        | Trade x -> ItemCollection.Instance.GetByItemId(x.ItemId |> int)
+    | Order of odrItem : MarketOrder
+    | Trade of logItem : TradeLog
 
     member x.IsHq =
         match x with
         | Order x -> x.IsHQ
         | Trade x -> x.IsHQ
 
-    member x.Count =
+    member x.Quantity =
         match x with
-        | Order x -> x.Count
-        | Trade x -> x.Count
+        | Order x -> x.Quantity
+        | Trade x -> x.Quantity
 
     member x.Price =
         match x with
-        | Order x -> x.Price
-        | Trade x -> x.Price
+        | Order x -> x.PricePerUnit
+        | Trade x -> x.PricePerUnit
 
     /// 返回GMT+8的时间
     member x.UpdateTime =
         let ts =
             match x with
-            | Order x -> x.TimeStamp
+            | Order x -> x.LastReviewTime
             | Trade x -> x.TimeStamp
 
         DateTimeOffset
@@ -130,14 +125,22 @@ type MarketAnalyzer(item : XivItem, world : World, data : MarketData []) =
         |> StdEv.FromData
 
     member x.MinCount() =
-        if data.Length = 0 then 0u else (data |> Array.minBy (fun x -> x.Count)).Count
+        if data.Length = 0 then
+            0
+        else
+            (data |> Array.minBy (fun x -> x.Quantity))
+                .Quantity
 
     member x.MaxCount() =
-        if data.Length = 0 then 0u else (data |> Array.maxBy (fun x -> x.Count)).Count
+        if data.Length = 0 then
+            0
+        else
+            (data |> Array.maxBy (fun x -> x.Quantity))
+                .Quantity
 
     member x.StdEvCount() =
         data
-        |> Array.map (fun x -> x.Count |> float)
+        |> Array.map (fun x -> x.Quantity |> float)
         |> StdEv.FromData
 
     member x.TakeNQ() =
@@ -156,7 +159,7 @@ type MarketAnalyzer(item : XivItem, world : World, data : MarketData []) =
             [| let samples = data |> Array.sortBy (fun x -> x.Price)
 
                let itemCount =
-                   data |> Array.sumBy (fun x -> x.Count |> int)
+                   data |> Array.sumBy (fun x -> x.Quantity)
 
                let cutLen = itemCount * cutPct / 100
                let mutable rest = cutLen
@@ -168,38 +171,39 @@ type MarketAnalyzer(item : XivItem, world : World, data : MarketData []) =
                    yield data.[0]
                | false, false ->
                    for record in samples do
-                       let takeCount = min rest (record.Count |> int)
+                       let takeCount = min rest (record.Quantity)
 
                        if takeCount <> 0 then
                            rest <- rest - takeCount
                            yield record |]
         )
 
-    static member GetTradeLog(world : World, item : XivItem) =
-        try
-            let data =
-                CompundMarketInfo.MarketInfoCollection.Instance.GetTradeLogs(world, item)
-                |> Array.map (MarketData.Trade)
+type UniversalisRecord with
+    member x.GetListingAnalyzer() =
+        let data =
+            x.Listings |> Array.map (MarketData.Order)
 
-            MarketAnalyzer(item, world, data)
-        with CompundMarketInfo.UniversalisAccessException resp ->
-            raise
-            <| ModuleException(ExternalError, sprintf "Universalis访问失败%O" resp.StatusCode)
+        let info = x.GetInfo()
+        MarketAnalyzer(info.Item, info.World, data)
 
-    static member GetMarketListing(world : World, item : XivItem) =
-        try
-            let data =
-                CompundMarketInfo.MarketInfoCollection.Instance.GetMarketListings(world, item)
-                |> Array.map (MarketData.Order)
+    member x.GetTradeLogAnalyzer() =
+        let data =
+            x.TradeLogs |> Array.map (MarketData.Trade)
 
-            MarketAnalyzer(item, world, data)
-        with CompundMarketInfo.UniversalisAccessException resp ->
-            raise
-            <| ModuleException(ExternalError, sprintf "Universalis访问失败%O" resp.StatusCode)
+        let info = x.GetInfo()
+        MarketAnalyzer(info.Item, info.World, data)
 
-let MateriaGrades = [|"壹型"; "贰型"; "叁型"; "肆型"; "伍型"; "陆型"; "柒型"; "捌型"|]
+let MateriaGrades =
+    [| "壹型"
+       "贰型"
+       "叁型"
+       "肆型"
+       "伍型"
+       "陆型"
+       "柒型"
+       "捌型" |]
 
-let MateriaAliasMapper = 
+let MateriaAliasMapper =
     let mapper = AliasMapper()
     mapper.Add("雄略", "信念", "信", "DET")
     mapper.Add("神眼", "直击", "直", "DH")

@@ -74,7 +74,6 @@
     <ProjectReference Include="..\..\LibFFXIV\LibFFXIV.GameData\LibFFXIV.GameData.fsproj" />
     <ProjectReference Include="..\FsCqHttp\FsCqHttp.fsproj" />
     <ProjectReference Include="..\TheBotData\TheBotData.fsproj" />
-    <ProjectReference Include="..\..\FFXIVNetwork\LibXIVServerFable\LibDmfXivShared.fsproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -28,7 +28,7 @@
     <Compile Include="XivData\ClassJobMapping.fs" />
     <Compile Include="XivData\CraftGearSet.fs" />
     <Compile Include="XivData\OceanFishing.fs" />
-    <Compile Include="XivData\CompundMarketInfo.fs" />
+    <Compile Include="XivData\UniversalisMarketCache.fs" />
     <Compile Include="XivData\ContentFinderCondition.fs" />
     <Compile Include="XivData\CraftLeve.fs" />
     <Compile Include="EveData\Utils.fs" />
@@ -52,15 +52,13 @@
 
   <ItemGroup>
     <PackageReference Include="LiteDB" Version="5.0.9" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Include="NLog" Version="4.6.7" />
     <PackageReference Include="System.IO.Compression" Version="4.3.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\FFXIVNetwork\LibDmfXivClient\LibDmfXivClient.fsproj" />
-    <ProjectReference Include="..\..\FFXIVNetwork\LibXIVServerFable\LibDmfXivShared.fsproj" />
     <ProjectReference Include="..\..\LibFFXIV\LibFFXIV.GameData\LibFFXIV.GameData.fsproj" />
-    <ProjectReference Include="..\..\LibFFXIV\LibFFXIV.Network\LibFFXIV.Network.fsproj" />
   </ItemGroup>
 
   <ItemGroup>
