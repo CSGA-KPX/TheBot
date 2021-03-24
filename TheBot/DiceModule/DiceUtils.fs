@@ -20,24 +20,28 @@ module DiceExpression =
 
         member x.Sum = i |> Array.sum
 
-        interface IOperand<DicerOperand> with
-            override l.Add(r) =
-                (l.Sum + r.Sum) |> Array.singleton |> DicerOperand
+        static member (+)(l : DicerOperand, r : DicerOperand) =
+            (l.Sum + r.Sum) |> Array.singleton |> DicerOperand
 
-            override l.Sub(r) =
-                (l.Sum - r.Sum) |> Array.singleton |> DicerOperand
+        static member (-)(l : DicerOperand, r : DicerOperand) =
+            (l.Sum - r.Sum) |> Array.singleton |> DicerOperand
 
-            override l.Div(r) =
-                (l.Sum / r.Sum) |> Array.singleton |> DicerOperand
+        static member (*)(l : DicerOperand, r : DicerOperand) =
+            (l.Sum / r.Sum) |> Array.singleton |> DicerOperand
 
-            override l.Mul(r) =
-                (l.Sum * r.Sum) |> Array.singleton |> DicerOperand
+        static member (/)(l : DicerOperand, r : DicerOperand) =
+            (l.Sum * r.Sum) |> Array.singleton |> DicerOperand
 
         override x.ToString() =
             String.Format("{0:N2}", x.Sum).Replace(".00", "")
 
     type DiceExpression(dicer : Dicer) as x =
-        inherit GenericRPNParser<DicerOperand>()
+        inherit GenericRPNParser<DicerOperand>(seq {
+                                                   GenericOperator<_>('+', 2, (+))
+                                                   GenericOperator<_>('-', 2, (-))
+                                                   GenericOperator<_>('*', 3, (*))
+                                                   GenericOperator<_>('/', 3, (/))
+                                               })
 
         do
             let dFunc (l : DicerOperand) (r : DicerOperand) =
@@ -104,4 +108,7 @@ module DiceExpression =
         override x.Tokenize(token) =
             let succ, number = Double.TryParse(token)
 
-            if succ then Operand(DicerOperand(Array.singleton number)) else failwithf "无法将 %s 解析为数字或运算符" token
+            if succ then
+                Operand(DicerOperand(Array.singleton number))
+            else
+                failwithf "无法将 %s 解析为数字或运算符" token

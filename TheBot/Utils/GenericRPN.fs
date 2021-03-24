@@ -6,12 +6,6 @@ open System.Collections.Generic
 open KPX.FsCqHttp.Handler
 
 
-type IOperand<'T when 'T :> IOperand<'T>> =
-    abstract Add : 'T -> 'T
-    abstract Div : 'T -> 'T
-    abstract Sub : 'T -> 'T
-    abstract Mul : 'T -> 'T
-
 type GenericOperator<'Operand>(c, p, f : 'Operand -> 'Operand -> 'Operand) =
     member x.Char = c
     member x.Precedence = p
@@ -27,7 +21,7 @@ type GenericOperator<'Operand>(c, p, f : 'Operand -> 'Operand -> 'Operand) =
     member val IsBinary = true with get, set
     override x.ToString() = x.Char |> string
 
-type RPNToken<'T when 'T :> IOperand<'T>> =
+type RPNToken<'T> =
     | Operand of 'T
     | Operator of GenericOperator<'T>
 
@@ -37,30 +31,27 @@ type RPNToken<'T when 'T :> IOperand<'T>> =
         | Operator o -> sprintf "(Operator %O)" o
 
 [<AbstractClass>]
-type GenericRPNParser<'Operand when 'Operand :> IOperand<'Operand>>(?OperatorEscapeChar : Char) =
+type GenericRPNParser<'Operand>(ops : seq<_>) =
     let opsDict =
-        let defaultOps =
-            [| GenericOperator<'Operand>('(', -1, (fun _ -> invalidOp ""))
-               GenericOperator<'Operand>(')', -1, (fun _ -> invalidOp ""))
-               GenericOperator<'Operand>('+', 2, (fun l r -> l.Add(r)))
-               GenericOperator<'Operand>('-', 2, (fun l r -> l.Sub(r)))
-               GenericOperator<'Operand>('*', 3, (fun l r -> l.Mul(r)))
-               GenericOperator<'Operand>('/', 3, (fun l r -> l.Div(r))) |]
-
         let col =
             { new Collections.ObjectModel.KeyedCollection<char, GenericOperator<'Operand>>() with
                 member x.GetKeyForItem(item) = item.Char }
 
-        for op in defaultOps do
+        col.Add(GenericOperator<'Operand>('(', -1, (fun _ -> invalidOp "")))
+        col.Add(GenericOperator<'Operand>(')', -1, (fun _ -> invalidOp "")))
+
+        for op in ops do
             col.Add(op)
 
         col
+
+    new() = GenericRPNParser<'Operand>(Seq.empty)
 
     /// 把字符串转换为操作数
     abstract Tokenize : string -> RPNToken<'Operand>
 
     /// 操作符转义字符
-    member val OperatorEscape = defaultArg OperatorEscapeChar '\\'
+    member val OperatorEscape = '\\' with get, set
 
     /// 获得操作符集合
     ///
