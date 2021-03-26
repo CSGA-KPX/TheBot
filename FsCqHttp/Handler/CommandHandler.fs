@@ -33,7 +33,11 @@ type CommandEventArgs(cqArg : CqEventArgs, msg : MessageEvent, attr : CommandHan
     let rawMsg = msg.Message.ToString()
 
     let cmdLine =
-        rawMsg.Split([| ' ' |], StringSplitOptions.RemoveEmptyEntries)
+        rawMsg.Split(
+            [| ' '
+               KPX.FsCqHttp.Config.Output.TextTable.FullWidthSpace |],
+            StringSplitOptions.RemoveEmptyEntries
+        )
 
     /// 原始消息对象
     member x.MessageEvent = msg
