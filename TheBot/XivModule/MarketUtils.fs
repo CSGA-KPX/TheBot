@@ -84,9 +84,7 @@ type MarketData =
             | Order x -> x.LastReviewTime
             | Trade x -> x.TimeStamp
 
-        DateTimeOffset
-            .FromUnixTimeSeconds(ts |> int64)
-            .ToOffset(TimeSpan.FromHours(8.0))
+        DateTimeOffset.FromUnixTimeSeconds(ts)
 
 type MarketAnalyzer(item : XivItem, world : World, data : MarketData []) =
 
@@ -101,9 +99,11 @@ type MarketAnalyzer(item : XivItem, world : World, data : MarketData []) =
         else
             let dt =
                 (data |> Array.maxBy (fun x -> x.UpdateTime))
-                    .UpdateTime
 
-            (DateTimeOffset.Now - dt)
+            let ret = (DateTimeOffset.Now - dt.UpdateTime)
+            //if ret.TotalSeconds < 0.0 then
+            //    failwithf "%i %A" (dt.UpdateTime.ToUnixTimeSeconds()) dt
+            ret
 
     member x.MinPrice() =
         if data.Length = 0 then

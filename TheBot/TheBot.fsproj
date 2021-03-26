@@ -56,7 +56,7 @@
 
   <ItemGroup>
     <None Include="NLog.config">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <EmbeddedResource Include="Resources\Funny.jpg" />
   </ItemGroup>

@@ -40,7 +40,7 @@ type XivCity =
 
 [<CLIMutable>]
 type MarketOrder =
-    { LastReviewTime : uint32
+    { LastReviewTime : int64
       PricePerUnit : int
       Quantity : int
       CreatorName : string
@@ -57,7 +57,7 @@ type TradeLog =
       IsHQ : bool
       PricePerUnit : int
       Quantity : int
-      TimeStamp : uint32
+      TimeStamp : int64
       BuyerName : string
       Total : int64 }
 
