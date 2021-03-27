@@ -8,6 +8,8 @@ type NumberFormatOptions =
       SigDigits : int
       /// 舍去小数部分
       TruncateDigits : bool
+      /// 使用中文数词
+      UseNumeral : bool
       /// 是否右对齐
       RightAlign : bool
       /// 数字0的替代文本
@@ -19,39 +21,45 @@ type NumberFormatOptions =
 
     member x.Format(value : float) =
         let getCell str =
-            if x.RightAlign then RightAlignCell str else LeftAlignCell str
+            if x.RightAlign then
+                RightAlignCell str
+            else
+                LeftAlignCell str
 
         match value with
         | 0.0 -> getCell x.ZeroString
         | _ when Double.IsNaN(value) -> getCell x.NanString
         | _ when Double.IsNegativeInfinity(value) -> getCell "+inf%"
         | _ when Double.IsPositiveInfinity(value) -> getCell "-inf%"
-        | _ when x.SigDigits <> 0 ->
-            let rounded =
-                NumberFormatOptions.RoundSigDigits(value, x.SigDigits)
-
-            let pow10 =
-                ((rounded |> abs |> log10 |> floor) + 1.0)
-                |> floor
-                |> int
-
-            let (scale, postfix) = if pow10 >= 9 then 8.0, "亿" else 0.0, ""
-
-            let str =
-                let hasEnoughDigits = (pow10 - (int scale) + 1) >= x.SigDigits
-
-                if x.TruncateDigits || hasEnoughDigits then
-                    String.Format("{0:N0}{1}", rounded / 10.0 ** scale, postfix)
-                else
-                    String.Format("{0:N2}{1}", rounded / 10.0 ** scale, postfix)
-
-            getCell str
         | _ ->
-            let str = String.Format("{0:N2}", value)
-            if str.EndsWith(".00") then
+            let mutable value = value
+
+            if x.SigDigits <> 0 then
+                value <- NumberFormatOptions.RoundSigDigits(value, x.SigDigits)
+
+            if x.TruncateDigits then value <- truncate value
+
+            if x.UseNumeral then
+                let pow10 =
+                    ((value |> abs |> log10 |> floor) + 1.0)
+                    |> floor
+                    |> int
+
+                let (scale, postfix) = if pow10 >= 9 then 8.0, "亿" else 0.0, ""
+
+                let str =
+                    let hasEnoughDigits = (pow10 - (int scale) + 1) >= x.SigDigits
+
+                    if x.TruncateDigits || hasEnoughDigits then
+                        String.Format("{0:N0}{1}", value / 10.0 ** scale, postfix)
+                    else
+                        String.Format("{0:N2}{1}", value / 10.0 ** scale, postfix)
+
+                getCell str
+            else if x.TruncateDigits then
                 getCell <| String.Format("{0:N0}", value)
             else
-                getCell str
+                getCell <| String.Format("{0:N2}", value)
 
     static member private RoundSigDigits(value : float, sigDigits : int) =
         if value = 0.0 then
@@ -75,6 +83,7 @@ type NumbericHelpers() =
     static let Sig4Float =
         { SigDigits = 4
           TruncateDigits = false
+          UseNumeral = true
           RightAlign = true
           ZeroString = "0"
           NanString = "NaN" }
@@ -83,6 +92,7 @@ type NumbericHelpers() =
     static let Sig4Integer =
         { SigDigits = 4
           TruncateDigits = true
+          UseNumeral = true
           RightAlign = true
           ZeroString = "0"
           NanString = "NaN" }
@@ -91,6 +101,7 @@ type NumbericHelpers() =
     static let DefaultFloat =
         { SigDigits = 0
           TruncateDigits = false
+          UseNumeral = false
           RightAlign = true
           ZeroString = "0"
           NanString = "NaN" }
@@ -99,6 +110,7 @@ type NumbericHelpers() =
     static let DefaultInteger =
         { SigDigits = 0
           TruncateDigits = true
+          UseNumeral = false
           RightAlign = true
           ZeroString = "0"
           NanString = "NaN" }
