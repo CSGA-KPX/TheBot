@@ -335,8 +335,8 @@ mgno 排除metagroup名称
                 PredefinedSearchCond.Planet
             | "#EVE组件" -> PredefinedSearchCond.Components
             | "#EVE舰船" -> PredefinedSearchCond.T1Ships
-            | "#EVE舰船ii" -> PredefinedSearchCond.T2Ships
-            | "#EVE装备ii" ->
+            | "#EVE舰船II" -> PredefinedSearchCond.T2Ships
+            | "#EVE装备II" ->
                 let isGroup = cfg.GetValue("by") = "group"
 
                 let keyword =
