@@ -62,9 +62,9 @@ type CommandEventArgs(cqArg : CqEventArgs, msg : MessageEvent, attr : CommandHan
         if idx = -1 then str else str.[0..idx - 1]
 
 type CommandInfo =
-    { OwnerModule : HandlerModuleBase
-      CommandAttribute : CommandHandlerMethodAttribute
-      Method : Reflection.MethodInfo }
+    { CommandAttribute : CommandHandlerMethodAttribute
+      MethodName : string
+      MethodAction : Action<CommandEventArgs> }
 
 [<AbstractClass>]
 type CommandHandlerBase() =
@@ -84,10 +84,14 @@ type CommandHandlerBase() =
                 for attrib in ret do
                     let attr = attrib :?> CommandHandlerMethodAttribute
 
+                    let d =
+                        method.CreateDelegate(typeof<Action<CommandEventArgs>>, x)
+                        :?> Action<CommandEventArgs>
+
                     let cmd =
                         { CommandAttribute = attr
-                          Method = method
-                          OwnerModule = x }
+                          MethodName = method.Name
+                          MethodAction = d }
 
                     if not attr.Disabled then commands.Add(cmd)
                     commandGenerated <- true

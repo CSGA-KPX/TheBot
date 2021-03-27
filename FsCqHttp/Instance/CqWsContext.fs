@@ -206,12 +206,14 @@ type CqWsContext(ws : WebSocket) =
                     if KPX.FsCqHttp.Config.Logging.LogCommandCall then
                         logger.Info(
                             "Calling handler {0}\r\n Command Context {1}",
-                            cmd.Method.Name,
+                            cmd.MethodName,
                             sprintf "%A" e
                         )
 
-                        cmd.Method.Invoke(cmd.OwnerModule, [| cmdArg |])
-                        |> ignore
+                        cmd.MethodAction.Invoke(cmdArg)
+
+                        //cmd.Method.Invoke(cmd.OwnerModule, [| cmdArg |])
+                        //|> ignore
                 else
                     for m in modules do
                         m.HandleMessage(args, e)
