@@ -117,7 +117,7 @@ type EveRecipeModule() =
         cfg.Parse(cmdArg.Arguments)
 
         let final = ItemAccumulator<EveType>()
-        let tt = TextTable("名称", "数量")
+        let tt = TextTable("名称", RightAlignCell "数量")
         tt.AddPreTable(sprintf "输入效率：%i%% 默认效率：%i%%" cfg.InputMe cfg.DerivativetMe)
 
         tt.AddPreTable(sprintf "展开行星材料：%b 展开反应公式：%b" cfg.ExpandPlanet cfg.ExpandReaction)

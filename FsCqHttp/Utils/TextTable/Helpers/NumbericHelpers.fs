@@ -26,7 +26,7 @@ type NumberFormatOptions =
         | _ when Double.IsNaN(value) -> getCell x.NanString
         | _ when Double.IsNegativeInfinity(value) -> getCell "+inf%"
         | _ when Double.IsPositiveInfinity(value) -> getCell "-inf%"
-        | _ ->
+        | _ when x.SigDigits <> 0 ->
             let rounded =
                 NumberFormatOptions.RoundSigDigits(value, x.SigDigits)
 
@@ -46,6 +46,12 @@ type NumberFormatOptions =
                     String.Format("{0:N2}{1}", rounded / 10.0 ** scale, postfix)
 
             getCell str
+        | _ ->
+            let str = String.Format("{0:N2}", value)
+            if str.EndsWith(".00") then
+                getCell <| String.Format("{0:N0}", value)
+            else
+                getCell str
 
     static member private RoundSigDigits(value : float, sigDigits : int) =
         if value = 0.0 then
