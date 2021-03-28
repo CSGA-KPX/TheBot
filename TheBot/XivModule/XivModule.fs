@@ -1,4 +1,4 @@
-namespace KPX.TheBot.Module.XivModule
+namespace KPX.TheBot.Module.XivModule.MiscModule
 
 open System
 open System.Text
@@ -9,14 +9,30 @@ open KPX.FsCqHttp.Handler
 
 open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.TextTable
-open KPX.FsCqHttp.Utils.UserOption
+open KPX.FsCqHttp.Utils.UserOptionV2
 
 open KPX.TheBot.Data.XivData
 
 open KPX.TheBot.Utils.Dicer
 
+open KPX.TheBot.Module.XivModule
 
-type XivModule() =
+
+type DfcOption() as x = 
+    inherit OptionBase()
+
+    member val ListCount = OptionCellSimple<int>(x, "list", 7)
+
+    member val RebuildData = OptionCell(x, "rebuild")
+
+type SeaFishingOption() as x = 
+    inherit OptionBase() 
+    
+    member val ListCount = OptionCellSimple<int>(x, "list", 7)
+
+    member val NextCoolDown = OptionCellSimple<int>(x, "next", 0)
+
+type MiscModule() =
     inherit CommandHandlerBase()
 
     let itemCol = ItemCollection.Instance
@@ -34,12 +50,10 @@ type XivModule() =
 
     [<CommandHandlerMethodAttribute("#纷争前线", "今日轮转查询", "")>]
     member x.HandleDailyFrontlineChallenge(cmdArg : CommandEventArgs) =
-        let uo = UserOptionParser()
-        uo.RegisterOption("list", "7")
-        uo.RegisterOption("rebuild", "")
-        uo.Parse(cmdArg.Arguments)
+        let opt = DfcOption()
+        opt.Parse(cmdArg)
 
-        if uo.IsDefined("rebuild") then
+        if opt.RebuildData.IsDefined then
             dfcRoulettes <- buildDfc ()
             cmdArg.QuickMessageReply(sprintf "重建完成，当前有%i个副本" dfcRoulettes.Length)
         else
@@ -74,10 +88,10 @@ type XivModule() =
 
             tt.AddPreTable(sprintf "当前为：%s" (getString (startDate)))
 
-            let list = uo.GetValue<int>("list")
+            let list = opt.ListCount.DefaultOrHead()
 
             if list > 31 then cmdArg.AbortExecution(InputError, "一个月还不够嘛？")
-            for i = 0 to uo.GetValue<int>("list") do
+            for i = 0 to list do
                 let date = startDate.AddDays(float i)
 
                 let dateStr =
@@ -265,10 +279,11 @@ type XivModule() =
         let n =
             doc.DocumentNode.SelectSingleNode("//div[@id = \"v_desc\"]")
 
-        let cfg = Utils.CommandUtils.XivConfig(cmdArg)
+        let cfg = Utils.CommandUtils.XivOption()
+        cfg.Parse(cmdArg)
 
         using
-            (cmdArg.OpenResponse(cfg.IsImageOutput))
+            (cmdArg.OpenResponse(cfg.ResponseType.Value))
             (fun ret ->
                 ret.Write(title)
                 ret.Write("\r\n")
@@ -280,21 +295,18 @@ type XivModule() =
 #海钓 next:2
 #海钓 list:50")>]
     member x.HandleOceanFishing(cmdArg : CommandEventArgs) =
-        let cfg = UserOptionParser()
-        cfg.RegisterOption("next", "0")
-        cfg.RegisterOption("list", "12")
-        cfg.Parse(cmdArg.Arguments)
+        let opt = SeaFishingOption()
+        opt.Parse(cmdArg)
 
         let dateFmt = "yyyy/MM/dd HH:00"
-
         use ret = cmdArg.OpenResponse(ForceImage)
         ret.WriteLine("警告：国服数据，世界服不一定适用。时间为中国标准时间。")
         let mutable now = GetCstTime()
 
         try
-            if cfg.IsDefined("list") then
+            if opt.ListCount.IsDefined then
                 let tt = TextTable("CD时间", "概述", "tid", "rid")
-                let count = cfg.GetValue<int>("list")
+                let count = opt.ListCount.DefaultOrHead()
 
                 if count > 12 * 31 then cmdArg.AbortExecution(InputError, "那时间可太长了。")
                 for i = 0 to count - 1 do
@@ -310,7 +322,7 @@ type XivModule() =
 
                 ret.Write(tt)
             else
-                let next = cfg.GetValue<int>("next")
+                let next = opt.NextCoolDown.DefaultOrHead()
                 if next <> 0 then now <- now.AddHours(2.0 * (float next))
                 let info = OceanFishing.CalculateCooldown(now)
 

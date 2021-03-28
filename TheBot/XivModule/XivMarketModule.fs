@@ -1,4 +1,4 @@
-﻿namespace KPX.TheBot.Module.XivMarketModule
+﻿namespace KPX.TheBot.Module.XivModule.MarketModule
 
 open System
 
@@ -25,38 +25,31 @@ type XivMarketModule() =
     let itemCol = ItemCollection.Instance
     let gilShop = GilShopCollection.Instance
     let xivExpr = XivExpression.XivExpression()
-    let universalis = UniversalisMarketCache.MarketInfoCollection.Instance
+
+    let universalis =
+        UniversalisMarketCache.MarketInfoCollection.Instance
 
 
     let isNumber (str : string) =
-        if str.Length <> 0 then String.forall (Char.IsDigit) str else false
+        if str.Length <> 0 then
+            String.forall (Char.IsDigit) str
+        else
+            false
 
     let strToItem (str : string) =
-        if isNumber (str)
-        then itemCol.TryGetByItemId(Convert.ToInt32(str))
-        else itemCol.TryGetByName(str.TrimEnd(CommandUtils.XivSpecialChars))
+        if isNumber (str) then
+            itemCol.TryGetByItemId(Convert.ToInt32(str))
+        else
+            itemCol.TryGetByName(str.TrimEnd(CommandUtils.XivSpecialChars))
 
     /// 给物品名备注上NPC价格
     let tryLookupNpcPrice (item : XivItem) =
         let ret = gilShop.TryLookupByItem(item)
-        if ret.IsSome then sprintf "%s(%i)" item.Name ret.Value.Ask else item.Name
 
-    [<CommandHandlerMethodAttribute("#ffsrv", "设置默认查询的服务器", "")>]
-    member x.HandleXivDefSrv(cmdArg : CommandEventArgs) =
-        let cfg = CommandUtils.XivConfig(cmdArg)
-
-        if cfg.IsWorldDefined then
-            let cm =
-                ConfigManager(ConfigOwner.User(cmdArg.MessageEvent.UserId))
-
-            let world = cfg.GetWorld()
-            cm.Put(CommandUtils.defaultServerKey, world)
-
-            cmdArg.QuickMessageReply(
-                sprintf "%s的默认服务器设置为%s" cmdArg.MessageEvent.DisplayName world.WorldName
-            )
+        if ret.IsSome then
+            sprintf "%s(%i)" item.Name ret.Value.Ask
         else
-            cmdArg.QuickMessageReply("没有指定服务器或服务器名称不正确")
+            item.Name
 
     //[<CommandHandlerMethodAttribute("ffhelp", "FF14指令帮助", "")>]
     member x.HandleFFCmdHelp(cmdArg : CommandEventArgs) =
@@ -72,7 +65,8 @@ text 以文本格式输出结果
 #fm 一区 风之水晶 text:
 #fm 拉诺 紫水 风之水晶")>]
     member x.HandleXivMarket(cmdArg : CommandEventArgs) =
-        let cfg = CommandUtils.XivConfig(cmdArg)
+        let opt = CommandUtils.XivOption()
+        opt.Parse(cmdArg)
 
         let tt =
             TextTable(
@@ -88,12 +82,13 @@ text 以文本格式输出结果
 
         let acc = XivExpression.ItemAccumulator()
 
-        let worlds = ResizeArray<World>(cfg.GetWorlds())
+        let worlds = opt.World.DefaultOrValues()
 
-        match cfg.CommandLine |> Array.tryHead with
+        match opt.NonConfigStrings |> Seq.tryHead with
         | None -> cmdArg.QuickMessageReply("物品名或采集重建/魔晶石/水晶。")
         | Some "水晶" ->
-            if worlds.Count >= 2 then cmdArg.AbortExecution(InputError, "该选项不支持多服务器")
+            if worlds.Length >= 2 then
+                cmdArg.AbortExecution(InputError, "该选项不支持多服务器")
 
             [ 2 .. 19 ]
             |> Seq.iter
@@ -102,8 +97,8 @@ text 以文本格式输出结果
                     acc.Update(item))
         | Some "魔晶石" ->
             let ret =
-                cfg.CommandLine
-                |> Array.tryItem 1
+                opt.NonConfigStrings
+                |> Seq.tryItem 1
                 |> Option.map MarketUtils.MateriaAliasMapper.TryMap
                 |> Option.flatten
 
@@ -120,11 +115,14 @@ text 以文本格式输出结果
                 for grade in MarketUtils.MateriaGrades do
                     acc.Update(
                         itemCol
-                            .TryGetByName(sprintf "%s魔晶石%s" key grade)
+                            .TryGetByName(
+                                sprintf "%s魔晶石%s" key grade
+                            )
                             .Value
                     )
         | Some "重建采集" ->
-            if worlds.Count >= 2 then cmdArg.AbortExecution(InputError, "该选项不支持多服务器")
+            if worlds.Length >= 2 then
+                cmdArg.AbortExecution(InputError, "该选项不支持多服务器")
 
             [ 31252 .. 31275 ]
             |> Seq.iter
@@ -132,7 +130,7 @@ text 以文本格式输出结果
                     let item = itemCol.GetByItemId(id)
                     acc.Update(item))
         | Some _ ->
-            for str in cfg.CommandLine do
+            for str in opt.NonConfigStrings do
                 match xivExpr.TryEval(str) with
                 | Error err -> raise err
                 | Ok (Number i) -> tt.AddPreTable(sprintf "计算结果为数字%f，物品Id请加#" i)
@@ -140,14 +138,17 @@ text 以文本格式输出结果
                     for i in a do
                         acc.Update(i)
 
-        if acc.Count * worlds.Capacity >= 50 then cmdArg.AbortExecution(InputError, "查询数量超过上线")
+        if acc.Count * worlds.Length >= 50 then
+            cmdArg.AbortExecution(InputError, "查询数量超过上线")
 
         let mutable sumListingAll, sumListingHq = 0.0, 0.0
         let mutable sumTradeAll, sumTradeHq = 0.0, 0.0
 
         for mr in acc do
             for world in worlds do
-                let uni = universalis.GetMarketInfo(world, mr.Item)
+                let uni =
+                    universalis.GetMarketInfo(world, mr.Item)
+
                 let tradelog = uni.GetTradeLogAnalyzer()
                 let listing = uni.GetListingAnalyzer()
                 let mutable updated = TimeSpan.MaxValue
@@ -192,7 +193,7 @@ text 以文本格式输出结果
                 }
                 |> tt.AddRow
 
-        if worlds.Count = 1 && acc.Count >= 2 then
+        if worlds.Length = 1 && acc.Count >= 2 then
             tt.RowBuilder {
                 yield "合计"
                 yield "--"
@@ -205,10 +206,12 @@ text 以文本格式输出结果
             }
             |> tt.AddRow
 
-        using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun ret -> ret.Write(tt))
+        using (cmdArg.OpenResponse(opt.ResponseType.Value)) (fun ret -> ret.Write(tt))
 
     [<CommandHandlerMethodAttribute("#r", "根据表达式汇总多个物品的材料，不查询价格", "可以使用text:选项返回文本。如#r 白钢锭 text:")>]
-    [<CommandHandlerMethodAttribute("#rr", "根据表达式汇总多个物品的基础材料，不查询价格", "可以使用text:选项返回文本。如#rr 白钢锭 text:")>]
+    [<CommandHandlerMethodAttribute("#rr",
+                                    "根据表达式汇总多个物品的基础材料，不查询价格",
+                                    "可以使用text:选项返回文本。如#rr 白钢锭 text:")>]
     [<CommandHandlerMethodAttribute("#rc",
                                     "计算物品基础材料成本",
                                     "可以使用text:选项返回文本。
@@ -229,8 +232,10 @@ text 以文本格式输出结果
             else
                 fun (item : XivItem) -> rm.TryGetRecipe(item)
 
-        let cfg = CommandUtils.XivConfig(cmdArg)
-        let world = cfg.GetWorld()
+        let opt = CommandUtils.XivOption()
+        opt.Parse(cmdArg)
+
+        let world = opt.World.DefaultOrHead()
 
         let tt =
             if doCalculateCost then
@@ -244,12 +249,13 @@ text 以文本格式输出结果
             else
                 TextTable("物品", RightAlignCell "数量")
 
-        if doCalculateCost then tt.AddPreTable(sprintf "服务器：%s" world.WorldName)
+        if doCalculateCost then
+            tt.AddPreTable(sprintf "服务器：%s" world.WorldName)
 
         let product = XivExpression.ItemAccumulator()
         let acc = XivExpression.ItemAccumulator()
 
-        for str in cfg.CommandLine do
+        for str in opt.NonConfigStrings do
             match xivExpr.TryEval(str) with
             | Error err -> raise err
             | Ok (Number i) -> tt.AddPreTable(sprintf "计算结果为数字%f，物品Id请加#" i)
@@ -269,7 +275,8 @@ text 以文本格式输出结果
         for mr in acc |> Seq.sortBy (fun kv -> kv.Item.Id) do
             let market =
                 if doCalculateCost then
-                    universalis.GetMarketInfo(world, mr.Item)
+                    universalis
+                        .GetMarketInfo(world, mr.Item)
                         .GetListingAnalyzer()
                         .TakeVolume()
                     |> Some
@@ -279,8 +286,8 @@ text 以文本格式输出结果
             tt.RowBuilder {
                 yield mr.Item |> tryLookupNpcPrice
 
-                if doCalculateCost
-                then yield HumanReadableInteger(market.Value.StdEvPrice().Average)
+                if doCalculateCost then
+                    yield HumanReadableInteger(market.Value.StdEvPrice().Average)
 
                 yield HumanReadableInteger mr.Quantity
 
@@ -301,7 +308,8 @@ text 以文本格式输出结果
                 |> Seq.sumBy
                     (fun mr ->
                         let lst =
-                            universalis.GetMarketInfo(world, mr.Item)
+                            universalis
+                                .GetMarketInfo(world, mr.Item)
                                 .GetListingAnalyzer()
                                 .TakeVolume()
 
@@ -317,7 +325,7 @@ text 以文本格式输出结果
             let profit = (totalSell - sum).Average
             tt.AddRowFill("税前利润", PaddingRight, PaddingRight, HumanReadableInteger profit)
 
-        using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))
+        using (cmdArg.OpenResponse(opt.ResponseType.Value)) (fun x -> x.Write(tt))
 
     [<CommandHandlerMethodAttribute("#ssc",
                                     "计算部分道具兑换的价格",
@@ -326,10 +334,11 @@ text 以文本格式输出结果
     member x.HandleSSS(cmdArg : CommandEventArgs) =
         let sc = SpecialShopCollection.Instance
 
-        let cfg = CommandUtils.XivConfig(cmdArg)
-        let world = cfg.GetWorld()
+        let opt = CommandUtils.XivOption()
+        opt.Parse(cmdArg)
+        let world = opt.World.DefaultOrHead()
 
-        if cfg.CommandLine.Length = 0 then
+        if opt.NonConfigStrings.Count = 0 then
             //回复所有可交易道具
             let headerSet =
                 [| box <| RightAlignCell "ID"
@@ -339,7 +348,7 @@ text 以文本格式输出结果
 
             let header =
                 [| for _ = 0 to headerCol - 1 do
-                    yield! headerSet |]
+                       yield! headerSet |]
 
             let tt = TextTable(header)
             tt.AddPreTable("可交换道具：")
@@ -354,6 +363,7 @@ text 以文本格式输出结果
                     for item in chunk do
                         yield item.Id
                         yield item.Name
+
                     for _ = 0 to headerCol - chunk.Length - 1 do
                         yield PaddingRight
                         yield PaddingLeft
@@ -362,14 +372,15 @@ text 以文本格式输出结果
 
             using (cmdArg.OpenResponse(ForceImage)) (fun x -> x.Write(tt))
         else
-            let ret = strToItem (cfg.CommandLine.[0])
+            let ret = strToItem (opt.NonConfigStrings.[0])
 
             match ret with
-            | None -> cmdArg.AbortExecution(ModuleError, "找不到物品{0}", cfg.CommandLine.[0])
+            | None -> cmdArg.AbortExecution(ModuleError, "找不到物品{0}", opt.NonConfigStrings.[0])
             | Some reqi ->
                 let ia = sc.SearchByCostItemId(reqi.Id)
 
-                if ia.Length = 0 then cmdArg.AbortExecution(InputError, "{0} 不能兑换道具", reqi.Name)
+                if ia.Length = 0 then
+                    cmdArg.AbortExecution(InputError, "{0} 不能兑换道具", reqi.Name)
 
                 let tt =
                     TextTable(
@@ -390,7 +401,8 @@ text 以文本格式输出结果
                         let recv = itemCol.GetByItemId(info.ReceiveItem)
 
                         let market =
-                            universalis.GetMarketInfo(world, recv)
+                            universalis
+                                .GetMarketInfo(world, recv)
                                 .GetListingAnalyzer()
                                 .TakeVolume()
 
@@ -425,18 +437,19 @@ text 以文本格式输出结果
                                     "#理符 [职业名] [服务器名]",
                                     Disabled = true)>]
     member x.HandleCraftLeve(cmdArg : CommandEventArgs) =
-        let cfg = CommandUtils.XivConfig(cmdArg)
-        //let world = cfg.GetWorld()
+        let opt = CommandUtils.XivOption()
+        opt.Parse(cmdArg)
 
         let leves =
-            cfg.CommandLine
-            |> Array.tryHead
+            opt.NonConfigStrings
+            |> Seq.tryHead
             |> Option.map
                 (fun x -> ClassJobMapping.ClassJobMappingCollection.Instance.TrySearchByName(x))
             |> Option.flatten
             |> Option.map (fun job -> CraftLeve.CraftLeveInfoCollection.Instance.GetByClassJob(job))
 
-        if leves.IsNone then cmdArg.AbortExecution(InputError, "未设置职业或职业无效")
+        if leves.IsNone then
+            cmdArg.AbortExecution(InputError, "未设置职业或职业无效")
 
         let leves =
             leves.Value

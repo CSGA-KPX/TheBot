@@ -65,6 +65,7 @@
     <Compile Include="Utils\TextTable\Extensions.fs" />
     <Compile Include="Utils\AliasMapper.fs" />
     <Compile Include="Utils\UserOption.fs" />
+    <Compile Include="Utils\UserOptionV2.fs" />
     <Compile Include="Instance\CqWsContext.fs" />
     <Compile Include="Instance\ContextApi.fs" />
     <Compile Include="Instance\ActiveWebsocket.fs" />
