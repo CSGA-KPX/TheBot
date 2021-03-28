@@ -211,9 +211,6 @@ type CqWsContext(ws : WebSocket) =
                         )
 
                         cmd.MethodAction.Invoke(cmdArg)
-
-                        //cmd.Method.Invoke(cmd.OwnerModule, [| cmdArg |])
-                        //|> ignore
                 else
                     for m in modules do
                         m.HandleMessage(args, e)
@@ -224,6 +221,7 @@ type CqWsContext(ws : WebSocket) =
             match rootExn with
             | :? IgnoreException -> ()
             | :? ModuleException as me ->
+                args.QuickMessageReply(sprintf "错误：%s" me.Message)
                 args.Logger.Warn(
                     "[{0}] -> {1} : {2} \r\n ctx： {3}",
                     x.BotIdString,
@@ -231,9 +229,6 @@ type CqWsContext(ws : WebSocket) =
                     sprintf "%A" args.Event,
                     me.Message
                 )
-
-                args.QuickMessageReply(sprintf "错误：%s" me.Message)
-                args.AbortExecution(me.ErrorLevel, me.Message)
             | _ ->
                 args.QuickMessageReply(sprintf "内部错误：%s" rootExn.Message)
                 logger.Error(sprintf "捕获异常：\r\n %O" e)
