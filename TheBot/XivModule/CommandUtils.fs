@@ -19,6 +19,7 @@ type XivOption() as x =
 
     static let defaultServer = World.GetWorldByName("拉诺西亚")
 
+    // 因为下游可能需要第一个也可能需要全部，所以保留显式的Cell
     member val World = XivWorldOpt(x, "world", defaultServer)
 
     override x.PreParse(args) =

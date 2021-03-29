@@ -8,7 +8,7 @@ open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Utils.TextResponse
 
 
-type OptionCell(cb : OptionBase, key : string) =
+type OptionCell(cb : OptionImpl, key : string) =
     /// 该选项的主要键名
     member x.KeyName = key
 
@@ -27,16 +27,16 @@ type OptionCell(cb : OptionBase, key : string) =
             |> Array.tryFind (fun alias -> cb.IsDefined(alias))
 
 [<AbstractClass>]
-type OptionCell<'T>(cb : OptionBase, key : string, defValue : 'T) =
+type OptionCell<'T>(cb : OptionImpl, key : string, defValue : 'T) =
     inherit OptionCell(cb, key)
 
     /// 获取或更改该选项的默认值
     member val DefaultValue = defValue with get, set
-    
+
     abstract ConvertValue : string -> 'T
-    
+
     /// 获取第一个设定值，如果没有则返回默认值
-    member x.DefaultOrHead() =
+    member x.DefaultOrHead =
         x.TryGetRealKey()
         |> Option.map
             (fun kn ->
@@ -49,7 +49,7 @@ type OptionCell<'T>(cb : OptionBase, key : string, defValue : 'T) =
         |> Option.defaultValue x.DefaultValue
 
     /// 获取所有设定值，如果没有则返回默认值
-    member x.DefaultOrValues() =
+    member x.DefaultOrValues =
         x.TryGetRealKey()
         |> Option.map
             (fun kn ->
@@ -58,13 +58,14 @@ type OptionCell<'T>(cb : OptionBase, key : string, defValue : 'T) =
                 |> Seq.toArray)
         |> Option.defaultValue [| x.DefaultValue |]
 
-type OptionCellSimple<'T when 'T :> IConvertible>(cb : OptionBase, key : string, defValue : 'T) = 
+type OptionCellSimple<'T when 'T :> IConvertible>(cb : OptionImpl, key : string, defValue : 'T) =
     inherit OptionCell<'T>(cb, key, defValue)
 
-    override x.ConvertValue value = Convert.ChangeType(value, typeof<'T>) :?> 'T
+    override x.ConvertValue value =
+        Convert.ChangeType(value, typeof<'T>) :?> 'T
 
 [<AbstractClass>]
-type OptionBase() as x =
+type OptionImpl() =
     static let optCache = Dictionary<string, HashSet<string>>()
 
     static let seperator = [| ';'; '；'; '：'; ':' |]
@@ -75,12 +76,6 @@ type OptionBase() as x =
 
     let data =
         Dictionary<string, ResizeArray<string>>(StringComparer.OrdinalIgnoreCase)
-
-    /// 常用选项：指示是否需要文本输出
-    member val ResponseType = TextOutputCell(x, "text")
-
-    ///// 常用选项：指示是否需要显示帮助文本
-    //member val NeedHelp = OptionCell(x, "help")
 
     member x.Parsed = isParsed
 
@@ -124,7 +119,9 @@ type OptionBase() as x =
 
         isParsed <- true
 
-    member x.NonConfigStrings = nonOption :> IReadOnlyList<_>
+    member x.NonOptionStrings = nonOption :> IReadOnlyList<_>
+
+    member x.GetNonOptionString() = String.Join(' ', x.NonOptionStrings)
 
     member private x.TryGenerateOptionCache() : HashSet<string> =
         let key = x.GetType().FullName
@@ -132,28 +129,42 @@ type OptionBase() as x =
         if not <| optCache.ContainsKey(key) then
             optCache.[key] <- HashSet<_>(StringComparer.OrdinalIgnoreCase)
 
-            for prop in x.GetType().GetProperties() do
-                let pt = prop.PropertyType
+            let flags =
+                Reflection.BindingFlags.Instance
+                ||| Reflection.BindingFlags.NonPublic
 
-                if pt.IsSubclassOf(typeof<OptionCell>) then
-                    let cell = prop.GetValue(x) :?> OptionCell
+            let targetType = typeof<OptionCell>
 
-                    if not <| optCache.[key].Add(cell.KeyName) then
-                        invalidOp (sprintf "键名已被使用: %s" cell.KeyName)
+            // 获取Fields而不是Properties是因为这样可以使用let绑定
+            // 隐藏Cell类型。这样可以同时兼容let绑定和member val声明。
+            // 可以在下游需要的时候再将let换成member val进行操作。
+            for f in x.GetType().GetFields(flags) do
+                let ft = f.FieldType
+
+                if ft.IsSubclassOf(targetType) || ft = targetType then
+                    // 不检查重复值意味着下游应用可以
+                    // 设置同名选项来重写一些行为
+                    let cell = f.GetValue(x) :?> OptionCell
+                    optCache.[key].Add(cell.KeyName) |> ignore
 
                     for item in cell.Aliases do
-                        if not <| optCache.[key].Add(item) then
-                            invalidOp (sprintf "键名已被使用: alias(%s)" item)
+                        optCache.[key].Add(item) |> ignore
 
         optCache.[key]
 
     member private x.OptAddOrAppend(key, value) =
-        if not <| data.ContainsKey(key) then data.[key] <- ResizeArray<_>()
+        if not <| data.ContainsKey(key) then
+            data.[key] <- ResizeArray<_>()
 
         data.[key].Add(value)
 
-type TextOutputCell(cb, key) =
-    inherit OptionCell(cb, key)
+type OptionBase() as x =
+    inherit OptionImpl()
 
-    member x.Value =
-        if x.IsDefined then ForceText else PreferImage
+    let shouldTextOutput = OptionCell(x, "text")
+
+    member x.ResponseType =
+        if shouldTextOutput.IsDefined then
+            ForceText
+        else
+            PreferImage

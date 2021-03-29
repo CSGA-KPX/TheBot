@@ -88,7 +88,7 @@ type MiscModule() =
 
             tt.AddPreTable(sprintf "当前为：%s" (getString (startDate)))
 
-            let list = opt.ListCount.DefaultOrHead()
+            let list = opt.ListCount.DefaultOrHead
 
             if list > 31 then cmdArg.AbortExecution(InputError, "一个月还不够嘛？")
             for i = 0 to list do
@@ -283,7 +283,7 @@ type MiscModule() =
         cfg.Parse(cmdArg)
 
         using
-            (cmdArg.OpenResponse(cfg.ResponseType.Value))
+            (cmdArg.OpenResponse(cfg.ResponseType))
             (fun ret ->
                 ret.Write(title)
                 ret.Write("\r\n")
@@ -306,7 +306,7 @@ type MiscModule() =
         try
             if opt.ListCount.IsDefined then
                 let tt = TextTable("CD时间", "概述", "tid", "rid")
-                let count = opt.ListCount.DefaultOrHead()
+                let count = opt.ListCount.DefaultOrHead
 
                 if count > 12 * 31 then cmdArg.AbortExecution(InputError, "那时间可太长了。")
                 for i = 0 to count - 1 do
@@ -322,7 +322,7 @@ type MiscModule() =
 
                 ret.Write(tt)
             else
-                let next = opt.NextCoolDown.DefaultOrHead()
+                let next = opt.NextCoolDown.DefaultOrHead
                 if next <> 0 then now <- now.AddHours(2.0 * (float next))
                 let info = OceanFishing.CalculateCooldown(now)
 

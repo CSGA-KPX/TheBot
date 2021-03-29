@@ -82,9 +82,9 @@ text 以文本格式输出结果
 
         let acc = XivExpression.ItemAccumulator()
 
-        let worlds = opt.World.DefaultOrValues()
+        let worlds = opt.World.DefaultOrValues
 
-        match opt.NonConfigStrings |> Seq.tryHead with
+        match opt.NonOptionStrings |> Seq.tryHead with
         | None -> cmdArg.QuickMessageReply("物品名或采集重建/魔晶石/水晶。")
         | Some "水晶" ->
             if worlds.Length >= 2 then
@@ -97,7 +97,7 @@ text 以文本格式输出结果
                     acc.Update(item))
         | Some "魔晶石" ->
             let ret =
-                opt.NonConfigStrings
+                opt.NonOptionStrings
                 |> Seq.tryItem 1
                 |> Option.map MarketUtils.MateriaAliasMapper.TryMap
                 |> Option.flatten
@@ -130,7 +130,7 @@ text 以文本格式输出结果
                     let item = itemCol.GetByItemId(id)
                     acc.Update(item))
         | Some _ ->
-            for str in opt.NonConfigStrings do
+            for str in opt.NonOptionStrings do
                 match xivExpr.TryEval(str) with
                 | Error err -> raise err
                 | Ok (Number i) -> tt.AddPreTable(sprintf "计算结果为数字%f，物品Id请加#" i)
@@ -206,7 +206,7 @@ text 以文本格式输出结果
             }
             |> tt.AddRow
 
-        using (cmdArg.OpenResponse(opt.ResponseType.Value)) (fun ret -> ret.Write(tt))
+        using (cmdArg.OpenResponse(opt.ResponseType)) (fun ret -> ret.Write(tt))
 
     [<CommandHandlerMethodAttribute("#r", "根据表达式汇总多个物品的材料，不查询价格", "可以使用text:选项返回文本。如#r 白钢锭 text:")>]
     [<CommandHandlerMethodAttribute("#rr",
@@ -235,7 +235,7 @@ text 以文本格式输出结果
         let opt = CommandUtils.XivOption()
         opt.Parse(cmdArg)
 
-        let world = opt.World.DefaultOrHead()
+        let world = opt.World.DefaultOrHead
 
         let tt =
             if doCalculateCost then
@@ -255,7 +255,7 @@ text 以文本格式输出结果
         let product = XivExpression.ItemAccumulator()
         let acc = XivExpression.ItemAccumulator()
 
-        for str in opt.NonConfigStrings do
+        for str in opt.NonOptionStrings do
             match xivExpr.TryEval(str) with
             | Error err -> raise err
             | Ok (Number i) -> tt.AddPreTable(sprintf "计算结果为数字%f，物品Id请加#" i)
@@ -325,7 +325,7 @@ text 以文本格式输出结果
             let profit = (totalSell - sum).Average
             tt.AddRowFill("税前利润", PaddingRight, PaddingRight, HumanReadableInteger profit)
 
-        using (cmdArg.OpenResponse(opt.ResponseType.Value)) (fun x -> x.Write(tt))
+        using (cmdArg.OpenResponse(opt.ResponseType)) (fun x -> x.Write(tt))
 
     [<CommandHandlerMethodAttribute("#ssc",
                                     "计算部分道具兑换的价格",
@@ -336,9 +336,9 @@ text 以文本格式输出结果
 
         let opt = CommandUtils.XivOption()
         opt.Parse(cmdArg)
-        let world = opt.World.DefaultOrHead()
+        let world = opt.World.DefaultOrHead
 
-        if opt.NonConfigStrings.Count = 0 then
+        if opt.NonOptionStrings.Count = 0 then
             //回复所有可交易道具
             let headerSet =
                 [| box <| RightAlignCell "ID"
@@ -372,10 +372,10 @@ text 以文本格式输出结果
 
             using (cmdArg.OpenResponse(ForceImage)) (fun x -> x.Write(tt))
         else
-            let ret = strToItem (opt.NonConfigStrings.[0])
+            let ret = strToItem (opt.NonOptionStrings.[0])
 
             match ret with
-            | None -> cmdArg.AbortExecution(ModuleError, "找不到物品{0}", opt.NonConfigStrings.[0])
+            | None -> cmdArg.AbortExecution(ModuleError, "找不到物品{0}", opt.NonOptionStrings.[0])
             | Some reqi ->
                 let ia = sc.SearchByCostItemId(reqi.Id)
 
@@ -441,7 +441,7 @@ text 以文本格式输出结果
         opt.Parse(cmdArg)
 
         let leves =
-            opt.NonConfigStrings
+            opt.NonOptionStrings
             |> Seq.tryHead
             |> Option.map
                 (fun x -> ClassJobMapping.ClassJobMappingCollection.Instance.TrySearchByName(x))
