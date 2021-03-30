@@ -1,31 +1,78 @@
 ﻿namespace KPX.FsCqHttp.Utils.TextResponse
-
 open System
 open System.Collections.Generic
 open System.Drawing
 open System.IO
 open System.Text
+open System.Text.RegularExpressions
 
 open KPX.FsCqHttp.Message
 open KPX.FsCqHttp.Api.System
 
 open KPX.FsCqHttp.Handler
 
+
+[<Sealed>]
+type internal ImageHelper private () =
+
+    /// 调整字符显示宽度。如果IsMatch=true则认为是1栏宽
+    ///
+    /// 需要设置RegexOptions.Compiled
+    static let CharDisplayLengthAdj =
+        Regex(@"\p{IsBasicLatin}|\p{IsGeneralPunctuation}|±|·", RegexOptions.Compiled)
+
+    static let tmpImg = Graphics.FromImage(new Bitmap(1, 1))
+
+    static member val Font =
+        new Font(
+            KPX.FsCqHttp.Config.Output.ImageOutputFont,
+            KPX.FsCqHttp.Config.Output.ImageOutputSize
+        )
+
+    static member val StringFormat =
+        let sf =
+            new StringFormat(StringFormat.GenericTypographic)
+
+        sf.FormatFlags <-
+            sf.FormatFlags
+            ||| StringFormatFlags.MeasureTrailingSpaces
+
+        sf
+
+    static member val private SingleColumnWidth =
+        let str =
+            string KPX.FsCqHttp.Config.Output.TextTable.FullWidthSpace
+
+        let ret = ImageHelper.MeasureByGraphic(str)
+        (int ret.Width) / 2
+
+    static member MeasureByChar(str : string) =
+        str.ToCharArray()
+        |> Array.sumBy (fun c -> if CharDisplayLengthAdj.IsMatch(c.ToString()) then 1 else 2)
+
+    static member MeasureByGraphic(str : string) : SizeF =
+        tmpImg.MeasureString(str, ImageHelper.Font, 0, ImageHelper.StringFormat)
+
+    /// 使用Output.TextTable.UseGraphicStringMeasure计算宽度。
+    /// 返回宽度按栏数计算。
+    static member MeasureWidthByConfig(str : string) =
+        if KPX.FsCqHttp.Config.Output.TextTable.UseGraphicStringMeasure then
+            let ret =
+                ImageHelper.MeasureByGraphic(str).Width |> int
+
+            let mutable width = ret / ImageHelper.SingleColumnWidth
+
+            if (ret % ImageHelper.SingleColumnWidth) <> 0 then
+                width <- width + 1
+
+            width
+        else
+            ImageHelper.MeasureByChar(str)
+
 type ResponseType =
     | ForceImage
     | PreferImage
     | ForceText
-
-    member internal x.CanSendImage(args : CqEventArgs) =
-        let canSendImage =
-            lazy (args.ApiCaller.CallApi<CanSendImage>().Can)
-
-        match x with
-        | ForceImage ->
-            if not canSendImage.Value then raise <| InvalidOperationException("")
-            true
-        | ForceText -> false
-        | PreferImage -> canSendImage.Value
 
 type TextResponse(args : CqEventArgs, respType : ResponseType) =
     inherit TextWriter()
@@ -38,9 +85,15 @@ type TextResponse(args : CqEventArgs, respType : ResponseType) =
     let buf = Queue<string>()
     let sb = StringBuilder()
 
-    let resp = lazy (respType.CanSendImage(args))
+    let canSendImage =
+        lazy (args.ApiCaller.CallApi<CanSendImage>().Can)
 
-    member x.DoSendImage = resp.Force()
+    member x.DoSendAsImage =
+        match respType with
+        | ForceText -> false
+        | PreferImage when KPX.FsCqHttp.Config.Output.ForceImageAvailable -> true
+        | PreferImage -> canSendImage.Force()
+        | ForceImage -> true
 
     override x.Write(c : char) =
         if not isUsed then isUsed <- true
@@ -100,23 +153,12 @@ type TextResponse(args : CqEventArgs, respType : ResponseType) =
 
     member private x.FlushImageMessage() =
         let DrawLines (lines : string []) =
-            use font =
-                new Font(KPX.FsCqHttp.Config.Output.ImageOutputFont, KPX.FsCqHttp.Config.Output.ImageOutputSize)
-
-            let sf =
-                new StringFormat(StringFormat.GenericTypographic)
-
-            sf.FormatFlags <-
-                sf.FormatFlags
-                ||| StringFormatFlags.MeasureTrailingSpaces
+            let font = ImageHelper.Font
+            let sf = ImageHelper.StringFormat
 
             let fullSize =
-                use bmp = new Bitmap(1, 1)
-                use draw = Graphics.FromImage(bmp)
-
                 let calc =
-                    lines
-                    |> Array.map (fun str -> draw.MeasureString(str, font, 0, sf))
+                    lines |> Array.map ImageHelper.MeasureByGraphic
 
                 let maxWidth = calc |> Array.maxBy (fun x -> x.Width)
                 let sumHeight = calc |> Array.sumBy (fun x -> x.Height)
@@ -161,7 +203,10 @@ type TextResponse(args : CqEventArgs, respType : ResponseType) =
             args.QuickMessageReply(message)
 
     override x.Flush() =
-        if x.DoSendImage then x.FlushImageMessage() else x.FlushTextMessage()
+        if x.DoSendAsImage then
+            x.FlushImageMessage()
+        else
+            x.FlushTextMessage()
 
     interface IDisposable with
         member x.Dispose() =

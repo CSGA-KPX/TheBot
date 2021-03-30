@@ -2,6 +2,8 @@
 
 open System
 
+open KPX.FsCqHttp.Utils.TextResponse
+
 
 [<RequireQualifiedAccess>]
 [<Struct>]
@@ -17,8 +19,7 @@ type TableCell =
     member x.IsLeftAlign = x.Align = CellAlign.Left
     member x.IsRightAlign = x.Align = CellAlign.Right
 
-    member x.DisplayWidth =
-        KPX.FsCqHttp.Config.Output.TextTable.StrDispLen(x.Text)
+    member x.DisplayWidth = ImageHelper.MeasureWidthByConfig(x.Text)
 
     static member private GetDefaultAlign(o : obj) =
         match Type.GetTypeCode(o.GetType()) with

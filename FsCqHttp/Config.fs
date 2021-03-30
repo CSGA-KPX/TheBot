@@ -19,39 +19,33 @@ module Logging =
 
 [<RequireQualifiedAccess>]
 module Output =
-    open System.Text.RegularExpressions
+    open System.Drawing
+
+    /// 如果设置，将不再使用CanSendImage API检查上游功能
+    let ForceImageAvailable = true
 
     /// 文本回复下最长输出字符数
-    let mutable TextLengthLimit = 3000
+    let TextLengthLimit = 3000
 
     /// 图片输出下使用的字体
     // Mono上GDI+处理和Windows不同，字体渲染存在差异
     // 目前已知Sarasa Fixed CL字体输出比较稳定，其他不明
-    let mutable ImageOutputFont = "Sarasa Fixed CL"
-    let mutable ImageOutputSize = 12.0f
+    let ImageOutputFont = "Sarasa Fixed CL"
+    let ImageOutputSize = 12.0f
 
-    let mutable ImageBackgroundColor = System.Drawing.Color.White
-    let mutable ImageTextColor = System.Drawing.Color.Black
-    let mutable RowBackgroundColorA = System.Drawing.Color.White
-    let mutable RowBackgroundColorB = System.Drawing.Color.LightGray
+    let ImageBackgroundColor = Color.White
+    let ImageTextColor = Color.Black
 
-    /// 调整字符显示宽度。如果IsMatch=true则认为是1栏宽
-    ///
-    /// 需要设置RegexOptions.Compiled
-    let mutable CharDisplayLengthAdj =
-        Regex(@"\p{IsBasicLatin}|\p{IsGeneralPunctuation}|±|·", RegexOptions.Compiled)
+    let RowBackgroundColorA = Color.White
+    let RowBackgroundColorB = Color.LightGray
 
     [<RequireQualifiedAccess>]
     module TextTable =
         let mutable CellPadding = "--"
 
-        /// 计算字符宽度
-        let inline CharLen (c) =
-            if CharDisplayLengthAdj.IsMatch(c.ToString()) then 1 else 2
-
-        /// 计算字符串宽度
-        let inline StrDispLen (str : string) =
-            str.ToCharArray() |> Array.sumBy CharLen
+        /// 使用Graphics.MeasureString计算字符串长度，
+        /// 否则使用正则匹配
+        let UseGraphicStringMeasure = true
 
         [<Literal>]
         let HalfWidthSpace = ' '

@@ -3,6 +3,8 @@
 open System
 open System.Collections.Generic
 
+open KPX.FsCqHttp.Utils.TextResponse
+
 
 /// 表示表格内每列的内容
 type internal TextColumn() =
@@ -19,7 +21,10 @@ type internal TextColumn() =
     /// 添加为默认对齐方式
     member x.AddDefaultAlignment(o : obj) =
         let add =
-            if defaultLeftAlignment then LeftAlignCell o else RightAlignCell o
+            if defaultLeftAlignment then
+                LeftAlignCell o
+            else
+                RightAlignCell o
 
         x.Add(add)
 
@@ -47,7 +52,7 @@ type internal TextColumn() =
         let max = x.GetMaxDisplayWidth()
 
         let padCharLen =
-            KPX.FsCqHttp.Config.Output.TextTable.CharLen(padChar)
+            ImageHelper.MeasureWidthByConfig(string padChar)
 
         for i = 0 to x.Count - 1 do
             let cell = x.[i]
@@ -59,7 +64,8 @@ type internal TextColumn() =
                 let padding =
                     String(padChar, padLen) + String(' ', rstLen)
 
-                x.[i] <- if cell.IsLeftAlign then
-                             LeftAlignCell(cell.Text + padding)
-                         else
-                             RightAlignCell(padding + cell.Text)
+                x.[i] <-
+                    if cell.IsLeftAlign then
+                        LeftAlignCell(cell.Text + padding)
+                    else
+                        RightAlignCell(padding + cell.Text)
