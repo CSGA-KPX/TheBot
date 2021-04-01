@@ -6,14 +6,16 @@ open System.IO.Compression
 open System.Collections.Generic
 open System.Reflection
 
+open LiteDB
+
 open LibFFXIV.GameData
 open LibFFXIV.GameData.Provided
 
-open LiteDB
+open KPX.TheBot.Data.Common.Resource
 
 
 type TypedXivCollection =
-    XivCollectionProvider< @"K:\Source\Repos\TheBot\TheBot\bin\Debug\staticData\ffxiv-datamining-cn-master.zip", "none", "ffxiv-datamining-cn-master/" >
+    XivCollectionProvider<XivTPSample, "none", "ffxiv-datamining-cn-master/" >
 
 [<AutoOpen>]
 module Helpers =

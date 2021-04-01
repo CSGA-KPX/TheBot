@@ -10,5 +10,8 @@ let StaticDataPath = "../staticData/"
 [<Literal>]
 let private ResourcePrefix = "TheBotData."
 
+[<Literal>]
+let XivTPSample = __SOURCE_DIRECTORY__ + "/../../TheBot/bin/Debug/staticData/ffxiv-datamining-cn-master.zip"
+
 let GetResourceManager (str) =
     Resources.ResourceManager(ResourcePrefix + str, Assembly.GetExecutingAssembly())
