@@ -2,13 +2,31 @@
 
 open System
 
-open Newtonsoft.Json.Linq
+open Newtonsoft.Json
 
 open KPX.TheBot.Data.Common.Database
 open KPX.TheBot.Data.Common.Network
 
 open KPX.TheBot.Data.EveData.EveType
 
+
+[<CLIMutable>]
+type internal PriceInfo =
+    { [<JsonProperty>]
+      Max : float
+      [<JsonProperty>]
+      Min : float
+      [<JsonProperty>]
+      Volume : uint64 }
+
+[<CLIMutable>]
+type internal MarketInfo =
+    { [<JsonProperty>]
+      All : PriceInfo
+      [<JsonProperty>]
+      Buy : PriceInfo
+      [<JsonProperty>]
+      Sell : PriceInfo }
 
 [<CLIMutable>]
 type PriceCache =
@@ -34,7 +52,9 @@ type PriceCacheCollection private () =
 
     override x.DoFetchItem(itemId) =
         let url =
-            sprintf @"https://www.ceve-market.org/api/market/region/10000002/system/30000142/type/%i.json" itemId
+            sprintf
+                @"https://www.ceve-market.org/api/market/region/10000002/system/30000142/type/%i.json"
+                itemId
 
         x.Logger.Info(sprintf "Fetching %s" url)
 
@@ -45,17 +65,19 @@ type PriceCacheCollection private () =
                 .GetAwaiter()
                 .GetResult()
 
-        let obj = JObject.Parse(json)
+        let info = JsonConvert.DeserializeObject<MarketInfo>(json)
 
-        let sellMin =
-            (obj.GetValue("sell") :?> JObject)
-                .GetValue("min")
-                .ToObject<float>()
+        let sellMin = 
+            if info.Sell.Volume = 0UL then
+                nan
+            else
+                info.Sell.Min
 
-        let buyMax =
-            (obj.GetValue("buy") :?> JObject)
-                .GetValue("max")
-                .ToObject<float>()
+        let buyMax = 
+            if info.Buy.Volume = 0UL then
+                nan
+            else
+                info.Buy.Max
 
         { Id = itemId
           Sell = sellMin
