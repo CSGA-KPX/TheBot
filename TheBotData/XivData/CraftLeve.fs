@@ -34,7 +34,7 @@ type CraftLeveInfoCollection private () =
         db.EnsureIndex(LiteDB.BsonExpression.Create("ClassJob"))
         |> ignore
 
-        use col = BotDataInitializer.XivCollectionChs
+        let col = BotDataInitializer.XivCollectionChs
 
         seq {
             let acc = ItemAccumulator<_>()

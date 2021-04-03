@@ -33,7 +33,7 @@ type ItemCollection private () =
         db.EnsureIndex(LiteDB.BsonExpression.Create("Name"))
         |> ignore
 
-        use col = BotDataInitializer.XivCollectionChs
+        let col = BotDataInitializer.XivCollectionChs
 
         seq {
             for row in col.Item.TypedRows do

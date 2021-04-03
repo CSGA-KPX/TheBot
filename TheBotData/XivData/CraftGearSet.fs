@@ -36,7 +36,7 @@ type CraftableGearCollection private () =
         db.EnsureIndex(LiteDB.BsonExpression.Create("ItemLv"), false)
         |> ignore
 
-        use col = BotDataInitializer.XivCollectionChs
+        let col = BotDataInitializer.XivCollectionChs
 
         (*let fields =
             [| "EquipSlotCategory"

@@ -23,7 +23,7 @@ type ClassJobMappingCollection private () =
 
     override x.InitializeCollection() =
         let db = x.DbCollection
-        use col = BotDataInitializer.XivCollectionChs
+        let col = BotDataInitializer.XivCollectionChs
 
         seq {
             for row in col.ClassJob.TypedRows do

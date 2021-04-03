@@ -25,7 +25,7 @@ type CraftRecipeProvider private () =
         db.EnsureIndex(LiteDB.BsonExpression.Create("Process.Output[0].Item"))
         |> ignore
 
-        use col = BotDataInitializer.XivCollectionChs
+        let col = BotDataInitializer.XivCollectionChs
 
         seq {
             for row in col.Recipe.TypedRows do

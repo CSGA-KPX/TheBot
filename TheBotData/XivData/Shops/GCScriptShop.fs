@@ -29,7 +29,7 @@ type GCScriptShop private () =
         x.DbCollection.EnsureIndex(LiteDB.BsonExpression.Create("ReceiveItem"))
         |> ignore
 
-        use col = BotDataInitializer.XivCollectionChs
+        let col = BotDataInitializer.XivCollectionChs
 
         seq {
             for row in col.GCScripShopItem.TypedRows do

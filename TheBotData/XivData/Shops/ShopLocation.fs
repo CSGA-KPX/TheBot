@@ -33,7 +33,7 @@ type ShopLocationCollection private () =
     override x.Depends = Array.empty
 
     override x.InitializeCollection() =
-        use col = BotDataInitializer.XivCollectionChs
+        let col = BotDataInitializer.XivCollectionChs
 
         let level =
             seq {

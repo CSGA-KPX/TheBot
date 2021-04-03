@@ -26,7 +26,7 @@ type CompanyCraftRecipeProvider private () =
         |> ignore
 
         seq {
-            use col = BotDataInitializer.XivCollectionChs
+            let col = BotDataInitializer.XivCollectionChs
             let ia = ItemAccumulator<int>()
 
             for ccs in col.CompanyCraftSequence.TypedRows do

@@ -171,7 +171,7 @@ module World =
            "Light", "光" |]
 
     do
-        use col =
+        let col =
             KPX.TheBot.Data.Common.Database.BotDataInitializer.XivCollectionChs
 
         for row in col.GetSheet("World") do

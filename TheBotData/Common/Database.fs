@@ -14,8 +14,7 @@ open LibFFXIV.GameData.Provided
 open KPX.TheBot.Data.Common.Resource
 
 
-type TypedXivCollection =
-    XivCollectionProvider<XivTPSample, "none", "ffxiv-datamining-cn-master/" >
+type TypedXivCollection = XivCollectionProvider<XivTPSample, "none", "ffxiv-datamining-cn-master/">
 
 [<AutoOpen>]
 module Helpers =
@@ -167,10 +166,7 @@ type BotDataInitializer private () =
         if xivArchive.IsSome then xivArchive.Value.Dispose()
 
         let archivePath =
-            Path.Combine(
-                KPX.TheBot.Data.Common.Resource.StaticDataPath,
-                "ffxiv-datamining-cn-master.zip"
-            )
+            Path.Combine(StaticDataPath, "ffxiv-datamining-cn-master.zip")
 
         xivArchive <-
             Some

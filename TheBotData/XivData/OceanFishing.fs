@@ -7,14 +7,14 @@ open KPX.TheBot.Data.Common.Resource
 
 
 let private RouteTable =
-    use col = BotDataInitializer.XivCollectionChs
+    let col = BotDataInitializer.XivCollectionChs
 
     col.GetSheet("IKDRouteTable")
     |> Seq.map (fun row -> row.As<int>("Route"))
     |> Seq.toArray
 
 let private RouteDefine =
-    use col = BotDataInitializer.XivCollectionChs
+    let col = BotDataInitializer.XivCollectionChs
 
     [|
         for row in col.IKDRoute.TypedRows do 

@@ -31,7 +31,7 @@ type SpecialShopCollection private () =
         x.DbCollection.EnsureIndex(LiteDB.BsonExpression.Create("ReceiveItem"))
         |> ignore
 
-        use col = BotDataInitializer.XivCollectionChs
+        let col = BotDataInitializer.XivCollectionChs
 
         //col.GetSheet("Item", [| "Name"; "IsUntradable" |])
         //|> ignore // 缓存

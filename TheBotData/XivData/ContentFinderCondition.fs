@@ -34,7 +34,7 @@ type XivContentCollection private () =
     override x.IsExpired = false
 
     override x.InitializeCollection() =
-        use col = BotDataInitializer.XivCollectionChs
+        let col = BotDataInitializer.XivCollectionChs
         seq {
             for row in col.ContentFinderCondition.TypedRows do
                 yield
