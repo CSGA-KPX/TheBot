@@ -4,7 +4,7 @@ module KPX.FsCqHttp.Utils.TextResponse.Extension
 open KPX.FsCqHttp.Handler
 
 
-type CqEventArgs with
+type CqMessageEventArgs with
 
     /// 生成一个强制文本输出的TextResponse
     member x.OpenResponse() = new TextResponse(x, ForceText)

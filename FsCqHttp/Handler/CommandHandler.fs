@@ -27,10 +27,10 @@ type CommandHandlerMethodAttribute(command : string, desc, lh) =
     member val IsHidden = false with get, set
 
 [<Sealed>]
-type CommandEventArgs(cqArg : CqEventArgs, msg : MessageEvent, attr : CommandHandlerMethodAttribute) =
-    inherit CqEventArgs(cqArg)
+type CommandEventArgs (args : CqMessageEventArgs, attr : CommandHandlerMethodAttribute) = 
+    inherit CqMessageEventArgs(args.ApiCaller, args.RawEvent, args.Event)
 
-    let rawMsg = msg.Message.ToString()
+    let rawMsg = args.Event.Message.ToString()
 
     let cmdLine =
         rawMsg.Split(
@@ -40,7 +40,7 @@ type CommandEventArgs(cqArg : CqEventArgs, msg : MessageEvent, attr : CommandHan
         )
 
     /// 原始消息对象
-    member x.MessageEvent = msg
+    member x.MessageEvent = args.Event
 
     /// 原始消息文本
     member x.RawMessage = rawMsg

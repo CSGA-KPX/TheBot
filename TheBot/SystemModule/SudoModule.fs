@@ -151,8 +151,10 @@ type SudoModule() =
             Printf.bprintf sb "设置好友： qq:群号\r\n"
             cmdArg.QuickMessageReply(sb.ToString())
 
-    override x.HandleRequest(args, e) =
-        match e with
+    override x.OnRequest = Some x.HandleRequest
+
+    member x.HandleRequest(args)=
+        match args.Event with
         | FriendRequest req ->
             let inList =
                 allowList.Contains(allowQqFmt args.BotUserId req.UserId)

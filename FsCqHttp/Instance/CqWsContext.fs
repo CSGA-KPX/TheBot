@@ -1,13 +1,10 @@
 ﻿namespace rec KPX.FsCqHttp.Instance
 
 open System
-open System.Collections.Generic
 open System.Collections.Concurrent
 open System.Threading
 open System.Net.WebSockets
-open System.Reflection
 
-open KPX.FsCqHttp.Event
 open KPX.FsCqHttp.Api
 open KPX.FsCqHttp.Api.System
 open KPX.FsCqHttp.Handler
@@ -21,32 +18,6 @@ type WsContextApiBase() =
 
     abstract Invoke : CqWsContext -> unit
 
-[<AbstractClass>]
-type ContextModuleLoader() =
-    abstract RegisterFor : CqWsContext -> unit
-
-/// 默认加载FsCqHttp项目和EntryAssembly中的所有模块。
-type DefaultContextModuleLoader() =
-    inherit ContextModuleLoader()
-
-    let logger = NLog.LogManager.GetCurrentClassLogger()
-
-    let allModules =
-        seq {
-            yield! Assembly.GetExecutingAssembly().GetTypes()
-            yield! Assembly.GetEntryAssembly().GetTypes()
-        }
-        |> Seq.filter
-            (fun t ->
-                t.IsSubclassOf(typeof<HandlerModuleBase>)
-                && (not <| t.IsAbstract))
-        |> Seq.toArray
-
-    override x.RegisterFor(ctx) =
-        for m in allModules do
-            logger.Debug("加载模块{0}", m.FullName)
-            ctx.RegisterModule(m)
-
 type CqWsContextPool private () =
     let logger = NLog.LogManager.GetCurrentClassLogger()
 
@@ -56,7 +27,7 @@ type CqWsContextPool private () =
     member x.AddContext(context : CqWsContext) =
         pool.TryAdd(context.BotUserId, context) |> ignore
 
-        CqWsContextPool.ModuleLoader.RegisterFor(context)
+        CqWsContextPool.ModuleLoader.RegisterModuleFor(context.BotUserId, context.ModulesInfo)
 
         logger.Info(sprintf "已接受连接:%s" context.BotIdString)
 
@@ -78,7 +49,6 @@ type CqWsContextPool private () =
         DefaultContextModuleLoader() :> ContextModuleLoader with get, set
 
 type CqWsContext(ws : WebSocket) =
-    static let moduleCache = Dictionary<Type, HandlerModuleBase>()
     let cts = new CancellationTokenSource()
     let utf8 = Text.Encoding.UTF8
     let logger = NLog.LogManager.GetCurrentClassLogger()
@@ -87,10 +57,6 @@ type CqWsContext(ws : WebSocket) =
         ConcurrentDictionary<string, ManualResetEvent * CqHttpApiBase>()
 
     let started = new ManualResetEvent(false)
-    let modules = List<HandlerModuleBase>()
-
-    let cmdCache =
-        Dictionary<string, CommandInfo>(StringComparer.OrdinalIgnoreCase)
 
     let self = GetLoginInfo()
 
@@ -100,10 +66,10 @@ type CqWsContext(ws : WebSocket) =
         else
             getRootExn exn.InnerException
 
-    member x.Moduldes = modules :> IEnumerable<_>
-
     /// 返回已经定义的指令，结果无序。
-    member x.Commands = cmdCache.Values |> Seq.cast<CommandInfo>
+    member x.Commands =
+        x.ModulesInfo.Commands.Values
+        |> Seq.cast<CommandInfo>
 
     /// 发生链接错误时重启服务器的函数
     ///
@@ -123,32 +89,7 @@ type CqWsContext(ws : WebSocket) =
         else
             "[--:--]"
 
-    /// 注册模块
-    member x.RegisterModule(t : Type) =
-        let toAdd =
-            if moduleCache.ContainsKey(t) then
-                moduleCache.[t]
-            else
-                let isSubClass =
-                    t.IsSubclassOf(typeof<HandlerModuleBase>)
-                    && (not <| t.IsAbstract)
-
-                if not isSubClass then
-                    invalidArg "t" "必须是HandlerModuleBase子类"
-
-                let m =
-                    Activator.CreateInstance(t) :?> HandlerModuleBase
-
-                moduleCache.Add(t, m)
-                m
-
-        modules.Add(toAdd)
-
-        if toAdd :? CommandHandlerBase then
-            let cmdBase = toAdd :?> CommandHandlerBase
-
-            for cmd in cmdBase.Commands do
-                cmdCache.Add(cmd.CommandAttribute.Command, cmd)
+    member val ModulesInfo = ContextModuleInfo()
 
     /// 使用API检查是否在线
     member x.CheckOnline() =
@@ -181,58 +122,6 @@ type CqWsContext(ws : WebSocket) =
 
     member x.Stop() = cts.Cancel()
 
-    member private x.HandleEventPost(args : CqEventArgs) =
-        try
-            match args.Event with
-            | MetaEvent _ -> () // 心跳和生命周期事件没啥用
-            | NoticeEvent e ->
-                for m in modules do
-                    m.HandleNotice(args, e)
-            | RequestEvent e ->
-                for m in modules do
-                    m.HandleRequest(args, e)
-            | MessageEvent e ->
-                // 只匹配第一个文本段
-                let key =
-                    e.Message.TryGetSection<KPX.FsCqHttp.Message.Sections.TextSection>()
-                    |> Option.map (fun ts -> CommandEventArgs.TryGetCommand(ts.Text))
-
-                if key.IsSome && cmdCache.ContainsKey(key.Value) then
-                    let cmd = cmdCache.[key.Value]
-
-                    let cmdArg =
-                        CommandEventArgs(args, e, cmd.CommandAttribute)
-
-                    if KPX.FsCqHttp.Config.Logging.LogCommandCall then
-                        logger.Info(
-                            "Calling handler {0}\r\n Command Context {1}",
-                            cmd.MethodName,
-                            sprintf "%A" e
-                        )
-
-                        cmd.MethodAction.Invoke(cmdArg)
-                else
-                    for m in modules do
-                        m.HandleMessage(args, e)
-
-        with e ->
-            let rootExn = getRootExn e
-
-            match rootExn with
-            | :? IgnoreException -> ()
-            | :? ModuleException as me ->
-                args.QuickMessageReply(sprintf "错误：%s" me.Message)
-                args.Logger.Warn(
-                    "[{0}] -> {1} : {2} \r\n ctx： {3}",
-                    x.BotIdString,
-                    me.ErrorLevel,
-                    sprintf "%A" args.Event,
-                    me.Message
-                )
-            | _ ->
-                args.QuickMessageReply(sprintf "内部错误：%s" rootExn.Message)
-                logger.Error(sprintf "捕获异常：\r\n %O" e)
-
     member private x.HandleApiResponse(ret : ApiResponse) =
         let hasPending, item = apiPending.TryGetValue(ret.Echo)
 
@@ -244,24 +133,33 @@ type CqWsContext(ws : WebSocket) =
             logger.Warn(sprintf "未注册echo:%s" ret.Echo)
 
     member private x.HandleMessage(json : string) =
-        let obj = JObject.Parse(json)
+        let ctx = EventContext(JObject.Parse(json))
 
-        let logJson = lazy (obj.ToString())
-
-        if (obj.ContainsKey("post_type")) then //消息上报
+        if (ctx.Event.ContainsKey("post_type")) then //消息上报
             if KPX.FsCqHttp.Config.Logging.LogEventPost then
-                logger.Trace(sprintf "%s收到上报：%s" x.BotIdString logJson.Value)
+                logger.Trace(sprintf "%s收到上报：%O" x.BotIdString ctx)
 
-            x.HandleEventPost(CqEventArgs(x, obj))
+            match CqEventArgs.Parse(x, ctx) with
+            | :? CqMetaEventArgs when x.ModulesInfo.MetaCallbacks.Count = 0 -> ()
+            | :? CqNoticeEventArgs when x.ModulesInfo.NoticeCallbacks.Count = 0 -> ()
+            | :? CqRequestEventArgs when x.ModulesInfo.RequestCallbacks.Count = 0 -> ()
+            | :? CqMessageEventArgs as args when
+                (x.ModulesInfo.TryCommand(args).IsNone)
+                && x.ModulesInfo.MessageCallbacks.Count = 0 -> ()
+            | args ->
+                Tasks.Task.Run(fun () -> TaskScheduler.Enqueue(x.ModulesInfo, args))
+                |> ignore
 
-        elif obj.ContainsKey("retcode") then //API调用结果
+        elif ctx.Event.ContainsKey("retcode") then //API调用结果
             if KPX.FsCqHttp.Config.Logging.LogApiCall then
-                logger.Trace(sprintf "%s收到API调用结果： %s" x.BotIdString logJson.Value)
+                logger.Trace(sprintf "%s收到API调用结果： %O" x.BotIdString ctx)
 
-            x.HandleApiResponse(obj.ToObject<ApiResponse>())
+            x.HandleApiResponse(ctx.Event.ToObject<ApiResponse>())
 
     member private x.StartMessageLoop() =
         async {
+            do! Async.SwitchToNewThread()
+
             let buffer = Array.zeroCreate<byte> 4096
             let seg = ArraySegment<byte>(buffer)
             use ms = new IO.MemoryStream()
@@ -285,17 +183,7 @@ type CqWsContext(ws : WebSocket) =
                 while (not cts.IsCancellationRequested) do
                     ms.SetLength(0L)
                     let json = readMessage (ms)
-
-                    Tasks
-                        .Task
-                        .Run((fun () -> x.HandleMessage(json)))
-                        .ContinueWith(fun t ->
-                            if t.IsFaulted then
-                                for inner in t.Exception.InnerExceptions do
-                                    logger.Fatal(
-                                        sprintf "捕获异常%s : %s" (inner.GetType().Name) inner.Message
-                                    ))
-                    |> ignore
+                    x.HandleMessage(json)
             with e ->
                 cts.Cancel()
                 logger.Fatal(sprintf "%sWS读取捕获异常：%A" x.BotIdString e)
@@ -308,6 +196,13 @@ type CqWsContext(ws : WebSocket) =
         |> Async.Start
 
     interface IApiCallProvider with
+        
+        member x.CallerUserId = x.BotUserId
+
+        member x.CallerId = x.BotIdString
+        
+        member x.CallerName = x.BotNickname
+
         member x.CallApi(req) =
             started.WaitOne() |> ignore
 

@@ -23,7 +23,7 @@ type HelpModuleBase() =
         let nonCommandModules = ResizeArray<string>()
 
         let modules =
-            cmdArg.ApiCaller.CallApi<GetCtxModules>().Moduldes
+            cmdArg.ApiCaller.CallApi<GetCtxModuleInfo>().ModuleInfo.AllModules
 
         for item in modules do
             match item with

@@ -1,4 +1,5 @@
 ﻿namespace KPX.FsCqHttp.Utils.TextResponse
+
 open System
 open System.Collections.Generic
 open System.Drawing
@@ -74,7 +75,7 @@ type ResponseType =
     | PreferImage
     | ForceText
 
-type TextResponse(args : CqEventArgs, respType : ResponseType) =
+type TextResponse(args : CqMessageEventArgs, respType : ResponseType) =
     inherit TextWriter()
 
     let mutable isUsed = false

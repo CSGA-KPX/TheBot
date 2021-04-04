@@ -1,16 +1,20 @@
 ﻿namespace KPX.FsCqHttp.Handler
 
 open KPX.FsCqHttp.Event
+open KPX.FsCqHttp.Handler
 
 
 [<AbstractClass>]
 type HandlerModuleBase() as x =
     member val Logger = NLog.LogManager.GetLogger(x.GetType().Name)
 
-    abstract HandleMessage : CqEventArgs * MessageEvent -> unit
-    abstract HandleRequest : CqEventArgs * RequestEvent -> unit
-    abstract HandleNotice : CqEventArgs * NoticeEvent -> unit
+    /// 是否接受非指令消息。启用会导致所有非指令消息进入消息队列，影响性能
+    abstract OnMessage : (CqMessageEventArgs -> unit) option
+    abstract OnRequest : (CqRequestEventArgs -> unit) option
+    abstract OnNotice : (CqNoticeEventArgs -> unit) option
+    abstract OnMeta : (CqMetaEventArgs -> unit) option
 
-    default x.HandleMessage(_, _) = ()
-    default x.HandleRequest(_, _) = ()
-    default x.HandleNotice(_, _) = ()
+    default x.OnMessage = None
+    default x.OnRequest = None
+    default x.OnNotice = None
+    default x.OnMeta = None

@@ -20,7 +20,6 @@
     <Compile Include="Event\RequestEventTypes.fs" />
     <Compile Include="Event\RequestEvent.fs" />
     <Compile Include="Event\MetaEvent.fs" />
-    <Compile Include="Event\CqHttpEvent.fs" />
     <Compile Include="Event\EventResponse.fs" />
     <Compile Include="Api\ApiResponse.fs" />
     <Compile Include="Api\ApiBase.fs" />
@@ -50,7 +49,8 @@
     <Compile Include="Api\Group\SetGroupLeave.fs" />
     <Compile Include="Api\Group\SetGroupSpecialTitle.fs" />
     <Compile Include="Api\Group\SetDiscussLeave.fs" />
-    <Compile Include="Handler\ClientEventArgs.fs" />
+    <Compile Include="Handler\HandlerErrorHandling.fs" />
+    <Compile Include="Handler\CqEvent.fs" />
     <Compile Include="Handler\HandlerBase.fs" />
     <Compile Include="Handler\CommandHandler.fs" />
     <Compile Include="Utils\TextResponse.fs" />
@@ -66,6 +66,9 @@
     <Compile Include="Utils\AliasMapper.fs" />
     <Compile Include="Utils\UserOption.fs" />
     <Compile Include="Utils\UserOptionV2.fs" />
+    <Compile Include="Instance\ModuleInfo.fs" />
+    <Compile Include="Instance\ContextModuleLoader.fs" />
+    <Compile Include="Instance\EventDispatcher.fs" />
     <Compile Include="Instance\CqWsContext.fs" />
     <Compile Include="Instance\ContextApi.fs" />
     <Compile Include="Instance\ActiveWebsocket.fs" />

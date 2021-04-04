@@ -82,6 +82,9 @@ type CqHttpApiBase(action : string) =
     default x.WriteParams(_, _) = ()
 
 type IApiCallProvider =
+    abstract CallerUserId : uint64
+    abstract CallerId : string
+    abstract CallerName : string
 
     abstract CallApi<'T when 'T :> ApiBase> : 'T -> 'T
     /// 调用一个不需要额外设定的api

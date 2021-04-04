@@ -4,21 +4,19 @@
 // 所以使用API的方式实现访问和并发控制
 namespace KPX.FsCqHttp.Api.Context
 
-open KPX.FsCqHttp.Event
-
 open KPX.FsCqHttp.Instance
 
 
-type GetCtxModules() =
+type GetCtxModuleInfo() =
     inherit WsContextApiBase()
 
-    let mutable m = Array.empty
+    let mutable m = ContextModuleInfo()
 
-    member x.Moduldes =
+    member x.ModuleInfo =
         x.EnsureExecuted()
         m
 
-    override x.Invoke(ctx) = m <- ctx.Moduldes |> Seq.toArray
+    override x.Invoke(ctx) = m <- ctx.ModulesInfo
 
 /// 返回无序的已定义指令。
 ///
