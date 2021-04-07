@@ -46,7 +46,8 @@ type CompanyCraftRecipeProvider private () =
                         let sets = proc.SetsRequired.AsDoubles()
 
                         for i = 0 to items.Length - 1 do
-                            if items.[i] <> 0 then ia.Update(i, amounts.[i] * sets.[i])
+                            if items.[i] <> 0 then
+                                ia.Update(items.[i], amounts.[i] * sets.[i])
 
                 yield
                     { Id = 0

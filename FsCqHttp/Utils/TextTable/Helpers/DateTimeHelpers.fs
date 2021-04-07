@@ -6,7 +6,8 @@ open System
 [<AutoOpen>]
 type DateTimeHelpers =
     static member HumanTimeSpan(ts : TimeSpan) =
-        if ts.TotalDays >= 1.0 then sprintf "%.0f天前" ts.TotalDays
+        if ts = TimeSpan.MaxValue then "--"
+        elif ts.TotalDays >= 1.0 then sprintf "%.0f天前" ts.TotalDays
         elif ts.TotalHours >= 1.0 then sprintf "%.0f时前" ts.TotalHours
         else sprintf "%.0f分前" ts.TotalMinutes
         |> RightAlignCell

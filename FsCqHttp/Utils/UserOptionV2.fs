@@ -35,28 +35,29 @@ type OptionCell<'T>(cb : OptionImpl, key : string, defValue : 'T) =
 
     abstract ConvertValue : string -> 'T
 
-    /// 获取第一个设定值，如果没有则返回默认值
-    member x.DefaultOrHead =
-        x.TryGetRealKey()
-        |> Option.map
-            (fun kn ->
-                let ret = cb.GetDefined(kn)
-
-                if ret.Count = 0 then
-                    x.DefaultValue
-                else
-                    x.ConvertValue(ret.[0]))
-        |> Option.defaultValue x.DefaultValue
-
-    /// 获取所有设定值，如果没有则返回默认值
-    member x.DefaultOrValues =
+    member private x.ValueSequense =
         x.TryGetRealKey()
         |> Option.map
             (fun kn ->
                 cb.GetDefined(kn)
-                |> Seq.map (fun item -> x.ConvertValue(item))
-                |> Seq.toArray)
-        |> Option.defaultValue [| x.DefaultValue |]
+                |> Seq.map
+                    (fun item ->
+                        if String.IsNullOrWhiteSpace(item) then
+                            x.DefaultValue
+                        else
+                            x.ConvertValue(item)))
+
+        |> Option.defaultValue (Seq.singleton x.DefaultValue)
+
+    /// 获取第一个设定值，如果没有则返回默认值
+    member x.DefaultOrHead =
+        x.ValueSequense
+        |> Seq.head
+
+    /// 获取所有设定值，如果没有则返回默认值
+    member x.DefaultOrValues =
+        x.ValueSequense
+        |> Seq.toArray
 
 type OptionCellSimple<'T when 'T :> IConvertible>(cb : OptionImpl, key : string, defValue : 'T) =
     inherit OptionCell<'T>(cb, key, defValue)

@@ -20,7 +20,7 @@ type XivContent =
       IsExpertRoulette : bool
       IsTrialRoulette : bool
       IsDailyFrontlineChallengeRoulette : bool
-      IsLevel70Roulette : bool
+      IsLevel80Roulette : bool
       IsMentorRoulette : bool }
 
 type XivContentCollection private () =
@@ -42,13 +42,13 @@ type XivContentCollection private () =
                       Name = row.Name.AsString()
                       IsHighEndDuty = row.HighEndDuty.AsBool()
                       IsLevelingRoulette = row.LevelingRoulette.AsBool()
-                      IsLevel5060Roulette = row.``Level50/60Roulette``.AsBool()
+                      IsLevel5060Roulette = row.``Level50/60/70Roulette``.AsBool()
                       IsMSQRoulette = row.MSQRoulette.AsBool()
                       IsGuildHestRoulette = row.GuildHestRoulette.AsBool()
                       IsExpertRoulette = row.ExpertRoulette.AsBool()
                       IsTrialRoulette = row.TrialRoulette.AsBool()
                       IsDailyFrontlineChallengeRoulette = row.DailyFrontlineChallenge.AsBool()
-                      IsLevel70Roulette = row.Level70Roulette.AsBool()
+                      IsLevel80Roulette = row.Level80Roulette.AsBool()
                       IsMentorRoulette = row.MentorRoulette.AsBool() }
         }
         |> x.DbCollection.InsertBulk

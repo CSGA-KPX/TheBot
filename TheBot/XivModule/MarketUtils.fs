@@ -79,12 +79,9 @@ type MarketData =
 
     /// 返回GMT+8的时间
     member x.UpdateTime =
-        let ts =
-            match x with
-            | Order x -> x.LastReviewTime
-            | Trade x -> x.TimeStamp
-
-        DateTimeOffset.FromUnixTimeSeconds(ts)
+        match x with
+        | Order x -> x.LastReviewTime
+        | Trade x -> x.TimeStamp
 
 type MarketAnalyzer(item : XivItem, world : World, data : MarketData []) =
 
@@ -97,13 +94,12 @@ type MarketAnalyzer(item : XivItem, world : World, data : MarketData []) =
         if data.Length = 0 then
             TimeSpan.MaxValue
         else
-            let dt =
+            let data =
                 (data |> Array.maxBy (fun x -> x.UpdateTime))
 
-            let ret = (DateTimeOffset.Now - dt.UpdateTime)
-            //if ret.TotalSeconds < 0.0 then
-            //    failwithf "%i %A" (dt.UpdateTime.ToUnixTimeSeconds()) dt
-            ret
+            let dt = DateTimeOffset.FromUnixTimeSeconds(data.UpdateTime)
+
+            (DateTimeOffset.Now - dt)
 
     member x.MinPrice() =
         if data.Length = 0 then
