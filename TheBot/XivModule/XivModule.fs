@@ -339,6 +339,9 @@ type MiscModule() =
 
                 ret.WriteEmptyLine()
                 ret.WriteLine("数据源：https://bbs.nga.cn/read.php?tid=20553241")
+                ret.WriteLine("        https://bbs.nga.cn/read.php?tid=26210039")
+                ret.WriteLine("        https://bbs.nga.cn/read.php?tid=26218473")
+                ret.WriteLine("        https://bbs.nga.cn/read.php?tid=25905000")
 
                 ret.WriteLine(
                     "调试信息:IKDRouteTable:{0}, IKDRoute:{1}, isNext:{2}",
