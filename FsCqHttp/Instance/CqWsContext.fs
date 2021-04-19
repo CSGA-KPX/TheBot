@@ -1,6 +1,7 @@
 ﻿namespace rec KPX.FsCqHttp.Instance
 
 open System
+open System.IO
 open System.Collections.Concurrent
 open System.Threading
 open System.Net.WebSockets
@@ -60,12 +61,6 @@ type CqWsContext(ws : WebSocket) =
 
     let self = GetLoginInfo()
 
-    let rec getRootExn (exn : exn) =
-        if isNull exn.InnerException then
-            exn
-        else
-            getRootExn exn.InnerException
-
     /// 返回已经定义的指令，结果无序。
     member x.Commands =
         x.ModulesInfo.Commands.Values
@@ -106,7 +101,7 @@ type CqWsContext(ws : WebSocket) =
     /// 启用消息循环
     member x.Start() =
         if cts.IsCancellationRequested then
-            logger.Fatal("无法启动消息循环：已调用Stop或Ws异常终止")
+            logger.Fatal("无法启动消息循环：已调用Stop或WS异常终止")
             invalidOp "CancellationRequested"
 
         if ws.State <> WebSocketState.Open then
@@ -120,7 +115,9 @@ type CqWsContext(ws : WebSocket) =
 
         (x :> IApiCallProvider).CallApi(self) |> ignore
 
-    member x.Stop() = cts.Cancel()
+    member x.Stop() =
+        cts.Cancel()
+        ws.Abort()
 
     member private x.HandleApiResponse(ret : ApiResponse) =
         let hasPending, item = apiPending.TryGetValue(ret.Echo)
@@ -133,61 +130,71 @@ type CqWsContext(ws : WebSocket) =
             logger.Warn(sprintf "未注册echo:%s" ret.Echo)
 
     member private x.HandleMessage(json : string) =
-        let ctx = EventContext(JObject.Parse(json))
+        try
+            let ctx = EventContext(JObject.Parse(json))
 
-        if (ctx.Event.ContainsKey("post_type")) then //消息上报
-            if KPX.FsCqHttp.Config.Logging.LogEventPost then
-                logger.Trace(sprintf "%s收到上报：%O" x.BotIdString ctx)
+            if (ctx.Event.ContainsKey("post_type")) then //消息上报
+                if KPX.FsCqHttp.Config.Logging.LogEventPost then
+                    logger.Trace(sprintf "%s收到上报：%O" x.BotIdString ctx)
 
-            match CqEventArgs.Parse(x, ctx) with
-            | :? CqMetaEventArgs when x.ModulesInfo.MetaCallbacks.Count = 0 -> ()
-            | :? CqNoticeEventArgs when x.ModulesInfo.NoticeCallbacks.Count = 0 -> ()
-            | :? CqRequestEventArgs when x.ModulesInfo.RequestCallbacks.Count = 0 -> ()
-            | :? CqMessageEventArgs as args when
-                (x.ModulesInfo.TryCommand(args).IsNone)
-                && x.ModulesInfo.MessageCallbacks.Count = 0 -> ()
-            | args ->
-                Tasks.Task.Run(fun () -> TaskScheduler.Enqueue(x.ModulesInfo, args))
-                |> ignore
+                match CqEventArgs.Parse(x, ctx) with
+                | :? CqMetaEventArgs when x.ModulesInfo.MetaCallbacks.Count = 0 -> ()
+                | :? CqNoticeEventArgs when x.ModulesInfo.NoticeCallbacks.Count = 0 -> ()
+                | :? CqRequestEventArgs when x.ModulesInfo.RequestCallbacks.Count = 0 -> ()
+                | :? CqMessageEventArgs as args when
+                    (x.ModulesInfo.TryCommand(args).IsNone)
+                    && x.ModulesInfo.MessageCallbacks.Count = 0 -> ()
+                | args ->
+                    Tasks.Task.Run(fun () -> TaskScheduler.Enqueue(x.ModulesInfo, args))
+                    |> ignore
 
-        elif ctx.Event.ContainsKey("retcode") then //API调用结果
-            if KPX.FsCqHttp.Config.Logging.LogApiCall then
-                logger.Trace(sprintf "%s收到API调用结果： %O" x.BotIdString ctx)
+            elif ctx.Event.ContainsKey("retcode") then //API调用结果
+                if KPX.FsCqHttp.Config.Logging.LogApiCall then
+                    logger.Trace(sprintf "%s收到API调用结果： %O" x.BotIdString ctx)
 
-            x.HandleApiResponse(ctx.Event.ToObject<ApiResponse>())
+                x.HandleApiResponse(ctx.Event.ToObject<ApiResponse>())
+        with 
+        | e ->
+            logger.Warn(sprintf "%sWS处理消息异常：\r\n%A" x.BotIdString e)
 
     member private x.StartMessageLoop() =
+        let rec readMessage
+            (ms : MemoryStream)
+            (seg : ArraySegment<_>)
+            (cts : CancellationTokenSource)
+            =
+            let s =
+                ws.ReceiveAsync(seg, cts.Token)
+                |> Async.AwaitTask
+                |> Async.RunSynchronously
+
+            ms.Write(seg.Array, seg.Offset, s.Count)
+
+            if s.EndOfMessage then
+                utf8.GetString(ms.ToArray())
+            else
+                readMessage ms seg cts
+
         async {
+            // 长时间执行，所以使用新线程
             do! Async.SwitchToNewThread()
 
-            let buffer = Array.zeroCreate<byte> 4096
-            let seg = ArraySegment<byte>(buffer)
-            use ms = new IO.MemoryStream()
+            let seg =
+                ArraySegment<byte>(Array.zeroCreate 4096)
 
-            let rec readMessage (ms : IO.MemoryStream) =
-                let s =
-                    ws.ReceiveAsync(seg, cts.Token)
-                    |> Async.AwaitTask
-                    |> Async.RunSynchronously
-
-                ms.Write(seg.Array, seg.Offset, s.Count)
-
-                if s.EndOfMessage then
-                    utf8.GetString(ms.ToArray())
-                else
-                    readMessage (ms)
+            use ms = new MemoryStream()
 
             try
                 started.Set() |> ignore
 
                 while (not cts.IsCancellationRequested) do
                     ms.SetLength(0L)
-                    let json = readMessage (ms)
+                    let json = readMessage ms seg cts
                     x.HandleMessage(json)
             with e ->
-                cts.Cancel()
-                logger.Fatal(sprintf "%sWS读取捕获异常：%A" x.BotIdString e)
+                logger.Fatal(sprintf "%sWS读取捕获异常：\r\n%A" x.BotIdString e)
                 CqWsContextPool.Instance.RemoveContext(x)
+                x.Stop()
 
                 if x.RestartContext.IsSome then
                     logger.Warn(sprintf "%s正在尝试重新连接" x.BotIdString)
@@ -196,11 +203,11 @@ type CqWsContext(ws : WebSocket) =
         |> Async.Start
 
     interface IApiCallProvider with
-        
+
         member x.CallerUserId = x.BotUserId
 
         member x.CallerId = x.BotIdString
-        
+
         member x.CallerName = x.BotNickname
 
         member x.CallApi(req) =
