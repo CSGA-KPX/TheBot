@@ -451,7 +451,8 @@ mgno 排除metagroup名称
                     let volume = data.GetItemTradeVolume(product.Item)
 
                     let sortIdx =
-                        (sellWithTax - cost) / cost * 100.0 |> int
+                        //(sellWithTax - cost) / cost * 100.0 |> int
+                       (sellWithTax - cost) * volume /// 利润*平均交易量
 
                     {| Name = product.Item.Name
                        TypeGroup = product.Item.TypeGroup
@@ -473,8 +474,8 @@ mgno 排除metagroup名称
                             RightAlignCell "出售价格/税前卖出",
                             RightAlignCell("生产成本/" + pmStr),
                             RightAlignCell "含税利润",
-                            RightAlignCell "利润率",
-                            RightAlignCell "日均交易"
+                            RightAlignCell "交易量",
+                            RightAlignCell "日均利润"
                         )
 
                     for x in data do
@@ -483,8 +484,8 @@ mgno 排除metagroup名称
                             HumanReadableSig4Float x.Sell,
                             HumanReadableSig4Float x.Cost,
                             HumanReadableSig4Float x.Profit,
-                            RightAlignCell(sprintf "%i%%" x.SortIndex),
-                            HumanReadableInteger x.Volume
+                            HumanReadableInteger x.Volume,
+                            HumanReadableSig4Float x.SortIndex
                         )
 
                     ret.Write(tt)

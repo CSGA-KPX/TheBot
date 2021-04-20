@@ -31,7 +31,7 @@ type OptionCell<'T>(cb : OptionImpl, key : string, defValue : 'T) =
     inherit OptionCell(cb, key)
 
     /// 获取或更改该选项的默认值
-    member val DefaultValue = defValue with get, set
+    member val Default = defValue with get, set
 
     abstract ConvertValue : string -> 'T
 
@@ -43,21 +43,17 @@ type OptionCell<'T>(cb : OptionImpl, key : string, defValue : 'T) =
                 |> Seq.map
                     (fun item ->
                         if String.IsNullOrWhiteSpace(item) then
-                            x.DefaultValue
+                            x.Default
                         else
                             x.ConvertValue(item)))
 
-        |> Option.defaultValue (Seq.singleton x.DefaultValue)
+        |> Option.defaultValue (Seq.singleton x.Default)
 
     /// 获取第一个设定值，如果没有则返回默认值
-    member x.DefaultOrHead =
-        x.ValueSequense
-        |> Seq.head
+    member x.Value = x.ValueSequense |> Seq.head
 
     /// 获取所有设定值，如果没有则返回默认值
-    member x.DefaultOrValues =
-        x.ValueSequense
-        |> Seq.toArray
+    member x.Values = x.ValueSequense |> Seq.toArray
 
 type OptionCellSimple<'T when 'T :> IConvertible>(cb : OptionImpl, key : string, defValue : 'T) =
     inherit OptionCell<'T>(cb, key, defValue)
@@ -70,6 +66,8 @@ type OptionImpl() =
     static let optCache = Dictionary<string, HashSet<string>>()
 
     static let seperator = [| ';'; '；'; '：'; ':' |]
+
+    let localOpts = HashSet<string>()
 
     let mutable isParsed = false
 
@@ -88,6 +86,29 @@ type OptionImpl() =
         if not isParsed then invalidOp "尚未解析数据"
         data.[key] :> IReadOnlyList<_>
 
+    member x.RegisterOption(keyName : string) =
+        let cell = OptionCell(x, keyName)
+        x.RegisterOptionCore(cell)
+        cell
+
+    member x.RegisterOption<'T when 'T :> IConvertible>(keyName : string, defValue : 'T) =
+        let cell =
+            OptionCellSimple<'T>(x, keyName, defValue)
+        x.RegisterOptionCore(cell)
+        cell
+
+    member x.RegisterOption<'T when 'T :> OptionCell>(cell : 'T) =
+        x.RegisterOptionCore(cell)
+        cell
+
+    member private x.RegisterOptionCore(cell : OptionCell) =
+        if isParsed then invalidOp "不能再解析参数后添加选项"
+
+        localOpts.Add(cell.KeyName) |> ignore
+
+        for alias in cell.Aliases do
+            localOpts.Add(alias) |> ignore
+
     /// 解析前的前处理操作
     abstract PreParse : string [] -> string []
     default x.PreParse(args) = args
@@ -99,7 +120,16 @@ type OptionImpl() =
         nonOption.Clear()
         isParsed <- false
 
-        let defKeys = x.TryGenerateOptionCache()
+        let defKeys =
+            if localOpts.Count = 0 then
+                x.TryGenerateOptionCache()
+            else
+                let defined = x.TryGenerateOptionCache()
+                let cap = localOpts.Count + defined.Count
+                let ret = HashSet<_>(cap)
+                ret.UnionWith(defined)
+                ret.UnionWith(localOpts)
+                ret
 
         for item in x.PreParse(input) do
             let isOption = item.IndexOfAny(seperator) <> -1
@@ -164,6 +194,7 @@ type OptionBase() as x =
 
     let shouldTextOutput = OptionCell(x, "text")
 
+    /// 根据text参数，返回推定的影响类型
     member x.ResponseType =
         if shouldTextOutput.IsDefined then
             ForceText

@@ -82,7 +82,7 @@ text 以文本格式输出结果
 
         let acc = XivExpression.ItemAccumulator()
 
-        let worlds = opt.World.DefaultOrValues
+        let worlds = opt.World.Values
 
         match opt.NonOptionStrings |> Seq.tryHead with
         | None -> cmdArg.QuickMessageReply("物品名或采集重建/魔晶石/水晶。")
@@ -235,7 +235,7 @@ text 以文本格式输出结果
         let opt = CommandUtils.XivOption()
         opt.Parse(cmdArg)
 
-        let world = opt.World.DefaultOrHead
+        let world = opt.World.Value
 
         let tt =
             if doCalculateCost then
@@ -336,7 +336,7 @@ text 以文本格式输出结果
 
         let opt = CommandUtils.XivOption()
         opt.Parse(cmdArg)
-        let world = opt.World.DefaultOrHead
+        let world = opt.World.Value
 
         if opt.NonOptionStrings.Count = 0 then
             //回复所有可交易道具
