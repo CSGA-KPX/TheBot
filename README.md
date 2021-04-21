@@ -20,3 +20,9 @@
 |TheBot |本体 |
 |TheBot.Utils |辅助工具 |
 |TheBot.Module |命令模块 | 
+
+备注
+====
+
+* Linux需要安装libgdiplus
+* go-cqhttp需要禁用消息分片 ``force_fragment : false``
