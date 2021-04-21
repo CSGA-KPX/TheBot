@@ -96,6 +96,8 @@ type TextResponse(args : CqMessageEventArgs, respType : ResponseType) =
         | PreferImage -> canSendImage.Force()
         | ForceImage -> true
 
+    override x.NewLine = KPX.FsCqHttp.Config.Output.NewLine
+
     override x.Write(c : char) =
         if not isUsed then isUsed <- true
         sb.Append(c) |> ignore
@@ -136,6 +138,7 @@ type TextResponse(args : CqMessageEventArgs, respType : ResponseType) =
         let pages =
             [| let mutable pageSize = 0
                let page = List<string>()
+               let newline = KPX.FsCqHttp.Config.Output.NewLine
 
                while buf.Count <> 0 do
                    let line = buf.Dequeue()
@@ -143,11 +146,11 @@ type TextResponse(args : CqMessageEventArgs, respType : ResponseType) =
                    pageSize <- pageSize + line.Length
 
                    if pageSize > sizeLimit then
-                       yield String.Join("\r\n", page)
+                       yield String.Join(newline, page)
                        page.Clear()
                        pageSize <- 0
 
-               if page.Count <> 0 then yield String.Join("\r\n", page) |]
+               if page.Count <> 0 then yield String.Join(newline, page) |]
 
         for page in pages do
             args.QuickMessageReply(page)

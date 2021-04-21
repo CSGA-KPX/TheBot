@@ -26,7 +26,10 @@ type TextTable([<ParamArray>] header : Object []) =
                 let cell = TableCell.CreateFrom(o)
                 cols.[i].Add(cell)
                 // 根据表头设置默认的对齐类型
-                if cell.IsLeftAlign then cols.[i].SetLeftAlignment() else cols.[i].SetRightAlignment())
+                if cell.IsLeftAlign then
+                    cols.[i].SetLeftAlignment()
+                else
+                    cols.[i].SetRightAlignment())
 
     member val ColumnPaddingChar = KPX.FsCqHttp.Config.Output.TextTable.FullWidthSpace with get, set
 
@@ -41,22 +44,24 @@ type TextTable([<ParamArray>] header : Object []) =
 
     member x.AddRow(fields : IEnumerable<TableCell>) =
         let fCount = Seq.length fields
-        if fCount <> colCount
-        then invalidArg (nameof fields) (sprintf "数量不足：需求%i 提供%i" colCount fCount)
+
+        if fCount <> colCount then
+            invalidArg (nameof fields) (sprintf "数量不足：需求%i 提供%i" colCount fCount)
 
         fields |> Seq.iteri (fun i c -> cols.[i].Add(c))
 
     member x.AddRow([<ParamArray>] objs : Object []) =
-        if objs.Length <> colCount
-        then invalidArg (nameof objs) (sprintf "数量不足：需求%i 提供%i" colCount objs.Length)
+        if objs.Length <> colCount then
+            invalidArg (nameof objs) (sprintf "数量不足：需求%i 提供%i" colCount objs.Length)
 
         objs
         |> Array.iteri (fun i o -> cols.[i].Add(TableCell.CreateFrom(o)))
 
     /// 使用指定字符串填充未使用的单元格
     member x.AddRowFill([<ParamArray>] objs : Object []) =
-        if objs.Length > colCount
-        then invalidArg (nameof objs) (sprintf "输入过多：需求%i 提供%i" colCount objs.Length)
+        if objs.Length > colCount then
+            invalidArg (nameof objs) (sprintf "输入过多：需求%i 提供%i" colCount objs.Length)
+
         for i = 0 to objs.Length - 1 do
             cols.[i].Add(TableCell.CreateFrom(objs.[i]))
 
@@ -68,14 +73,14 @@ type TextTable([<ParamArray>] header : Object []) =
 
     member x.ToLines() =
         [| let expand (l : List<DelayedTableItem>) =
-            seq {
-                for item in l do
-                    match item with
-                    | StringItem str -> yield str
-                    | TableItem tt ->
-                        tt.ColumnPaddingChar <- x.ColumnPaddingChar
-                        yield! tt.ToLines()
-            }
+               seq {
+                   for item in l do
+                       match item with
+                       | StringItem str -> yield str
+                       | TableItem tt ->
+                           tt.ColumnPaddingChar <- x.ColumnPaddingChar
+                           yield! tt.ToLines()
+               }
 
            yield! expand preTableLines
 
@@ -98,4 +103,5 @@ type TextTable([<ParamArray>] header : Object []) =
 
            yield! expand postTableLines |]
 
-    override x.ToString() = String.Join("\r\n", x.ToLines())
+    override x.ToString() =
+        String.Join(KPX.FsCqHttp.Config.Output.NewLine, x.ToLines())

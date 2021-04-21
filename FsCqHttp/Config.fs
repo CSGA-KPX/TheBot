@@ -21,6 +21,11 @@ module Logging =
 module Output =
     open System.Drawing
 
+    /// 输出使用的换行符
+    /// Windows QQ使用\r，Android使用\n
+    /// iOS设备可能有识别问题
+    let NewLine = "\r"
+
     /// 如果设置，将不再使用CanSendImage API检查上游功能
     let ForceImageAvailable = true
 
