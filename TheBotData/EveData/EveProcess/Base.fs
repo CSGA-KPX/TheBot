@@ -34,18 +34,20 @@ type EveProcess =
         match flag with
         | Original -> x.Original
         | MeApplied when x.Type = ProcessType.Manufacturing ->
-            let proc = x.ApplyFlags(QuantityApplied)
             let meFactor = (float (100 - x.TargetMe)) / 100.0
-
-            let input =
-                proc.Input
-                |> Array.map
-                    (fun rm ->
-                        { rm with
-                                Quantity = rm.Quantity * meFactor |> ceil })
-
-            { proc with Input = input }
-        | QuantityApplied | MeApplied ->
+            let runs = x.TargetQuantity.ToRuns(x.Original)
+            let meApplied =
+                { x.Original with
+                      Input =
+                          x.Original.Input
+                          |> Array.map
+                              (fun rm ->
+                                  { rm with
+                                        Quantity = rm.Quantity * meFactor |> ceil }) }
+            meApplied * runs
+        // 除了制造以外的项目不需要计算材料效率
+        | QuantityApplied
+        | MeApplied ->
             let runs = x.TargetQuantity.ToRuns(x.Original)
             x.Original * runs
 
