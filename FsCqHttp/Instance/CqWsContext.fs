@@ -145,8 +145,7 @@ type CqWsContext(ws : WebSocket) =
                     (x.ModulesInfo.TryCommand(args).IsNone)
                     && x.ModulesInfo.MessageCallbacks.Count = 0 -> ()
                 | args ->
-                    Tasks.Task.Run(fun () -> TaskScheduler.Enqueue(x.ModulesInfo, args))
-                    |> ignore
+                    TaskScheduler.enqueue(x.ModulesInfo, args)
 
             elif ctx.Event.ContainsKey("retcode") then //API调用结果
                 if KPX.FsCqHttp.Config.Logging.LogApiCall then

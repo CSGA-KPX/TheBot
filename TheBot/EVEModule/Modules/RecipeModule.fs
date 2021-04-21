@@ -452,7 +452,7 @@ mgno 排除metagroup名称
 
                     let sortIdx =
                         //(sellWithTax - cost) / cost * 100.0 |> int
-                       (sellWithTax - cost) * volume /// 利润*平均交易量
+                       (sellWithTax - cost) * volume / proc.FinalProcess.Output.[0].Quantity /// 利润*平均交易量
 
                     {| Name = product.Item.Name
                        TypeGroup = product.Item.TypeGroup

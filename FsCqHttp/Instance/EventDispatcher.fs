@@ -11,7 +11,8 @@ type private TaskSchedulerMessage =
     | Task of ContextModuleInfo * CqEventArgs
     | Finished
 
-module TaskScheduler =
+[<RequireQualifiedAccess>]
+module internal TaskScheduler =
     let rec private getRootExn (exn : exn) =
         if isNull exn.InnerException then
             exn
@@ -100,4 +101,4 @@ module TaskScheduler =
                             |> Async.Start
                 })
 
-    let Enqueue (ctx, args) = agent.Post(Task(ctx, args))
+    let enqueue (ctx, args) = agent.Post(Task(ctx, args))
