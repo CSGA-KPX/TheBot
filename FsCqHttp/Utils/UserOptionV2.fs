@@ -61,6 +61,17 @@ type OptionCellSimple<'T when 'T :> IConvertible>(cb : OptionImpl, key : string,
     override x.ConvertValue value =
         Convert.ChangeType(value, typeof<'T>) :?> 'T
 
+[<RequireQualifiedAccess>]
+/// 设置OptionImpl未定义选项标记的行为
+type UndefinedOptionHandling =
+    /// 抛出InvalidArg异常
+    | Raise
+    /// 无视该字段
+    | Ignore
+    /// 添加到NonOptionStrings
+    | AsNonOption
+
+
 [<AbstractClass>]
 type OptionImpl() =
     static let optCache = Dictionary<string, HashSet<string>>()
@@ -75,6 +86,8 @@ type OptionImpl() =
 
     let data =
         Dictionary<string, ResizeArray<string>>(StringComparer.OrdinalIgnoreCase)
+
+    member val UndefinedOptionHandling = UndefinedOptionHandling.Raise with get, set
 
     member x.Parsed = isParsed
 
@@ -94,6 +107,7 @@ type OptionImpl() =
     member x.RegisterOption<'T when 'T :> IConvertible>(keyName : string, defValue : 'T) =
         let cell =
             OptionCellSimple<'T>(x, keyName, defValue)
+
         x.RegisterOptionCore(cell)
         cell
 
@@ -144,7 +158,12 @@ type OptionImpl() =
                     let value = if s.Length >= 2 then s.[1] else ""
                     x.OptAddOrAppend(key, value)
                 else
-                    nonOption.Add(item)
+                    match x.UndefinedOptionHandling with
+                    | UndefinedOptionHandling.Ignore -> ()
+                    | UndefinedOptionHandling.Raise -> 
+                        invalidArg key "不是有效的选项名称"
+                    | UndefinedOptionHandling.AsNonOption ->
+                        nonOption.Add(item)
             else
                 nonOption.Add(item)
 

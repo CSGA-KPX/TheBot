@@ -15,7 +15,7 @@ type XivWorldOpt(cb : OptionBase, key, defVal) =
     override x.ConvertValue(name) = World.GetWorldByName(name)
 
 type XivOption() as x =
-    inherit OptionBase()
+    inherit OptionBase(UndefinedOptionHandling = UndefinedOptionHandling.AsNonOption)
 
     static let defaultServer = World.GetWorldByName("拉诺西亚")
 
