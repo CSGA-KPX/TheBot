@@ -17,6 +17,8 @@ type EveConfigParser() as x =
     let r = OptionCell(x, "r")
     let buy = OptionCell(x, "buy")
 
+    member x.SetDefaultInputMe(value)= ime.Default <- value
+
     member x.InputMe = ime.Value
 
     member x.DerivativetMe = dme.Value

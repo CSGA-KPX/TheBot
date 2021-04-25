@@ -161,6 +161,13 @@ type EveRecipeModule() =
 
             if mr.IsNone then cmdArg.AbortExecution(InputError, "没有可供计算的物品")
 
+            match mr.Value.Item.MetaGroupId with
+            | 1 | 54 -> 10 // T1装备建筑默认10
+            | 2 | 14 | 53 -> 2  // T2/T3装备 建筑默认2
+            | _ -> 0  // 其他默认0
+            // TODO : 这个功能应该汇入上级，可以供dme使用
+            |> cfg.SetDefaultInputMe
+
             let pm = EveProcessManager(cfg)
 
             let recipe =
