@@ -2,7 +2,7 @@
 
 open NUnit.Framework
 
-open KPX.FsCqHttp.Utils.UserOptionV2
+open KPX.FsCqHttp.Utils.UserOption
 
 
 [<SetUp>]

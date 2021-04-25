@@ -64,7 +64,6 @@
     <Compile Include="Utils\TextTable\TextTable.fs" />
     <Compile Include="Utils\TextTable\Extensions.fs" />
     <Compile Include="Utils\AliasMapper.fs" />
-    <Compile Include="Utils\UserOption.fs" />
     <Compile Include="Utils\UserOptionV2.fs" />
     <Compile Include="Instance\ModuleInfo.fs" />
     <Compile Include="Instance\ContextModuleLoader.fs" />

@@ -2,7 +2,7 @@
 
 open KPX.TheBot.Data.XivData
 
-open KPX.FsCqHttp.Utils.UserOptionV2
+open KPX.FsCqHttp.Utils.UserOption
 
 
 let XivSpecialChars =

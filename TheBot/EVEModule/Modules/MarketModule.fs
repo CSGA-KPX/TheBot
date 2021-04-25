@@ -50,7 +50,7 @@ type EveMarketModule() =
 
         let cfg = EveConfigParser()
         cfg.Parse(cmdArg.Arguments)
-        using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(att))
+        using (cmdArg.OpenResponse(cfg.ResponseType)) (fun x -> x.Write(att))
 
     [<CommandHandlerMethodAttribute("#EVE采矿", "EVE挖矿利润，仅供参考", "")>]
     [<CommandHandlerMethodAttribute("#EVE挖矿", "EVE挖矿利润，仅供参考", "")>]

@@ -1,4 +1,4 @@
-﻿namespace rec KPX.FsCqHttp.Utils.UserOptionV2
+﻿namespace rec KPX.FsCqHttp.Utils.UserOption
 
 open System
 open System.Collections.Generic
@@ -71,8 +71,7 @@ type UndefinedOptionHandling =
     /// 添加到NonOptionStrings
     | AsNonOption
 
-
-[<AbstractClass>]
+/// 不提供任何默认选项
 type OptionImpl() =
     static let optCache = Dictionary<string, HashSet<string>>()
 
@@ -208,6 +207,7 @@ type OptionImpl() =
 
         data.[key].Add(value)
 
+/// 命令常用：提供 text选项和ResponseType属性
 type OptionBase() as x =
     inherit OptionImpl()
 

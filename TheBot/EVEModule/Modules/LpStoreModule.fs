@@ -5,6 +5,7 @@ open System
 open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.TextTable
+open KPX.FsCqHttp.Utils.UserOption
 
 open KPX.TheBot.Data.CommonModule.Recipe
 open KPX.TheBot.Data.EveData.Utils
@@ -19,17 +20,16 @@ open KPX.TheBot.Module.EveModule.Utils.Extensions
 type LpConfigParser() as x =
     inherit EveConfigParser()
 
-    do
-        x.RegisterOption("vol", "2")
-        x.RegisterOption("val", "2000")
-        x.RegisterOption("count", "50")
+    let minVolume = OptionCellSimple(x, "vol", 2.0)
+    let minValue = OptionCellSimple(x, "val", 2000.0)
+    let maxCount = OptionCellSimple(x, "count", 50)
 
-    member x.MinimalVolume = x.GetValue<float>("vol")
-    member x.MinimalValue = x.GetValue<float>("val")
+    member x.MinimalVolume = minVolume.Value
+    member x.MinimalValue = minValue.Value
 
     member x.RecordCount =
-        let ret = x.GetValue<uint32>("count") |> int
-        if ret = 0 then System.Int32.MaxValue else ret
+        let ret = maxCount.Value
+        if ret = 0 then Int32.MaxValue else ret
 
 type EveLpStoreModule() =
     inherit CommandHandlerBase()
@@ -39,19 +39,28 @@ type EveLpStoreModule() =
 
     member x.ShowOverview(cmdArg : CommandEventArgs, cfg : LpConfigParser) =
         let tt =
-            TextTable("兑换", RightAlignCell "出售价格", RightAlignCell "利润", RightAlignCell "利润/LP", RightAlignCell "交易量比")
+            TextTable(
+                "兑换",
+                RightAlignCell "出售价格",
+                RightAlignCell "利润",
+                RightAlignCell "利润/LP",
+                RightAlignCell "交易量比"
+            )
 
         let minVol = cfg.MinimalVolume
         let minVal = cfg.MinimalValue
 
-        tt.AddPreTable(sprintf "最低交易量比(vol)：%g 最低LP价值(val)：%g 结果上限(count)：%i" minVol minVal cfg.RecordCount)
+        tt.AddPreTable(
+            sprintf "最低交易量比(vol)：%g 最低LP价值(val)：%g 结果上限(count)：%i" minVol minVal cfg.RecordCount
+        )
 
         tt.AddPreTable("警告：请参考交易量，利润很高的不一定卖得掉")
 
         let corp =
-            let cmd = cfg.CmdLineAsString
+            let cmd = cfg.GetNonOptionString()
 
-            if String.IsNullOrWhiteSpace(cmd) then cmdArg.AbortExecution(InputError, "请输入目标军团名称")
+            if String.IsNullOrWhiteSpace(cmd) then
+                cmdArg.AbortExecution(InputError, "请输入目标军团名称")
 
             data.GetNpcCorporation(cmd)
 
@@ -116,26 +125,34 @@ type EveLpStoreModule() =
                 }
                 |> tt.AddRow)
 
-        using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))
+        using (cmdArg.OpenResponse(cfg.ResponseType)) (fun x -> x.Write(tt))
 
     member x.ShowSingleItem(cmdArg : CommandEventArgs, cfg : LpConfigParser) =
         let corp =
-            let cmd = cfg.CommandLine.[0]
-            if String.IsNullOrWhiteSpace(cmd) then cmdArg.AbortExecution(InputError, "目标军团名称不正确")
+            let cmd = cfg.NonOptionStrings.[0]
+
+            if String.IsNullOrWhiteSpace(cmd) then
+                cmdArg.AbortExecution(InputError, "目标军团名称不正确")
+
             data.GetNpcCorporation(cmd)
 
         let item =
-            let name = String.Join(' ', cfg.CommandLine.[1..])
+            let name =
+                String.Join(' ', cfg.NonOptionStrings |> Seq.tail)
+
             let ret = data.TryGetItem(name)
-            if ret.IsNone then cmdArg.AbortExecution(InputError, "{0} 不是有效道具名", name)
+
+            if ret.IsNone then
+                cmdArg.AbortExecution(InputError, "{0} 不是有效道具名", name)
+
             ret.Value
 
         let offer =
             data.GetLpStoreOffersByCorp(corp)
             |> Array.tryFind (fun offer -> offer.Process.GetFirstProduct().Item = item.Id)
 
-        if offer.IsNone
-        then cmdArg.AbortExecution(InputError, "不能在{0}的中找到兑换{1}的交易", corp.CorporationName, item.Name)
+        if offer.IsNone then
+            cmdArg.AbortExecution(InputError, "不能在{0}的中找到兑换{1}的交易", corp.CorporationName, item.Name)
 
         let mutable materialPriceSum = offer.Value.IskCost
 
@@ -214,16 +231,18 @@ type EveLpStoreModule() =
         tt.AddPreTable("材料：")
         tt.AddRow("合计", PaddingRight, HumanReadableSig4Float materialPriceSum)
 
-        using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))
+        using (cmdArg.OpenResponse(cfg.ResponseType)) (fun x -> x.Write(tt))
 
-    [<CommandHandlerMethodAttribute("#eveLp", "EVE LP兑换计算。", "#evelp 军团名 [道具名] [vol:2] [val:2000] [count:50] [buy:]
+    [<CommandHandlerMethodAttribute("#eveLp",
+                                    "EVE LP兑换计算。",
+                                    "#evelp 军团名 [道具名] [vol:2] [val:2000] [count:50] [buy:]
 []内为可选参数。如果指定道具名则查询目标军团指定兑换的详细信息。
 参数说明：vol 最低交易量比，val 最低LP价值，count 结果数量上限，buy 更改为买单价格")>]
     member x.HandleEveLp(cmdArg : CommandEventArgs) =
         let cfg = LpConfigParser()
         cfg.Parse(cmdArg.Arguments)
 
-        match cfg.CommandLine.Length with
+        match cfg.NonOptionStrings.Count with
         | 0 -> cmdArg.AbortExecution(InputError, "请输入目标军团名称")
         | 1 -> x.ShowOverview(cmdArg, cfg)
         | _ -> x.ShowSingleItem(cmdArg, cfg)

@@ -26,9 +26,7 @@ type EveMiscModule() =
         tt.AddRow("r", "设置后展开反应材料", cfg.ExpandReaction)
         tt.AddRow("buy", "设置后使用求购价格", cfg.MaterialPriceMode)
         tt.AddRow("text", "设置后使用文本输出（部分指令不支持）", cfg.IsDefined("text"))
-        //tt.AddRow("selltax", "出售税率", 6)
-        //tt.AddRow("buytax", "求购税率", 4)
-        
+
         using (cmdArg.OpenResponse(ForceImage)) (fun ret -> ret.Write(tt))
 
     [<CommandHandlerMethodAttribute("#evesci", "EVE星系成本指数查询", "")>]
@@ -45,7 +43,7 @@ type EveMiscModule() =
         let tt =
             TextTable("星系", "制造%", "材料%", "时间%", "拷贝%", "发明%", "反应%")
 
-        for arg in cfg.CommandLine do
+        for arg in cfg.NonOptionStrings do
             let sys = sc.TryGetBySolarSystem(arg)
 
             if sys.IsNone then
@@ -68,4 +66,4 @@ type EveMiscModule() =
                         HumanReadableInteger(100.0 * sci.Reaction)
                     )
 
-        using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun ret -> ret.Write(tt))
+        using (cmdArg.OpenResponse(cfg.ResponseType)) (fun ret -> ret.Write(tt))

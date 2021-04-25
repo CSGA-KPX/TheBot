@@ -28,8 +28,7 @@ type DebugModule() =
         let prefix = cp.FullName.Replace(cp.Name, "")
 
         let configTypes =
-            typeof<Config.ConfigPlaceholder>
-                .Assembly.GetTypes()
+            typeof<Config.ConfigPlaceholder>.Assembly.GetTypes ()
             |> Array.filter (fun t -> t.FullName.StartsWith(prefix))
 
         let tt = TextTable("名称", "值")
@@ -49,31 +48,35 @@ type DebugModule() =
 
         using (cmdArg.OpenResponse(PreferImage)) (fun ret -> ret.Write(tt))
 
-    [<CommandHandlerMethodAttribute("##setlog", "(超管) 设置日志设置", "event, api, command", IsHidden = true)>]
+    [<CommandHandlerMethodAttribute("##setlog",
+                                    "(超管) 设置日志设置",
+                                    "event, api, command",
+                                    IsHidden = true)>]
     member x.HandleSetLogging(cmdArg : CommandEventArgs) =
         cmdArg.EnsureSenderOwner()
 
-        let cfg = UserOptionParser()
-        cfg.RegisterOption("event", Config.Logging.LogEventPost.ToString())
-        cfg.RegisterOption("api", Config.Logging.LogApiCall.ToString())
-        cfg.RegisterOption("apijson", Config.Logging.LogApiJson.ToString())
-        cfg.RegisterOption("command", Config.Logging.LogCommandCall.ToString())
+        let cfg = OptionBase()
 
-        cfg.Parse(cmdArg.Arguments)
+        let event =
+            cfg.RegisterOption("event", Config.Logging.LogEventPost)
 
-        let e = cfg.GetValue<bool>("event")
-        let api = cfg.GetValue<bool>("api")
-        let apiJson = cfg.GetValue<bool>("apijson")
-        let command = cfg.GetValue<bool>("command")
+        let api =
+            cfg.RegisterOption("api", Config.Logging.LogApiCall)
 
-        Config.Logging.LogEventPost <- e
-        Config.Logging.LogApiCall <- api
-        Config.Logging.LogApiJson <- apiJson
-        Config.Logging.LogCommandCall <- command
+        let apiJson =
+            cfg.RegisterOption("apijson", Config.Logging.LogApiJson)
+
+        let command =
+            cfg.RegisterOption("command", Config.Logging.LogCommandCall)
+
+        Config.Logging.LogEventPost <- event.Value
+        Config.Logging.LogApiCall <- api.Value
+        Config.Logging.LogApiJson <- apiJson.Value
+        Config.Logging.LogCommandCall <- command.Value
 
         let ret =
             sprintf
-                "日志选项已设定为：时间(%b) Api(%b) ApiJson(%b) 指令调用(%b)"
+                "日志选项已设定为：##setlog event:%b api:%b apijson:%b comamnd:%b"
                 Config.Logging.LogEventPost
                 Config.Logging.LogApiCall
                 Config.Logging.LogApiJson

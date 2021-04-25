@@ -9,7 +9,7 @@ open KPX.FsCqHttp.Handler
 
 open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.TextTable
-open KPX.FsCqHttp.Utils.UserOptionV2
+open KPX.FsCqHttp.Utils.UserOption
 
 open KPX.TheBot.Data.XivData
 

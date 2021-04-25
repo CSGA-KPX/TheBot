@@ -11,19 +11,30 @@ open KPX.FsCqHttp.Utils.TextTable
 open KPX.FsCqHttp.Utils.UserOption
 
 
+type HelpOption() as x =
+    inherit OptionBase()
+
+    let hidden = OptionCell(x, "hidden")
+
+    member x.ShowHiddenCommands = hidden.IsDefined
+
 /// 提供基础的帮助指令实现
 /// 需要在应用中继承并调用HelpCommandImpl
 [<AbstractClass>]
 type HelpModuleBase() =
     inherit CommandHandlerBase()
 
-    member _.ShowCommandList(cfg : UserOptionParser, cmdArg : CommandEventArgs) =
+    member _.ShowCommandList(cfg : HelpOption, cmdArg : CommandEventArgs) =
         let tt = TextTable("命令", "说明")
 
         let nonCommandModules = ResizeArray<string>()
 
         let modules =
-            cmdArg.ApiCaller.CallApi<GetCtxModuleInfo>().ModuleInfo.AllModules
+            cmdArg
+                .ApiCaller
+                .CallApi<GetCtxModuleInfo>()
+                .ModuleInfo
+                .AllModules
 
         for item in modules do
             match item with
@@ -46,8 +57,8 @@ type HelpModuleBase() =
 
         using (cmdArg.OpenResponse(PreferImage)) (fun ret -> ret.Write(tt))
 
-    member _.ShowCommandInfo(cfg : UserOptionParser, cmdArg : CommandEventArgs) =
-        let cmd = cfg.CommandLine.[0]
+    member _.ShowCommandInfo(cfg : HelpOption, cmdArg : CommandEventArgs) =
+        let cmd = cfg.NonOptionStrings.[0]
 
         let api =
             cmdArg.ApiCaller.CallApi(TryGetCommand(cmd))
@@ -62,11 +73,10 @@ type HelpModuleBase() =
             ret.Write(ci.CommandAttribute.LongHelp)
 
     member x.HelpCommandImpl(cmdArg : CommandEventArgs) =
-        let cfg = UserOptionParser()
-        cfg.RegisterOption("hidden", "")
+        let cfg = HelpOption()
         cfg.Parse(cmdArg.Arguments)
 
-        if cfg.CommandLine.Length = 0 then
+        if cfg.NonOptionStrings.Count = 0 then
             x.ShowCommandList(cfg, cmdArg)
         else
             x.ShowCommandInfo(cfg, cmdArg)

@@ -3,6 +3,7 @@
 open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.TextTable
+open KPX.FsCqHttp.Utils.UserOption
 
 open KPX.TheBot.Data.CommonModule.Recipe
 open KPX.TheBot.Data.EveData.Utils
@@ -30,16 +31,17 @@ type EveRecipeModule() =
         let cfg = EveConfigParser()
         cfg.Parse(cmdArg.Arguments)
 
-        let item = data.TryGetItem(cfg.CmdLineAsString)
+
+        let item = data.TryGetItem(cfg.GetNonOptionString())
 
         if item.IsNone
-        then cmdArg.AbortExecution(InputError, "找不到物品：{0}", cfg.CmdLineAsString)
+        then cmdArg.AbortExecution(InputError, "找不到物品：{0}", cfg.GetNonOptionString())
 
         let recipe =
             pm.TryGetRecipe(item.Value, ByRun 1.0, 0)
 
         if recipe.IsNone
-        then cmdArg.AbortExecution(InputError, "找不到蓝图：{0}", cfg.CmdLineAsString)
+        then cmdArg.AbortExecution(InputError, "找不到蓝图：{0}", cfg.GetNonOptionString())
 
         let me0Price =
             recipe.Value.GetTotalMaterialPrice(PriceFetchMode.Sell, MeApplied)
@@ -61,7 +63,7 @@ type EveRecipeModule() =
             let save = me0Price - cost |> ceil
             tt.AddRow(me, HumanReadableInteger save)
 
-        using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))
+        using (cmdArg.OpenResponse(cfg.ResponseType)) (fun x -> x.Write(tt))
 
     [<CommandHandlerMethodAttribute("#er",
                                     "EVE蓝图材料计算",
@@ -75,7 +77,7 @@ type EveRecipeModule() =
         let tt = TextTable("名称", "数量")
         tt.AddPreTable(sprintf "输入效率：%i%% " cfg.InputMe)
 
-        match er.Eval(cfg.CmdLineAsString) with
+        match er.Eval(cfg.GetNonOptionString()) with
         | Number n -> cmdArg.AbortExecution(InputError, "结算结果为数字: {0}", n)
         | Accumulator a ->
             let pm = EveProcessManager(cfg)
@@ -106,7 +108,7 @@ type EveRecipeModule() =
         for mr in final do
             tt.AddRow(mr.Item.Name, HumanReadableInteger mr.Quantity)
 
-        using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))
+        using (cmdArg.OpenResponse(cfg.ResponseType)) (fun x -> x.Write(tt))
 
     [<CommandHandlerMethodAttribute("#err",
                                     "EVE蓝图基础材料计算",
@@ -122,7 +124,7 @@ type EveRecipeModule() =
 
         tt.AddPreTable(sprintf "展开行星材料：%b 展开反应公式：%b" cfg.ExpandPlanet cfg.ExpandReaction)
 
-        match er.Eval(cfg.CmdLineAsString) with
+        match er.Eval(cfg.GetNonOptionString()) with
         | Number n -> cmdArg.AbortExecution(InputError, "结算结果为数字: {0}", n)
         | Accumulator a ->
             let pm = EveProcessManager(cfg)
@@ -144,7 +146,7 @@ type EveRecipeModule() =
         for mr in final do
             tt.AddRow(mr.Item.Name, HumanReadableInteger mr.Quantity)
 
-        using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun x -> x.Write(tt))
+        using (cmdArg.OpenResponse(cfg.ResponseType)) (fun x -> x.Write(tt))
 
     [<CommandHandlerMethodAttribute("#errc", "EVE蓝图成本计算", "不支持表达式，但仅限一个物品。可选参数见#evehelp。如：
 #errc 帝国海军散热槽*10")>]
@@ -152,7 +154,7 @@ type EveRecipeModule() =
         let cfg = EveConfigParser()
         cfg.Parse(cmdArg.Arguments)
 
-        match er.Eval(cfg.CmdLineAsString) with
+        match er.Eval(cfg.GetNonOptionString()) with
         | Number n -> cmdArg.AbortExecution(InputError, "结算结果为数字: {0}", n)
         | Accumulator a ->
             let mr = a |> Seq.tryHead
@@ -278,7 +280,7 @@ type EveRecipeModule() =
                 HumanReadableSig4Float(sellWithTax - optCost)
             )
 
-            using (cmdArg.OpenResponse(cfg.IsImageOutput)) (fun ret -> ret.Write(tt))
+            using (cmdArg.OpenResponse(cfg.ResponseType)) (fun ret -> ret.Write(tt))
 
     [<CommandHandlerMethodAttribute("#EVE舰船II", "T2舰船制造总览", "可选参数见#evehelp。")>]
     [<CommandHandlerMethodAttribute("#EVE舰船", "T1舰船制造总览", "可选参数见#evehelp。")>]
@@ -286,34 +288,18 @@ type EveRecipeModule() =
     [<CommandHandlerMethodAttribute("#EVE种菜", "EVE种菜利润", "可选参数见#evehelp。")>]
     [<CommandHandlerMethodAttribute("#EVE装备II", "EVET2装备利润", "可以使用by:搜索物品组名称。其他可选参数见#evehelp。")>]
     [<CommandHandlerMethodAttribute("#EVE燃料块", "EVE燃料块", "可选参数见#evehelp。")>]
-    [<CommandHandlerMethodAttribute("#EVE生产", "EVE生产总览", "可选参数：
-mgid 匹配metaGroupId
-cid 匹配categoryId
-gid 匹配groupId
-n 匹配物品名称
-gn 匹配组名称
-mgn 匹配metagroup名称
-no 排除物品名称
-gno 排除组名称
-mgno 排除metagroup名称
-其他可选参数见#evehelp。")>]
     member x.HandleManufacturingOverview(cmdArg : CommandEventArgs) =
         let cfg = EveConfigParser()
-        cfg.RegisterOption("by", "")
-        // 生产总览使用
-        cfg.RegisterOption("mgid", "1,2,4,14")
-        cfg.RegisterOption("cid", "")
-        cfg.RegisterOption("gid", "")
-        cfg.RegisterOption("n", "")
-        cfg.RegisterOption("gn", "")
-        cfg.RegisterOption("mgn", "")
-        cfg.RegisterOption("no", "")
-        cfg.RegisterOption("gno", "")
-        cfg.RegisterOption("mgno", "")
+
+        let searchByGroupName =
+            cfg.RegisterOption(
+                { new OptionCell<bool>(cfg, "by", false) with
+                    member x.ConvertValue(opt) = opt = "group" }
+            )
 
         cfg.Parse(cmdArg.Arguments)
 
-        use ret = cmdArg.OpenResponse(cfg.IsImageOutput)
+        use ret = cmdArg.OpenResponse(cfg.ResponseType)
         ret.WriteLine(ToolWarning)
 
         ret.WriteLine(
@@ -337,70 +323,15 @@ mgno 排除metagroup名称
             | "#EVE舰船" -> PredefinedSearchCond.T1Ships
             | "#EVE舰船II" -> PredefinedSearchCond.T2Ships
             | "#EVE装备II" ->
-                let isGroup = cfg.GetValue("by") = "group"
-
                 let keyword =
-                    if cfg.CommandLine.Length = 0 then ret.AbortExecution(InputError, "需要一个装备名称关键词")
+                    if cfg.NonOptionStrings.Count = 0 then ret.AbortExecution(InputError, "需要一个装备名称关键词")
 
-                    cfg.CommandLine.[0]
+                    cfg.NonOptionStrings.[0]
 
                 let cond =
-                    if isGroup then ByGroupName keyword else ByItemName keyword
+                    if searchByGroupName.Value then ByGroupName keyword else ByItemName keyword
 
                 PredefinedSearchCond.T2ModulesOf(cond)
-            | "#EVE生产" ->
-                let cond =
-                    ProcessSearchCond(ProcessType.Manufacturing)
-
-                let mgid =
-                    cfg
-                        .GetValue("mgid")
-                        .Split(',', System.StringSplitOptions.RemoveEmptyEntries)
-
-                if mgid.Length <> 0 then cond.MetaGroupIds <- mgid |> Array.map int
-
-                let gid =
-                    cfg
-                        .GetValue("gid")
-                        .Split(',', System.StringSplitOptions.RemoveEmptyEntries)
-
-                if gid.Length <> 0 then cond.GroupIds <- gid |> Array.map int
-
-                let cid =
-                    cfg
-                        .GetValue("cid")
-                        .Split(',', System.StringSplitOptions.RemoveEmptyEntries)
-
-                if cid.Length <> 0 then cond.CategoryIds <- cid |> Array.map int
-
-                let nameSearch = ResizeArray<NameSearchCond>()
-
-                let name = cfg.GetValue("n")
-                if name <> "" then nameSearch.Add(ByItemName name)
-
-                let gName = cfg.GetValue("gn")
-                if gName <> "" then nameSearch.Add(ByGroupName gName)
-
-                let mgName = cfg.GetValue("mgn")
-
-                if mgName <> "" then nameSearch.Add(ByMarketGroupName mgName)
-
-                cond.NameSearch <- nameSearch.ToArray()
-                nameSearch.Clear()
-
-                let name = cfg.GetValue("no")
-                if name <> "" then nameSearch.Add(ByItemName name)
-
-                let gName = cfg.GetValue("gno")
-                if gName <> "" then nameSearch.Add(ByGroupName gName)
-
-                let mgName = cfg.GetValue("mgno")
-
-                if mgName <> "" then nameSearch.Add(ByMarketGroupName mgName)
-
-                cond.NameExclude <- nameSearch.ToArray()
-
-                cond
             | other -> cmdArg.AbortExecution(ModuleError, "不应发生匹配:{0}", other)
 
         let pmStr = cfg.MaterialPriceMode.ToString()

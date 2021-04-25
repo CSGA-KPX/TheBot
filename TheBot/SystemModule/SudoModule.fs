@@ -80,14 +80,13 @@ type SudoModule() =
     member x.HandleGrant(cmdArg : CommandEventArgs) =
         cmdArg.EnsureSenderOwner()
 
-        let uo = UserOptionParser()
-        uo.RegisterOption("qq", "0")
-        uo.Parse(cmdArg.Arguments)
+        let uo = OptionBase()
+        let qq = uo.RegisterOption("qq", 0UL)
+        uo.Parse(cmdArg)
 
-        let uids = uo.GetValues<uint64>("qq")
         let sb = Text.StringBuilder()
 
-        for uid in uids do
+        for uid in qq.Values do
             if uid <> 0UL then
                 cmdArg.GrantBotAdmin(uid)
 
@@ -124,24 +123,25 @@ type SudoModule() =
 
     [<CommandHandlerMethodAttribute("##allow", "(管理) 允许好友、加群请求", "", IsHidden = true)>]
     member x.HandleAllow(cmdArg : CommandEventArgs) =
-        let cfg = UserOptionParser()
-        cfg.RegisterOption("group", "0")
-        cfg.RegisterOption("qq", "0")
-        cfg.Parse(cmdArg.Arguments)
+        
+        let uo = OptionBase()
+        let qq = uo.RegisterOption("qq", 0UL)
+        let group = uo.RegisterOption("group", 0UL)
+        uo.Parse(cmdArg)
 
-        if cfg.IsDefined("group") then
+        if group.IsDefined then
             cmdArg.EnsureSenderAdmin()
 
             let key =
-                allowGroupFmt cmdArg.BotUserId (cfg.GetValue<uint64>("group"))
+                allowGroupFmt cmdArg.BotUserId (group.Value)
 
             allowList.Add(key) |> ignore
             cmdArg.QuickMessageReply(sprintf "接受来自[%s]的邀请" key)
-        elif cfg.IsDefined("qq") then
+        elif qq.IsDefined then
             cmdArg.EnsureSenderAdmin()
 
             let key =
-                allowQqFmt cmdArg.BotUserId (cfg.GetValue<uint64>("friend"))
+                allowQqFmt cmdArg.BotUserId (qq.Value)
 
             allowList.Add(key) |> ignore
             cmdArg.QuickMessageReply(sprintf "接受来自[%s]的邀请" key)

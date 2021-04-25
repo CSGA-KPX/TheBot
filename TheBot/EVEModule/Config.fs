@@ -1,47 +1,36 @@
 ﻿namespace KPX.TheBot.Module.EveModule.Utils.Config
 
-open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.UserOption
 
 open KPX.TheBot.Data.EveData.Utils
 
 
-type EveConfigParser() as x =
-    inherit UserOptionParser()
+type EveConfigParser() as x = 
+    inherit OptionBase()
 
-    do
-        x.RegisterOption("ime", "2")
-        x.RegisterOption("dme", "10")
-        x.RegisterOption("sci", "3")
-        x.RegisterOption("tax", "10")
-        x.RegisterOption("p", "false")
-        x.RegisterOption("r", "false")
-        x.RegisterOption("buy", "")
-        x.RegisterOption("debug", "")
-        x.RegisterOption("text", "")
-        x.RegisterOption("selltax", "6")
-        x.RegisterOption("buytax", "4")
+    let ime = OptionCellSimple(x, "ime", 2)
+    let dme = OptionCellSimple(x, "dme", 10)
+    let sci = OptionCellSimple(x, "sci", 4)
+    let tax = OptionCellSimple(x, "tax", 10)
 
-    /// 是否强制文本输出。具体输出方式取决于酷Q
-    member x.IsImageOutput =
-        if x.IsDefined("text") then ForceText else PreferImage
+    let p = OptionCell(x, "p")
+    let r = OptionCell(x, "r")
+    let buy = OptionCell(x, "buy")
 
-    member x.IsDebug = x.IsDefined("debug")
+    member x.InputMe = ime.Value
 
-    member x.InputMe = x.GetValue<int>("ime")
+    member x.DerivativetMe = dme.Value
 
-    member x.DerivativetMe = x.GetValue<int>("dme")
+    member x.SystemCostIndex = sci.Value
 
-    member x.SystemCostIndex = x.GetValue<int>("sci")
+    member x.StructureTax = tax.Value
 
-    member x.StructureTax = x.GetValue<int>("tax")
+    member x.ExpandReaction = r.IsDefined
 
-    member x.ExpandReaction = x.IsDefined("r")
-
-    member x.ExpandPlanet = x.IsDefined("p")
+    member x.ExpandPlanet = p.IsDefined
 
     member x.MaterialPriceMode =
-        if x.IsDefined("buy") then PriceFetchMode.BuyWithTax else PriceFetchMode.Sell
+        if buy.IsDefined then PriceFetchMode.BuyWithTax else PriceFetchMode.Sell
 
     interface KPX.TheBot.Data.EveData.Process.IEveCalculatorConfig with
         member x.InputME = x.InputMe

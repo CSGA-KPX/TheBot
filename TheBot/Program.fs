@@ -10,26 +10,25 @@ let logger = NLog.LogManager.GetCurrentClassLogger()
 
 [<EntryPoint>]
 let main argv =
-    let parser = UserOptionParser()
-    parser.RegisterOption("debug", "")
-    parser.RegisterOption("endpoint", "")
-    parser.RegisterOption("token", "")
-    parser.RegisterOption("reverse", "5004")
-    parser.Parse(argv)
+    let cfg = OptionImpl()
 
-    if parser.IsDefined("reverse")
-       && parser.IsDefined("token") then
+    let endpoint = cfg.RegisterOption("endpoint", "")
+    let token = cfg.RegisterOption("token", "")
+    let reverse = cfg.RegisterOption("reverse", 5004)
+
+    cfg.Parse(argv)
+
+    if reverse.IsDefined && token.IsDefined then
         let endpoint =
-            sprintf "http://localhost:%i/" (parser.GetValue<int>("reverse"))
+            sprintf "http://localhost:%i/" (reverse.Value)
 
         let wss =
-            new CqWebSocketServer(endpoint, parser.GetValue("token"))
+            new CqWebSocketServer(endpoint, token.Value)
 
         wss.Start()
-    elif parser.IsDefined("endpoint")
-         && parser.IsDefined("token") then
-        let uri = Uri(parser.GetValue("endpoint"))
-        let token = parser.GetValue("token")
+    elif endpoint.IsDefined && token.IsDefined then
+        let uri = Uri(endpoint.Value)
+        let token = token.Value
         let aws = ActiveWebsocket(uri, token)
         let ctx = aws.GetContext()
         logger.Info(sprintf "已连接:[%i:%s]" ctx.BotUserId ctx.BotNickname)
