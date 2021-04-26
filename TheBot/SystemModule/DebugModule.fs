@@ -69,6 +69,8 @@ type DebugModule() =
         let command =
             cfg.RegisterOption("command", Config.Logging.LogCommandCall)
 
+        cfg.Parse(cmdArg)
+
         Config.Logging.LogEventPost <- event.Value
         Config.Logging.LogApiCall <- api.Value
         Config.Logging.LogApiJson <- apiJson.Value
@@ -76,7 +78,7 @@ type DebugModule() =
 
         let ret =
             sprintf
-                "日志选项已设定为：##setlog event:%b api:%b apijson:%b comamnd:%b"
+                "日志选项已设定为：##setlog event:%b api:%b apijson:%b command:%b"
                 Config.Logging.LogEventPost
                 Config.Logging.LogApiCall
                 Config.Logging.LogApiJson

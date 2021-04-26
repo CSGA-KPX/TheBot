@@ -51,6 +51,7 @@
     <Compile Include="SystemModule\TestModule.fs" />
     <Compile Include="SystemModule\SudoModule.fs" />
     <Compile Include="SystemModule\HelpModule.fs" />
+    <Compile Include="AppShareConverter\ConverterModule.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 

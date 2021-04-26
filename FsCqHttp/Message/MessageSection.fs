@@ -266,7 +266,14 @@ type XmlSection() =
 
     member x.XmlData = x.GetValue("data")
 
+    member x.ResId = x.TryGetValue("resid")
+
 type JsonSection() =
     inherit MessageSection("json")
 
-    member x.XmlData = x.GetValue("json")
+    // 默认不填为0, 走小程序通道, 填了走富文本通道发送
+    member x.ResId = x.TryGetValue("resid")
+
+    member x.JsonData = x.GetValue("data")
+
+    member x.GetObject() = JObject.Parse(x.JsonData)
