@@ -22,7 +22,7 @@ type internal ImageHelper private () =
     static let CharDisplayLengthAdj =
         Regex(@"\p{IsBasicLatin}|\p{IsGeneralPunctuation}|±|·", RegexOptions.Compiled)
 
-    static let tmpImg = Graphics.FromImage(new Bitmap(1, 1))
+    static let mutable tmpImg = Graphics.FromImage(new Bitmap(1, 1))
 
     static member val Font =
         new Font(
@@ -32,11 +32,12 @@ type internal ImageHelper private () =
 
     static member val StringFormat =
         let sf =
-            new StringFormat(StringFormat.GenericTypographic)
+            new StringFormat(StringFormat.GenericDefault)
 
         sf.FormatFlags <-
             sf.FormatFlags
             ||| StringFormatFlags.MeasureTrailingSpaces
+            ||| StringFormatFlags.NoFontFallback
 
         sf
 
@@ -66,6 +67,14 @@ type internal ImageHelper private () =
             if (ret % ImageHelper.SingleColumnWidth) <> 0 then
                 width <- width + 1
 
+            if width = 0 && str.Length <> 0 then
+                // 可能是上游Cairo和libgdiplus的bug
+                // 对于含有颜文字的文字会计算错误
+                // 需要用老式方法计算并且替换graphic
+                width <- ImageHelper.MeasureByChar(str)
+                tmpImg <- Graphics.FromImage(new Bitmap(1, 1))
+
+            printfn ">%s< -> %i" str width
             width
         else
             ImageHelper.MeasureByChar(str)

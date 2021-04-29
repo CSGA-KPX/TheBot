@@ -54,6 +54,9 @@ type internal TextColumn() =
         let padCharLen =
             ImageHelper.MeasureWidthByConfig(string padChar)
 
+        if padCharLen = 0 then
+            invalidArg (nameof padChar) (sprintf "字符长度计算错误： %c 的栏位数为0" padChar)
+
         for i = 0 to x.Count - 1 do
             let cell = x.[i]
             let width = cell.DisplayWidth
