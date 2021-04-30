@@ -32,12 +32,12 @@ type internal ImageHelper private () =
 
     static member val StringFormat =
         let sf =
-            new StringFormat(StringFormat.GenericDefault)
+            // 请勿使用StringFormat.GenericDefault
+            new StringFormat(StringFormat.GenericTypographic)
 
         sf.FormatFlags <-
             sf.FormatFlags
             ||| StringFormatFlags.MeasureTrailingSpaces
-            ||| StringFormatFlags.NoFontFallback
 
         sf
 
@@ -74,7 +74,7 @@ type internal ImageHelper private () =
                 width <- ImageHelper.MeasureByChar(str)
                 tmpImg <- Graphics.FromImage(new Bitmap(1, 1))
 
-            printfn ">%s< -> %i" str width
+            //printfn ">%s< -> %i" str width
             width
         else
             ImageHelper.MeasureByChar(str)

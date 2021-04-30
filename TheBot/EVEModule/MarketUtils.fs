@@ -12,10 +12,10 @@ open KPX.TheBot.Module.EveModule.Utils.Extensions
 type EveMarketPriceTable() =
     inherit TextTable("名称",
                       RightAlignCell "数量",
-                      RightAlignCell
-                      <| PriceFetchMode.Sell.ToString() + "/税后",
-                      RightAlignCell
-                      <| PriceFetchMode.Buy.ToString() + "/税后",
+                      RightAlignCell <| PriceFetchMode.Sell.ToString(),
+                      RightAlignCell "变动",
+                      RightAlignCell <| PriceFetchMode.Buy.ToString(),
+                      RightAlignCell "变动",
                       RightAlignCell "日均交易",
                       RightAlignCell "更新时间")
 
@@ -24,27 +24,36 @@ type EveMarketPriceTable() =
             yield t.Name
             yield q
 
+            let adjPrice =
+                t.GetPrice(PriceFetchMode.AveragePrice) * q
+
             let nt =
                 HumanReadableSig4Float(t.GetPrice(PriceFetchMode.Sell) * q)
 
-            let st =
-                HumanReadableSig4Float(t.GetPrice(PriceFetchMode.SellWithTax) * q)
+            yield nt
 
-            yield
-                sprintf "%s/%s" nt.Text st.Text
-                |> RightAlignCell
+            let ntPct =
+                ((t.GetPrice(PriceFetchMode.Sell) * q) - adjPrice)
+                / adjPrice
+                * 100.0
+                |> HumanReadableSig4Float
+
+            yield sprintf "%s%%" ntPct.Text |> RightAlignCell
 
             let nt =
                 HumanReadableSig4Float(t.GetPrice(PriceFetchMode.Buy) * q)
 
-            let wt =
-                HumanReadableSig4Float(t.GetPrice(PriceFetchMode.BuyWithTax) * q)
+            yield nt
 
-            yield
-                sprintf "%s/%s" nt.Text wt.Text
-                |> RightAlignCell
+            let ntPct =
+                ((t.GetPrice(PriceFetchMode.Buy) * q) - adjPrice)
+                / adjPrice
+                * 100.0
+                |> HumanReadableSig4Float
 
-            yield HumanReadableInteger(t.GetTradeVolume())
+            yield sprintf "%s%%" ntPct.Text |> RightAlignCell
+
+            yield HumanReadableSig4Float(t.GetTradeVolume())
 
             yield HumanTimeSpan(t.GetPriceInfo().Updated)
         }

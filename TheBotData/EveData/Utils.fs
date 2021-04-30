@@ -17,8 +17,10 @@ type PriceFetchMode =
     | Buy
     | BuyWithTax
     /// 游戏内部加权价格
+    /// Adjusted has modifications to prevent manipulation. 
     | AdjustedPrice
     /// 游戏内部平均价格
+    /// Average is a average over the last 28 days, over the entirety of new eden.
     | AveragePrice
     /// 游戏内部硬编码的价格
     | BasePrice
