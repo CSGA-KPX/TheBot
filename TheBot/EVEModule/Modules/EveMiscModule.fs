@@ -58,12 +58,12 @@ type EveMiscModule() =
 
                     tt.AddRow(
                         arg,
-                        HumanReadableInteger(100.0 * sci.Manufacturing),
-                        HumanReadableInteger(100.0 * sci.ResearcMaterial),
-                        HumanReadableInteger(100.0 * sci.ResearchTime),
-                        HumanReadableInteger(100.0 * sci.Copying),
-                        HumanReadableInteger(100.0 * sci.Invention),
-                        HumanReadableInteger(100.0 * sci.Reaction)
+                        HumanReadableSig4Float(100.0 * sci.Manufacturing),
+                        HumanReadableSig4Float(100.0 * sci.ResearcMaterial),
+                        HumanReadableSig4Float(100.0 * sci.ResearchTime),
+                        HumanReadableSig4Float(100.0 * sci.Copying),
+                        HumanReadableSig4Float(100.0 * sci.Invention),
+                        HumanReadableSig4Float(100.0 * sci.Reaction)
                     )
 
         using (cmdArg.OpenResponse(cfg.ResponseType)) (fun ret -> ret.Write(tt))
