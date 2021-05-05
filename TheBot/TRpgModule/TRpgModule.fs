@@ -229,10 +229,7 @@ type TRpgModule() =
             else
                 cmdArg.QuickMessageReply(msg)
 
-    [<CommandHandlerMethodAttribute(".crule",
-                                    "查询/设置当前房规区间（不稳定）",
-                                    "",
-                                    Disabled = true)>]
+    [<CommandHandlerMethodAttribute(".crule", "查询/设置当前房规区间（不稳定）", "", Disabled = true)>]
     member x.HandleRollRule(cmdArg : CommandEventArgs) =
         if cmdArg.MessageEvent.IsPrivate then
             cmdArg.AbortExecution(InputError, "此指令仅私聊无效")
@@ -278,6 +275,27 @@ type TRpgModule() =
             TrpgStringTemplate(de)
                 .ParseByKey(StringData.Key_ChrBackground)
 
+        cmdArg.QuickMessageReply(ret)
+
+    [<CommandHandlerMethodAttribute(".name", "生成人物背景", "")>]
+    member x.HandleChrName(cmdArg : CommandEventArgs) =
+        let opt = NameOption()
+        opt.Parse(cmdArg)
+
+        if opt.NameCount > 20 then
+            cmdArg.AbortExecution(InputError, "数量太多")
+
+        let de = DiceExpression(Dicer.RandomDicer)
+
+        let tmpl =
+            StringData.GetString(opt.NameLanguageKey)
+
+        let names =
+            Seq.initInfinite (fun _ -> TrpgStringTemplate(de).ParseTemplate(tmpl))
+            |> Seq.distinct
+            |> Seq.take opt.NameCount
+
+        let ret = String.Join(" ", names)
         cmdArg.QuickMessageReply(ret)
 
 (*

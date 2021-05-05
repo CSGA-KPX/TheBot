@@ -30,6 +30,10 @@ module StringData =
     let Key_SkillAlias = "技能别名"
     let Key_DefaultSkillValues = "默认技能数值"
 
+    let Key_ChsName = "中文名"
+    let Key_EngName = "英文名"
+    let Key_EngChsName = "英中名"
+    let Key_JpnName = "日语名"
 
 type TrpgStringTemplate(de : DiceExpression) =
     inherit StringTemplate()
@@ -39,7 +43,7 @@ type TrpgStringTemplate(de : DiceExpression) =
 
     override x.ProcessFunctions(name, args) =
         match name with
-        | "eval" ->
+        | "eval" -> // \{eval 表达式 noexpr}
             let ShowExpr =
                 args
                 |> Array.exists (fun x -> x = "noexpr")
@@ -48,10 +52,11 @@ type TrpgStringTemplate(de : DiceExpression) =
             let expression = args |> Array.tryHead
             if expression.IsNone then invalidArg "args" "找不到表达式"
 
-            if ShowExpr
-            then sprintf "{%s = %O}" (expression.Value) (de.Eval(expression.Value).Sum)
-            else sprintf "%O" (de.Eval(expression.Value).Sum)
-        | "randomItem" ->
+            if ShowExpr then
+                sprintf "{%s = %O}" (expression.Value) (de.Eval(expression.Value).Sum)
+            else
+                sprintf "%O" (de.Eval(expression.Value).Sum)
+        | "randomItem" -> // \{randomItem 数组名称 个数}
             try
                 let name = args |> Array.tryHead
                 if name.IsNone then invalidArg "args" "没有指定数据集名称"
@@ -65,5 +70,23 @@ type TrpgStringTemplate(de : DiceExpression) =
                 let input = StringData.GetLines(name.Value)
                 let items = de.Dicer.GetRandomItems(input, count)
                 String.Join(" ", items)
+            with e -> failwithf "找不到请求的数据集 %s : %s" name e.Message
+        | "randomItemOpt" -> // \{randomItemOpt 数组名称 阈值|50 } 1D100
+            try
+                let name = args |> Array.tryHead
+                if name.IsNone then invalidArg "args" "没有指定数据集名称"
+
+                let threshold =
+                    args
+                    |> Array.tryItem 1
+                    |> Option.defaultValue "50"
+                    |> Int32.Parse
+
+                let d100 = de.Dicer.GetRandom(100u)
+
+                if d100 >= threshold then
+                    de.Dicer.GetRandomItem(StringData.GetLines(name.Value))
+                else
+                    ""
             with e -> failwithf "找不到请求的数据集 %s : %s" name e.Message
         | other -> invalidArg (nameof name) ("未知指令名称" + other)

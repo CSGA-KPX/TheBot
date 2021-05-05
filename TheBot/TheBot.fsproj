@@ -31,6 +31,7 @@
     <Compile Include="TRpgModule\DailySanCache.fs" />
     <Compile Include="TRpgModule\CharacterCard.fs" />
     <Compile Include="TRpgModule\CardManager.fs" />
+    <Compile Include="TRpgModule\NameOption.fs" />
     <Compile Include="TRpgModule\TRpgModule.fs" />
     <Compile Include="XivModule\MarketUtils.fs" />
     <Compile Include="XivModule\CommandUtils.fs" />
