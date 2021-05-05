@@ -14,4 +14,4 @@ let ``FFXIV : OceanFishing function`` () =
         |> ignore
 
 [<Test>]
-let ``FFXIV : World function`` () = World.WorldFromName.["拉诺西亚"] |> ignore
+let ``FFXIV : World function`` () = World.GetWorldByName("拉诺西亚") |> ignore

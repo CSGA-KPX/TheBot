@@ -21,6 +21,7 @@ type ProcessType =
 type ProcessFlag =
     | Original
     | QuantityApplied
+    /// MeApplied隐含QuantityApplied。对于制造项目会计算材料效率
     | MeApplied
 
 [<CLIMutable>]

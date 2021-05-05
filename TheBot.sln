@@ -19,7 +19,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "TheBotData-Test", "TheBot-Test\TheBotData-Test.fsproj", "{787150A5-2986-4AA1-B96E-6731AA6FAC61}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "TheBotData-Test", "TheBotData-Test\TheBotData-Test.fsproj", "{787150A5-2986-4AA1-B96E-6731AA6FAC61}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSCqHttp-Test", "FSCqHttp-Test\FSCqHttp-Test.fsproj", "{FF530083-BB65-4011-A990-1D4C41226D27}"
 EndProject

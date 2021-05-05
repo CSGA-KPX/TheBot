@@ -6,6 +6,7 @@ open KPX.TheBot.Data.XivData.Recipe
 
 open NUnit.Framework
 
+
 [<OneTimeSetUp>]
 let Setup () = InitCollection.Setup()
 
