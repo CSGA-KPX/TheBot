@@ -10,6 +10,8 @@ open KPX.FsCqHttp.Event
 open KPX.FsCqHttp.Api
 open KPX.FsCqHttp.Handler
 
+open KPX.FsCqHttp.Instance
+
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 
@@ -43,10 +45,15 @@ type TestContext() as x =
 
     let responseQueue = Queue<string>()
 
-    do
-        x.AddApiResponse(".handle_quick_operation", obj ())
+    let modules = ContextModuleInfo()
 
+    do
+        // 用来混淆类型推导机制
+        x.AddApiResponse("no_such_command", obj ())
         x.AddApiResponse("can_send_image", {| yes = true |})
+
+        // 加载所有可发现的模块
+        DefaultContextModuleLoader().RegisterModuleFor(botUserId, modules)
 
     member x.AddApiResponse<'T when 'T :> CqHttpApiBase>(obj : obj) =
         let api =
@@ -56,28 +63,22 @@ type TestContext() as x =
 
     member x.AddApiResponse(str, obj) = apiResponse.Add(str, obj)
 
-    // TODO :
-    // 一个method会有多个指令名
-    // 应该是 x.InvokeCommand(instance : CommandHandlerBase, cmd : string)
-    // 拆分cmd以后去比对相关方法
-    member x.InvokeCommand(instance : CommandHandlerBase, methodName : string, ?args : string) =
-        let method =
-            instance
-                .GetType()
-                .GetMethod(methodName, Array.singleton typeof<CommandEventArgs>)
-
-        let attr =
-            method.GetCustomAttributes(typeof<CommandHandlerMethodAttribute>, true)
-            |> Array.head
-            :?> CommandHandlerMethodAttribute
-
+    member x.InvokeCommand(cmdLine : string) =
         let msg = Message()
-        msg.Add(attr.Command + " " + (defaultArg args ""))
+        msg.Add(cmdLine)
+        x.InvokeCommand(msg)
+
+    member x.InvokeCommand(msg : Message) =
         let msgEvent = x.MakeEvent(msg)
+
+        let cmd = modules.TryCommand(msgEvent)
+        if cmd.IsNone then invalidArg "cmdLine/msg" "指定模块不含指定指令"
+
+        let method = cmd.Value.MethodAction
+        let attr = cmd.Value.CommandAttribute
         let cmdEvent = CommandEventArgs(msgEvent, attr)
 
-        method.Invoke(instance, Array.singleton<obj> cmdEvent)
-        |> ignore
+        method.Invoke(cmdEvent)
 
         responseQueue.Dequeue()
 
@@ -116,7 +117,6 @@ type TestContext() as x =
 
         member x.CallApi(req : #ApiBase) =
             // 拦截所有回复调用
-
             match req :> ApiBase with
             | :? System.QuickOperation as q ->
                 match q.Reply with

@@ -16,8 +16,17 @@ type ContextModuleLoader() =
 
     static do
         seq {
-            yield! Assembly.GetExecutingAssembly().GetTypes()
-            yield! Assembly.GetEntryAssembly().GetTypes()
+            for asm in AppDomain.CurrentDomain.GetAssemblies() do
+                let name = asm.GetName().Name
+
+                if not
+                   <| (name = "mscorlib"
+                       || name = "netstandard"
+                       || name.StartsWith("System.")
+                       || name.StartsWith("FSharp.")
+                       || name.StartsWith("Microsoft.")) then
+                    logger.Info("正在导入程序集：{0}", name)
+                    yield! asm.GetTypes()
         }
         |> Seq.filter
             (fun t ->

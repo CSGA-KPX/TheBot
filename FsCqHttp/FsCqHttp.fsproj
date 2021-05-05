@@ -65,7 +65,6 @@
     <Compile Include="Utils\TextTable\Extensions.fs" />
     <Compile Include="Utils\AliasMapper.fs" />
     <Compile Include="Utils\UserOptionV2.fs" />
-    <Compile Include="Instance\TestContext.fs" />
     <Compile Include="Instance\ModuleInfo.fs" />
     <Compile Include="Instance\ContextModuleLoader.fs" />
     <Compile Include="Instance\EventDispatcher.fs" />
@@ -74,6 +73,7 @@
     <Compile Include="Instance\ActiveWebsocket.fs" />
     <Compile Include="Instance\ReverseWebSocket.fs" />
     <Compile Include="Instance\DummyReverseClient.fs" />
+    <Compile Include="Instance\TestContext.fs" />
     <Compile Include="Modules\HelpModule.fs" />
   </ItemGroup>
 
