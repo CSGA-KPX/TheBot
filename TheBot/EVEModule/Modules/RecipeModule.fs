@@ -32,16 +32,17 @@ type EveRecipeModule() =
         cfg.Parse(cmdArg.Arguments)
 
 
-        let item = data.TryGetItem(cfg.GetNonOptionString())
+        let item =
+            data.TryGetItem(cfg.GetNonOptionString())
 
-        if item.IsNone
-        then cmdArg.AbortExecution(InputError, "找不到物品：{0}", cfg.GetNonOptionString())
+        if item.IsNone then
+            cmdArg.AbortExecution(InputError, "找不到物品：{0}", cfg.GetNonOptionString())
 
         let recipe =
             pm.TryGetRecipe(item.Value, ByRun 1.0, 0)
 
-        if recipe.IsNone
-        then cmdArg.AbortExecution(InputError, "找不到蓝图：{0}", cfg.GetNonOptionString())
+        if recipe.IsNone then
+            cmdArg.AbortExecution(InputError, "找不到蓝图：{0}", cfg.GetNonOptionString())
 
         let me0Price =
             recipe.Value.GetTotalMaterialPrice(PriceFetchMode.Sell, MeApplied)
@@ -74,7 +75,12 @@ type EveRecipeModule() =
         cfg.Parse(cmdArg.Arguments)
 
         let final = ItemAccumulator<EveType>()
-        let tt = TextTable("名称", "数量")
+        let mutable totalInputVolume = 0.0
+        let mutable totalOutputVolume = 0.0
+
+        let tt =
+            TextTable("名称", RightAlignCell "数量", RightAlignCell "体积")
+
         tt.AddPreTable(sprintf "输入效率：%i%% " cfg.InputMe)
 
         match er.Eval(cfg.GetNonOptionString()) with
@@ -90,7 +96,15 @@ type EveRecipeModule() =
                 | Some recipe when mr.Quantity > 0.0 ->
                     let proc = recipe.ApplyFlags(MeApplied)
                     let product = proc.GetFirstProduct()
-                    tt.AddRow("产出：" + product.Item.Name, HumanReadableInteger product.Quantity)
+                    let sumVolume = product.Item.Volume * product.Quantity
+
+                    tt.AddRow(
+                        "产出：" + product.Item.Name,
+                        HumanReadableInteger product.Quantity,
+                        HumanReadableInteger sumVolume
+                    )
+
+                    totalOutputVolume <- totalOutputVolume + sumVolume
 
                     for m in proc.Input do
                         final.Update(m)
@@ -105,8 +119,22 @@ type EveRecipeModule() =
                         mr.Quantity
                     )
 
-        for mr in final do
-            tt.AddRow(mr.Item.Name, HumanReadableInteger mr.Quantity)
+        tt.AddRow("产出：总体积", RightAlignCell "--", HumanReadableInteger totalOutputVolume)
+        tt.AddRow("--", RightAlignCell "--", RightAlignCell "--")
+
+        for mr in final
+                  |> Seq.sortBy (fun x -> x.Item.MarketGroupId) do
+            let sumVolume = mr.Item.Volume * mr.Quantity
+
+            tt.AddRow(
+                mr.Item.Name,
+                HumanReadableInteger mr.Quantity,
+                HumanReadableInteger sumVolume
+            )
+
+            totalInputVolume <- totalInputVolume + sumVolume
+
+        tt.AddRow("材料体积", RightAlignCell "--", HumanReadableInteger totalInputVolume)
 
         using (cmdArg.OpenResponse(cfg.ResponseType)) (fun x -> x.Write(tt))
 
@@ -119,10 +147,16 @@ type EveRecipeModule() =
         cfg.Parse(cmdArg.Arguments)
 
         let final = ItemAccumulator<EveType>()
-        let tt = TextTable("名称", RightAlignCell "数量")
+
+        let tt =
+            TextTable("名称", RightAlignCell "数量", RightAlignCell "体积")
+
         tt.AddPreTable(sprintf "输入效率：%i%% 默认效率：%i%%" cfg.InputMe cfg.DerivativetMe)
 
         tt.AddPreTable(sprintf "展开行星材料：%b 展开反应公式：%b" cfg.ExpandPlanet cfg.ExpandReaction)
+
+        let mutable totalInputVolume = 0.0
+        let mutable totalOutputVolume = 0.0
 
         match er.Eval(cfg.GetNonOptionString()) with
         | Number n -> cmdArg.AbortExecution(InputError, "结算结果为数字: {0}", n)
@@ -133,22 +167,34 @@ type EveRecipeModule() =
                 let proc =
                     pm.TryGetRecipeRecMe(mr.Item, ByRun mr.Quantity)
 
-                if proc.IsNone then cmdArg.AbortExecution(InputError, "找不到配方：{0}", mr.Item.Name)
+                if proc.IsNone then
+                    cmdArg.AbortExecution(InputError, "找不到配方：{0}", mr.Item.Name)
 
                 let finalProc = proc.Value.FinalProcess
                 let product = finalProc.GetFirstProduct()
 
-                tt.AddRow("产出：" + product.Item.Name, HumanReadableInteger product.Quantity)
+                let outputVolume = product.Item.Volume * product.Quantity
+
+                tt.AddRow("产出：" + product.Item.Name, HumanReadableInteger product.Quantity, HumanReadableInteger outputVolume)
 
                 for m in finalProc.Input do
                     final.Update(m)
 
-        for mr in final do
-            tt.AddRow(mr.Item.Name, HumanReadableInteger mr.Quantity)
+        tt.AddRow("产出：总体积", RightAlignCell "--", HumanReadableInteger totalOutputVolume)
+        tt.AddRow("--", RightAlignCell "--", RightAlignCell "--")
+
+        for mr in final |> Seq.sortBy (fun x -> x.Item.MarketGroupId) do
+            let sumVolume = mr.Item.Volume * mr.Quantity
+            tt.AddRow(mr.Item.Name, HumanReadableInteger mr.Quantity, HumanReadableInteger sumVolume)
+            totalInputVolume <- totalInputVolume + sumVolume
+
+        tt.AddRow("材料体积", RightAlignCell "--", HumanReadableInteger totalInputVolume)
 
         using (cmdArg.OpenResponse(cfg.ResponseType)) (fun x -> x.Write(tt))
 
-    [<CommandHandlerMethodAttribute("#errc", "EVE蓝图成本计算", "不支持表达式，但仅限一个物品。可选参数见#evehelp。如：
+    [<CommandHandlerMethodAttribute("#errc",
+                                    "EVE蓝图成本计算",
+                                    "不支持表达式，但仅限一个物品。可选参数见#evehelp。如：
 #errc 帝国海军散热槽*10")>]
     member x.HandleERRCV2(cmdArg : CommandEventArgs) =
         let cfg = EveConfigParser()
@@ -157,14 +203,21 @@ type EveRecipeModule() =
         match er.Eval(cfg.GetNonOptionString()) with
         | Number n -> cmdArg.AbortExecution(InputError, "结算结果为数字: {0}", n)
         | Accumulator a ->
+            if a.Count > 1 then
+                cmdArg.AbortExecution(InputError, "#errc只允许计算一个物品")
+
             let mr = a |> Seq.tryHead
 
-            if mr.IsNone then cmdArg.AbortExecution(InputError, "没有可供计算的物品")
+            if mr.IsNone then
+                cmdArg.AbortExecution(InputError, "没有可供计算的物品")
 
             match mr.Value.Item.MetaGroupId with
-            | 1 | 54 -> 10 // T1装备建筑默认10
-            | 2 | 14 | 53 -> 2  // T2/T3装备 建筑默认2
-            | _ -> 0  // 其他默认0
+            | 1
+            | 54 -> 10 // T1装备建筑默认10
+            | 2
+            | 14
+            | 53 -> 2 // T2/T3装备 建筑默认2
+            | _ -> 0 // 其他默认0
             // TODO : 这个功能应该汇入上级，可以供dme使用
             |> cfg.SetDefaultInputMe
 
@@ -173,8 +226,8 @@ type EveRecipeModule() =
             let recipe =
                 pm.TryGetRecipe(mr.Value.Item, ByRun mr.Value.Quantity)
 
-            if recipe.IsNone
-            then cmdArg.AbortExecution(InputError, "找不到配方:{0}", mr.Value.Item.Name)
+            if recipe.IsNone then
+                cmdArg.AbortExecution(InputError, "找不到配方:{0}", mr.Value.Item.Name)
 
             let tt =
                 TextTable(
@@ -213,7 +266,7 @@ type EveRecipeModule() =
             let mutable optCost = installFee
             let mutable allCost = installFee
 
-            for mr in proc.Input do
+            for mr in proc.Input |> Seq.sortBy (fun x -> x.Item.MarketGroupId) do
                 let price = // 市场价格
                     mr.Item.GetPrice(cfg.MaterialPriceMode)
                     * mr.Quantity
@@ -226,8 +279,10 @@ type EveRecipeModule() =
                         cfg.DerivativetMe
                     )
 
-                if mrProc.IsSome
-                   && pm.CanExpand(mrProc.Value.InputProcess) then
+                if
+                    mrProc.IsSome
+                    && pm.CanExpand(mrProc.Value.InputProcess)
+                then
                     let mrInstall =
                         mrProc.Value.IntermediateProcess
                         |> Array.fold (fun acc proc -> acc + proc.GetInstallationCost(cfg)) 0.0
@@ -301,7 +356,7 @@ type EveRecipeModule() =
         let searchByGroupName =
             cfg.RegisterOption(
                 { new OptionCell<bool>(cfg, "by", false) with
-                    member x.ConvertValue(opt) = opt = "group" }
+                    override x.ConvertValue(opt) = opt = "group" }
             )
 
         cfg.Parse(cmdArg.Arguments)
@@ -331,12 +386,16 @@ type EveRecipeModule() =
             | "#EVE舰船II" -> PredefinedSearchCond.T2Ships
             | "#EVE装备II" ->
                 let keyword =
-                    if cfg.NonOptionStrings.Count = 0 then ret.AbortExecution(InputError, "需要一个装备名称关键词")
+                    if cfg.NonOptionStrings.Count = 0 then
+                        ret.AbortExecution(InputError, "需要一个装备名称关键词")
 
                     cfg.NonOptionStrings.[0]
 
                 let cond =
-                    if searchByGroupName.Value then ByGroupName keyword else ByItemName keyword
+                    if searchByGroupName.Value then
+                        ByGroupName keyword
+                    else
+                        ByItemName keyword
 
                 PredefinedSearchCond.T2ModulesOf(cond)
             | other -> cmdArg.AbortExecution(ModuleError, "不应发生匹配:{0}", other)
@@ -359,10 +418,12 @@ type EveRecipeModule() =
 
                     let proc =
                         pm
-                            .TryGetRecipeRecMe(product.Item,
-                                               ByRun 1.0,
-                                               cfg.InputMe,
-                                               cfg.DerivativetMe)
+                            .TryGetRecipeRecMe(
+                                product.Item,
+                                ByRun 1.0,
+                                cfg.InputMe,
+                                cfg.DerivativetMe
+                            )
                             .Value
 
                     // 所有基础材料的报价
@@ -390,7 +451,8 @@ type EveRecipeModule() =
 
                     let sortIdx =
                         //(sellWithTax - cost) / cost * 100.0 |> int
-                       (sellWithTax - cost) * volume / proc.FinalProcess.Output.[0].Quantity /// 利润*平均交易量
+                        (sellWithTax - cost) * volume
+                        / proc.FinalProcess.Output.[0].Quantity
 
                     {| Name = product.Item.Name
                        TypeGroup = product.Item.TypeGroup
