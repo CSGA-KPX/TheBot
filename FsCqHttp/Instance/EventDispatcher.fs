@@ -13,6 +13,8 @@ type private TaskSchedulerMessage =
 
 [<RequireQualifiedAccess>]
 module internal TaskScheduler =
+    let private logger = NLog.LogManager.GetLogger("TaskScheduler")
+
     let rec private getRootExn (exn : exn) =
         if isNull exn.InnerException then
             exn
@@ -99,6 +101,9 @@ module internal TaskScheduler =
                                 inbox.Post(Finished)
                             }
                             |> Async.Start
+
+                        if !count >= maxConcurrentCommands && queue.Count > 0 then
+                            logger.Warn("队列已满，当前并发：{0}，队列数：{1}。", !count, queue.Count)
                 })
 
     let enqueue (ctx, args) = agent.Post(Task(ctx, args))
