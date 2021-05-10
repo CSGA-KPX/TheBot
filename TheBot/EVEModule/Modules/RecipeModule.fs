@@ -174,6 +174,7 @@ type EveRecipeModule() =
                 let product = finalProc.GetFirstProduct()
 
                 let outputVolume = product.Item.Volume * product.Quantity
+                totalOutputVolume <- totalOutputVolume + outputVolume
 
                 tt.AddRow("产出：" + product.Item.Name, HumanReadableInteger product.Quantity, HumanReadableInteger outputVolume)
 
