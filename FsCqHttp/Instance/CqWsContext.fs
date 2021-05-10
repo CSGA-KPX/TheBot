@@ -27,10 +27,12 @@ type CqWsContextPool private () =
 
     member x.AddContext(context : CqWsContext) =
         pool.TryAdd(context.BotUserId, context) |> ignore
+        logger.Info(sprintf "已接受连接:%s" context.BotIdString)
+
+        ContextModuleLoader.CacheBuiltEvent.WaitOne()
+        |> ignore
 
         CqWsContextPool.ModuleLoader.RegisterModuleFor(context.BotUserId, context.ModulesInfo)
-
-        logger.Info(sprintf "已接受连接:%s" context.BotIdString)
 
     member x.RemoveContext(context : CqWsContext) =
         pool.TryRemove(context.BotUserId) |> ignore
@@ -144,17 +146,14 @@ type CqWsContext(ws : WebSocket) =
                 | :? CqMessageEventArgs as args when
                     (x.ModulesInfo.TryCommand(args).IsNone)
                     && x.ModulesInfo.MessageCallbacks.Count = 0 -> ()
-                | args ->
-                    TaskScheduler.enqueue(x.ModulesInfo, args)
+                | args -> TaskScheduler.enqueue (x.ModulesInfo, args)
 
             elif ctx.Event.ContainsKey("retcode") then //API调用结果
                 if KPX.FsCqHttp.Config.Logging.LogApiCall then
                     logger.Trace(sprintf "%s收到API调用结果： %O" x.BotIdString ctx)
 
                 x.HandleApiResponse(ctx.Event.ToObject<ApiResponse>())
-        with 
-        | e ->
-            logger.Warn(sprintf "%sWS处理消息异常：\r\n%A" x.BotIdString e)
+        with e -> logger.Warn(sprintf "%sWS处理消息异常：\r\n%A" x.BotIdString e)
 
     member private x.StartMessageLoop() =
         let rec readMessage

@@ -3,7 +3,7 @@
 open System
 open System.Collections.Generic
 
-open System.Reflection
+open System.Threading
 
 open KPX.FsCqHttp.Handler
 
@@ -12,32 +12,30 @@ open KPX.FsCqHttp.Handler
 type ContextModuleLoader() =
     static let logger = NLog.LogManager.GetCurrentClassLogger()
 
+    static let cacheBuiltEvent = new ManualResetEvent(false)
+
     static let moduleInstanceCache = ResizeArray<HandlerModuleBase>()
 
     static do
-        seq {
-            for asm in AppDomain.CurrentDomain.GetAssemblies() do
-                let name = asm.GetName().Name
+        for asm in AppDomain.CurrentDomain.GetAssemblies() do
+            let name = asm.GetName().Name
 
-                if not
-                   <| (name = "mscorlib"
-                       || name = "netstandard"
-                       || name.StartsWith("System.")
-                       || name.StartsWith("FSharp.")
-                       || name.StartsWith("Microsoft.")) then
-                    logger.Info("正在导入程序集：{0}", name)
-                    yield! asm.GetTypes()
-        }
-        |> Seq.filter
-            (fun t ->
-                t.IsSubclassOf(typeof<HandlerModuleBase>)
-                && (not <| t.IsAbstract))
-        |> Seq.iter
-            (fun t ->
-                let i =
-                    Activator.CreateInstance(t) :?> HandlerModuleBase
+            if not
+               <| (name = "mscorlib"
+                   || name = "netstandard"
+                   || name.StartsWith("System.")
+                   || name.StartsWith("FSharp.")
+                   || name.StartsWith("Microsoft.")) then
+                logger.Info("正在导入程序集：{0}", name)
 
-                moduleInstanceCache.Add(i))
+                for t in asm.GetTypes() do
+                    if t.IsSubclassOf(typeof<HandlerModuleBase>)
+                       && (not <| t.IsAbstract) then
+                        moduleInstanceCache.Add(Activator.CreateInstance(t) :?> HandlerModuleBase)
+
+        cacheBuiltEvent.Set() |> ignore
+
+    static member CacheBuiltEvent = cacheBuiltEvent
 
     member x.AllDefinedModules = moduleInstanceCache :> IReadOnlyList<_>
 

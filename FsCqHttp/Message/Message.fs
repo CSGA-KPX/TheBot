@@ -1,6 +1,7 @@
-namespace KPX.FsCqHttp.Message
+namespace rec KPX.FsCqHttp.Message
 
 open System
+open System.Collections.Generic
 
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
@@ -9,8 +10,10 @@ open KPX.FsCqHttp.Message.Sections
 
 
 [<JsonConverter(typeof<MessageConverter>)>]
-type Message(sec : MessageSection []) as x =
-    inherit ResizeArray<MessageSection>()
+type Message(items : seq<MessageSection>) =
+    let sections = ResizeArray<MessageSection>()
+
+    do sections.AddRange(items)
 
     static let cqStringReplace =
         [| "&", "&amp;"
@@ -18,17 +21,25 @@ type Message(sec : MessageSection []) as x =
            "]", "&#93;"
            ",", "&#44;" |]
 
-    do x.AddRange(sec)
+    new() = Message(Seq.empty)
 
-    new() = Message(Array.empty)
+    new(sec : MessageSection) = Message(Seq.singleton sec)
 
-    new(sec : MessageSection) = Message(Array.singleton sec)
+    member x.Count = sections.Count
+
+    member x.Add(sec : MessageSection) = sections.Add(sec)
 
     member x.Add(at : AtUserType) = x.Add(AtSection.Create(at))
 
     member x.Add(msg : string) = x.Add(TextSection.Create(msg))
 
     member x.Add(img : Drawing.Bitmap) = x.Add(ImageSection.Create(img))
+
+    member x.Clear() = sections.Clear()
+
+    member x.Contains(item) = sections.Contains(item)
+
+    member x.Remove(item) = sections.Remove(item)
 
     member x.GetSections<'T when 'T :> MessageSection>() =
         x
@@ -102,22 +113,44 @@ type Message(sec : MessageSection []) as x =
 
         let segs =
             [| for seg in str.Split('[', ']') do
-                if seg.StartsWith("CQ") then
-                    let segv = seg.Split(',')
-                    let name = segv.[0].Split(':').[1]
+                   if seg.StartsWith("CQ") then
+                       let segv = seg.Split(',')
+                       let name = segv.[0].Split(':').[1]
 
-                    let args =
-                        [| for arg in segv.[1..] do
-                            let argv = arg.Split('=')
-                            yield argv.[0], decode (argv.[1]) |]
+                       let args =
+                           [| for arg in segv.[1..] do
+                                  let argv = arg.Split('=')
+                                  yield argv.[0], decode (argv.[1]) |]
 
-                    yield MessageSection.CreateFrom(name, args)
-                else
-                    yield TextSection.Create(decode (seg)) |]
+                       yield MessageSection.CreateFrom(name, args)
+                   else
+                       yield TextSection.Create(decode (seg)) |]
 
         new Message(segs)
 
-and MessageConverter() =
+    interface ICollection<MessageSection> with
+        member x.Count = sections.Count
+
+        member x.IsReadOnly = (sections :> ICollection<_>).IsReadOnly
+
+        member x.Add(item) = sections.Add(item)
+
+        member x.Clear() = sections.Clear()
+
+        member x.Contains(item) = sections.Contains(item)
+
+        member x.CopyTo(array, index) = sections.CopyTo(array, index)
+
+        member x.GetEnumerator() =
+            (sections :> IEnumerable<_>).GetEnumerator()
+
+        member x.GetEnumerator() =
+            (sections :> Collections.IEnumerable)
+                .GetEnumerator()
+
+        member x.Remove(item) = sections.Remove(item)
+
+type MessageConverter() =
     inherit JsonConverter<Message>()
 
     override x.WriteJson(w : JsonWriter, r : Message, _ : JsonSerializer) =
