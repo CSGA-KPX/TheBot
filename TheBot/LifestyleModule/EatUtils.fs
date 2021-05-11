@@ -217,7 +217,6 @@ let eatFuncs : Collections.Generic.IReadOnlyDictionary<string, Dicer -> IO.TextW
        "午餐", mealsFunc "午餐" dinner
        "#零食", mealsFunc "零食" snacks
        "#饮料", mealsFunc "饮料" drinks
-       "#买菜", mealsFunc "买菜" grocery
 
        "火锅", hotpotFunc
        "萨莉亚", saizeriyaFunc |]

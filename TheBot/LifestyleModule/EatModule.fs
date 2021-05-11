@@ -19,7 +19,6 @@ type EatModule() =
                                     "#eat 食物名称或预设名单
 预设名单：早 中 晚 加 火锅 萨莉亚
 可以@一个群友帮他选。")>]
-    [<CommandHandlerMethodAttribute("#买菜", "投掷买什么菜，可以@一个群友帮他选", "")>]
     //[<CommandHandlerMethodAttribute("零食", "", "")>]
     [<CommandHandlerMethodAttribute("#饮料", "投掷喝什么饮料，可以@一个群友帮他选", "")>]
     member x.HandleEat(cmdArg : CommandEventArgs) =
