@@ -42,24 +42,7 @@ type ContextModuleLoader() =
     member x.RegisterModuleFor(botUserId : uint64, mi : ContextModuleInfo) =
         for m in x.GetModulesFor(botUserId) do
             logger.Debug("为{0}加载模块{1}", botUserId, m.GetType().FullName)
-            mi.AllModules.Add(m)
-
-            if m.OnMeta.IsSome then mi.MetaCallbacks.Add(m.OnMeta.Value)
-
-            if m.OnNotice.IsSome then
-                mi.NoticeCallbacks.Add(m.OnNotice.Value)
-
-            if m.OnRequest.IsSome then
-                mi.RequestCallbacks.Add(m.OnRequest.Value)
-
-            if m.OnMessage.IsSome then
-                mi.MessageCallbacks.Add(m.OnMessage.Value)
-
-            if m :? CommandHandlerBase then
-                let cmdBase = m :?> CommandHandlerBase
-
-                for cmd in cmdBase.Commands do
-                    mi.Commands.Add(cmd.CommandAttribute.Command, cmd)
+            mi.RegisterModule(m)
 
     abstract GetModulesFor : botUserId : uint64 -> seq<HandlerModuleBase>
 

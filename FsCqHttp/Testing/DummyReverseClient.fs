@@ -1,4 +1,4 @@
-﻿namespace KPX.FsCqHttp.Instance
+﻿namespace KPX.FsCqHttp.Testing
 
 open System
 open System.Threading

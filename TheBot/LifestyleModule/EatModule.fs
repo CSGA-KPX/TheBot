@@ -6,6 +6,8 @@ open KPX.FsCqHttp.Message
 open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Utils.TextResponse
 
+open KPX.FsCqHttp.Testing
+
 open KPX.TheBot.Module.LifestyleModule.EatUtils
 
 open KPX.TheBot.Utils.Dicer
@@ -66,3 +68,13 @@ type EatModule() =
             let func = eatFuncs.[key]
             func dicer ret
         | _ -> scoreByMeals dicer cmdArg.Arguments ret
+
+    [<TestFixture>]
+    member x.TestEat() = 
+        let tc = TestContext(x)
+        tc.ShouldThrow("#eat")
+        tc.ShouldNotThrow("#eat AAA")
+        tc.ShouldNotThrow("#eat 早")
+        tc.ShouldNotThrow("#eat 中")
+        tc.ShouldNotThrow("#eat 晚")
+        tc.ShouldNotThrow("#饮料")

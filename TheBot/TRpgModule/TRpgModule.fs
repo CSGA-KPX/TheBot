@@ -7,11 +7,11 @@ open KPX.FsCqHttp.Event
 open KPX.FsCqHttp.Handler
 
 open KPX.FsCqHttp.Api.Private
+open KPX.FsCqHttp.Testing
 
 open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.TextTable
 
-open KPX.TheBot.Utils.Config
 open KPX.TheBot.Utils.Dicer
 
 open KPX.TheBot.Module.DiceModule.Utils.DiceExpression
@@ -60,6 +60,12 @@ type TRpgModule() =
             tt.AddPostTable(sprintf "今日推荐职业：%s" job)
 
         using (cmdArg.OpenResponse()) (fun ret -> ret.Write(tt))
+
+    [<TestFixture>]
+    member x.TestCoc7() = 
+        let tc = TestContext(x)
+        tc.ShouldNotThrow(".coc7")
+        tc.ShouldNotThrow("#coc7")
 
     [<CommandHandlerMethodAttribute(".sc",
                                     "理智检定 .sc 成功/失败 [当前san]",
@@ -116,6 +122,14 @@ type TRpgModule() =
         else
             ret.WriteLine("San值减少{0}点，当前剩余{1}点。", lose, finalSan)
 
+    [<TestFixture>]
+    member x.TestSc() = 
+        let tc = TestContext(x)
+        tc.ShouldNotThrow(".sc 100/100")
+        tc.ShouldNotThrow(".sc 100/100 50")
+        tc.ShouldNotThrow(".sc 1D10/1D100")
+        tc.ShouldNotThrow(".sc 1D10/1D100 50")
+
     [<CommandHandlerMethodAttribute(".en", "技能/属性成长检定 .en 技能 成功率", "")>]
     member x.HandleEn(cmdArg : CommandEventArgs) =
         let current = ref 0
@@ -147,6 +161,12 @@ type TRpgModule() =
             else
                 ret.WriteLine("{0} 对 {1} 的增强或成长鉴定： {{1D100 = {2}}} -> 失败", usrName, attr, roll0)
         | _ -> cmdArg.AbortExecution(InputError, "参数错误：.ra/.rc 属性/技能名 属性/技能值")
+
+    [<TestFixture>]
+    member x.TestEn() = 
+        let tc = TestContext(x)
+        tc.ShouldNotThrow(".en 测试 0")
+        tc.ShouldNotThrow(".en 测试 100")
 
     [<CommandHandlerMethodAttribute(".ra", "检定（房规）", "")>]
     [<CommandHandlerMethodAttribute(".rc", "检定（规则书）", "")>]
@@ -229,6 +249,20 @@ type TRpgModule() =
             else
                 cmdArg.QuickMessageReply(msg)
 
+    [<TestFixture>]
+    member x.TestR() = 
+        let tc = TestContext(x)
+        tc.ShouldNotThrow(".r")
+        tc.ShouldNotThrow(".r 测试")
+        tc.ShouldNotThrow(".rd")
+        tc.ShouldNotThrow(".rd 测试")
+        tc.ShouldNotThrow(".ra 测试 50")
+        tc.ShouldNotThrow(".rc 测试 50")
+        // 测试表达式
+        tc.ShouldNotThrow(".r 1D100 测试")
+        tc.ShouldNotThrow(".r 1D(100+100) 测试")
+        tc.ShouldNotThrow(".r 50*50 测试")
+
     [<CommandHandlerMethodAttribute(".crule", "查询/设置当前房规区间（不稳定）", "", Disabled = true)>]
     member x.HandleRollRule(cmdArg : CommandEventArgs) =
         if cmdArg.MessageEvent.IsPrivate then
@@ -290,6 +324,10 @@ type TRpgModule() =
         let tmpl =
             StringData.GetString(opt.NameLanguageKey)
 
+        if opt.NonOptionStrings.Count <> 0 then
+            let str = opt.GetNonOptionString()
+            cmdArg.AbortExecution(InputError, "意外参数'{0}'", str)
+
         let names =
             Seq.initInfinite (fun _ -> TrpgStringTemplate(de).ParseTemplate(tmpl))
             |> Seq.distinct
@@ -297,6 +335,26 @@ type TRpgModule() =
 
         let ret = String.Join(" ", names)
         cmdArg.QuickMessageReply(ret)
+
+    [<TestFixture>]
+    member x.TestGenerator() = 
+        let tc = TestContext(x)
+        tc.ShouldNotThrow(".li")
+        tc.ShouldNotThrow(".ti")
+        tc.ShouldNotThrow(".bg")
+        tc.ShouldNotThrow(".name 英")
+        tc.ShouldNotThrow(".name 英汉")
+        tc.ShouldNotThrow(".name 中")
+        tc.ShouldNotThrow(".name 日")
+        tc.ShouldNotThrow(".name en")
+        tc.ShouldNotThrow(".name eng")
+        tc.ShouldNotThrow(".name zh")
+        tc.ShouldNotThrow(".name chs")
+        tc.ShouldNotThrow(".name jp")
+        tc.ShouldNotThrow(".name jpn")
+        tc.ShouldNotThrow(".name enzh")
+        tc.ShouldThrow(".name AAA")
+        tc.ShouldThrow(".name BBB")
 
 (*
     [<CommandHandlerMethodAttribute("st", "设置人物卡", "", AltCommandStart = ".", IsHidden = true)>]

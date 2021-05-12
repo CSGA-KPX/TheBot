@@ -1,8 +1,10 @@
 ﻿namespace KPX.FsCqHttp.Handler
 
-open KPX.FsCqHttp.Event
 open KPX.FsCqHttp.Handler
 
+
+type TestFixtureAttribute() =
+    inherit System.Attribute()
 
 [<AbstractClass>]
 type HandlerModuleBase() as x =

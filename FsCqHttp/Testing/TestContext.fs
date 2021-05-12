@@ -1,4 +1,4 @@
-﻿namespace rec KPX.FsCqHttp.Instance.Testing
+﻿namespace rec KPX.FsCqHttp.Testing
 
 open System
 open System.Collections.Generic
@@ -36,24 +36,25 @@ module private Strings =
    "user_id":0
 }"""
 
-type TestContext() as x =
+exception AssertFailedException of string
+
+type TestContext(m : HandlerModuleBase, ?parentApi : IApiCallProvider) as x =
 
     let botUserId = 10000UL
     let botUserName = "TestContext"
 
     let apiResponse = Dictionary<string, obj>()
 
-    let responseQueue = Queue<string>()
+    let mutable response = None
 
-    let modules = ContextModuleInfo()
+    let mi = ContextModuleInfo()
 
     do
         // 用来混淆类型推导机制
         x.AddApiResponse("no_such_command", obj ())
         x.AddApiResponse("can_send_image", {| yes = true |})
 
-        // 加载所有可发现的模块
-        DefaultContextModuleLoader().RegisterModuleFor(botUserId, modules)
+        mi.RegisterModule(m)
 
     member x.AddApiResponse<'T when 'T :> CqHttpApiBase>(obj : obj) =
         let api =
@@ -71,7 +72,7 @@ type TestContext() as x =
     member x.InvokeCommand(msg : Message) =
         let msgEvent = x.MakeEvent(msg)
 
-        let cmd = modules.TryCommand(msgEvent)
+        let cmd = mi.TryCommand(msgEvent)
         if cmd.IsNone then invalidArg "cmdLine/msg" "指定模块不含指定指令"
 
         let method = cmd.Value.MethodAction
@@ -80,9 +81,39 @@ type TestContext() as x =
 
         method.Invoke(cmdEvent)
 
-        responseQueue.Dequeue()
+        response
 
-    member x.MakeEvent(msg : Message) =
+    member x.ShouldThrow(cmdLine : string) =
+        let ret =
+            try
+                x.InvokeCommand(cmdLine) |> ignore
+                false
+            with _ -> true
+
+        if not ret then raise <| AssertFailedException "失败：预期捕获异常"
+
+    member x.ShouldNotThrow(cmdLine : string) =
+        try
+            x.InvokeCommand(cmdLine) |> ignore
+        with _ -> reraise ()
+
+    member x.ShouldReturn(cmdLine : string) =
+        let ret =
+            try
+                x.InvokeCommand(cmdLine)
+            with _ -> reraise ()
+
+        ret.IsSome
+
+    member x.ReturnContains (cmdLine : string) (value : string) =
+        let ret : string option =
+            try
+                x.InvokeCommand(cmdLine)
+            with _ -> reraise ()
+
+        ret.Value.Contains(value)
+
+    member private x.MakeEvent(msg : Message) =
         let raw = JObject.Parse(Strings.msgEvent)
 
         // 更新Bot信息
@@ -120,10 +151,10 @@ type TestContext() as x =
             match req :> ApiBase with
             | :? System.QuickOperation as q ->
                 match q.Reply with
-                | EventResponse.PrivateMessageResponse msg ->
-                    msg.ToString() |> responseQueue.Enqueue
+                | EventResponse.PrivateMessageResponse msg -> response <- Some <| msg.ToString()
+                | _ -> invalidOp "不能处理私聊以外回复"
+                req.IsExecuted <- true
 
-                | _ -> invalidOp "咱不能处理私聊以外回复"
             | :? CqHttpApiBase as cqhttp ->
                 if apiResponse.ContainsKey(cqhttp.ActionName) then
                     let ret =
@@ -139,12 +170,17 @@ type TestContext() as x =
                           ApiResponse.Data = ret }
 
                     cqhttp.HandleResponse(apiResp)
+                    req.IsExecuted <- true
                 else
-                    invalidOp (sprintf "尚未实现API %s" cqhttp.ActionName)
-            | _ -> invalidOp (sprintf "尚未实现API %O" (req.GetType().FullName))
-
-            req.IsExecuted <- true
-
+                    if parentApi.IsSome then
+                        parentApi.Value.CallApi(req) |> ignore
+                    else
+                        invalidOp (sprintf "尚未实现API %s" cqhttp.ActionName)
+            | _ ->
+                if parentApi.IsSome then
+                    parentApi.Value.CallApi(req) |> ignore
+                else
+                    invalidOp (sprintf "尚未实现API %O" (req.GetType().FullName))
             req
 
         member x.CallApi<'T when 'T :> ApiBase and 'T : (new : unit -> 'T)>() =
