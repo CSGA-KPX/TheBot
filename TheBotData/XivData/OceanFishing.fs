@@ -20,7 +20,7 @@ let private RouteDefine =
            let routeName = row.Name.AsString()
 
            let timeStr =
-               match row.TimeDefine.AsInt() with
+               match row.Time.AsInts().[0] with
                | 0 -> "占位" // 0是第一行，为了保证.[rid]操作，保留这一行了
                | 1 -> "黄昏"
                | 2 -> "黑夜"

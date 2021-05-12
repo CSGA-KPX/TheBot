@@ -23,9 +23,6 @@ module private Data =
     let drinks =
         mgr.GetWordsWithouComment("饮料") |> Array.distinct
 
-    let grocery =
-        mgr.GetWordsWithouComment("买菜") |> Array.distinct
-
     let dinnerTypes = [| "早餐"; "午餐"; "晚餐"; "加餐" |]
 
     let saizeriya =
