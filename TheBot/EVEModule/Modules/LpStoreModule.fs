@@ -3,6 +3,7 @@
 open System
 
 open KPX.FsCqHttp.Handler
+open KPX.FsCqHttp.Testing
 open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.TextTable
 open KPX.FsCqHttp.Utils.UserOption
@@ -246,3 +247,10 @@ type EveLpStoreModule() =
         | 0 -> cmdArg.AbortExecution(InputError, "请输入目标军团名称")
         | 1 -> x.ShowOverview(cmdArg, cfg)
         | _ -> x.ShowSingleItem(cmdArg, cfg)
+
+    [<TestFixture>]
+    member x.TestLP() = 
+        let tc = TestContext(x)
+        tc.ShouldNotThrow("#evelp 姐妹会 val:5 val:3000 count:999")
+        tc.ShouldNotThrow("#evelp 姐妹会 val:5 val:3000 count:999 buy:")
+        tc.ShouldNotThrow("#evelp 姐妹会 姐妹会延伸探针发射器")

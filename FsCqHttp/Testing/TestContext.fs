@@ -175,12 +175,12 @@ type TestContext(m : HandlerModuleBase, ?parentApi : IApiCallProvider) as x =
                     if parentApi.IsSome then
                         parentApi.Value.CallApi(req) |> ignore
                     else
-                        invalidOp (sprintf "尚未实现API %s" cqhttp.ActionName)
+                        invalidOp (sprintf "TestContext 尚未实现API %s" cqhttp.ActionName)
             | _ ->
                 if parentApi.IsSome then
                     parentApi.Value.CallApi(req) |> ignore
                 else
-                    invalidOp (sprintf "尚未实现API %O" (req.GetType().FullName))
+                    invalidOp (sprintf "TestContext 尚未实现API %O" (req.GetType().FullName))
             req
 
         member x.CallApi<'T when 'T :> ApiBase and 'T : (new : unit -> 'T)>() =

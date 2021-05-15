@@ -5,6 +5,8 @@ open System.Reflection
 
 open KPX.FsCqHttp
 open KPX.FsCqHttp.Handler
+open KPX.FsCqHttp.Api.Context
+
 open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.TextTable
 open KPX.FsCqHttp.Utils.UserOption
@@ -103,3 +105,28 @@ type DebugModule() =
                 ret.WriteLine(log)
 
             logs.Clear()
+
+    [<CommandHandlerMethodAttribute("##cmdtest", "（超管）单元测试", "")>]
+    member x.HandleCommandTest(cmdArg : CommandEventArgs) =
+        cmdArg.EnsureSenderOwner()
+        
+        // 备份测试前的日志信息
+        let logs = nlogMemoryTarget.Logs |> Seq.toArray
+
+        try
+            let mi =
+                cmdArg.ApiCaller.CallApi<GetCtxModuleInfo>()
+
+            mi.ModuleInfo.TestCallbacks
+            |> Seq.toArray
+            |> Array.iter (fun test -> test.Invoke())
+
+            cmdArg.QuickMessageReply("成功完成")
+        with e -> 
+            using (cmdArg.OpenResponse(PreferImage)) (fun ret -> ret.Write(sprintf "%O" e))
+
+        nlogMemoryTarget.Logs.Clear()
+
+        // 还原日志
+        for log in logs do
+            nlogMemoryTarget.Logs.Add(log)

@@ -3,6 +3,7 @@
 open System
 
 open KPX.FsCqHttp.Handler
+open KPX.FsCqHttp.Testing
 open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.TextTable
 
@@ -51,6 +52,15 @@ type EveMarketModule() =
         let cfg = EveConfigParser()
         cfg.Parse(cmdArg.Arguments)
         using (cmdArg.OpenResponse(cfg.ResponseType)) (fun x -> x.Write(att))
+
+    [<TestFixture>]
+    member x.TestEveMarket() = 
+        let tc = TestContext(x)
+        tc.ShouldNotThrow("#eve矿物")
+        tc.ShouldNotThrow("#em 三钛合金")
+        
+        tc.ShouldThrow("#em 三铜合金")
+        tc.ShouldThrow("#em 三铁合金")
 
     [<CommandHandlerMethodAttribute("#EVE采矿", "EVE挖矿利润，仅供参考", "")>]
     [<CommandHandlerMethodAttribute("#EVE挖矿", "EVE挖矿利润，仅供参考", "")>]
@@ -127,3 +137,9 @@ type EveMarketModule() =
 
         use ret = cmdArg.OpenResponse(ForceImage)
         ret.Write(tt)
+
+    [<TestFixture>]
+    member x.TestOreMining() = 
+        let tc = TestContext(x)
+        tc.ShouldNotThrow("#eve采矿")
+        tc.ShouldNotThrow("#eve挖矿")

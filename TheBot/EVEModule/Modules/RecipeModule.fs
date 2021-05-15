@@ -1,6 +1,7 @@
 ﻿namespace KPX.TheBot.Module.EveModule
 
 open KPX.FsCqHttp.Handler
+open KPX.FsCqHttp.Testing
 open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.TextTable
 open KPX.FsCqHttp.Utils.UserOption
@@ -65,6 +66,15 @@ type EveRecipeModule() =
             tt.AddRow(me, HumanReadableInteger save)
 
         using (cmdArg.OpenResponse(cfg.ResponseType)) (fun x -> x.Write(tt))
+
+    [<TestFixture>]
+    member x.TestME() = 
+        let tc = TestContext(x)
+        tc.ShouldNotThrow("#eme 恶狼级蓝图")
+        tc.ShouldNotThrow("#eme 恶狼级")
+        tc.ShouldThrow("#eme")
+        tc.ShouldThrow("#eme 军用馒头蓝图")
+        tc.ShouldThrow("#eme 军用馒头")
 
     [<CommandHandlerMethodAttribute("#er",
                                     "EVE蓝图材料计算",
@@ -138,6 +148,17 @@ type EveRecipeModule() =
 
         using (cmdArg.OpenResponse(cfg.ResponseType)) (fun x -> x.Write(tt))
 
+    [<TestFixture>]
+    member x.TestER() = 
+        let tc = TestContext(x)
+        tc.ShouldThrow("#er")
+        tc.ShouldThrow("#er 5*5")
+        tc.ShouldThrow("#er 军用馒头 ime:10")
+        tc.ShouldThrow("#er 军用馒头蓝图")
+
+        tc.ShouldNotThrow("#er 恶狼级")
+        tc.ShouldNotThrow("#er 恶狼级蓝图 ime:10")
+
     [<CommandHandlerMethodAttribute("#err",
                                     "EVE蓝图基础材料计算",
                                     "可以使用表达式，多个物品需用+连接。可选参数见#evehelp。如：
@@ -192,6 +213,17 @@ type EveRecipeModule() =
         tt.AddRow("材料体积", RightAlignCell "--", HumanReadableInteger totalInputVolume)
 
         using (cmdArg.OpenResponse(cfg.ResponseType)) (fun x -> x.Write(tt))
+
+    [<TestFixture>]
+    member x.TestERR() = 
+        let tc = TestContext(x)
+        tc.ShouldThrow("#err")
+        tc.ShouldThrow("#err 5*5")
+        tc.ShouldThrow("#err 军用馒头 ime:10")
+        tc.ShouldThrow("#err 军用馒头蓝图")
+
+        tc.ShouldNotThrow("#err 恶狼级")
+        tc.ShouldNotThrow("#err 恶狼级蓝图 ime:10")
 
     [<CommandHandlerMethodAttribute("#errc",
                                     "EVE蓝图成本计算",
@@ -345,6 +377,17 @@ type EveRecipeModule() =
 
             using (cmdArg.OpenResponse(cfg.ResponseType)) (fun ret -> ret.Write(tt))
 
+    [<TestFixture>]
+    member x.TestERRC() = 
+        let tc = TestContext(x)
+        tc.ShouldThrow("#errc")
+        tc.ShouldThrow("#errc 5*5")
+        tc.ShouldThrow("#errc 军用馒头 ime:10")
+        tc.ShouldThrow("#errc 军用馒头蓝图")
+        
+        tc.ShouldNotThrow("#errc 恶狼级")
+        tc.ShouldNotThrow("#errc 恶狼级蓝图 ime:10")
+
     [<CommandHandlerMethodAttribute("#EVE舰船II", "T2舰船制造总览", "可选参数见#evehelp。")>]
     [<CommandHandlerMethodAttribute("#EVE舰船", "T1舰船制造总览", "可选参数见#evehelp。")>]
     [<CommandHandlerMethodAttribute("#EVE组件", "T2和旗舰组件制造总览", "可选参数见#evehelp。")>]
@@ -491,3 +534,10 @@ type EveRecipeModule() =
 
                     ret.Write(tt)
                     ret.WriteEmptyLine())
+    
+    [<TestFixture>]
+    member x.TestManufacturingOverview() = 
+        let tc = TestContext(x)
+        tc.ShouldNotThrow("#EVE燃料块")
+        tc.ShouldNotThrow("#EVE装备Ii by:group 气云")
+        tc.ShouldNotThrow("#EVE装备Ii 气云")

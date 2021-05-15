@@ -1,6 +1,7 @@
 ﻿namespace KPX.TheBot.Module.EveModule
 
 open KPX.FsCqHttp.Handler
+open KPX.FsCqHttp.Testing
 open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.TextTable
 
@@ -28,6 +29,11 @@ type EveMiscModule() =
         tt.AddRow("text", "设置后使用文本输出（部分指令不支持）", cfg.IsDefined("text"))
 
         using (cmdArg.OpenResponse(ForceImage)) (fun ret -> ret.Write(tt))
+
+    [<TestFixture>]
+    member x.TestEveHelp() = 
+        let tc = TestContext(x)
+        tc.ShouldNotThrow("#evehelp")
 
     [<CommandHandlerMethodAttribute("#evesci", "EVE星系成本指数查询", "")>]
     member x.HandleSci(cmdArg : CommandEventArgs) =
@@ -67,3 +73,8 @@ type EveMiscModule() =
                     )
 
         using (cmdArg.OpenResponse(cfg.ResponseType)) (fun ret -> ret.Write(tt))
+
+    [<TestFixture>]
+    member x.TestSystemCostIndex() = 
+        let tc = TestContext(x)
+        tc.ShouldNotThrow("#evesci 吉他 皮尔米特")
