@@ -12,29 +12,73 @@ open KPX.FsCqHttp.Handler
 
 open Newtonsoft.Json.Linq
 
+[<AbstractClass>]
+type CqWsContextBase() =
+    /// 发生链接错误时重启服务器的函数
+    ///
+    /// 值为None时，不再尝试重连
+    abstract RestartContext : (unit -> CqWsContext) option with get, set
+
+    /// 使用API检查是否在线
+    abstract IsOnline : bool
+
+    /// 获取Context内已经定义的模块信息
+    member val Modules = ContextModuleInfo()
+
+    /// 返回已经定义的指令，结果无序
+    member x.Commands =
+        x.Modules.Commands.Values |> Seq.cast<CommandInfo>
+
+    /// 获取登录号昵称
+    abstract BotNickname : string
+
+    /// 获取登录号信息
+    abstract BotUserId : uint64
+
+    /// 获取登录号标识符
+    abstract BotIdString : string
+
+    /// 启用消息循环
+    abstract Start : unit -> unit
+
+    abstract Stop : unit -> unit
+
+    abstract CallApi<'T when 'T :> ApiBase> : 'T -> 'T
+
+    interface IApiCallProvider with
+        member x.CallerUserId = x.BotUserId
+        member x.CallerId = x.BotIdString
+        member x.CallerName = x.BotNickname
+
+        member x.CallApi<'T when 'T :> ApiBase>(req : 'T) = x.CallApi(req)
+
+        /// 调用一个不需要额外设定的api
+        member x.CallApi<'T when 'T :> ApiBase and 'T : (new : unit -> 'T)>() =
+            let req = Activator.CreateInstance<'T>()
+            (x :> IApiCallProvider).CallApi(req)
 
 [<AbstractClass>]
 type WsContextApiBase() =
     inherit ApiBase()
 
-    abstract Invoke : CqWsContext -> unit
+    abstract Invoke : CqWsContextBase -> unit
 
 type CqWsContextPool private () =
     let logger = NLog.LogManager.GetCurrentClassLogger()
 
     let pool =
-        ConcurrentDictionary<uint64, CqWsContext>()
+        ConcurrentDictionary<uint64, CqWsContextBase>()
 
-    member x.AddContext(context : CqWsContext) =
+    member x.AddContext(context : CqWsContextBase) =
         pool.TryAdd(context.BotUserId, context) |> ignore
         logger.Info(sprintf "已接受连接:%s" context.BotIdString)
 
         ContextModuleLoader.CacheBuiltEvent.WaitOne()
         |> ignore
 
-        CqWsContextPool.ModuleLoader.RegisterModuleFor(context.BotUserId, context.ModulesInfo)
+        CqWsContextPool.ModuleLoader.RegisterModuleFor(context.BotUserId, context.Modules)
 
-    member x.RemoveContext(context : CqWsContext) =
+    member x.RemoveContext(context : CqWsContextBase) =
         pool.TryRemove(context.BotUserId) |> ignore
         logger.Info(sprintf "已移除连接:%s" context.BotIdString)
 
@@ -42,7 +86,7 @@ type CqWsContextPool private () =
         member x.GetEnumerator() =
             pool.Values.GetEnumerator() :> Collections.IEnumerator
 
-    interface Collections.Generic.IEnumerable<CqWsContext> with
+    interface Collections.Generic.IEnumerable<CqWsContextBase> with
         member x.GetEnumerator() = pool.Values.GetEnumerator()
 
     static member val Instance = CqWsContextPool()
@@ -52,6 +96,8 @@ type CqWsContextPool private () =
         DefaultContextModuleLoader() :> ContextModuleLoader with get, set
 
 type CqWsContext(ws : WebSocket) =
+    inherit CqWsContextBase()
+
     let cts = new CancellationTokenSource()
     let utf8 = Text.Encoding.UTF8
     let logger = NLog.LogManager.GetCurrentClassLogger()
@@ -63,45 +109,19 @@ type CqWsContext(ws : WebSocket) =
 
     let self = GetLoginInfo()
 
-    /// 返回已经定义的指令，结果无序。
-    member x.Commands =
-        x.ModulesInfo.Commands.Values
-        |> Seq.cast<CommandInfo>
+    override val RestartContext : (unit -> CqWsContext) option = None with get, set
 
-    /// 发生链接错误时重启服务器的函数
-    ///
-    /// 值为None时，不再尝试重连
-    member val RestartContext : (unit -> CqWsContext) option = None with get, set
+    override x.BotNickname = self.Nickname
 
-    /// 获取登录号昵称
-    member x.BotNickname = self.Nickname
+    override x.BotUserId = self.UserId
 
-    /// 获取登录号信息
-    member x.BotUserId = self.UserId
-
-    /// 获取登录号标识符
-    member x.BotIdString =
+    override x.BotIdString =
         if self.IsExecuted then
             sprintf "[%i:%s]" self.UserId self.Nickname
         else
             "[--:--]"
 
-    member val ModulesInfo = ContextModuleInfo()
-
-    /// 使用API检查是否在线
-    member x.CheckOnline() =
-        if ws.State <> WebSocketState.Open then
-            false
-        else
-            try
-                let ret =
-                    (x :> IApiCallProvider).CallApi<GetStatus>()
-
-                ret.Online && ret.Good
-            with _ -> false
-
-    /// 启用消息循环
-    member x.Start() =
+    override x.Start() =
         if cts.IsCancellationRequested then
             logger.Fatal("无法启动消息循环：已调用Stop或WS异常终止")
             invalidOp "CancellationRequested"
@@ -117,9 +137,63 @@ type CqWsContext(ws : WebSocket) =
 
         (x :> IApiCallProvider).CallApi(self) |> ignore
 
-    member x.Stop() =
+    override x.Stop() =
         cts.Cancel()
         ws.Abort()
+
+    override x.IsOnline =
+        if ws.State <> WebSocketState.Open then
+            false
+        else
+            try
+                let ret =
+                    (x :> IApiCallProvider).CallApi<GetStatus>()
+
+                ret.Online && ret.Good
+            with _ -> false
+
+    override x.CallApi(req) =
+        started.WaitOne() |> ignore
+
+        match req :> ApiBase with
+        | :? WsContextApiBase as ctxApi ->
+            ctxApi.Invoke(x)
+            ctxApi.IsExecuted <- true
+        | :? CqHttpApiBase as httpApi ->
+            async {
+                let echo = Guid.NewGuid().ToString()
+                let mre = new ManualResetEvent(false)
+                let json = httpApi.GetRequestJson(echo)
+
+                apiPending.TryAdd(echo, (mre, httpApi)) |> ignore
+
+                if KPX.FsCqHttp.Config.Logging.LogApiCall then
+                    logger.Trace(sprintf "%s请求API：%s" x.BotIdString httpApi.ActionName)
+
+                    if KPX.FsCqHttp.Config.Logging.LogApiJson then
+                        logger.Trace(sprintf "%s请求API：%s" x.BotIdString json)
+
+                let data = json |> utf8.GetBytes
+
+                do!
+                    ws.SendAsync(
+                        ArraySegment<byte>(data),
+                        WebSocketMessageType.Text,
+                        true,
+                        cts.Token
+                    )
+                    |> Async.AwaitTask
+
+                let! _ = Async.AwaitWaitHandle(mre :> WaitHandle)
+
+                apiPending.TryRemove(echo) |> ignore
+
+                httpApi.IsExecuted <- true
+            }
+            |> Async.RunSynchronously
+        | _ -> invalidArg (nameof req) "未知API类型"
+
+        req
 
     member private x.HandleApiResponse(ret : ApiResponse) =
         let hasPending, item = apiPending.TryGetValue(ret.Echo)
@@ -140,13 +214,13 @@ type CqWsContext(ws : WebSocket) =
                     logger.Trace(sprintf "%s收到上报：%O" x.BotIdString ctx)
 
                 match CqEventArgs.Parse(x, ctx) with
-                | :? CqMetaEventArgs when x.ModulesInfo.MetaCallbacks.Count = 0 -> ()
-                | :? CqNoticeEventArgs when x.ModulesInfo.NoticeCallbacks.Count = 0 -> ()
-                | :? CqRequestEventArgs when x.ModulesInfo.RequestCallbacks.Count = 0 -> ()
+                | :? CqMetaEventArgs when x.Modules.MetaCallbacks.Count = 0 -> ()
+                | :? CqNoticeEventArgs when x.Modules.NoticeCallbacks.Count = 0 -> ()
+                | :? CqRequestEventArgs when x.Modules.RequestCallbacks.Count = 0 -> ()
                 | :? CqMessageEventArgs as args when
-                    (x.ModulesInfo.TryCommand(args).IsNone)
-                    && x.ModulesInfo.MessageCallbacks.Count = 0 -> ()
-                | args -> TaskScheduler.enqueue (x.ModulesInfo, args)
+                    (x.Modules.TryCommand(args).IsNone)
+                    && x.Modules.MessageCallbacks.Count = 0 -> ()
+                | args -> TaskScheduler.enqueue (x.Modules, args)
 
             elif ctx.Event.ContainsKey("retcode") then //API调用结果
                 if KPX.FsCqHttp.Config.Logging.LogApiCall then
@@ -199,61 +273,6 @@ type CqWsContext(ws : WebSocket) =
                     CqWsContextPool.Instance.RemoveContext(x.RestartContext.Value())
         }
         |> Async.Start
-
-    interface IApiCallProvider with
-
-        member x.CallerUserId = x.BotUserId
-
-        member x.CallerId = x.BotIdString
-
-        member x.CallerName = x.BotNickname
-
-        member x.CallApi(req) =
-            started.WaitOne() |> ignore
-
-            match req :> ApiBase with
-            | :? WsContextApiBase as ctxApi ->
-                ctxApi.Invoke(x)
-                ctxApi.IsExecuted <- true
-            | :? CqHttpApiBase as httpApi ->
-                async {
-                    let echo = Guid.NewGuid().ToString()
-                    let mre = new ManualResetEvent(false)
-                    let json = httpApi.GetRequestJson(echo)
-
-                    apiPending.TryAdd(echo, (mre, httpApi)) |> ignore
-
-                    if KPX.FsCqHttp.Config.Logging.LogApiCall then
-                        logger.Trace(sprintf "%s请求API：%s" x.BotIdString httpApi.ActionName)
-
-                        if KPX.FsCqHttp.Config.Logging.LogApiJson then
-                            logger.Trace(sprintf "%s请求API：%s" x.BotIdString json)
-
-                    let data = json |> utf8.GetBytes
-
-                    do!
-                        ws.SendAsync(
-                            ArraySegment<byte>(data),
-                            WebSocketMessageType.Text,
-                            true,
-                            cts.Token
-                        )
-                        |> Async.AwaitTask
-
-                    let! _ = Async.AwaitWaitHandle(mre :> WaitHandle)
-
-                    apiPending.TryRemove(echo) |> ignore
-
-                    httpApi.IsExecuted <- true
-                }
-                |> Async.RunSynchronously
-            | _ -> invalidArg (nameof req) "未知API类型"
-
-            req
-
-        member x.CallApi<'T when 'T :> ApiBase and 'T : (new : unit -> 'T)>() =
-            let req = Activator.CreateInstance<'T>()
-            (x :> IApiCallProvider).CallApi(req)
 
     interface IDisposable with
         member x.Dispose() = x.Stop()

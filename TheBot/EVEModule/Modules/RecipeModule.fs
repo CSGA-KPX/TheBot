@@ -539,5 +539,7 @@ type EveRecipeModule() =
     member x.TestManufacturingOverview() = 
         let tc = TestContext(x)
         tc.ShouldNotThrow("#EVE燃料块")
+        tc.ShouldNotThrow("#EVE燃料块 ime:10")
+        tc.ShouldNotThrow("#EVE燃料块 ime:10 sci:10")
         tc.ShouldNotThrow("#EVE装备Ii by:group 气云")
         tc.ShouldNotThrow("#EVE装备Ii 气云")

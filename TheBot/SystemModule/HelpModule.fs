@@ -17,12 +17,10 @@ type HelpModule() =
 
     [<TestFixture>]
     member x.TestHelp() = 
-        let _ = TestContext(x)
-        ()
-        // TODO: 查询涉及到ContextApi的支持，暂时还不行
-        //tc.ShouldNotThrow("#help")
-        //tc.ShouldNotThrow("#help #help")
-        //tc.ShouldNotThrow("#help .help")
-        //tc.ShouldNotThrow(".help")
-        //tc.ShouldNotThrow(".help .help")
-        //tc.ShouldNotThrow(".help #help")
+        let tc = TestContext(x)
+        tc.ShouldNotThrow("#help")
+        tc.ShouldNotThrow("#help #help")
+        tc.ShouldNotThrow("#help .help")
+        tc.ShouldNotThrow(".help")
+        tc.ShouldNotThrow(".help .help")
+        tc.ShouldNotThrow(".help #help")

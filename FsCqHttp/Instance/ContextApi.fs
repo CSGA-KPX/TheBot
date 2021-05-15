@@ -16,7 +16,7 @@ type GetCtxModuleInfo() =
         x.EnsureExecuted()
         m
 
-    override x.Invoke(ctx) = m <- ctx.ModulesInfo
+    override x.Invoke(ctx) = m <- ctx.Modules
 
 /// 返回无序的已定义指令。
 ///

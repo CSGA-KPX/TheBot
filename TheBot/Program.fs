@@ -44,7 +44,7 @@ let main argv =
     logger.Info("TheBot已结束。正在关闭WS连接")
 
     for ws in CqWsContextPool.Instance do
-        if ws.CheckOnline() then
+        if ws.IsOnline then
             logger.Info(sprintf "向%s发送停止信号" ws.BotIdString)
             ws.Stop()
         else

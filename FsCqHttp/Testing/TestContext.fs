@@ -38,23 +38,25 @@ module private Strings =
 
 exception AssertFailedException of string
 
-type TestContext(m : HandlerModuleBase, ?parentApi : IApiCallProvider) as x =
+type TestContext(m : HandlerModuleBase, ?parent : CqWsContextBase) as x =
+    inherit CqWsContextBase()
 
     let botUserId = 10000UL
-    let botUserName = "TestContext"
+    let botUserName = "测试用户"
 
     let apiResponse = Dictionary<string, obj>()
 
     let mutable response = None
 
-    let mi = ContextModuleInfo()
+    let mutable localRestart = None
 
     do
         // 用来混淆类型推导机制
         x.AddApiResponse("no_such_command", obj ())
         x.AddApiResponse("can_send_image", {| yes = true |})
 
-        mi.RegisterModule(m)
+        x.Modules.RegisterModule(m)
+
 
     member x.AddApiResponse<'T when 'T :> CqHttpApiBase>(obj : obj) =
         let api =
@@ -72,7 +74,7 @@ type TestContext(m : HandlerModuleBase, ?parentApi : IApiCallProvider) as x =
     member x.InvokeCommand(msg : Message) =
         let msgEvent = x.MakeEvent(msg)
 
-        let cmd = mi.TryCommand(msgEvent)
+        let cmd = x.Modules.TryCommand(msgEvent)
         if cmd.IsNone then invalidArg "cmdLine/msg" "指定模块不含指定指令"
 
         let method = cmd.Value.MethodAction
@@ -117,19 +119,19 @@ type TestContext(m : HandlerModuleBase, ?parentApi : IApiCallProvider) as x =
         let raw = JObject.Parse(Strings.msgEvent)
 
         // 更新Bot信息
-        raw.["self_id"] <- JValue(botUserId)
+        raw.["self_id"] <- JValue(x.BotUserId)
 
         // 更新发送时间
         raw.["time"] <- JValue(DateTimeOffset.Now.ToUnixTimeSeconds())
 
         // 更新发送者
-        let uid = x.GetUserId()
-        raw.["user_id"] <- JValue(uid)
-        raw.["sender"].["nickname"] <- JValue(sprintf "测试用户%i" uid)
-        raw.["sender"].["user_id"] <- JValue(uid)
+        let uid = JValue(x.BotUserId)
+        raw.["user_id"] <- uid
+        raw.["sender"].["nickname"] <- JValue(x.BotNickname)
+        raw.["sender"].["user_id"] <- uid
 
         // 更新消息Id
-        raw.["message_id"] <- JValue(uid)
+        raw.["message_id"] <- uid
 
         // 更新消息内容
         raw.["message"] <- JToken.FromObject(msg) :?> JArray
@@ -137,52 +139,80 @@ type TestContext(m : HandlerModuleBase, ?parentApi : IApiCallProvider) as x =
 
         CqEventArgs.Parse(x, EventContext(raw)) :?> CqMessageEventArgs
 
-    member private x.GetUserId() : uint64 =
-        DateTimeOffset.Now.ToUnixTimeMilliseconds()
-        |> uint64
+    override x.RestartContext
+        with get () =
+            if parent.IsSome then
+                parent.Value.RestartContext
+            else
+                localRestart
+        and set (v) =
+            if parent.IsSome then
+                parent.Value.RestartContext <- v
+            else
+                localRestart <- v
 
-    interface IApiCallProvider with
-        member x.CallerId = ""
-        member x.CallerUserId = botUserId
-        member x.CallerName = botUserName
+    override x.IsOnline =
+        if parent.IsSome then parent.Value.IsOnline else true
 
-        member x.CallApi(req : #ApiBase) =
-            // 拦截所有回复调用
-            match req :> ApiBase with
-            | :? System.QuickOperation as q ->
-                match q.Reply with
-                | EventResponse.PrivateMessageResponse msg -> response <- Some <| msg.ToString()
-                | _ -> invalidOp "不能处理私聊以外回复"
+    override x.BotNickname =
+        if parent.IsSome then
+            parent.Value.BotNickname
+        else
+            botUserName
+
+    override x.BotUserId =
+        if parent.IsSome then parent.Value.BotUserId else botUserId
+
+    override x.BotIdString =
+        if parent.IsSome then
+            parent.Value.BotIdString
+        else
+            sprintf "[%i:%s]" x.BotUserId x.BotNickname
+
+    override x.Start() = raise <| NotImplementedException()
+
+    override x.Stop() = raise <| NotImplementedException()
+
+    override x.CallApi(req : #ApiBase) =
+        // 拦截所有回复调用
+        match req :> ApiBase with
+        | :? System.QuickOperation as q ->
+            match q.Reply with
+            | EventResponse.PrivateMessageResponse msg -> response <- Some <| msg.ToString()
+            | _ -> invalidOp "不能处理私聊以外回复"
+
+            req.IsExecuted <- true
+
+        | :? CqHttpApiBase as cqhttp ->
+            if apiResponse.ContainsKey(cqhttp.ActionName) then
+                let ret =
+                    apiResponse.[cqhttp.ActionName]
+                    |> JsonConvert.SerializeObject
+                    |> JsonConvert.DeserializeObject<Dictionary<string, string>>
+
+                let apiResp =
+                    { ApiResponse.ReturnCode = ApiRetCode.OK
+                      ApiResponse.DataType = ApiRetType.Object
+                      ApiResponse.Echo = Guid.NewGuid().ToString()
+                      ApiResponse.Status = "ok"
+                      ApiResponse.Data = ret }
+
+                cqhttp.HandleResponse(apiResp)
                 req.IsExecuted <- true
+            else if parent.IsSome then
+                parent.Value.CallApi(req) |> ignore
+            else
+                invalidOp (sprintf "TestContext 尚未实现API %s" cqhttp.ActionName)
+        | :? WsContextApiBase as ctxApi ->
+            if parent.IsSome then
+                parent.Value.CallApi(ctxApi) |> ignore
+            else
+                ctxApi.Invoke(x)
+                ctxApi.IsExecuted <- true
+        | _ ->
+            if parent.IsSome then
+                parent.Value.CallApi(req) |> ignore
+            else
+                invalidOp (sprintf "TestContext 尚未实现API %O" (req.GetType().FullName))
 
-            | :? CqHttpApiBase as cqhttp ->
-                if apiResponse.ContainsKey(cqhttp.ActionName) then
-                    let ret =
-                        apiResponse.[cqhttp.ActionName]
-                        |> JsonConvert.SerializeObject
-                        |> JsonConvert.DeserializeObject<Dictionary<string, string>>
-
-                    let apiResp =
-                        { ApiResponse.ReturnCode = ApiRetCode.OK
-                          ApiResponse.DataType = ApiRetType.Object
-                          ApiResponse.Echo = Guid.NewGuid().ToString()
-                          ApiResponse.Status = "ok"
-                          ApiResponse.Data = ret }
-
-                    cqhttp.HandleResponse(apiResp)
-                    req.IsExecuted <- true
-                else
-                    if parentApi.IsSome then
-                        parentApi.Value.CallApi(req) |> ignore
-                    else
-                        invalidOp (sprintf "TestContext 尚未实现API %s" cqhttp.ActionName)
-            | _ ->
-                if parentApi.IsSome then
-                    parentApi.Value.CallApi(req) |> ignore
-                else
-                    invalidOp (sprintf "TestContext 尚未实现API %O" (req.GetType().FullName))
-            req
-
-        member x.CallApi<'T when 'T :> ApiBase and 'T : (new : unit -> 'T)>() =
-            let req = Activator.CreateInstance<'T>()
-            (x :> IApiCallProvider).CallApi(req)
+        req
