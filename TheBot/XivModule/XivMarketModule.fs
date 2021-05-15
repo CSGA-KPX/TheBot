@@ -6,12 +6,12 @@ open KPX.FsCqHttp.Handler
 
 open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.TextTable
+open KPX.FsCqHttp.Testing
 
 open KPX.TheBot.Data.CommonModule.Recipe
 open KPX.TheBot.Data.XivData
 open KPX.TheBot.Data.XivData.Shops
 
-open KPX.TheBot.Utils.Config
 open KPX.TheBot.Utils.RecipeRPN
 
 open KPX.TheBot.Module.XivModule.Utils
@@ -28,7 +28,6 @@ type XivMarketModule() =
 
     let universalis =
         UniversalisMarketCache.MarketInfoCollection.Instance
-
 
     let isNumber (str : string) =
         if str.Length <> 0 then
@@ -51,11 +50,50 @@ type XivMarketModule() =
         else
             item.Name
 
-    //[<CommandHandlerMethodAttribute("ffhelp", "FF14指令帮助", "")>]
+    [<CommandHandlerMethodAttribute("#ffsrv", "检查Bot可用的FF14服务器/大区名称", "")>]
     member x.HandleFFCmdHelp(cmdArg : CommandEventArgs) =
-        use ret = cmdArg.OpenResponse(ForceText)
-        ret.WriteLine("当前可使用服务器及缩写有：{0}", String.Join(" ", World.WorldNames))
-        ret.WriteLine("当前可使用大区及缩写有：{0}", String.Join(" ", World.DataCenterNames))
+        use ret = cmdArg.OpenResponse(PreferImage)
+
+        let colsNum = 5 // 总列数
+
+        let mkTable (strs : seq<string>) =
+            let append =
+                let c = strs |> Seq.length
+                let padLen = (c % colsNum)
+
+                if padLen = 0 then
+                    Seq.empty<obj>
+                else
+                    let obj = box String.Empty
+                    Seq.init (colsNum - padLen) (fun _ -> obj)
+
+            let rows =
+                append
+                |> Seq.append (strs |> Seq.map (box))
+                |> Seq.chunkBySize colsNum
+                |> Seq.toArray
+
+            let tt = TextTable(rows |> Array.head)
+
+            if rows.Length > 1 then
+                for row in rows |> Array.tail do
+                    tt.AddRow(row)
+
+            tt
+
+
+        let mainTable = mkTable (World.WorldNames)
+        mainTable.AddPreTable("可用大区及缩写有：")
+        mainTable.AddPreTable(mkTable (World.DataCenterNames))
+        mainTable.AddPreTable(" ")
+        mainTable.AddPreTable("可用服务器及缩写有：")
+
+        ret.Write(mainTable)
+
+    [<TestFixture>]
+    member x.TestFFSrv() =
+        let tc = TestContext(x)
+        tc.ShouldNotThrow("#ffsrv")
 
     [<CommandHandlerMethodAttribute("#fm",
                                     "FF14市场查询。可以使用 采集重建/魔晶石/水晶 快捷组",
@@ -208,6 +246,13 @@ text 以文本格式输出结果
 
         using (cmdArg.OpenResponse(opt.ResponseType)) (fun ret -> ret.Write(tt))
 
+    [<TestFixture>]
+    member x.TestXivMatket() =
+        let tc = TestContext(x)
+        tc.ShouldNotThrow("#fm 风之水晶")
+        tc.ShouldNotThrow("#fm 风之水晶 拉诺西亚")
+        tc.ShouldNotThrow("#fm 风之水晶 一区")
+
     [<CommandHandlerMethodAttribute("#r", "根据表达式汇总多个物品的材料，不查询价格", "可以使用text:选项返回文本。如#r 白钢锭 text:")>]
     [<CommandHandlerMethodAttribute("#rr",
                                     "根据表达式汇总多个物品的基础材料，不查询价格",
@@ -258,7 +303,7 @@ text 以文本格式输出结果
         for str in opt.NonOptionStrings do
             match xivExpr.TryEval(str) with
             | Error err -> raise err
-            | Ok (Number i) -> tt.AddPreTable(sprintf "计算结果为数字%f，物品Id请加#" i)
+            | Ok (Number i) -> cmdArg.AbortExecution(InputError, "计算结果为数字{0}，物品Id请加#", i)
             | Ok (Accumulator a) ->
                 for mr in a do
                     product.Update(mr)
@@ -269,6 +314,9 @@ text 以文本格式输出结果
                     else
                         for m in recipe.Value.Input do
                             acc.Update(m.Item, m.Quantity * mr.Quantity)
+
+        if acc.Count = 0 then
+            cmdArg.AbortExecution(InputError, "缺少表达式")
 
         let mutable sum = MarketUtils.StdEv.Zero
 
@@ -327,11 +375,58 @@ text 以文本格式输出结果
 
         using (cmdArg.OpenResponse(opt.ResponseType)) (fun x -> x.Write(tt))
 
+    [<TestFixture>]
+    member x.TestXivRecipe() =
+        let tc = TestContext(x)
+        // 数据正确与否在BotData的单元测试中进行
+
+        // 空值
+        tc.ShouldThrow("#r")
+        tc.ShouldThrow("#rr")
+        tc.ShouldThrow("#rc")
+        tc.ShouldThrow("#rrc")
+
+        // 不存在值
+        tc.ShouldThrow("#r 不存在物品")
+        tc.ShouldThrow("#rr 不存在物品")
+        tc.ShouldThrow("#rc 不存在物品")
+        tc.ShouldThrow("#rrc 不存在物品")
+
+        // 纯数字计算
+        tc.ShouldThrow("#r 5*5")
+        tc.ShouldThrow("#rr 5*5")
+        tc.ShouldThrow("#rc 5*5")
+        tc.ShouldThrow("#rrc 5*5")
+
+        // 常规道具计算
+        tc.ShouldNotThrow("#r 亚拉戈高位合成兽革")
+        tc.ShouldNotThrow("#r 亚拉戈高位合成兽革*555")
+        tc.ShouldNotThrow("#r 亚拉戈高位合成兽革*(5+10)")
+        tc.ShouldNotThrow("#rr 亚拉戈高位合成兽革")
+        tc.ShouldNotThrow("#rr 亚拉戈高位合成兽革*555")
+        tc.ShouldNotThrow("#rr 亚拉戈高位合成兽革*(5+10)")
+        tc.ShouldNotThrow("#rc 亚拉戈高位合成兽革")
+        tc.ShouldNotThrow("#rrc 亚拉戈高位合成兽革")
+        tc.ShouldNotThrow("#rc 亚拉戈高位合成兽革 拉诺西亚")
+        tc.ShouldNotThrow("#rrc 亚拉戈高位合成兽革 拉诺西亚")
+
+        // 部队工坊
+        tc.ShouldNotThrow("#r 野马级船体")
+        tc.ShouldNotThrow("#r 野马级船体*555")
+        tc.ShouldNotThrow("#r 野马级船体*(5+10)")
+        tc.ShouldNotThrow("#rr 野马级船体")
+        tc.ShouldNotThrow("#rr 野马级船体*555")
+        tc.ShouldNotThrow("#rr 野马级船体*(5+10)")
+        tc.ShouldNotThrow("#rc 野马级船体")
+        tc.ShouldNotThrow("#rrc 野马级船体")
+        tc.ShouldNotThrow("#rc 野马级船体 拉诺西亚")
+        tc.ShouldNotThrow("#rrc 野马级船体 拉诺西亚")
+
     [<CommandHandlerMethodAttribute("#ssc",
                                     "计算部分道具兑换的价格",
                                     "兑换所需道具的名称或ID，只处理1个
 可以设置查询服务器，已有服务器见#ff14help")>]
-    member x.HandleSSS(cmdArg : CommandEventArgs) =
+    member x.HandleSSC(cmdArg : CommandEventArgs) =
         let sc = SpecialShopCollection.Instance
 
         let opt = CommandUtils.XivOption()
@@ -432,6 +527,12 @@ text 以文本格式输出结果
 
                 using (cmdArg.OpenResponse(ForceImage)) (fun x -> x.Write(tt))
 
+    [<TestFixture>]
+    member x.TestXivSSC() =
+        let tc = TestContext(x)
+        tc.ShouldNotThrow("#ssc")
+        tc.ShouldNotThrow("#ssc 盐酸")
+
     [<CommandHandlerMethodAttribute("#理符",
                                     "计算制作理符利润（只查询70级以上的基础材料）",
                                     "#理符 [职业名] [服务器名]",
@@ -468,3 +569,6 @@ text 以文本格式输出结果
                 ()
 
             ()
+
+    [<TestFixture>]
+    member x.TestXivLeveCraft() = ()

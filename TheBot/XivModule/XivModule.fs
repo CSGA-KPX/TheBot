@@ -6,6 +6,7 @@ open System.Text
 open KPX.FsCqHttp.Message
 
 open KPX.FsCqHttp.Handler
+open KPX.FsCqHttp.Testing
 
 open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.TextTable
@@ -102,6 +103,11 @@ type MiscModule() =
 
             using (cmdArg.OpenResponse(ForceImage)) (fun ret -> ret.Write(tt))
 
+    [<TestFixture>]
+    member x.TestXivDFC() = 
+        let tc = TestContext(x)
+        tc.ShouldNotThrow("#纷争前线")
+
     [<CommandHandlerMethodAttribute("#幻想药", "洗个啥？", "")>]
     member x.HandleFantasia(cmdArg : CommandEventArgs) =
         let choices =
@@ -139,6 +145,11 @@ type MiscModule() =
         |> Array.iter (fun (str, d) -> tt.AddRow(d, str))
 
         cmdArg.QuickMessageReply(tt.ToString())
+
+    [<TestFixture>]
+    member x.TestXivFantasia() = 
+        let tc = TestContext(x)
+        tc.ShouldNotThrow("#幻想药")
 
     [<CommandHandlerMethodAttribute("#cgss",
                                     "查找指定职业和品级的套装。用于#r/rr/rc/rrc计算",
@@ -182,6 +193,11 @@ type MiscModule() =
         else
             cmdArg.QuickMessageReply("没找到")
 
+    [<TestFixture>]
+    member x.TestXivCGSS() = 
+        let tc = TestContext(x)
+        tc.ShouldNotThrow("#cgss 占星 510")
+
     [<CommandHandlerMethodAttribute("#is", "（FF14）查找名字包含字符的物品", "关键词（大小写敏感）")>]
     member x.HandleItemSearch(cmdArg : CommandEventArgs) =
         let tt = TextTable(RightAlignCell "Id", "物品名")
@@ -204,6 +220,12 @@ type MiscModule() =
 
         using (cmdArg.OpenResponse()) (fun r -> r.Write(tt))
 
+    [<TestFixture>]
+    member x.TestItemSearch() = 
+        let tc = TestContext(x)
+        tc.ShouldNotThrow("#is 风之水晶")
+        tc.ShouldThrow("#is 第三期")
+
     [<CommandHandlerMethodAttribute("#gate", "挖宝选门", "")>]
     member x.HandleGate(cmdArg : CommandEventArgs) =
         let tt = TextTable("1D100", "门")
@@ -215,6 +237,11 @@ type MiscModule() =
 
         cmdArg.QuickMessageReply(tt.ToString())
 
+    [<TestFixture>]
+    member x.TestGate() = 
+        let tc = TestContext(x)
+        tc.ShouldNotThrow("#gate")
+
     [<CommandHandlerMethodAttribute("#仙人彩", "仙人彩周常", "")>]
     member x.HandleCactpot(cmdArg : CommandEventArgs) =
         let nums =
@@ -223,6 +250,11 @@ type MiscModule() =
             |> Seq.take 3
 
         cmdArg.QuickMessageReply(sprintf "%s" (String.Join(" ", nums)))
+
+    [<TestFixture>]
+    member x.TestCactpot() = 
+        let tc = TestContext(x)
+        tc.ShouldNotThrow("#仙人彩")
 
     [<CommandHandlerMethodAttribute("#nuannuan", "暖暖", "")>]
     [<CommandHandlerMethodAttribute("#nrnr", "暖暖", "")>]
@@ -289,6 +321,12 @@ type MiscModule() =
                 ret.Write("\r\n")
                 ret.Write(n.InnerText))
 
+    [<TestFixture>]
+    member x.TestNrnr() = 
+        let tc = TestContext(x)
+        tc.ShouldNotThrow("#nrnr")
+        tc.ShouldNotThrow("#nuannuan")
+
     [<CommandHandlerMethodAttribute("#海钓",
                                     "FF14海钓攻略",
                                     "next:查阅n个CD后的信息，list:查阅n个时间窗的信息。如：
@@ -350,3 +388,11 @@ type MiscModule() =
                     info.IsNextCooldown
                 )
         with e -> ret.AbortExecution(ModuleError, "CD计算错误，请通告管理员：\r\n{0}", e)
+
+    [<TestFixture>]
+    member x.TestIKD() = 
+        let tc = TestContext(x)
+        tc.ShouldNotThrow("#海钓")
+        tc.ShouldNotThrow("#海钓 next:1")
+        tc.ShouldNotThrow("#海钓 next:10")
+        tc.ShouldNotThrow("#海钓 list:10")

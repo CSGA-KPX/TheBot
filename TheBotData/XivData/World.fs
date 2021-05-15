@@ -22,7 +22,13 @@ module World =
 
     let Worlds = idMapping.Values |> Seq.readonly
 
-    let WorldNames = nameMapping.Keys |> Seq.readonly
+    /// IsPublic=true
+    let WorldNames =
+        seq {
+            for kv in nameMapping do
+                if kv.Value.IsPublic then yield kv.Key
+        }
+
     let DataCenterNames = dcNameMapping.Keys |> Seq.readonly
 
 
@@ -94,7 +100,7 @@ module World =
 
            "Alexander", "亚历山大" //Gaia
            "Bahamut", "巴哈姆特"
-           "Durandal", "圣剑，杜兰德尔，圣剑杜兰德尔"
+           "Durandal", "圣剑,杜兰德尔,圣剑杜兰德尔"
            "Fenrir", "芬里尔"
            "Ifrit", "伊弗利特"
            "Ridill", "里德尔"
@@ -145,7 +151,7 @@ module World =
 
            "Cerberus", "刻耳柏洛斯" //Chaos
            "Louisoix", "路易索瓦"
-           "Moogle", "混沌莫古力，莫古力服"
+           "Moogle", "混沌莫古力,莫古力服"
            "Omega", "欧米茄"
            "Ragnarok", "诸神黄昏"
            "Spriggan", "魔石精"
@@ -189,7 +195,9 @@ module World =
                   IsPublic = isPublic }
 
             idMapping.Add(id, world)
-            if not <| nameMapping.TryAdd(name, world) then printfn "World : 服务器添加失败 %A" world
+
+            if not <| nameMapping.TryAdd(name, world) then
+                printfn "World : 服务器添加失败 %A" world
 
         // 添加国服服务器名称
         for (chs, eng) in ChsWorldName do
