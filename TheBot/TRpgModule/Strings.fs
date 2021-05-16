@@ -68,7 +68,7 @@ type TrpgStringTemplate(de : DiceExpression) =
                     |> Int32.Parse
 
                 let input = StringData.GetLines(name.Value)
-                let items = de.Dicer.GetRandomItems(input, count)
+                let items = de.Dicer.GetArrayItem(input, count)
                 String.Join(" ", items)
             with e -> failwithf "找不到请求的数据集 %s : %s" name e.Message
         | "randomItemOpt" -> // \{randomItemOpt 数组名称 阈值|50 } 1D100
@@ -82,10 +82,10 @@ type TrpgStringTemplate(de : DiceExpression) =
                     |> Option.defaultValue "50"
                     |> Int32.Parse
 
-                let d100 = de.Dicer.GetRandom(100u)
+                let d100 = de.Dicer.GetPostive(100)
 
                 if d100 >= threshold then
-                    de.Dicer.GetRandomItem(StringData.GetLines(name.Value))
+                    de.Dicer.GetArrayItem(StringData.GetLines(name.Value))
                 else
                     ""
             with e -> failwithf "找不到请求的数据集 %s : %s" name e.Message

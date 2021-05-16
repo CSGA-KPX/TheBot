@@ -140,7 +140,7 @@ type MiscModule() =
         let tt = TextTable(RightAlignCell "D100", "选项")
 
         choices
-        |> Array.map (fun str -> str, dicer.GetRandom(100u, str))
+        |> Array.map (fun str -> str, dicer.GetPostive(100u, str))
         |> Array.sortBy (snd)
         |> Array.iter (fun (str, d) -> tt.AddRow(d, str))
 
@@ -231,7 +231,7 @@ type MiscModule() =
         let tt = TextTable("1D100", "门")
 
         [| "左"; "中"; "右" |]
-        |> Array.map (fun door -> door, Dicer.RandomDicer.GetRandom(100u, door))
+        |> Array.map (fun door -> door, Dicer.RandomDicer.GetPostive(100u, door))
         |> Array.sortBy (snd)
         |> Array.iter (fun (door, score) -> tt.AddRow((sprintf "%03i" score), door))
 
@@ -245,7 +245,7 @@ type MiscModule() =
     [<CommandHandlerMethodAttribute("#仙人彩", "仙人彩周常", "")>]
     member x.HandleCactpot(cmdArg : CommandEventArgs) =
         let nums =
-            Seq.initInfinite (fun _ -> sprintf "%04i" (Dicer.RandomDicer.GetRandom(10000u) - 1))
+            Seq.initInfinite (fun _ -> sprintf "%04i" (Dicer.RandomDicer.GetPostive(10000u) - 1u))
             |> Seq.distinctBy (fun numStr -> numStr.[3])
             |> Seq.take 3
 
@@ -339,7 +339,8 @@ type MiscModule() =
         let dateFmt = "yyyy/MM/dd HH:00"
         use ret = cmdArg.OpenResponse(ForceImage)
         ret.WriteLine("警告：国服数据，世界服不一定适用。时间为中国标准时间。")
-        let mutable now = GetCstTime()
+        let mutable now =
+            DateTimeOffset.Now.ToOffset(TimeSpan.FromHours(8.0))
 
         try
             if opt.ListCount.IsDefined then

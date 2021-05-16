@@ -77,8 +77,9 @@ type DiceModule() =
                     else
                         SeedOption.SeedByUserDay(cmdArg.MessageEvent)
 
-                let dicer = Dicer(seed).Freeze()
-                (c, dicer.GetRandom(100u, c)))
+                let dicer = Dicer(seed)
+                dicer.Freeze()
+                (c, dicer.GetPostive(100u, c)))
         |> Array.sortBy snd
         |> Array.iter (fun (c, n) -> tt.AddRow((sprintf "%03i" n), c))
 
@@ -90,7 +91,7 @@ type DiceModule() =
         let dicer =
             Dicer(SeedOption.SeedByUserDay(cmdArg.MessageEvent))
 
-        let jrrp = dicer.GetRandom(100u)
+        let jrrp = dicer.GetPostive(100u)
         cmdArg.QuickMessageReply(sprintf "%s今日人品值是：%i" cmdArg.MessageEvent.DisplayName jrrp)
 
     [<CommandHandlerMethodAttribute("#cal",
@@ -133,7 +134,7 @@ type DiceModule() =
         let choices = [| "A"; "B"; "C"; "D" |]
 
         let chunks =
-            Dicer.RandomDicer.GetRandomArray(choices.Length |> uint32, count)
+            Dicer.RandomDicer.GetNaturalArray(choices.Length, count)
             |> Array.map (fun x -> choices.[x - 1])
             |> Array.chunkBySize 5 // 5个一组
             |> Array.map (fun chk -> String.Join("", chk))
@@ -165,7 +166,7 @@ type DiceModule() =
                     cutoff <- i
 
         let ret =
-            Array.init count (fun _ -> Dicer.RandomDicer.GetRandom(100u))
+            Array.init count (fun _ -> Dicer.RandomDicer.GetPostive(100u) |> int)
             |> Array.countBy (fun x -> if x <= cutoff then "红" else "黑")
             |> Array.sortBy (fst)
             |> Array.map (fun (s, c) -> sprintf "%s(%i)" s c)

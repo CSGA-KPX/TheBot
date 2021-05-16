@@ -52,7 +52,7 @@ type TRpgModule() =
         tt.AddPreTable(sprintf "%s的人物作成:" cmdArg.MessageEvent.DisplayName)
 
         let job =
-            de.Dicer.GetRandomItem(StringData.ChrJobs)
+            de.Dicer.GetArrayItem(StringData.ChrJobs)
 
         if isDotCommand then
             tt.AddPostTable(sprintf "推荐职业：%s" job)
@@ -293,7 +293,7 @@ type TRpgModule() =
         let de = DiceExpression(Dicer.RandomDicer)
 
         let tmpl =
-            de.Dicer.GetRandomItem(StringData.GetLines(key))
+            de.Dicer.GetArrayItem(StringData.GetLines(key))
 
         let ret =
             TrpgStringTemplate(de).ParseTemplate(tmpl)

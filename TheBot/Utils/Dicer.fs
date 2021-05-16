@@ -1,28 +1,27 @@
-﻿module KPX.TheBot.Utils.Dicer
+﻿namespace KPX.TheBot.Utils.Dicer
 
 open System
+open System.Collections.Generic
+
 open KPX.FsCqHttp.Event
 
-
-let private cstOffset = TimeSpan.FromHours(8.0)
-
-let GetCstTime () =
-    DateTimeOffset.UtcNow.ToOffset(cstOffset)
 
 type SeedOption =
     | SeedDate
     | SeedRandom
     | SeedCustom of string
 
-    member x.GetSeedString() =
+    override x.ToString() =
         match x with
-        | SeedDate -> GetCstTime().ToString("yyyyMMdd")
+        | SeedDate ->
+            DateTimeOffset
+                .Now
+                .ToOffset(TimeSpan.FromHours(8.0))
+                .ToString("yyyyMMdd")
         | SeedRandom -> Guid.NewGuid().ToString()
         | SeedCustom s -> s
 
-    static member GetSeedString(a : SeedOption []) =
-        a
-        |> Array.fold (fun str x -> str + (x.GetSeedString())) ""
+    static member GetSeedString(seeds : seq<SeedOption>) = String.Join("|", seeds)
 
     static member SeedByUserDay(msg : MessageEvent) =
         [| SeedDate
@@ -33,117 +32,147 @@ type SeedOption =
            SeedCustom(
                let at = msg.Message.TryGetAt()
 
-               if at.IsNone then raise <| InvalidOperationException("没有用户被At！") else at.Value.ToString()
+               if at.IsNone then
+                   raise <| InvalidOperationException("没有用户被At！")
+               else
+                   at.Value.ToString()
            ) |]
 
-[<AbstractClass>]
-/// 确定性随机数生成器
-type private DRng(seed : byte []) =
+type private DRng(seeds : seq<SeedOption>) =
     static let utf8 = Text.Encoding.UTF8
 
     let hash =
         Security.Cryptography.MD5.Create() :> Security.Cryptography.HashAlgorithm
 
-    /// 用于计算hash的算法
-    /// 此类型不能跨线程使用
-    member x.HashAlgorithm = hash
+    let mutable freeze = false
 
-    /// 获取随机字节，不小于8字节
-    abstract GetBytes : unit -> byte []
+    let mutable seed =
+        SeedOption.GetSeedString(seeds)
+        |> utf8.GetBytes
+        |> hash.ComputeHash
 
-    /// 初始种子值
-    member x.InitialSeed = seed
+    let iterate () =
+        if not freeze then seed <- hash.ComputeHash(seed)
 
-    member x.NextInt32() = BitConverter.ToInt32(x.GetBytes(), 0)
-    member x.NextUInt32() = BitConverter.ToUInt32(x.GetBytes(), 0)
+    /// 指示该DRng是否继续衍生
+    member x.Freeze() = freeze <- true
 
-    member x.NextInt64() = BitConverter.ToInt64(x.GetBytes(), 0)
-    member x.NextUInt64() = BitConverter.ToUInt64(x.GetBytes(), 0)
+    member x.IsFreezed = freeze
 
-    member x.StringToUInt32(str : string) =
-        let hash =
-            Array.append (x.GetBytes()) (utf8.GetBytes(str))
-            |> x.HashAlgorithm.ComputeHash
+    member x.GetInt32() = BitConverter.ToInt32(x.GetBytes(), 0)
+    member x.GetUInt32() = BitConverter.ToUInt32(x.GetBytes(), 0)
+    member x.GetInt64() = BitConverter.ToInt64(x.GetBytes(), 0)
+    member x.GetUInt64() = BitConverter.ToUInt64(x.GetBytes(), 0)
 
-        BitConverter.ToUInt32(hash, 0)
+    member x.GetInt32(str) = BitConverter.ToInt32(x.GetBytes(str), 0)
+    member x.GetUInt32(str) = BitConverter.ToUInt32(x.GetBytes(str), 0)
+    member x.GetInt64(str) = BitConverter.ToInt64(x.GetBytes(str), 0)
+    member x.GetUInt64(str) = BitConverter.ToUInt64(x.GetBytes(str), 0)
 
-type private ConstantDRng(seed) =
-    inherit DRng(seed)
-
-    override x.GetBytes() = x.InitialSeed
-
-type private HashBasedDRng(seed) =
-    inherit DRng(seed)
-
-    let mutable hash = seed
-
-    let sync = obj ()
-
-    override x.GetBytes() =
-        lock
-            sync
-            (fun () ->
-                hash <- x.HashAlgorithm.ComputeHash(hash)
-                hash)
-
-
-type Dicer private (rng : DRng) =
-    static let utf8 = Text.Encoding.UTF8
-    static let randomDicer = new Dicer(SeedRandom)
-
-    new(seed : SeedOption []) =
-        let initSeed =
+    member private x.GetBytes() = 
+        if freeze then
             seed
-            |> SeedOption.GetSeedString
-            |> utf8.GetBytes
-            |> HashBasedDRng
+        else
+            iterate()
+            seed
 
-        Dicer(initSeed)
+    member private x.GetBytes(str : string) =
+        if freeze then
+            Array.append seed (utf8.GetBytes(str))
+            |> hash.ComputeHash
+        else
+            iterate()
+            Array.append seed (utf8.GetBytes(str))
+            |> hash.ComputeHash
 
-    new(seed : SeedOption) = Dicer(Array.singleton seed)
+type Dicer(seeds : seq<SeedOption>) =
+    let drng = DRng(seeds)
+
+    new(opt : SeedOption) = Dicer(Seq.singleton opt)
 
     /// 通用的随机骰子
-    static member RandomDicer = randomDicer
+    static member val RandomDicer = Dicer(SeedOption.SeedRandom)
 
-    /// 生成一个新的骰子，其种子值不变
-    member x.Freeze() = rng.GetBytes() |> ConstantDRng |> Dicer
+    member x.Freeze() = drng.Freeze()
 
-    /// 该Dicer是否返回恒定值(ConstantDRng)
-    member x.IsFreezed = rng :? ConstantDRng
+    member x.IsFreezed = drng.IsFreezed
 
-    /// 获得一个[1, faceNum]内的随机数
-    member x.GetRandom(faceNum : uint32) = rng.NextUInt32() % faceNum + 1u |> int32
+    member x.GetInteger(min : uint32, max : uint32) =
+        drng.GetUInt32() % (max - min + 1u) + min
 
-    /// 将字符串str转换为[1, faceNum]内的随机数
-    member x.GetRandom(faceNum : uint32, str : string) =
-        let ret = rng.StringToUInt32(str)
-        ret % faceNum + 1u |> int32
+    member x.GetInteger(min : uint64, max : uint64) =
+        drng.GetUInt64() % (max - min + 1UL) + min
 
-    /// 获得一组[1, faceNum]内的随机数，可能重复
-    member x.GetRandomArray(faceNum, count) =
-        Array.init count (fun _ -> x.GetRandom(faceNum))
+    member x.GetInteger(min : int, max : int) =
+        let max = max - min
+        (x.GetInteger(0u, uint32 max) |> int) + min
 
-    /// 获得一组[1, faceNum]内的随机数，不重复
-    member x.GetRandomArrayUnique(faceNum, count) =
-        let tmp = Collections.Generic.HashSet<int>()
+    member x.GetInteger(min : int64, max : int64) =
+        let max = max - min
+        (x.GetInteger(0UL, uint64 max) |> int64) + min
 
-        if count > (int faceNum) then raise <| ArgumentOutOfRangeException("不应超过可能数")
+    member x.GetInteger(min : uint32, max : uint32, str : string) =
+        drng.GetUInt32(str) % (max - min + 1u) + min
 
-        while tmp.Count <> count do
-            tmp.Add(x.GetRandom(faceNum)) |> ignore
+    member x.GetInteger(min : uint64, max : uint64, str : string) =
+        drng.GetUInt64(str) % (max - min + 1UL) + min
 
-        let ret = Array.zeroCreate<int> tmp.Count
-        tmp.CopyTo(ret)
-        ret
+    member x.GetInteger(min : int, max : int, str : string) =
+        let max = max - min
+        (x.GetInteger(0u, uint32 max, str) |> int) + min
 
-    /// 根据索引从数组获得随机项
-    member x.GetRandomItem(srcArr : 'T []) =
-        let idx = x.GetRandom(srcArr.Length |> uint32) - 1
-        srcArr.[idx]
+    member x.GetInteger(min : int64, max : int64, str : string) =
+        let max = max - min
+        (x.GetInteger(0UL, uint64 max, str) |> int64) + min
 
-    /// 根据索引从数组获得随机项，不重复
-    member x.GetRandomItems(srcArr : 'T [], count) =
-        [| let faceNum = srcArr.Length |> uint32
+    member x.GetNatural(upper) = x.GetInteger(0, upper)
+    member x.GetNatural(upper) = x.GetInteger(0L, upper)
+    member x.GetNatural(upper) = x.GetInteger(0u, upper)
+    member x.GetNatural(upper) = x.GetInteger(0UL, upper)
+    
+    member x.GetPostive(upper) = x.GetInteger(1, upper)
+    member x.GetPostive(upper) = x.GetInteger(1L, upper)
+    member x.GetPostive(upper) = x.GetInteger(1u, upper)
+    member x.GetPostive(upper) = x.GetInteger(1UL, upper)
 
-           for i in x.GetRandomArrayUnique(faceNum, count) do
-               yield srcArr.[i - 1] |]
+    member x.GetNatural(upper, str) = x.GetInteger(0, upper, str)
+    member x.GetNatural(upper, str) = x.GetInteger(0L, upper, str)
+    member x.GetNatural(upper, str) = x.GetInteger(0u, upper, str)
+    member x.GetNatural(upper, str) = x.GetInteger(0UL, upper, str)
+    
+    member x.GetPostive(upper, str) = x.GetInteger(1, upper, str)
+    member x.GetPostive(upper, str) = x.GetInteger(1L, upper, str)
+    member x.GetPostive(upper, str) = x.GetInteger(1u, upper, str)
+    member x.GetPostive(upper, str) = x.GetInteger(1UL, upper, str)
+
+    member x.GetIntegerArray(lower : int, upper : int, count : int, unique : bool) =
+        if count < 0 then invalidArg "count" "数量不能小于0"
+        if unique && (upper - lower + 1) < count then
+            invalidArg "count" "获取唯一数大于可能数"
+
+        let ret =
+            if unique then
+                HashSet<int>(count) :> ICollection<_>
+            else
+                ResizeArray<int>(count) :> ICollection<_>
+
+        while ret.Count <> count do
+            ret.Add(x.GetInteger(lower, upper))
+
+        let r = Array.zeroCreate<int> count
+        ret.CopyTo(r, 0)
+        r
+
+    member x.GetNaturalArray(upper : int, count : int, ?unique : bool) = 
+        x.GetIntegerArray(0, upper, count, defaultArg unique false)
+
+    member x.GetPostiveArray(upper : int, count : int, ?unique : bool) = 
+        x.GetIntegerArray(1, upper, count, defaultArg unique false)
+
+    member x.GetArrayItem(items : 'T []) = 
+        let idx = x.GetNatural(items.Length - 1)
+        items.[idx]
+
+    member x.GetArrayItem(items : 'T [], count, ?unique : bool) = 
+        x.GetNaturalArray(items.Length - 1, count, defaultArg unique false)
+        |> Array.map (fun idx -> items.[idx])

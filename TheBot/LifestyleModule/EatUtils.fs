@@ -63,14 +63,14 @@ type MappedOption =
     static member Create(dicer : Dicer, option : string) =
         { Original = option
           Mapped = option
-          Value = dicer.GetRandom(diceSides, option) }
+          Value = dicer.GetPostive(diceSides, option) |> int}
 
     static member Create(dicer : Dicer, option : string, prefix) =
         let mapped = prefix + option
 
         { Original = option
           Mapped = mapped
-          Value = dicer.GetRandom(diceSides, mapped) }
+          Value = dicer.GetPostive(diceSides, mapped) |> int}
 
 type EatChoices(options : seq<string>, dicer : Dicer, ?prefix : string) =
     let prefix = defaultArg prefix ""

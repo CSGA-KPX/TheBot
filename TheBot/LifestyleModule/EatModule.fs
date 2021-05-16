@@ -56,7 +56,8 @@ type EatModule() =
 
             ret.WriteLine("{0} 为 {1} 投掷：", cmdArg.MessageEvent.DisplayName, atUserInfo.DisplayName)
 
-        let dicer = Dicer(seed).Freeze()
+        let dicer = Dicer(seed)
+        dicer.Freeze()
 
         match cmdArg.Arguments.Length with
         | _ when eatFuncs.ContainsKey(cmdArg.CommandAttrib.Command) ->

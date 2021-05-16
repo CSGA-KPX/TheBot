@@ -50,7 +50,7 @@ module DiceExpression =
                 if lsum > 100 then failwithf "投骰次数过多，目前上限为100。"
 
                 let ret =
-                    Array.init (lsum) (fun _ -> dicer.GetRandom(rsum) |> float)
+                    Array.init (lsum) (fun _ -> dicer.GetPostive(rsum) |> float)
 
                 DicerOperand(ret)
 
