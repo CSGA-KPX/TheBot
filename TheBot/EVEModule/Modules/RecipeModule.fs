@@ -37,13 +37,13 @@ type EveRecipeModule() =
             data.TryGetItem(cfg.GetNonOptionString())
 
         if item.IsNone then
-            cmdArg.AbortExecution(InputError, "找不到物品：{0}", cfg.GetNonOptionString())
+            cmdArg.Abort(InputError, "找不到物品：{0}", cfg.GetNonOptionString())
 
         let recipe =
             pm.TryGetRecipe(item.Value, ByRun 1.0, 0)
 
         if recipe.IsNone then
-            cmdArg.AbortExecution(InputError, "找不到蓝图：{0}", cfg.GetNonOptionString())
+            cmdArg.Abort(InputError, "找不到蓝图：{0}", cfg.GetNonOptionString())
 
         let me0Price =
             recipe.Value.GetTotalMaterialPrice(PriceFetchMode.Sell, MeApplied)
@@ -94,7 +94,7 @@ type EveRecipeModule() =
         tt.AddPreTable(sprintf "输入效率：%i%% " cfg.InputMe)
 
         match er.Eval(cfg.GetNonOptionString()) with
-        | Number n -> cmdArg.AbortExecution(InputError, "结算结果为数字: {0}", n)
+        | Number n -> cmdArg.Abort(InputError, "结算结果为数字: {0}", n)
         | Accumulator a ->
             let pm = EveProcessManager(cfg)
 
@@ -122,7 +122,7 @@ type EveRecipeModule() =
                     // 已有材料需要扣除
                     final.Update(mr)
                 | _ ->
-                    cmdArg.AbortExecution(
+                    cmdArg.Abort(
                         ModuleError,
                         "不知道如何处理：{0} * {1}",
                         mr.Item.Name,
@@ -180,7 +180,7 @@ type EveRecipeModule() =
         let mutable totalOutputVolume = 0.0
 
         match er.Eval(cfg.GetNonOptionString()) with
-        | Number n -> cmdArg.AbortExecution(InputError, "结算结果为数字: {0}", n)
+        | Number n -> cmdArg.Abort(InputError, "结算结果为数字: {0}", n)
         | Accumulator a ->
             let pm = EveProcessManager(cfg)
 
@@ -189,7 +189,7 @@ type EveRecipeModule() =
                     pm.TryGetRecipeRecMe(mr.Item, ByRun mr.Quantity)
 
                 if proc.IsNone then
-                    cmdArg.AbortExecution(InputError, "找不到配方：{0}", mr.Item.Name)
+                    cmdArg.Abort(InputError, "找不到配方：{0}", mr.Item.Name)
 
                 let finalProc = proc.Value.FinalProcess
                 let product = finalProc.GetFirstProduct()
@@ -234,15 +234,15 @@ type EveRecipeModule() =
         cfg.Parse(cmdArg.Arguments)
 
         match er.Eval(cfg.GetNonOptionString()) with
-        | Number n -> cmdArg.AbortExecution(InputError, "结算结果为数字: {0}", n)
+        | Number n -> cmdArg.Abort(InputError, "结算结果为数字: {0}", n)
         | Accumulator a ->
             if a.Count > 1 then
-                cmdArg.AbortExecution(InputError, "#errc只允许计算一个物品")
+                cmdArg.Abort(InputError, "#errc只允许计算一个物品")
 
             let mr = a |> Seq.tryHead
 
             if mr.IsNone then
-                cmdArg.AbortExecution(InputError, "没有可供计算的物品")
+                cmdArg.Abort(InputError, "没有可供计算的物品")
 
             match mr.Value.Item.MetaGroupId with
             | 1
@@ -260,7 +260,7 @@ type EveRecipeModule() =
                 pm.TryGetRecipe(mr.Value.Item, ByRun mr.Value.Quantity)
 
             if recipe.IsNone then
-                cmdArg.AbortExecution(InputError, "找不到配方:{0}", mr.Value.Item.Name)
+                cmdArg.Abort(InputError, "找不到配方:{0}", mr.Value.Item.Name)
 
             let tt =
                 TextTable(
@@ -431,7 +431,7 @@ type EveRecipeModule() =
             | "#EVE装备II" ->
                 let keyword =
                     if cfg.NonOptionStrings.Count = 0 then
-                        ret.AbortExecution(InputError, "需要一个装备名称关键词")
+                        ret.Abort(InputError, "需要一个装备名称关键词")
 
                     cfg.NonOptionStrings.[0]
 
@@ -442,7 +442,7 @@ type EveRecipeModule() =
                         ByItemName keyword
 
                 PredefinedSearchCond.T2ModulesOf(cond)
-            | other -> cmdArg.AbortExecution(ModuleError, "不应发生匹配:{0}", other)
+            | other -> cmdArg.Abort(ModuleError, "不应发生匹配:{0}", other)
 
         let pmStr = cfg.MaterialPriceMode.ToString()
 
@@ -452,8 +452,8 @@ type EveRecipeModule() =
         ret.WriteEmptyLine()
 
         match EveProcessSearch.Instance.Search(searchCond) with
-        | NoResult -> ret.AbortExecution(InputError, "无符合要求的蓝图信息")
-        | TooManyResults -> ret.AbortExecution(InputError, "蓝图数量超限")
+        | NoResult -> ret.Abort(InputError, "无符合要求的蓝图信息")
+        | TooManyResults -> ret.Abort(InputError, "蓝图数量超限")
         | Result result ->
             result
             |> Seq.map

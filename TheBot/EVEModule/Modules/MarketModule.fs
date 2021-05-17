@@ -47,7 +47,7 @@ type EveMarketModule() =
         | Accumulator a ->
             for mr in a do
                 att.AddObject(mr.Item, mr.Quantity)
-        | _ -> cmdArg.AbortExecution(InputError, sprintf "求值失败，结果是%A" t)
+        | _ -> cmdArg.Abort(InputError, sprintf "求值失败，结果是%A" t)
 
         let cfg = EveConfigParser()
         cfg.Parse(cmdArg.Arguments)

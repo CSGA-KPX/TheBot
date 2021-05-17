@@ -61,7 +61,7 @@ type EveLpStoreModule() =
             let cmd = cfg.GetNonOptionString()
 
             if String.IsNullOrWhiteSpace(cmd) then
-                cmdArg.AbortExecution(InputError, "请输入目标军团名称")
+                cmdArg.Abort(InputError, "请输入目标军团名称")
 
             data.GetNpcCorporation(cmd)
 
@@ -133,7 +133,7 @@ type EveLpStoreModule() =
             let cmd = cfg.NonOptionStrings.[0]
 
             if String.IsNullOrWhiteSpace(cmd) then
-                cmdArg.AbortExecution(InputError, "目标军团名称不正确")
+                cmdArg.Abort(InputError, "目标军团名称不正确")
 
             data.GetNpcCorporation(cmd)
 
@@ -144,7 +144,7 @@ type EveLpStoreModule() =
             let ret = data.TryGetItem(name)
 
             if ret.IsNone then
-                cmdArg.AbortExecution(InputError, "{0} 不是有效道具名", name)
+                cmdArg.Abort(InputError, "{0} 不是有效道具名", name)
 
             ret.Value
 
@@ -153,7 +153,7 @@ type EveLpStoreModule() =
             |> Array.tryFind (fun offer -> offer.Process.GetFirstProduct().Item = item.Id)
 
         if offer.IsNone then
-            cmdArg.AbortExecution(InputError, "不能在{0}的中找到兑换{1}的交易", corp.CorporationName, item.Name)
+            cmdArg.Abort(InputError, "不能在{0}的中找到兑换{1}的交易", corp.CorporationName, item.Name)
 
         let mutable materialPriceSum = offer.Value.IskCost
 
@@ -244,7 +244,7 @@ type EveLpStoreModule() =
         cfg.Parse(cmdArg.Arguments)
 
         match cfg.NonOptionStrings.Count with
-        | 0 -> cmdArg.AbortExecution(InputError, "请输入目标军团名称")
+        | 0 -> cmdArg.Abort(InputError, "请输入目标军团名称")
         | 1 -> x.ShowOverview(cmdArg, cfg)
         | _ -> x.ShowSingleItem(cmdArg, cfg)
 

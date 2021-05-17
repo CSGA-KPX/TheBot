@@ -75,10 +75,10 @@ type TRpgModule() =
         let args = cmdArg.Arguments // 参数检查
 
         if args.Length = 0 || args.Length > 2 then
-            cmdArg.AbortExecution(InputError, "此指令需要1/2个参数 .sc 成功/失败 [当前san]")
+            cmdArg.Abort(InputError, "此指令需要1/2个参数 .sc 成功/失败 [当前san]")
 
         if not <| args.[0].Contains("/") then
-            cmdArg.AbortExecution(InputError, "成功/失败 表达式错误")
+            cmdArg.Abort(InputError, "成功/失败 表达式错误")
 
         let isDaily, currentSan =
             if args.Length = 2 then
@@ -160,7 +160,7 @@ type TRpgModule() =
                     ret.WriteLine("（可选）并为恢复了 {{2D6 = {0}}} 点理智", sanAdd)
             else
                 ret.WriteLine("{0} 对 {1} 的增强或成长鉴定： {{1D100 = {2}}} -> 失败", usrName, attr, roll0)
-        | _ -> cmdArg.AbortExecution(InputError, "参数错误：.ra/.rc 属性/技能名 属性/技能值")
+        | _ -> cmdArg.Abort(InputError, "参数错误：.ra/.rc 属性/技能名 属性/技能值")
 
     [<TestFixture>]
     member x.TestEn() = 
@@ -218,10 +218,10 @@ type TRpgModule() =
             | [| attName; value |] when Int32.TryParse(value, t) ->
                 reason <- attName
                 needDescript <- Some !t
-            | _ -> cmdArg.AbortExecution(InputError, "参数错误：.ra/.rc 属性/技能名 属性/技能值")
+            | _ -> cmdArg.Abort(InputError, "参数错误：.ra/.rc 属性/技能名 属性/技能值")
 
         // 其他指令（不存在）
-        | _ -> cmdArg.AbortExecution(ModuleError, "指令错误")
+        | _ -> cmdArg.Abort(ModuleError, "指令错误")
 
         match parser.TryEval(expr) with
         | Error e -> cmdArg.Reply(sprintf "对 %s 求值失败：%s" expr e.Message)
@@ -266,7 +266,7 @@ type TRpgModule() =
     [<CommandHandlerMethodAttribute(".crule", "查询/设置当前房规区间（不稳定）", "", Disabled = true)>]
     member x.HandleRollRule(cmdArg : CommandEventArgs) =
         if cmdArg.MessageEvent.IsPrivate then
-            cmdArg.AbortExecution(InputError, "此指令仅私聊无效")
+            cmdArg.Abort(InputError, "此指令仅私聊无效")
 
 
         // 属性/技能名 属性/技能值
@@ -277,7 +277,7 @@ type TRpgModule() =
         | [| value |] when Int32.TryParse(value, test) ->
 
             ()
-        | _ -> cmdArg.AbortExecution(InputError, "参数错误：.crule 区间偏移值")
+        | _ -> cmdArg.Abort(InputError, "参数错误：.crule 区间偏移值")
 
         ()
 
@@ -317,7 +317,7 @@ type TRpgModule() =
         opt.Parse(cmdArg)
 
         if opt.NameCount > 20 then
-            cmdArg.AbortExecution(InputError, "数量太多")
+            cmdArg.Abort(InputError, "数量太多")
 
         let de = DiceExpression(Dicer.RandomDicer)
 
@@ -326,7 +326,7 @@ type TRpgModule() =
 
         if opt.NonOptionStrings.Count <> 0 then
             let str = opt.GetNonOptionString()
-            cmdArg.AbortExecution(InputError, "意外参数'{0}'", str)
+            cmdArg.Abort(InputError, "意外参数'{0}'", str)
 
         let names =
             Seq.initInfinite (fun _ -> TrpgStringTemplate(de).ParseTemplate(tmpl))

@@ -133,11 +133,11 @@ type TextResponse(args : CqMessageEventArgs, respType : ResponseType) =
         invalidOp<unit> "已禁用WriteLine(object)，请手动调用WriteLine(object.ToString())。"
 
     /// 中断执行过程，中断文本输出
-    member x.AbortExecution(level : ErrorLevel, fmt : string, [<ParamArray>] fmtargs : obj []) =
+    member x.Abort(level : ErrorLevel, fmt : string, [<ParamArray>] fmtargs : obj []) =
         x.WriteLine()
         buf.Clear()
         isUsed <- false
-        args.AbortExecution(level, fmt, fmtargs)
+        args.Abort(level, fmt, fmtargs)
 
     member x.WriteEmptyLine() = x.WriteLine("\u3000")
 

@@ -40,7 +40,7 @@ type CqEventArgs(api, ctx) =
     member x.BotId = api.CallerId
 
     /// 中断执行过程
-    member x.AbortExecution(level : ErrorLevel, fmt : string, [<ParamArray>] args : obj []) : 'T =
+    member x.Abort(level : ErrorLevel, fmt : string, [<ParamArray>] args : obj []) : 'T =
         match level with
         | IgnoreError -> raise IgnoreException
         | other ->
@@ -83,9 +83,9 @@ type CqMessageEventArgs(api : IApiCallProvider, ctx : EventContext, e) =
 
     member x.Event : MessageEvent = e
 
-    member x.AbortExecution(level : ErrorLevel, fmt : string, [<ParamArray>] args : obj []) : 'T =
+    member x.Abort(level : ErrorLevel, fmt : string, [<ParamArray>] args : obj []) : 'T =
         x.Reply(String.Format(fmt, args))
-        base.AbortExecution(level, fmt, args)
+        base.Abort(level, fmt, args)
 
     member x.Reply(msg : Message, ?atUser : bool) =
         let atUser = defaultArg atUser false

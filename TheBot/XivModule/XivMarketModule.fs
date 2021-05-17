@@ -126,7 +126,7 @@ text 以文本格式输出结果
         | None -> cmdArg.Reply("物品名或采集重建/魔晶石/水晶。")
         | Some "水晶" ->
             if worlds.Length >= 2 then
-                cmdArg.AbortExecution(InputError, "该选项不支持多服务器")
+                cmdArg.Abort(InputError, "该选项不支持多服务器")
 
             [ 2 .. 19 ]
             |> Seq.iter
@@ -146,7 +146,7 @@ text 以文本格式输出结果
 
                 tt.AddPreTable("请按以下方案选择合适的魔晶石类别")
                 using (cmdArg.OpenResponse(ForceImage)) (fun ret -> ret.Write(tt))
-                cmdArg.AbortExecution(IgnoreError, "")
+                cmdArg.Abort(IgnoreError, "")
             else
                 let key = ret.Value
 
@@ -160,7 +160,7 @@ text 以文本格式输出结果
                     )
         | Some "重建采集" ->
             if worlds.Length >= 2 then
-                cmdArg.AbortExecution(InputError, "该选项不支持多服务器")
+                cmdArg.Abort(InputError, "该选项不支持多服务器")
 
             [ 31252 .. 31275 ]
             |> Seq.iter
@@ -177,7 +177,7 @@ text 以文本格式输出结果
                         acc.Update(i)
 
         if acc.Count * worlds.Length >= 50 then
-            cmdArg.AbortExecution(InputError, "查询数量超过上线")
+            cmdArg.Abort(InputError, "查询数量超过上线")
 
         let mutable sumListingAll, sumListingHq = 0.0, 0.0
         let mutable sumTradeAll, sumTradeHq = 0.0, 0.0
@@ -303,7 +303,7 @@ text 以文本格式输出结果
         for str in opt.NonOptionStrings do
             match xivExpr.TryEval(str) with
             | Error err -> raise err
-            | Ok (Number i) -> cmdArg.AbortExecution(InputError, "计算结果为数字{0}，物品Id请加#", i)
+            | Ok (Number i) -> cmdArg.Abort(InputError, "计算结果为数字{0}，物品Id请加#", i)
             | Ok (Accumulator a) ->
                 for mr in a do
                     product.Update(mr)
@@ -316,7 +316,7 @@ text 以文本格式输出结果
                             acc.Update(m.Item, m.Quantity * mr.Quantity)
 
         if acc.Count = 0 then
-            cmdArg.AbortExecution(InputError, "缺少表达式")
+            cmdArg.Abort(InputError, "缺少表达式")
 
         let mutable sum = MarketUtils.StdEv.Zero
 
@@ -470,12 +470,12 @@ text 以文本格式输出结果
             let ret = strToItem (opt.NonOptionStrings.[0])
 
             match ret with
-            | None -> cmdArg.AbortExecution(ModuleError, "找不到物品{0}", opt.NonOptionStrings.[0])
+            | None -> cmdArg.Abort(ModuleError, "找不到物品{0}", opt.NonOptionStrings.[0])
             | Some reqi ->
                 let ia = sc.SearchByCostItemId(reqi.Id)
 
                 if ia.Length = 0 then
-                    cmdArg.AbortExecution(InputError, "{0} 不能兑换道具", reqi.Name)
+                    cmdArg.Abort(InputError, "{0} 不能兑换道具", reqi.Name)
 
                 let tt =
                     TextTable(
@@ -550,7 +550,7 @@ text 以文本格式输出结果
             |> Option.map (fun job -> CraftLeve.CraftLeveInfoCollection.Instance.GetByClassJob(job))
 
         if leves.IsNone then
-            cmdArg.AbortExecution(InputError, "未设置职业或职业无效")
+            cmdArg.Abort(InputError, "未设置职业或职业无效")
 
         let leves =
             leves.Value

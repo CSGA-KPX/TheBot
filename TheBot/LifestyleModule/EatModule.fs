@@ -45,7 +45,7 @@ type EatModule() =
             let msg = Message()
             msg.Add(img)
             cmdArg.Reply(msg)
-            ret.AbortExecution(IgnoreError, "")
+            ret.Abort(IgnoreError, "")
 
         | Some (AtUserType.User uid) ->
             seed <- SeedOption.SeedByAtUserDay(cmdArg.MessageEvent)
@@ -63,7 +63,7 @@ type EatModule() =
         | _ when eatFuncs.ContainsKey(cmdArg.CommandAttrib.Command) ->
             let func = eatFuncs.[cmdArg.CommandAttrib.Command]
             func dicer ret
-        | 0 -> ret.AbortExecution(InputError, "自选输菜名，预设套餐：早/中/晚/加/火锅/萨莉亚")
+        | 0 -> ret.Abort(InputError, "自选输菜名，预设套餐：早/中/晚/加/火锅/萨莉亚")
         | 1 when eatAlias.ContainsKey(cmdArg.Arguments.[0]) ->
             let key = eatAlias.[cmdArg.Arguments.[0]]
             let func = eatFuncs.[key]

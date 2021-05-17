@@ -34,7 +34,7 @@ type DiceModule() =
             let loginInfo = cmdArg.ApiCaller.CallApi<GetLoginInfo>()
 
             match atUser.Value with
-            | AtUserType.All -> sw.AbortExecution(InputError, "公共事件请at bot账号")
+            | AtUserType.All -> sw.Abort(InputError, "公共事件请at bot账号")
             | AtUserType.User x when
                 x = cmdArg.BotUserId
                 && not
@@ -127,7 +127,7 @@ type DiceModule() =
                 let i = int (i)
 
                 if i > 100 then
-                    cmdArg.AbortExecution(InputError, "最多100道")
+                    cmdArg.Abort(InputError, "最多100道")
                 else
                     count <- i
 
@@ -159,7 +159,7 @@ type DiceModule() =
                 let i = int (i)
 
                 if i > 300 then
-                    cmdArg.AbortExecution(InputError, "一井还不够你用？")
+                    cmdArg.Abort(InputError, "一井还不够你用？")
                 elif i >= 10 then
                     count <- i
                 else

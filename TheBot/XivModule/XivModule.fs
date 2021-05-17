@@ -59,7 +59,7 @@ type MiscModule() =
             cmdArg.Reply(sprintf "重建完成，当前有%i个副本" dfcRoulettes.Length)
         else
             if dfcRoulettes.Length = 0 then 
-                cmdArg.AbortExecution(
+                cmdArg.Abort(
                     ModuleError,
                     "模块错误：副本表为空。请使用rebuild"
                 )
@@ -91,7 +91,7 @@ type MiscModule() =
 
             let list = opt.ListCount.Value
 
-            if list > 31 then cmdArg.AbortExecution(InputError, "一个月还不够嘛？")
+            if list > 31 then cmdArg.Abort(InputError, "一个月还不够嘛？")
             for i = 0 to list do
                 let date = startDate.AddDays(float i)
 
@@ -129,10 +129,10 @@ type MiscModule() =
 
         if atUser.IsSome then
             match atUser.Value with
-            | AtUserType.All -> cmdArg.AbortExecution(InputError, "全员发洗澡水？给我一瓶谢谢！")
+            | AtUserType.All -> cmdArg.Abort(InputError, "全员发洗澡水？给我一瓶谢谢！")
             | AtUserType.User i when i = cmdArg.BotUserId ->
-                cmdArg.AbortExecution(InputError, "请联系开发者")
-            | AtUserType.User _ -> cmdArg.AbortExecution(ModuleError, "暂不支持")
+                cmdArg.Abort(InputError, "请联系开发者")
+            | AtUserType.User _ -> cmdArg.Abort(ModuleError, "暂不支持")
 
         let dicer =
             new Dicer(SeedOption.SeedByUserDay(cmdArg.MessageEvent))
@@ -172,9 +172,9 @@ type MiscModule() =
                 if ret.IsSome then job <- Some(ret.Value.Value)
 
         if job.IsNone
-        then cmdArg.AbortExecution(InputError, "没有职业信息。职业可以使用：单字简称/全程/英文简称")
+        then cmdArg.Abort(InputError, "没有职业信息。职业可以使用：单字简称/全程/英文简称")
 
-        if iLv.IsNone then cmdArg.AbortExecution(InputError, "没有品级信息")
+        if iLv.IsNone then cmdArg.Abort(InputError, "没有品级信息")
 
         let cgc =
             CraftGearSet.CraftableGearCollection.Instance
@@ -211,9 +211,9 @@ type MiscModule() =
                 itemCol.SearchByName(i)
                 |> Array.sortBy (fun x -> x.Id)
 
-            if ret.Length >= 50 then cmdArg.AbortExecution(InputError, "结果太多，请优化关键词")
+            if ret.Length >= 50 then cmdArg.Abort(InputError, "结果太多，请优化关键词")
 
-            if ret.Length = 0 then cmdArg.AbortExecution(InputError, "无结果")
+            if ret.Length = 0 then cmdArg.Abort(InputError, "无结果")
 
             for item in ret do
                 tt.AddRow(item.Id, item.Name)
@@ -347,7 +347,7 @@ type MiscModule() =
                 let tt = TextTable("CD时间", "概述", "tid", "rid")
                 let count = opt.ListCount.Value
 
-                if count > 12 * 31 then cmdArg.AbortExecution(InputError, "那时间可太长了。")
+                if count > 12 * 31 then cmdArg.Abort(InputError, "那时间可太长了。")
                 for i = 0 to count - 1 do
                     let cd = now.AddHours((float i) * 2.0)
                     let info = OceanFishing.CalculateCooldown(cd)
@@ -388,7 +388,7 @@ type MiscModule() =
                     info.RouteId,
                     info.IsNextCooldown
                 )
-        with e -> ret.AbortExecution(ModuleError, "CD计算错误，请通告管理员：\r\n{0}", e)
+        with e -> ret.Abort(ModuleError, "CD计算错误，请通告管理员：\r\n{0}", e)
 
     [<TestFixture>]
     member x.TestIKD() = 
