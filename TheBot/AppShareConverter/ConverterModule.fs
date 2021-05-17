@@ -48,7 +48,7 @@ type ConverterModule() =
 
     member private x.ReplayMessage(e : CqMessageEventArgs, msg : string) = 
         if e.Event.IsPrivate then
-            e.QuickMessageReply(msg)
+            e.Reply(msg)
 
     member private x.HandleXmlSection(_ : CqMessageEventArgs, _ : XmlSection) = 
         ()

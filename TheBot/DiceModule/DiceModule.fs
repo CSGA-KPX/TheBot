@@ -92,7 +92,7 @@ type DiceModule() =
             Dicer(SeedOption.SeedByUserDay(cmdArg.MessageEvent))
 
         let jrrp = dicer.GetPostive(100u)
-        cmdArg.QuickMessageReply(sprintf "%s今日人品值是：%i" cmdArg.MessageEvent.DisplayName jrrp)
+        cmdArg.Reply(sprintf "%s今日人品值是：%i" cmdArg.MessageEvent.DisplayName jrrp)
 
     [<CommandHandlerMethodAttribute("#cal",
                                     "计算器",
@@ -114,7 +114,7 @@ type DiceModule() =
 
             sb.AppendFormat("{0} = {1}", arg, sum) |> ignore
 
-        cmdArg.QuickMessageReply(sb.ToString())
+        cmdArg.Reply(sb.ToString())
 
     [<CommandHandlerMethodAttribute("#选择题", "考试专用", "")>]
     member x.HandleChoice(cmdArg : CommandEventArgs) =
@@ -141,7 +141,7 @@ type DiceModule() =
             |> Array.chunkBySize 4 // 4组一行
             |> Array.map (fun chk -> String.Join(" ", chk))
 
-        cmdArg.QuickMessageReply(String.Join("\r\n", chunks))
+        cmdArg.Reply(String.Join("\r\n", chunks))
 
     [<CommandHandlerMethodAttribute("#gacha",
                                     "抽10连 概率3%",
@@ -178,4 +178,4 @@ type DiceModule() =
                 .Append(String.Join(" ", ret))
                 .ToString()
 
-        cmdArg.QuickMessageReply(reply)
+        cmdArg.Reply(reply)

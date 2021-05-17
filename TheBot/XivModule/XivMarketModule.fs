@@ -123,7 +123,7 @@ text 以文本格式输出结果
         let worlds = opt.World.Values
 
         match opt.NonOptionStrings |> Seq.tryHead with
-        | None -> cmdArg.QuickMessageReply("物品名或采集重建/魔晶石/水晶。")
+        | None -> cmdArg.Reply("物品名或采集重建/魔晶石/水晶。")
         | Some "水晶" ->
             if worlds.Length >= 2 then
                 cmdArg.AbortExecution(InputError, "该选项不支持多服务器")

@@ -44,7 +44,7 @@ type EatModule() =
 
             let msg = Message()
             msg.Add(img)
-            cmdArg.QuickMessageReply(msg)
+            cmdArg.Reply(msg)
             ret.AbortExecution(IgnoreError, "")
 
         | Some (AtUserType.User uid) ->

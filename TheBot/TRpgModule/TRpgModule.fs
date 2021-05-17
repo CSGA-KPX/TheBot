@@ -224,7 +224,7 @@ type TRpgModule() =
         | _ -> cmdArg.AbortExecution(ModuleError, "指令错误")
 
         match parser.TryEval(expr) with
-        | Error e -> cmdArg.QuickMessageReply(sprintf "对 %s 求值失败：%s" expr e.Message)
+        | Error e -> cmdArg.Reply(sprintf "对 %s 求值失败：%s" expr e.Message)
         | Ok i ->
             let rolled = i.Sum |> int
             let usrName = cmdArg.MessageEvent.DisplayName
@@ -247,7 +247,7 @@ type TRpgModule() =
                 |> cmdArg.ApiCaller.CallApi
                 |> ignore
             else
-                cmdArg.QuickMessageReply(msg)
+                cmdArg.Reply(msg)
 
     [<TestFixture>]
     member x.TestR() = 
@@ -298,7 +298,7 @@ type TRpgModule() =
         let ret =
             TrpgStringTemplate(de).ParseTemplate(tmpl)
 
-        cmdArg.QuickMessageReply(ret)
+        cmdArg.Reply(ret)
 
     [<CommandHandlerMethodAttribute(".bg", "生成人物背景", "")>]
     member x.HandleChrBackground(cmdArg : CommandEventArgs) =
@@ -309,7 +309,7 @@ type TRpgModule() =
             TrpgStringTemplate(de)
                 .ParseByKey(StringData.Key_ChrBackground)
 
-        cmdArg.QuickMessageReply(ret)
+        cmdArg.Reply(ret)
 
     [<CommandHandlerMethodAttribute(".name", "生成人物背景", "")>]
     member x.HandleChrName(cmdArg : CommandEventArgs) =
@@ -334,7 +334,7 @@ type TRpgModule() =
             |> Seq.take opt.NameCount
 
         let ret = String.Join(" ", names)
-        cmdArg.QuickMessageReply(ret)
+        cmdArg.Reply(ret)
 
     [<TestFixture>]
     member x.TestGenerator() = 

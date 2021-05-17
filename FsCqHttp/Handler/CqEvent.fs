@@ -59,7 +59,7 @@ type CqEventArgs(api, ctx) =
 
             raise IgnoreException
 
-    member x.SendResponse(r : EventResponse) =
+    member x.Reply(r : EventResponse) =
         if r <> EmptyResponse then
             let rep =
                 QuickOperation(ctx.ToString())
@@ -84,28 +84,28 @@ type CqMessageEventArgs(api : IApiCallProvider, ctx : EventContext, e) =
     member x.Event : MessageEvent = e
 
     member x.AbortExecution(level : ErrorLevel, fmt : string, [<ParamArray>] args : obj []) : 'T =
-        x.QuickMessageReply(String.Format(fmt, args))
+        x.Reply(String.Format(fmt, args))
         base.AbortExecution(level, fmt, args)
 
-    member x.QuickMessageReply(msg : Message, ?atUser : bool) =
+    member x.Reply(msg : Message, ?atUser : bool) =
         let atUser = defaultArg atUser false
 
         if msg.ToString().Length > KPX.FsCqHttp.Config.Output.TextLengthLimit then
             invalidOp "回复字数超过上限。"
 
         if x.Event.IsDiscuss then
-            x.SendResponse(DiscusMessageResponse(msg, atUser))
+            x.Reply(DiscusMessageResponse(msg, atUser))
         elif x.Event.IsGroup then
-            x.SendResponse(GroupMessageResponse(msg, atUser, false, false, false, 0))
+            x.Reply(GroupMessageResponse(msg, atUser, false, false, false, 0))
         elif x.Event.IsPrivate then
-            x.SendResponse(PrivateMessageResponse(msg))
+            x.Reply(PrivateMessageResponse(msg))
         else
             raise <| InvalidOperationException("")
 
-    member x.QuickMessageReply(str : string, ?atUser : bool) =
+    member x.Reply(str : string, ?atUser : bool) =
         let msg = new Message()
         msg.Add(str)
-        x.QuickMessageReply(msg, defaultArg atUser false)
+        x.Reply(msg, defaultArg atUser false)
 
 type CqNoticeEventArgs(api, ctx, e) =
     inherit CqEventArgs(api, ctx)

@@ -40,21 +40,21 @@ type SudoModule() =
             + "\r\n"
             + caller.CallApi<GetVersionInfo>().ToString()
 
-        cmdArg.QuickMessageReply(info)
+        cmdArg.Reply(info)
 
     [<CommandHandlerMethodAttribute("##rebuilddatacache", "(超管) 重建数据缓存", "", IsHidden = true)>]
     member x.HandleRebuildXivDb(cmdArg : CommandEventArgs) =
         cmdArg.EnsureSenderOwner()
         BotDataInitializer.ClearCache()
         BotDataInitializer.ShrinkCache()
-        cmdArg.QuickMessageReply("清空数据库完成")
+        cmdArg.Reply("清空数据库完成")
         BotDataInitializer.InitializeAllCollections()
-        cmdArg.QuickMessageReply("重建数据库完成")
+        cmdArg.Reply("重建数据库完成")
 
     [<CommandHandlerMethodAttribute("##su", "提交凭据，添加当前用户为超管", "", IsHidden = true)>]
     member x.HandleSu(cmdArg : CommandEventArgs) =
         if isSuUsed then
-            cmdArg.QuickMessageReply("本次认证已被使用")
+            cmdArg.Reply("本次认证已被使用")
         else
             let path = Assembly.GetExecutingAssembly().Location
             let md5 = MD5.Create()
@@ -72,7 +72,7 @@ type SudoModule() =
                 x.Logger.Info("添加超管和管理员权限{0}", uid)
                 cmdArg.SetInstanceOwner(uid)
                 cmdArg.GrantBotAdmin(uid)
-                cmdArg.QuickMessageReply("完毕")
+                cmdArg.Reply("完毕")
 
             isSuUsed <- true
 
@@ -93,14 +93,14 @@ type SudoModule() =
                 sb.AppendLine(sprintf "已添加userId = %i" uid)
                 |> ignore
 
-        cmdArg.QuickMessageReply(sb.ToString())
+        cmdArg.Reply(sb.ToString())
 
     [<CommandHandlerMethodAttribute("##admins", "（超管）显示当前机器人管理账号", "", IsHidden = true)>]
     member x.HandleShowBotAdmins(cmdArg : CommandEventArgs) =
         cmdArg.EnsureSenderOwner()
         let admins = cmdArg.GetBotAdmins()
         let ret = String.Join("\r\n", admins)
-        cmdArg.QuickMessageReply(ret)
+        cmdArg.Reply(ret)
 
     [<CommandHandlerMethodAttribute("##showgroups", "（超管）检查加群信息", "", IsHidden = true)>]
     member x.HandleShowGroups(cmdArg : CommandEventArgs) =
@@ -112,7 +112,7 @@ type SudoModule() =
         for g in api.Groups do
             tt.AddRow(g.GroupId, g.GroupName)
 
-        cmdArg.QuickMessageReply(tt.ToString())
+        cmdArg.Reply(tt.ToString())
 
     [<CommandHandlerMethodAttribute("##abortall", "（超管）断开所有WS连接", "", IsHidden = true)>]
     member x.HandleShowAbortAll(cmdArg : CommandEventArgs) =
@@ -136,7 +136,7 @@ type SudoModule() =
                 allowGroupFmt cmdArg.BotUserId (group.Value)
 
             allowList.Add(key) |> ignore
-            cmdArg.QuickMessageReply(sprintf "接受来自[%s]的邀请" key)
+            cmdArg.Reply(sprintf "接受来自[%s]的邀请" key)
         elif qq.IsDefined then
             cmdArg.EnsureSenderAdmin()
 
@@ -144,12 +144,12 @@ type SudoModule() =
                 allowQqFmt cmdArg.BotUserId (qq.Value)
 
             allowList.Add(key) |> ignore
-            cmdArg.QuickMessageReply(sprintf "接受来自[%s]的邀请" key)
+            cmdArg.Reply(sprintf "接受来自[%s]的邀请" key)
         else
             let sb = Text.StringBuilder()
             Printf.bprintf sb "设置群白名单： group:群号\r\n"
             Printf.bprintf sb "设置好友： qq:群号\r\n"
-            cmdArg.QuickMessageReply(sb.ToString())
+            cmdArg.Reply(sb.ToString())
 
     override x.OnRequest = Some x.HandleRequest
 
@@ -160,9 +160,9 @@ type SudoModule() =
                 allowList.Contains(allowQqFmt args.BotUserId req.UserId)
 
             let isAdmin = args.GetBotAdmins().Contains(req.UserId)
-            args.SendResponse(FriendAddResponse(inList || isAdmin, ""))
+            args.Reply(FriendAddResponse(inList || isAdmin, ""))
         | GroupRequest req ->
             let inList =
                 allowList.Contains(allowGroupFmt args.BotUserId req.GroupId)
 
-            args.SendResponse(GroupAddResponse(inList, ""))
+            args.Reply(GroupAddResponse(inList, ""))

@@ -56,7 +56,7 @@ type MiscModule() =
 
         if opt.RebuildData.IsDefined then
             dfcRoulettes <- buildDfc ()
-            cmdArg.QuickMessageReply(sprintf "重建完成，当前有%i个副本" dfcRoulettes.Length)
+            cmdArg.Reply(sprintf "重建完成，当前有%i个副本" dfcRoulettes.Length)
         else
             if dfcRoulettes.Length = 0 then 
                 cmdArg.AbortExecution(
@@ -144,7 +144,7 @@ type MiscModule() =
         |> Array.sortBy (snd)
         |> Array.iter (fun (str, d) -> tt.AddRow(d, str))
 
-        cmdArg.QuickMessageReply(tt.ToString())
+        cmdArg.Reply(tt.ToString())
 
     [<TestFixture>]
     member x.TestXivFantasia() = 
@@ -189,9 +189,9 @@ type MiscModule() =
                     if item.Name.Contains(" ") then sprintf "#%i" item.Id else item.Name)
 
         if ret.Length <> 0 then
-            cmdArg.QuickMessageReply(String.Join("+", ret))
+            cmdArg.Reply(String.Join("+", ret))
         else
-            cmdArg.QuickMessageReply("没找到")
+            cmdArg.Reply("没找到")
 
     [<TestFixture>]
     member x.TestXivCGSS() = 
@@ -235,7 +235,7 @@ type MiscModule() =
         |> Array.sortBy (snd)
         |> Array.iter (fun (door, score) -> tt.AddRow((sprintf "%03i" score), door))
 
-        cmdArg.QuickMessageReply(tt.ToString())
+        cmdArg.Reply(tt.ToString())
 
     [<TestFixture>]
     member x.TestGate() = 
@@ -249,7 +249,7 @@ type MiscModule() =
             |> Seq.distinctBy (fun numStr -> numStr.[3])
             |> Seq.take 3
 
-        cmdArg.QuickMessageReply(sprintf "%s" (String.Join(" ", nums)))
+        cmdArg.Reply(sprintf "%s" (String.Join(" ", nums)))
 
     [<TestFixture>]
     member x.TestCactpot() = 

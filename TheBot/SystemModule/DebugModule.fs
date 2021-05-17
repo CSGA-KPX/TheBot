@@ -86,7 +86,7 @@ type DebugModule() =
                 Config.Logging.LogApiJson
                 Config.Logging.LogCommandCall
 
-        cmdArg.QuickMessageReply(ret)
+        cmdArg.Reply(ret)
 
     [<CommandHandlerMethodAttribute("##showlog", "(超管) 显示日志", "", IsHidden = true)>]
     member x.HandleShowLogging(cmdArg : CommandEventArgs) =
@@ -95,7 +95,7 @@ type DebugModule() =
         let logs = nlogMemoryTarget.Logs
 
         if logs.Count = 0 then
-            cmdArg.QuickMessageReply("暂无")
+            cmdArg.Reply("暂无")
         else
             use ret = cmdArg.OpenResponse(PreferImage)
 
@@ -121,7 +121,7 @@ type DebugModule() =
             |> Seq.toArray
             |> Array.iter (fun test -> test.Invoke())
 
-            cmdArg.QuickMessageReply("成功完成")
+            cmdArg.Reply("成功完成")
         with e -> 
             using (cmdArg.OpenResponse(PreferImage)) (fun ret -> ret.Write(sprintf "%O" e))
 

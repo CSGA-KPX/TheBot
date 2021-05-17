@@ -62,7 +62,7 @@ module internal TaskScheduler =
             | :? ModuleException as me ->
                 if args :? CqMessageEventArgs then
                     (args :?> CqMessageEventArgs)
-                        .QuickMessageReply(sprintf "错误：%s" me.Message)
+                        .Reply(sprintf "错误：%s" me.Message)
 
                 args.Logger.Warn(
                     "[{0}] -> {1} : {2} \r\n ctx： {3}",
@@ -74,7 +74,7 @@ module internal TaskScheduler =
             | _ ->
                 if args :? CqMessageEventArgs then
                     (args :?> CqMessageEventArgs)
-                        .QuickMessageReply(sprintf "内部错误：%s" rootExn.Message)
+                        .Reply(sprintf "内部错误：%s" rootExn.Message)
 
                 args.Logger.Error(sprintf "捕获异常：\r\n %O" e)
 

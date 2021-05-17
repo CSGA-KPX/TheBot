@@ -162,7 +162,7 @@ type TextResponse(args : CqMessageEventArgs, respType : ResponseType) =
                if page.Count <> 0 then yield String.Join(newline, page) |]
 
         for page in pages do
-            args.QuickMessageReply(page)
+            args.Reply(page)
 
     member private x.FlushImageMessage() =
         let DrawLines (lines : string []) =
@@ -213,7 +213,7 @@ type TextResponse(args : CqMessageEventArgs, respType : ResponseType) =
             use img = DrawLines(lines)
             let message = Message()
             message.Add(img)
-            args.QuickMessageReply(message)
+            args.Reply(message)
 
     override x.Flush() =
         if x.DoSendAsImage then
