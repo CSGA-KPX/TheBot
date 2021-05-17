@@ -41,6 +41,8 @@ exception AssertFailedException of string
 type TestContext(m : HandlerModuleBase, ?parent : CqWsContextBase) as x =
     inherit CqWsContextBase()
 
+    static let logger = NLog.LogManager.GetCurrentClassLogger()
+
     let botUserId = 10000UL
     let botUserName = "测试用户"
 
@@ -72,6 +74,7 @@ type TestContext(m : HandlerModuleBase, ?parent : CqWsContextBase) as x =
         x.InvokeCommand(msg)
 
     member x.InvokeCommand(msg : Message) =
+        logger.Info("正在测试 : {0}", msg.ToCqString())
         let msgEvent = x.MakeEvent(msg)
 
         let cmd = x.Modules.TryCommand(msgEvent)

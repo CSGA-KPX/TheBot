@@ -134,8 +134,8 @@ type DiceModule() =
         let choices = [| "A"; "B"; "C"; "D" |]
 
         let chunks =
-            Dicer.RandomDicer.GetNaturalArray(choices.Length, count)
-            |> Array.map (fun x -> choices.[x - 1])
+            Dicer.RandomDicer.GetNaturalArray(choices.Length - 1, count)
+            |> Array.map (fun x -> choices.[x])
             |> Array.chunkBySize 5 // 5个一组
             |> Array.map (fun chk -> String.Join("", chk))
             |> Array.chunkBySize 4 // 4组一行
