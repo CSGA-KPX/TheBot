@@ -16,7 +16,7 @@ open Newtonsoft.Json.Linq
 [<Sealed>]
 type EventContext (ctx : JObject) = 
     
-    let str = lazy (ctx.ToString(Newtonsoft.Json.Formatting.None))
+    let str = lazy (ctx.ToString(Newtonsoft.Json.Formatting.Indented))
 
     member x.Event = ctx
 
@@ -49,7 +49,7 @@ type CqEventArgs(api, ctx) =
             let stack = Diagnostics.StackTrace().ToString()
 
             x.Logger.Warn(
-                "[{0}] -> {1} : {3} \r\n ctx： {2} \r\n stack : {4}",
+                "[{0}] -> {1} : {3} \r\n ctx： \r\n{2} \r\n stack : \r\n{4}",
                 x.BotUserId,
                 lvl,
                 sprintf "%A" x.RawEvent,
