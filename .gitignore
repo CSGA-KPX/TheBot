@@ -339,3 +339,6 @@ ASALocalRun/
 # BeatPulse healthcheck temp database
 healthchecksdb
 .ionide
+
+# 隐藏服务器信息
+/.vscode/DebugArgs.txt
