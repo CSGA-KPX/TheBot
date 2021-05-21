@@ -1,0 +1,46 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": ".NET Core Launch (console)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/TheBot/bin/Debug/TheBot.dll",
+            "args": ["endpoint:${input:getEndpoint}", "token:${input:getToken}"],
+            "cwd": "${workspaceFolder}/TheBot/bin/Debug/",
+            "console": "internalConsole",
+            "stopAtEntry": false,
+            "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
+            "name": ".NET Core Attach",
+            "type": "coreclr",
+            "request": "attach",
+            "processId": "${command:pickProcess}"
+        }
+    ],
+    "inputs": [
+        {
+            "id": "getEndpoint",
+            "type": "command",
+            "command": "extension.commandvariable.file.content",
+            "args": {
+                "fileName": "${workspaceFolder}/.vscode/DebugArgs.txt",
+                "key" : "endpoint"
+            }
+        },
+        {
+            "id": "getToken",
+            "type": "command",
+            "command": "extension.commandvariable.file.content",
+            "args": {
+                "fileName": "${workspaceFolder}/.vscode/DebugArgs.txt",
+                "key" : "token"
+            }
+        }
+    ]
+}
