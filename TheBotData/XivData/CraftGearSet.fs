@@ -54,13 +54,14 @@ type CraftableGearCollection private () =
                 let sheet = col.GetSheet("ClassJobCategory")
 
                 let jobs =
-                    sheet.Header.Headers.[2..]
-                    |> Array.map (fun x -> x.ColumnName)
+                    sheet.Header.Headers
+                    |> Seq.skip 2
+                    |> Seq.map (fun x -> x.ColumnName)
 
                 for row in sheet do
                     let j =
                         jobs
-                        |> Array.filter (fun job -> row.As<bool>(job))
+                        |> Seq.filter (fun job -> row.As<bool>(job))
 
                     yield row.Key.Main, String.Join(" ", j)
             }

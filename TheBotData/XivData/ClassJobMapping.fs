@@ -30,7 +30,7 @@ type ClassJobMappingCollection private () =
                 let abbr = row.Abbreviation.AsString()
                 yield abbr, abbr
                 yield row.Name.AsString(), abbr
-                yield row.UNK_2.AsString(), abbr
+                yield row.RAW_2.AsString(), abbr
 
             yield! [| "占星", "AST"; "诗人", "BRD" |]
         }
