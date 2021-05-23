@@ -1,0 +1,168 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="战斗空间信号" xml:space="preserve">
+    <value>类型	出现	难度	天使	血袭者	古斯塔斯	萨沙	天蛇	无人机
+异常	高	 1.1	天使隐蔽处	血袭者隐蔽处	古斯塔斯隐蔽处	萨沙隐蔽处	天蛇隐蔽处	无人机群
+异常	高	 1.2	隐秘的天使藏身处	隐秘的血袭者藏身处	隐秘的古斯塔斯藏身处	隐秘的萨沙藏身处	天蛇隐秘藏身处	无人机群
+异常	高	 1.3	废弃的天使藏身处	废弃的血袭者藏身处	废弃的古斯塔斯藏身处	萨沙离弃藏身地	天蛇离弃藏身地	无人机群
+异常	高	 1.4	荒废的天使藏身处	荒废的血袭者藏身处	遭弃的古斯塔斯藏身处	荒废的萨沙藏身处	荒废的天蛇藏身处	无人机群
+异常	高	 2.1	天使洞穴	血袭者藏身处	古斯塔斯藏身处	萨沙藏身处	天蛇藏身处	无人机集群
+异常	高低	 3.1	天使庇护所	血袭者庇护所	古斯塔斯庇护所	萨沙庇护所	天蛇庇护所	无人机集结
+异常	高低	 4.1	天使贼窝	血袭者贼窝	古斯塔斯贼窝	萨沙贼窝	天蛇贼窝	无人机聚集
+异常	低零	 4.2	隐匿的天使据点	血袭者隐藏地	古斯塔斯隐秘据点	隐匿的萨沙据点	天蛇集团隐秘据点	无人机聚集
+异常	低零	 4.3	天使遗忘的隐藏所	废弃的血袭者据点	废弃的古斯塔斯据点	萨沙离弃地	天蛇遗忘的隐藏所	无人机聚集
+异常	低零	 4.4	荒废的天使据点	荒废的血袭者据点	遭弃的古斯塔斯营地	荒废的萨沙据点	天蛇废弃隐藏处	无人机聚集
+异常	低	 5.1	天使船坞	血袭者船坞	古斯塔斯船坞	萨沙船坞	天蛇船坞	无人机监查
+异常	低零	 6.1	天使集会点	血袭者集会点	古斯塔斯集会点	萨沙集会点	天蛇集会点	无人机群落
+异常	低零	 6.2	天使隐秘集合点	血袭者隐秘集合点	古斯塔斯隐秘集合点	萨沙隐秘的集会点	天蛇集团隐秘集会点	无人机群落
+异常	低零	 6.3	废弃的天使集会点	废弃的血袭者集会点	废弃的古斯塔斯集会点	废弃的萨沙集会点	废弃的天蛇集会点	无人机群落
+异常	低零	 6.4	荒废的天使集合地	荒废的血袭者集会点	遭弃的古斯塔斯集合点	荒废的萨沙集会点	荒废的天蛇集会点	无人机群落
+异常	低零	 7.1	天使港	血袭者港	古斯塔斯港	萨沙港	天蛇港	无人机团
+异常	低零	 8.1	天使活动中心	血袭者活动中心	古斯塔斯活动中心	萨沙活动中心	天蛇活动中心	无人机小队
+异常	低零	 8.2	天使隐秘老巢	血袭者隐秘老巢	古斯塔斯隐秘枢纽	萨沙隐藏空间站	天蛇隐秘枢纽	无人机小队
+异常	低零	 8.3	天使离弃老巢	血袭者离弃老巢	废弃的古斯塔斯枢纽	萨沙离弃老巢	废弃的天蛇枢纽	无人机小队
+异常	低零	 8.4	遗弃的天使老巢	血袭者离弃老巢	遗弃的古斯塔斯老巢	荒废的萨沙据点	荒废的天蛇枢纽	无人机小队
+异常	零	 9.1	天使避难所	血袭者避难所	古斯塔斯避难所	萨沙避难所	天蛇避难所	无人机巡逻队
+异常	零	10.1	天使圣坛	血袭者圣坛	古斯塔斯圣坛	萨沙圣坛	天蛇圣坛	无人机群
+死亡	高低	-	天使隐蔽所	血袭者隐蔽所	古斯塔藏身处	萨沙藏身处	天蛇藏身处	闹鬼庭院
+死亡	高低	-	天使集团哨所	血袭者哨所	古斯塔哨所	萨沙哨站	天蛇集团哨站	凄凉小站
+死亡	高低	-	天使瞭望站	血袭者瞭望站	古斯塔斯监察哨	萨沙瞭望塔	天蛇瞭望塔	化学园区
+死亡	高低	-	天使警卫哨	血袭者警卫哨	古斯塔斯警卫哨	萨沙警卫哨	天蛇警卫哨	-
+死亡	低	-	天使区域哨	血袭者区域哨	古斯塔斯区域哨	萨沙区域哨	天蛇区域哨	自由无人机审判场
+死亡	低	-	天使哨站	血袭者哨站	古斯塔哨站	萨沙哨站	天蛇哨站	不洁小站
+死亡	低	-	小型天使附属区	小型血袭者附属区	小型古斯塔斯附属区	小型萨沙附属区	小型天蛇附属区	废墟
+死亡	低	-	天使附属区	血袭者附属区	古斯塔斯附属区	萨沙附属区	天蛇附属区	-
+死亡	零	-	天使基地	血袭者基地	古斯塔基地	萨沙基地	天蛇基地	独立
+死亡	零	-	天使要塞	血袭者堡垒	古斯塔堡垒	萨沙堡垒	天蛇堡垒	眩光
+死亡	零	-	天使军事基地	血袭者军事基地	古斯塔斯军事基地	萨沙军用复合体	天蛇军用复合体	等级制度
+死亡	零	-	天使辖区总部	血袭者辖区总部	古斯塔斯辖区总部	萨沙辖区总部	天蛇辖区总部	-
+死亡	零	-	主天使舰队集结点	黑暗血袭者舰队集结点	恐惧古斯塔斯舰队集结点	萨沙爱国者舰队集结点	暗影天蛇舰队集结点	-
+DED	高低	 1 护卫	米玛塔尔承包模拟生态农场	“小气鬼”修心场	皮特—洛波斯小行星矿冶公司	萨沙军事哨站	天蛇毒品出口	-
+DED	高低	 2 驱逐	天使创造工业矿冶	血袭者人类养殖场	波希佣兵站	萨沙奴化设施	天蛇货物配送设施	自由无人机萌生地
+DED	高低	 3 巡洋	天使改良哨站	血袭者情报收集点	古斯塔斯游击队根据地	萨沙司令部	天蛇迷幻药贮藏所	自由无人机出没的小行星
+DED	高低	 4 战巡	天使集团占据的采矿殖民地	毛—扎塔修道院	古斯塔斯侦察哨站	萨沙占据的采矿殖民地	天蛇二十一哨站	-
+DED	高低	 5 战列	天使红灯区	血袭者精神药物仓库	古斯塔斯迷幻剂供应中转站	萨沙神经麻痹中心	天蛇集团水培站点	扩张自由无人机母巢
+DED	低零	 6 战列战略	天使矿物采集哨站	血腥傀儡补给站	古斯塔斯复兴营地	萨沙补给复合体	天蛇后勤哨站	-
+DED	零	 7	天使军用复合体	血袭者协调中心	古斯塔斯军用复合体	萨沙军用复合体	天蛇民兵设施群	-
+DED	零	 8	天使拘留所	血袭者监狱	皮特管教所	萨沙监狱	天蛇监狱	-
+DED	零	 9	-	-	-	-	-	-
+DED	零	10	天使海军造船厂	血袭者海军船坞	迷魂阵	森屠斯“实力派”装配工厂	天蛇舰队船坞	扩张自由无人机母巢</value>
+  </data>
+</root>

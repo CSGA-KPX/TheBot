@@ -84,6 +84,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Update="Resources\EVE.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
     <EmbeddedResource Update="Resources\Eat.resx">
       <Generator>ResXFileCodeGenerator</Generator>
     </EmbeddedResource>
