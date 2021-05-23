@@ -12,6 +12,12 @@ open KPX.TheBot.Data.EveData
 open KPX.TheBot.Utils.EmbeddedResource
 
 
+type CombatSiteInfo =
+    { Type : string
+      FoundIn : string
+      Difficulty : string
+      Name : string }
+
 type EveMiscModule() =
     inherit CommandHandlerBase()
 
@@ -81,16 +87,51 @@ type EveMiscModule() =
         let tc = TestContext(x)
         tc.ShouldNotThrow("#evesci 吉他 皮尔米特")
 
-    [<CommandHandlerMethodAttribute("#eve异常", "EVE异常/死亡表", "")>]
-    [<CommandHandlerMethodAttribute("#eve死亡", "EVE异常/死亡表", "")>]
+    member val EveCombatSites =
+        [| let mgr =
+               StringResource("EVE").GetLines("战斗空间信号")
+               |> Array.map (fun line -> line.Split('\t'))
+
+           for line in mgr do
+               let t = line.[0]
+               let f = line.[1]
+               let d = line.[2]
+
+               for i = 3 to line.Length - 1 do
+                   let n = line.[i]
+                   if n <> "-" then
+                       yield
+                           { CombatSiteInfo.Type = t
+                             CombatSiteInfo.Difficulty = d
+                             CombatSiteInfo.FoundIn = f
+                             CombatSiteInfo.Name = n } |]
+
+    [<CommandHandlerMethodAttribute("#eve异常", "EVE异常/死亡表 可接信号名称", "")>]
+    [<CommandHandlerMethodAttribute("#eve死亡", "EVE异常/死亡表 可接信号名称", "")>]
     member x.HandleUnrated(cmdArg : CommandEventArgs) =
-        let mgr =
-            StringResource("EVE").GetLines("战斗空间信号")
-            |> Array.map (fun line -> line.Split('\t') |> Array.map box)
+        if cmdArg.Arguments.Length = 0 then
+            let mgr =
+                StringResource("EVE").GetLines("战斗空间信号")
+                |> Array.map (fun line -> line.Split('\t') |> Array.map box)
 
-        let tt = TextTable(mgr.[0])
+            let tt = TextTable(mgr.[0])
 
-        for i = 1 to mgr.Length - 1 do
-            tt.AddRow(mgr.[i])
+            for i = 1 to mgr.Length - 1 do
+                tt.AddRow(mgr.[i])
 
-        using (cmdArg.OpenResponse(ForceImage)) (fun ret -> ret.Write(tt))
+            using (cmdArg.OpenResponse(ForceImage)) (fun ret -> ret.Write(tt))
+        else
+            use ret = cmdArg.OpenResponse(ForceText)
+
+            for arg in cmdArg.Arguments do
+                let mutable found = false
+
+                for site in x.EveCombatSites do
+                    if site.Name = arg then
+                        found <- true
+                        ret.WriteLine("{0}：", arg)
+                        ret.WriteLine("	类型：{0}", site.Type)
+                        ret.WriteLine("	难度：{0}", site.Difficulty)
+                        ret.WriteLine("	安等：{0}", site.FoundIn)
+
+                if not found then ret.WriteLine("{0}：未找到相关信息", arg)
