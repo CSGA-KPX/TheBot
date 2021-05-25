@@ -50,6 +50,7 @@
     <Compile Include="EVEModule\Extensions.fs" />
     <Compile Include="EVEModule\EveExpression.fs" />
     <Compile Include="EVEModule\MarketUtils.fs" />
+    <Compile Include="EVEModule\UserInventory.fs" />
     <Compile Include="EVEModule\Modules\MarketModule.fs" />
     <Compile Include="EVEModule\Modules\LpStoreModule.fs" />
     <Compile Include="EVEModule\Modules\RecipeModule.fs" />

@@ -27,17 +27,43 @@ type CommandHandlerMethodAttribute(command : string, desc, lh) =
     member val IsHidden = false with get, set
 
 [<Sealed>]
-type CommandEventArgs (args : CqMessageEventArgs, attr : CommandHandlerMethodAttribute) = 
+/// 备注：
+/// 每个消息的第一行是指令行，其他的需要通过MsgBodyLines访问
+type CommandEventArgs(args : CqMessageEventArgs, attr : CommandHandlerMethodAttribute) =
     inherit CqMessageEventArgs(args.ApiCaller, args.RawEvent, args.Event)
 
     let rawMsg = args.Event.Message.ToString()
 
+    let lines =
+        seq {
+            use sr = new IO.StringReader(rawMsg)
+            let mutable hasMore = true
+
+            while hasMore do
+                let line = sr.ReadLine()
+
+                if isNull line then
+                    yield String.Empty // 至少返回一个值，避免出现空序列。
+                    hasMore <- false
+                else
+                    yield line
+        }
+
     let cmdLine =
-        rawMsg.Split(
+        let fstLine = lines |> Seq.head
+
+        fstLine.Split(
             [| ' '
                KPX.FsCqHttp.Config.Output.TextTable.FullWidthSpace |],
             StringSplitOptions.RemoveEmptyEntries
         )
+
+    do
+        for line in lines do 
+            printfn "调试信息：%s" line
+
+    /// 除开指令行（第一行）以外的文本信息
+    member x.MsgBodyLines = lines |> Seq.tail
 
     /// 原始消息对象
     member x.MessageEvent = args.Event
@@ -58,7 +84,7 @@ type CommandEventArgs (args : CqMessageEventArgs, attr : CommandHandlerMethodAtt
 
     /// 从字符串获取可能的指令名
     static member TryGetCommand(str : string) =
-        let idx = str.IndexOf(' ')
+        let idx = str.IndexOfAny([|' '; '\r'; '\n'|])
         if idx = -1 then str else str.[0..idx - 1]
 
 type CommandInfo =

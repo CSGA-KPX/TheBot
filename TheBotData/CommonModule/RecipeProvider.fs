@@ -46,6 +46,14 @@ type ItemAccumulator<'Item when 'Item : equality>() =
     member x.Set(item, quantity) =
         data.[item] <- { Item = item; Quantity = quantity }
 
+    member x.Get(item) = data.[item].Quantity
+
+    member x.Contains(item) = data.ContainsKey(item)
+
+    member x.Item
+        with get item = data.[item]
+        and set item v = data.[item] <- v
+
     member x.AsMaterials() = data.Values |> Seq.toArray
 
     member x.MergeFrom(y : ItemAccumulator<'Item>) =
@@ -60,7 +68,6 @@ type ItemAccumulator<'Item when 'Item : equality>() =
         let ret = ItemAccumulator<'Item>()
         ret.Update(i)
         ret
-
 
     interface IEnumerable<RecipeMaterial<'Item>> with
         member x.GetEnumerator() =
