@@ -14,12 +14,12 @@ type ActiveWebsocket(url, token) =
 
     member x.GetContext() =
         if context.IsSome && (leftRestartCount <= 0) then
-            failwithf "ActiveWebsocket:%s 超过重连次数上限" context.Value.BotIdString
+            failwithf $"ActiveWebsocket:%s{context.Value.BotIdString} 超过重连次数上限"
 
         if context.IsSome
            && (DateTimeOffset.Now - lastRestart).TotalMinutes
               <= 1.0 then
-            failwithf "ActiveWebsocket:%s 重连间隔过短" context.Value.BotIdString
+            failwithf $"ActiveWebsocket:%s{context.Value.BotIdString} 重连间隔过短"
 
         context <- Some(x.StartContext())
         lastRestart <- DateTimeOffset.Now
@@ -28,9 +28,9 @@ type ActiveWebsocket(url, token) =
 
     member private x.StartContext() =
         let ws = new ClientWebSocket()
-        ws.Options.SetRequestHeader("Authorization", sprintf "Bearer %s" token)
+        ws.Options.SetRequestHeader("Authorization", $"Bearer %s{token}")
 
-        ws.ConnectAsync(url, new CancellationToken())
+        ws.ConnectAsync(url, CancellationToken())
         |> Async.AwaitTask
         |> Async.RunSynchronously
 

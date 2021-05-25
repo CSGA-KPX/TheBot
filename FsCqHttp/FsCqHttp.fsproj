@@ -58,7 +58,7 @@
     <Compile Include="Utils\TextTable\CellType.fs" />
     <Compile Include="Utils\TextTable\RowBuilder.fs" />
     <Compile Include="Utils\TextTable\Helpers\GeneralHelper.fs" />
-    <Compile Include="Utils\TextTable\Helpers\NumbericHelpers.fs" />
+    <Compile Include="Utils\TextTable\Helpers\NumericHelpers.fs" />
     <Compile Include="Utils\TextTable\Helpers\DateTimeHelpers.fs" />
     <Compile Include="Utils\TextTable\TextColumn.fs" />
     <Compile Include="Utils\TextTable\TextTable.fs" />

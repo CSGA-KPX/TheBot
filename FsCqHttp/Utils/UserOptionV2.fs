@@ -35,7 +35,7 @@ type OptionCell<'T>(cb : OptionImpl, key : string, defValue : 'T) =
 
     abstract ConvertValue : string -> 'T
 
-    member private x.ValueSequense =
+    member private x.ValueSequence =
         x.TryGetRealKey()
         |> Option.map
             (fun kn ->
@@ -50,10 +50,10 @@ type OptionCell<'T>(cb : OptionImpl, key : string, defValue : 'T) =
         |> Option.defaultValue (Seq.singleton x.Default)
 
     /// 获取第一个设定值，如果没有则返回默认值
-    member x.Value = x.ValueSequense |> Seq.head
+    member x.Value = x.ValueSequence |> Seq.head
 
     /// 获取所有设定值，如果没有则返回默认值
-    member x.Values = x.ValueSequense |> Seq.toArray
+    member x.Values = x.ValueSequence |> Seq.toArray
 
 type OptionCellSimple<'T when 'T :> IConvertible>(cb : OptionImpl, key : string, defValue : 'T) =
     inherit OptionCell<'T>(cb, key, defValue)
@@ -75,7 +75,7 @@ type UndefinedOptionHandling =
 type OptionImpl() =
     static let optCache = Dictionary<string, HashSet<string>>()
 
-    static let seperator = [| ';'; '；'; '：'; ':' |]
+    static let separators = [| ';'; '；'; '：'; ':' |]
 
     let localOpts = HashSet<string>()
 
@@ -145,11 +145,11 @@ type OptionImpl() =
                 ret
 
         for item in x.PreParse(input) do
-            let isOption = item.IndexOfAny(seperator) <> -1
+            let isOption = item.IndexOfAny(separators) <> -1
 
             if isOption then
                 let s =
-                    item.Split(seperator, 2, StringSplitOptions.RemoveEmptyEntries)
+                    item.Split(separators, 2, StringSplitOptions.RemoveEmptyEntries)
 
                 let key = s.[0]
 

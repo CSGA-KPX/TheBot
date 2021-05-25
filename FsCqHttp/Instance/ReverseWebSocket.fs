@@ -3,7 +3,7 @@
 open System
 open System.Threading
 open System.Net
-open KPX.FsCqHttp.Handler
+
 
 /// Reverse Websocket服务端
 ///
@@ -63,12 +63,12 @@ type CqWebSocketServer(uriPrefix, token : string) =
 
                         context.Start()
 
-                        logger.Info(sprintf "%s 已连接，反向WebSocket" context.BotIdString)
+                        logger.Info $"%s{context.BotIdString} 已连接，反向WebSocket"
 
                         CqWsContextPool.Instance.AddContext(context)
 
                     with e ->
-                        logger.Fatal(sprintf "反向WS连接错误：%O" e)
+                        logger.Fatal $"反向WS连接错误：{e}"
                         ctx.Response.StatusCode <- 500
                         ctx.Response.Close()
 

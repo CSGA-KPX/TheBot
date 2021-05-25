@@ -1,7 +1,5 @@
 ﻿namespace KPX.FsCqHttp.Message
 
-open System
-
 
 [<RequireQualifiedAccess>]
 type AtUserType =

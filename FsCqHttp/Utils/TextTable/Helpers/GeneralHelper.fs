@@ -1,7 +1,5 @@
 ﻿namespace KPX.FsCqHttp.Utils.TextTable
 
-open System
-
 
 [<Sealed>]
 [<AutoOpen>]

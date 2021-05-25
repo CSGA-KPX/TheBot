@@ -45,7 +45,7 @@ type NumberFormatOptions =
                     |> floor
                     |> int
 
-                let (scale, postfix) = if pow10 >= 9 then 8.0, "亿" else 0.0, ""
+                let scale, postfix = if pow10 >= 9 then 8.0, "亿" else 0.0, ""
 
                 let str =
                     let hasEnoughDigits = (pow10 - (int scale) + 1) >= x.SigDigits
@@ -78,7 +78,7 @@ type NumberFormatOptions =
 
 [<Sealed>]
 [<AutoOpen>]
-type NumbericHelpers() =
+type NumericHelpers() =
     /// 保留4位有效数字 含小数 右对齐
     static let Sig4Float =
         { SigDigits = 4

@@ -52,7 +52,7 @@ type MessageSection(typeName : string) =
         let typeName = sec.["type"].Value<string>()
 
         if (x.TypeName <> "") && (x.TypeName <> typeName)
-        then invalidArg "type" (sprintf "type字段不匹配：需求%s，实际%s" x.TypeName typeName)
+        then invalidArg "type" $"type字段不匹配：需求%s{x.TypeName}，实际%s{typeName}"
 
         if sec.["data"].HasValues then
             let child = sec.["data"].Value<JObject>()
@@ -63,7 +63,7 @@ type MessageSection(typeName : string) =
     override x.ToString() =
         let args =
             x.Values
-            |> Seq.map (fun a -> sprintf "%s=%s" a.Key a.Value)
+            |> Seq.map (fun a -> $"%s{a.Key}=%s{a.Value}")
 
         sprintf "[%s:%s]" x.TypeName (String.Join(";", args))
 
@@ -80,7 +80,7 @@ type MessageSection(typeName : string) =
             else
                 RawMessageSection(typeName) :> MessageSection
 
-        for (name, value) in values do
+        for name, value in values do
             section.SetValue(name, value)
 
         section
@@ -148,7 +148,7 @@ type RecordSection() =
     /// false 默认， true 变声
     member x.RecordType =
         x.TryGetValue("magic")
-        |> Option.map (Boolean.Parse)
+        |> Option.map Boolean.Parse
         |> Option.defaultValue false
 
     /// 未实现

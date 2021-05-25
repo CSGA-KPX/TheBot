@@ -71,7 +71,7 @@ type CqWsContextPool private () =
 
     member x.AddContext(context : CqWsContextBase) =
         pool.TryAdd(context.BotUserId, context) |> ignore
-        logger.Info(sprintf "已接受连接:%s" context.BotIdString)
+        logger.Info $"已接受连接:%s{context.BotIdString}"
 
         ContextModuleLoader.CacheBuiltEvent.WaitOne()
         |> ignore
@@ -80,7 +80,7 @@ type CqWsContextPool private () =
 
     member x.RemoveContext(context : CqWsContextBase) =
         pool.TryRemove(context.BotUserId) |> ignore
-        logger.Info(sprintf "已移除连接:%s" context.BotIdString)
+        logger.Info $"已移除连接:%s{context.BotIdString}"
 
     interface Collections.IEnumerable with
         member x.GetEnumerator() =
@@ -117,7 +117,7 @@ type CqWsContext(ws : WebSocket) =
 
     override x.BotIdString =
         if self.IsExecuted then
-            sprintf "[%i:%s]" self.UserId self.Nickname
+            $"[%i{self.UserId}:%s{self.Nickname}]"
         else
             "[--:--]"
 
@@ -128,7 +128,7 @@ type CqWsContext(ws : WebSocket) =
 
         if ws.State <> WebSocketState.Open then
             logger.Fatal("无法启动消息循环：WebSocketState状态检查失败。")
-            logger.Fatal(sprintf "%A %A %A" ws.State ws.CloseStatus ws.CloseStatusDescription)
+            logger.Fatal $"%A{ws.State} %A{ws.CloseStatus} %A{ws.CloseStatusDescription}"
             cts.Cancel()
             invalidOp "WebSocketState <> Open"
 
@@ -168,10 +168,10 @@ type CqWsContext(ws : WebSocket) =
                 apiPending.TryAdd(echo, (mre, httpApi)) |> ignore
 
                 if KPX.FsCqHttp.Config.Logging.LogApiCall then
-                    logger.Trace(sprintf "%s请求API：%s" x.BotIdString httpApi.ActionName)
+                    logger.Trace $"%s{x.BotIdString}请求API：%s{httpApi.ActionName}"
 
                     if KPX.FsCqHttp.Config.Logging.LogApiJson then
-                        logger.Trace(sprintf "%s请求API：%s" x.BotIdString json)
+                        logger.Trace $"%s{x.BotIdString}请求API：%s{json}"
 
                 let data = json |> utf8.GetBytes
 
@@ -199,11 +199,11 @@ type CqWsContext(ws : WebSocket) =
         let hasPending, item = apiPending.TryGetValue(ret.Echo)
 
         if hasPending then
-            let (mre, api) = item
+            let mre, api = item
             api.HandleResponse(ret)
             mre.Set() |> ignore
         else
-            logger.Warn(sprintf "未注册echo:%s" ret.Echo)
+            logger.Warn $"未注册echo:%s{ret.Echo}"
 
     member private x.HandleMessage(json : string) =
         try
@@ -211,7 +211,7 @@ type CqWsContext(ws : WebSocket) =
 
             if (ctx.Event.ContainsKey("post_type")) then //消息上报
                 if KPX.FsCqHttp.Config.Logging.LogEventPost then
-                    logger.Trace(sprintf "%s收到上报：%O" x.BotIdString ctx)
+                    logger.Trace $"%s{x.BotIdString}收到上报：{ctx}"
 
                 match CqEventArgs.Parse(x, ctx) with
                 | :? CqMetaEventArgs when x.Modules.MetaCallbacks.Count = 0 -> ()
@@ -224,10 +224,10 @@ type CqWsContext(ws : WebSocket) =
 
             elif ctx.Event.ContainsKey("retcode") then //API调用结果
                 if KPX.FsCqHttp.Config.Logging.LogApiCall then
-                    logger.Trace(sprintf "%s收到API调用结果： %O" x.BotIdString ctx)
+                    logger.Trace $"%s{x.BotIdString}收到API调用结果： {ctx}"
 
                 x.HandleApiResponse(ctx.Event.ToObject<ApiResponse>())
-        with e -> logger.Warn(sprintf "%sWS处理消息异常：\r\n%A" x.BotIdString e)
+        with e -> logger.Warn $"%s{x.BotIdString}WS处理消息异常：\r\n%A{e}"
 
     member private x.StartMessageLoop() =
         let rec readMessage
@@ -264,12 +264,12 @@ type CqWsContext(ws : WebSocket) =
                     let json = readMessage ms seg cts
                     x.HandleMessage(json)
             with e ->
-                logger.Fatal(sprintf "%sWS读取捕获异常：\r\n%A" x.BotIdString e)
+                logger.Fatal $"%s{x.BotIdString}WS读取捕获异常：\r\n%A{e}"
                 CqWsContextPool.Instance.RemoveContext(x)
                 x.Stop()
 
                 if x.RestartContext.IsSome then
-                    logger.Warn(sprintf "%s正在尝试重新连接" x.BotIdString)
+                    logger.Warn $"%s{x.BotIdString}正在尝试重新连接"
                     CqWsContextPool.Instance.RemoveContext(x.RestartContext.Value())
         }
         |> Async.Start

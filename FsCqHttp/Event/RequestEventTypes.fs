@@ -1,9 +1,6 @@
 ﻿namespace KPX.FsCqHttp.Event.Request
 
-open System
-
 open Newtonsoft.Json
-open Newtonsoft.Json.Linq
 
 
 type FriendRequestEvent =

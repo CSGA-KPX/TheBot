@@ -52,7 +52,7 @@ type CqEventArgs(api, ctx) =
                 "[{0}] -> {1} : {3} \r\n ctx： \r\n{2} \r\n stack : \r\n{4}",
                 x.BotUserId,
                 lvl,
-                sprintf "%A" x.RawEvent,
+                $"%A{x.RawEvent}",
                 msg,
                 stack
             )
@@ -103,7 +103,7 @@ type CqMessageEventArgs(api : IApiCallProvider, ctx : EventContext, e) =
             raise <| InvalidOperationException("")
 
     member x.Reply(str : string, ?atUser : bool) =
-        let msg = new Message()
+        let msg = Message()
         msg.Add(str)
         x.Reply(msg, defaultArg atUser false)
 

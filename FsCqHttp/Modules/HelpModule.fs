@@ -64,9 +64,9 @@ type HelpModuleBase() =
             cmdArg.ApiCaller.CallApi(TryGetCommand(cmd))
 
         match api.CommandInfo with
-        | None -> cmdArg.Reply(sprintf "该模块没有定义或不存在指令%s" cmd)
+        | None -> cmdArg.Reply $"该模块没有定义或不存在指令%s{cmd}"
         | Some ci when String.IsNullOrEmpty(ci.CommandAttribute.LongHelp) ->
-            cmdArg.Reply(sprintf "%s没有定义说明文本" cmd)
+            cmdArg.Reply $"%s{cmd}没有定义说明文本"
         | Some ci ->
             use ret = cmdArg.OpenResponse(ForceText)
             ret.WriteLine("{0} ： {1}", ci.CommandAttribute.Command, ci.CommandAttribute.HelpDesc)

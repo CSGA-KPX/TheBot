@@ -15,7 +15,7 @@ type ApiBase() =
     /// 该API是否被执行过
     member x.IsExecuted
         with get () = executed
-        and internal set (v) = executed <- v
+        and internal set v = executed <- v
 
     member x.EnsureExecuted() =
         if not executed then invalidOp "该API尚未被执行"
@@ -31,7 +31,7 @@ type ApiBase() =
                                ||| Reflection.BindingFlags.Public
                                ||| Reflection.BindingFlags.DeclaredOnly)
 
-        let header = sprintf "%s---" (x.GetType().Name)
+        let header = $"%s{x.GetType().Name}---"
         sb.AppendLine(header) |> ignore
 
         for prop in props do

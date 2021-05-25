@@ -22,7 +22,7 @@ type AliasMapper() =
             dict.[value]
         else
             raise
-            <| KeyNotFoundException(sprintf "找不到名称%s" value)
+            <| KeyNotFoundException $"找不到名称%s{value}"
 
     member x.TryMap(value : string) =
         let succ, key = dict.TryGetValue(value)

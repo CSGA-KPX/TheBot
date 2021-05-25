@@ -19,7 +19,7 @@ type RowBuilder private () =
     member _.For(xs : seq<_>, f : _ -> seq<_>) =
         seq {
             for item in xs do
-                yield! f (item)
+                yield! f item
         }
 
     member _.TryFinally(body, final : unit -> unit) =

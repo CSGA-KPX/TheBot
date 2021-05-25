@@ -28,18 +28,18 @@ module internal TaskScheduler =
             match args with
             | :? CqMetaEventArgs as args ->
                 for c in mi.MetaCallbacks do
-                    c (args)
+                    c args
             | :? CqNoticeEventArgs as args ->
                 for c in mi.NoticeCallbacks do
-                    c (args)
+                    c args
             | :? CqRequestEventArgs as args ->
                 for c in mi.RequestCallbacks do
-                    c (args)
+                    c args
             | :? CqMessageEventArgs as args ->
                 match mi.TryCommand(args) with
                 | None ->
                     for c in mi.MessageCallbacks do
-                        c (args)
+                        c args
                 | Some ci ->
                     let cmdArgs =
                         CommandEventArgs(args, ci.CommandAttribute)
@@ -48,11 +48,11 @@ module internal TaskScheduler =
                         args.Logger.Info(
                             "Calling handler {0}\r\n Command Context {1}",
                             ci.MethodName,
-                            sprintf "%A" args.Event
+                            $"%A{args.Event}"
                         )
 
                     ci.MethodAction.Invoke(cmdArgs)
-            | _ -> invalidArg "args" (sprintf "HandleEvent: 未知事件类型:%s" (args.GetType().FullName))
+            | _ -> invalidArg "args" $"HandleEvent: 未知事件类型:%s{args.GetType().FullName}"
 
         with e ->
             let rootExn = getRootExn e
@@ -62,7 +62,7 @@ module internal TaskScheduler =
             | :? ModuleException as me ->
                 if args :? CqMessageEventArgs then
                     (args :?> CqMessageEventArgs)
-                        .Reply(sprintf "错误：%s" me.Message)
+                        .Reply $"错误：%s{me.Message}"
 
                 args.Logger.Warn(
                     "[{0}] -> {1} : {2} \r\n ctx： {3}",
@@ -74,9 +74,9 @@ module internal TaskScheduler =
             | _ ->
                 if args :? CqMessageEventArgs then
                     (args :?> CqMessageEventArgs)
-                        .Reply(sprintf "内部错误：%s" rootExn.Message)
+                        .Reply $"内部错误：%s{rootExn.Message}"
 
-                args.Logger.Error(sprintf "捕获异常：\r\n %O" e)
+                args.Logger.Error $"捕获异常：\r\n {e}"
 
     let private agent =
         MailboxProcessor.Start
@@ -97,7 +97,7 @@ module internal TaskScheduler =
                             let work = queue.Dequeue()
 
                             async {
-                                handleEvent (work)
+                                handleEvent work
                                 inbox.Post(Finished)
                             }
                             |> Async.Start

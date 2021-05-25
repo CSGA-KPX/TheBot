@@ -46,13 +46,13 @@ type TextTable([<ParamArray>] header : Object []) =
         let fCount = Seq.length fields
 
         if fCount <> colCount then
-            invalidArg (nameof fields) (sprintf "数量不足：需求%i 提供%i" colCount fCount)
+            invalidArg (nameof fields) $"数量不足：需求%i{colCount} 提供%i{fCount}"
 
-        fields |> Seq.iteri (fun i c -> cols.[i].Add(c))
+        fields |> Seq.iteri (fun i -> cols.[i].Add)
 
     member x.AddRow([<ParamArray>] objs : Object []) =
         if objs.Length <> colCount then
-            invalidArg (nameof objs) (sprintf "数量不足：需求%i 提供%i" colCount objs.Length)
+            invalidArg (nameof objs) $"数量不足：需求%i{colCount} 提供%i{objs.Length}"
 
         objs
         |> Array.iteri (fun i o -> cols.[i].Add(TableCell.CreateFrom(o)))
@@ -60,7 +60,7 @@ type TextTable([<ParamArray>] header : Object []) =
     /// 使用指定字符串填充未使用的单元格
     member x.AddRowFill([<ParamArray>] objs : Object []) =
         if objs.Length > colCount then
-            invalidArg (nameof objs) (sprintf "输入过多：需求%i 提供%i" colCount objs.Length)
+            invalidArg (nameof objs) $"输入过多：需求%i{colCount} 提供%i{objs.Length}"
 
         for i = 0 to objs.Length - 1 do
             cols.[i].Add(TableCell.CreateFrom(objs.[i]))
@@ -87,7 +87,7 @@ type TextTable([<ParamArray>] header : Object []) =
            for col in cols do
                col.DoAlignment(x.ColumnPaddingChar)
 
-           let interColumnPadding = sprintf " %c " x.ColumnPaddingChar
+           let interColumnPadding = $" %c{x.ColumnPaddingChar} "
            let sb = Text.StringBuilder()
 
            for row = 0 to cols.[0].Count - 1 do

@@ -85,7 +85,7 @@ type Message(items : seq<MessageSection>) =
         let escape (str : string) =
             let text = Text.StringBuilder(str)
 
-            for (c, esc) in cqStringReplace do
+            for c, esc in cqStringReplace do
                 text.Replace(c, esc) |> ignore
 
             text.ToString()
@@ -94,11 +94,11 @@ type Message(items : seq<MessageSection>) =
 
         for sec in x do
             match sec with
-            | :? TextSection -> sb.Append(escape (sec.Values.["text"])) |> ignore
+            | :? TextSection -> sb.Append(escape sec.Values.["text"]) |> ignore
             | _ ->
                 let args =
                     sec.Values
-                    |> Seq.map (fun kv -> sprintf "%s=%s" kv.Key (escape (kv.Value)))
+                    |> Seq.map (fun kv -> $"%s{kv.Key}=%s{escape kv.Value}")
 
                 sb
                     .AppendFormat("[CQ:{0},", sec.TypeName)
@@ -120,13 +120,13 @@ type Message(items : seq<MessageSection>) =
                        let args =
                            [| for arg in segv.[1..] do
                                   let argv = arg.Split('=')
-                                  yield argv.[0], decode (argv.[1]) |]
+                                  yield argv.[0], decode argv.[1] |]
 
                        yield MessageSection.CreateFrom(name, args)
                    else
-                       yield TextSection.Create(decode (seg)) |]
+                       yield TextSection.Create(decode seg) |]
 
-        new Message(segs)
+        Message(segs)
 
     interface ICollection<MessageSection> with
         member x.Count = sections.Count
@@ -195,4 +195,4 @@ type MessageConverter() =
 
             msg
         | JsonToken.String -> Message.FromCqString(r.ReadAsString())
-        | other -> failwithf "未知消息类型:%A --> %O" other r
+        | other -> failwithf $"未知消息类型:%A{other} --> {r}"

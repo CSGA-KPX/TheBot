@@ -96,7 +96,7 @@ type TextResponse(args : CqMessageEventArgs, respType : ResponseType) =
     let sb = StringBuilder()
 
     let canSendImage =
-        lazy (args.ApiCaller.CallApi<CanSendImage>().Can)
+        lazy args.ApiCaller.CallApi<CanSendImage>().Can
 
     member x.DoSendAsImage =
         match respType with

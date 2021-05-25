@@ -89,7 +89,7 @@ type DummyReverseClient(server, token) as x =
 
         let mem = ArraySegment<byte>(utf8.GetBytes(send))
 
-        logger.Info(sprintf "事件: 发送消息 %s" send)
+        logger.Info $"事件: 发送消息 %s{send}"
 
         wsClient.SendAsync(mem, WebSockets.WebSocketMessageType.Text, true, cts.Token)
         |> Async.AwaitTask
@@ -102,7 +102,7 @@ type DummyReverseClient(server, token) as x =
 
     member private x.HandleMessage(json : string) =
         try
-            logger.Info(sprintf "事件: 接收到消息 %s" json)
+            logger.Info $"事件: 接收到消息 %s{json}"
             let obj = JObject.Parse(json)
             let echo = obj.["echo"].Value<string>()
             let action = obj.["action"].Value<string>()
@@ -129,14 +129,14 @@ type DummyReverseClient(server, token) as x =
             |> Async.AwaitTask
             |> Async.RunSynchronously
 
-            logger.Info(sprintf "事件: 回复消息 %s" ret)
-        with e -> logger.Fatal(sprintf "发生错误：%O" e)
+            logger.Info $"事件: 回复消息 %s{ret}"
+        with e -> logger.Fatal $"发生错误：{e}"
 
     member private x.ServerMessageLoop() =
         async {
-            wsClient.Options.SetRequestHeader("Authorization", sprintf "Bearer %s" token)
+            wsClient.Options.SetRequestHeader("Authorization", $"Bearer %s{token}")
             wsClient.Options.SetRequestHeader("X-Client-Role", "Universal")
-            logger.Info(sprintf "正在连接%s" server)
+            logger.Info $"正在连接%s{server}"
 
             wsClient.ConnectAsync(Uri(server), cts.Token)
             |> Async.AwaitTask
@@ -155,12 +155,12 @@ type DummyReverseClient(server, token) as x =
                     |> Async.RunSynchronously
 
                 ms.Write(seg.Array, seg.Offset, s.Count)
-                if s.EndOfMessage then utf8.GetString(ms.ToArray()) else readMessage (ms)
+                if s.EndOfMessage then utf8.GetString(ms.ToArray()) else readMessage ms
 
             try
                 while (not cts.IsCancellationRequested) do
                     ms.SetLength(0L)
-                    let json = readMessage (ms)
+                    let json = readMessage ms
 
                     Tasks.Task.Run(fun () -> x.HandleMessage(json))
                     |> ignore

@@ -148,7 +148,7 @@ type TestContext(m : HandlerModuleBase, ?parent : CqWsContextBase) as x =
                 parent.Value.RestartContext
             else
                 localRestart
-        and set (v) =
+        and set v =
             if parent.IsSome then
                 parent.Value.RestartContext <- v
             else
@@ -170,7 +170,7 @@ type TestContext(m : HandlerModuleBase, ?parent : CqWsContextBase) as x =
         if parent.IsSome then
             parent.Value.BotIdString
         else
-            sprintf "[%i:%s]" x.BotUserId x.BotNickname
+            $"[%i{x.BotUserId}:%s{x.BotNickname}]"
 
     override x.Start() = raise <| NotImplementedException()
 
@@ -205,7 +205,7 @@ type TestContext(m : HandlerModuleBase, ?parent : CqWsContextBase) as x =
             else if parent.IsSome then
                 parent.Value.CallApi(req) |> ignore
             else
-                invalidOp (sprintf "TestContext 尚未实现API %s" cqhttp.ActionName)
+                invalidOp $"TestContext 尚未实现API %s{cqhttp.ActionName}"
         | :? WsContextApiBase as ctxApi ->
             if parent.IsSome then
                 parent.Value.CallApi(ctxApi) |> ignore
@@ -216,6 +216,6 @@ type TestContext(m : HandlerModuleBase, ?parent : CqWsContextBase) as x =
             if parent.IsSome then
                 parent.Value.CallApi(req) |> ignore
             else
-                invalidOp (sprintf "TestContext 尚未实现API %O" (req.GetType().FullName))
+                invalidOp $"TestContext 尚未实现API {req.GetType().FullName}"
 
         req
