@@ -85,7 +85,7 @@ type EveProcessManager(cfg : IEveCalculatorConfig) as x =
                 let itemQuantity = quantity.ToItems(r.Original)
 
                 acc.Output.Update(item, itemQuantity)
-                Calc item (itemQuantity) ime
+                Calc item itemQuantity ime
 
                 {| InputProcess = r
                    InputRuns = quantity.ToRuns(r.Original)

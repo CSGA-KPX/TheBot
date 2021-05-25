@@ -19,4 +19,4 @@ type XivDbRecipe =
     { Id : int
       Process : RecipeProcess<int> }
 
-    member x.CastProcess() = convertInternalProcess (x.Process)
+    member x.CastProcess() = convertInternalProcess x.Process

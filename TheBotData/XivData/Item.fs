@@ -5,11 +5,11 @@ open KPX.TheBot.Data.Common.Database
 
 [<CLIMutable>]
 type XivItem =
-    { [<LiteDB.BsonIdAttribute(false)>]
+    { [<LiteDB.BsonId(false)>]
       Id : int
       Name : string }
 
-    override x.ToString() = sprintf "%s(%i)" x.Name x.Id
+    override x.ToString() = $"%s{x.Name}(%i{x.Id})"
 
     static member GetUnknown() = { Id = -1; Name = "Unknown" }
 

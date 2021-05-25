@@ -31,7 +31,7 @@ type CraftLeveInfoCollection private () =
     override x.InitializeCollection() =
         let db = x.DbCollection
 
-        db.EnsureIndex(LiteDB.BsonExpression.Create("ClassJob"))
+        db.EnsureIndex(BsonExpression.Create("ClassJob"))
         |> ignore
 
         let col = BotDataInitializer.XivCollectionChs

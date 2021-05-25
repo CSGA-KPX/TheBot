@@ -1,7 +1,5 @@
 ﻿module KPX.TheBot.Data.XivData.ContentFinderCondition
 
-open System
-
 open KPX.TheBot.Data.Common.Database
 
 open LiteDB

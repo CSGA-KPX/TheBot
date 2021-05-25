@@ -8,7 +8,7 @@ open KPX.TheBot.Data.EveData.NpcCorporation
 type DataBundle private () =
 
     let itemCol = EveTypeCollection.Instance
-    let npcCorpNames = NpcCorporationoCollection.Instance
+    let npcCorpNames = NpcCorporationCollection.Instance
 
     let priceCache =
         MarketPriceCache.PriceCacheCollection.Instance

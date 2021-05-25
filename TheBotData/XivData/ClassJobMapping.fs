@@ -7,7 +7,7 @@ open KPX.TheBot.Data.Common.Database
 
 [<CLIMutable>]
 type ClassJobMapping =
-    { [<LiteDB.BsonIdAttribute(false)>]
+    { [<LiteDB.BsonId(false)>]
       Id : string
       Value : string }
 

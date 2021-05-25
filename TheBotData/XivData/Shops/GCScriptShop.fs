@@ -26,7 +26,7 @@ type GCScriptShop private () =
     override x.Depends = Array.empty
 
     override x.InitializeCollection() =
-        x.DbCollection.EnsureIndex(LiteDB.BsonExpression.Create("ReceiveItem"))
+        x.DbCollection.EnsureIndex(BsonExpression.Create("ReceiveItem"))
         |> ignore
 
         let col = BotDataInitializer.XivCollectionChs

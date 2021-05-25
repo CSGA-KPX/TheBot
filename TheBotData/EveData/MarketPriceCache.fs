@@ -52,11 +52,9 @@ type PriceCacheCollection private () =
 
     override x.DoFetchItem(itemId) =
         let url =
-            sprintf
-                @"https://www.ceve-market.org/api/market/region/10000002/system/30000142/type/%i.json"
-                itemId
+            $@"https://www.ceve-market.org/api/market/region/10000002/system/30000142/type/%i{itemId}.json"
 
-        x.Logger.Info(sprintf "Fetching %s" url)
+        x.Logger.Info $"Fetching %s{url}"
 
         let json =
             hc

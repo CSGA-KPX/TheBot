@@ -114,7 +114,7 @@ type BlueprintCollection private () =
                 if tryAsBp.IsSome then
                     tryAsBp
                 else
-                    let id = new LiteDB.BsonValue(item.Id)
+                    let id = LiteDB.BsonValue(item.Id)
 
                     let ret =
                         x.DbCollection.FindOne(LiteDB.Query.EQ("Process.Output[0].Item", id))

@@ -197,23 +197,23 @@ module World =
             idMapping.Add(id, world)
 
             if not <| nameMapping.TryAdd(name, world) then
-                printfn "World : 服务器添加失败 %A" world
+                printfn $"World : 服务器添加失败 %A{world}"
 
         // 添加国服服务器名称
-        for (chs, eng) in ChsWorldName do
+        for chs, eng in ChsWorldName do
             let w = GetWorldByName(eng)
             // 引用传值，字典里面原本的也修改了
             w.WorldName <- chs
             nameMapping.Add(chs, w)
 
         // 重写国服服务器的大区信息
-        for (dcName, worlds) in ChsWorldsInfo do
+        for dcName, worlds in ChsWorldsInfo do
             for world in worlds.Split(",") do
                 GetWorldByName(world).DataCenter <- dcName
                 GetWorldByName(world).IsPublic <- true
 
         // 添加服务器别名
-        for (world, aliases) in WorldNameAlias do
+        for world, aliases in WorldNameAlias do
             for alias in aliases.Split(",") do
                 let isEmpty = String.IsNullOrWhiteSpace(alias)
 
@@ -230,7 +230,7 @@ module World =
                 dcNameMapping.Add(name, name)
 
         // 大区别名，因为国服自带了所以都有
-        for (dc, aliases) in DcNameAlias do
+        for dc, aliases in DcNameAlias do
             dcNameMapping.TryAdd(dc, dc) |> ignore
 
             for alias in aliases.Split(",") do

@@ -1,15 +1,12 @@
 ﻿namespace KPX.TheBot.Data.EveData.SystemCostIndexCache
 
 open System
-open System.IO
 
-open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 
 open KPX.TheBot.Data.Common.Database
 open KPX.TheBot.Data.Common.Network
 
-open KPX.TheBot.Data.EveData.Utils
 
 [<CLIMutable>]
 type SystemCostIndex =
@@ -48,7 +45,7 @@ type SystemCostIndexCollection private () =
         let url =
             "https://esi.evepc.163.com/latest/industry/systems/?datasource=serenity"
 
-        x.Logger.Info(sprintf "Fetching %s" url)
+        x.Logger.Info $"Fetching %s{url}"
 
         let json =
             hc
@@ -67,20 +64,20 @@ type SystemCostIndexCollection private () =
                 let mutable ret = SystemCostIndex.DefaultOf(sid)
                 let indices = item.GetValue("cost_indices") :?> JArray
 
-                for indice in indices do
-                    let indice = indice :?> JObject
+                for idx in indices do
+                    let idx = idx :?> JObject
 
                     let index =
-                        indice.GetValue("cost_index").ToObject<float>()
+                        idx.GetValue("cost_index").ToObject<float>()
 
-                    match indice.GetValue("activity").ToObject<string>() with
+                    match idx.GetValue("activity").ToObject<string>() with
                     | "manufacturing" -> ret <- { ret with Manufacturing = index }
                     | "researching_time_efficiency" -> ret <- { ret with ResearchTime = index }
                     | "researching_material_efficiency" -> ret <- { ret with ResearchMaterial = index }
                     | "copying" -> ret <- { ret with Copying = index }
                     | "invention" -> ret <- { ret with Invention = index }
                     | "reaction" -> ret <- { ret with Reaction = index }
-                    | unk -> failwithf "位置指数类型:%s" unk
+                    | unk -> failwithf $"位置指数类型:%s{unk}"
 
                 yield ret
         }

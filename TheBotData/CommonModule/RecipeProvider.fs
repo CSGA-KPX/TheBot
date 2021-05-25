@@ -97,7 +97,7 @@ and [<CLIMutable>] RecipeProcess<'Item when 'Item : equality> =
     /// 如果有多个则抛出异常
     member x.GetFirstProduct() =
         if x.Output.Length <> 1 then
-            invalidOp (sprintf "该过程不止一个产物：%A" x)
+            invalidOp $"该过程不止一个产物：%A{x}"
 
         x.Output |> Array.head
 

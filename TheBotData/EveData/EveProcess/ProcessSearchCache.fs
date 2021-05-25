@@ -23,7 +23,7 @@ type NameSearchCond =
     | ByGroupName of string
     | ByMarketGroupName of string
 
-    override x.ToString() = sprintf "%A" x
+    override x.ToString() = $"%A{x}"
 
     member x.Contains(t : EveType) =
         let checkName (name : string) =
@@ -105,7 +105,7 @@ type EveProcessSearch private () =
         | ProcessType.Manufacturing -> BlueprintCollection.Instance :> EveProcessCollection
         | ProcessType.Planet -> PlanetProcessCollection.Instance :> EveProcessCollection
         | ProcessType.Refine -> RefineProcessCollection.Instance :> EveProcessCollection
-        | _ -> invalidArg "ProcessType" (sprintf "无法为%A获取合适的数据表" t)
+        | _ -> invalidArg "ProcessType" $"无法为%A{t}获取合适的数据表"
 
     member x.Search(cond : ProcessSearchCond) =
         let results =

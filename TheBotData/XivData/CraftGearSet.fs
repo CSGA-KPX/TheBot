@@ -30,10 +30,10 @@ type CraftableGearCollection private () =
     override x.InitializeCollection() =
         let db = x.DbCollection
 
-        db.EnsureIndex(LiteDB.BsonExpression.Create("_id"), true)
+        db.EnsureIndex(BsonExpression.Create("_id"), true)
         |> ignore
 
-        db.EnsureIndex(LiteDB.BsonExpression.Create("ItemLv"), false)
+        db.EnsureIndex(BsonExpression.Create("ItemLv"), false)
         |> ignore
 
         let col = BotDataInitializer.XivCollectionChs

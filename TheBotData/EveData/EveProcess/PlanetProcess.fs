@@ -73,7 +73,7 @@ type PlanetProcessCollection private () =
 
     interface IRecipeProvider<EveType, EveProcess> with
         override x.TryGetRecipe(item) =
-            let id = new LiteDB.BsonValue(item.Id)
+            let id = LiteDB.BsonValue(item.Id)
 
             let ret =
                 x.DbCollection.FindOne(LiteDB.Query.EQ("Process.Output[0].Item", id))

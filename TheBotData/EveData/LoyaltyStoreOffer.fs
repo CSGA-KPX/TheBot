@@ -49,15 +49,15 @@ type LoyaltyStoreCollection private () =
     static member Instance = instance
 
     /// LoyaltyStoreOffer暂不过期
-    override x.IsExpired(_) = false
+    override x.IsExpired _ = false
 
-    override x.Depends = [| typeof<NpcCorporationoCollection> |]
+    override x.Depends = [| typeof<NpcCorporationCollection> |]
 
     override x.DoFetchItem(corpId) =
         let url =
-            sprintf "https://esi.evepc.163.com/latest/loyalty/stores/%i/offers/?datasource=serenity" corpId
+            $"https://esi.evepc.163.com/latest/loyalty/stores/%i{corpId}/offers/?datasource=serenity"
 
-        x.Logger.Info(sprintf "Fetching %s" url)
+        x.Logger.Info $"Fetching %s{url}"
 
         let json =
             hc

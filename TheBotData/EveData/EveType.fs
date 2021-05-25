@@ -1,6 +1,5 @@
 ﻿namespace KPX.TheBot.Data.EveData.EveType
 
-open System
 open System.IO
 open System.Collections.Generic
 
@@ -9,6 +8,7 @@ open Newtonsoft.Json.Linq
 
 open KPX.TheBot.Data.Common.Database
 open KPX.TheBot.Data.EveData.Group
+
 
 [<CLIMutable>]
 type EveType =

@@ -25,9 +25,9 @@ let private RouteDefine =
                | 1 -> "黄昏"
                | 2 -> "黑夜"
                | 3 -> "白天"
-               | o -> failwithf "未知海钓时间：%i" o
+               | o -> failwithf $"未知海钓时间：%i{o}"
 
-           yield sprintf "%s_%s" routeName timeStr |]
+           yield $"%s{routeName}_%s{timeStr}" |]
 
 let private RefDate =
     DateTimeOffset.Parse("2020/2/21 20:00 +08:00")
@@ -40,7 +40,7 @@ let GetWindowMessage (key : string) =
     let msg = rm.GetString(key)
 
     if isNull msg then
-        Array.singleton (sprintf "%s 暂无攻略文本" key)
+        Array.singleton $"%s{key} 暂无攻略文本"
     else
         msg.Split([| "\r\n"; "\r"; "\n" |], StringSplitOptions.None)
 

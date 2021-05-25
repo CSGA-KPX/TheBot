@@ -38,7 +38,7 @@ type GameInternalPriceCollection private () =
         let url =
             "https://esi.evepc.163.com/latest/markets/prices/?datasource=serenity"
 
-        x.Logger.Info(sprintf "Fetching %s" url)
+        x.Logger.Info $"Fetching %s{url}"
 
         let json =
             hc

@@ -1,6 +1,5 @@
 ﻿module KPX.TheBot.Data.EveData.Utils
 
-open System
 open System.IO
 
 

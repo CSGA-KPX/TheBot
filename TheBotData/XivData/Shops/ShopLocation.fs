@@ -77,7 +77,7 @@ type ShopLocationCollection private () =
                 let npcName =
                     eNpcRes.GetItemTyped(npcId).Singular.AsString()
 
-                npcInfo <- sprintf "%s: %s(%.1f, %.1f)" npcName npcPos.Territory npcPos.X npcPos.Y
+                npcInfo <- $"%s{npcName}: %s{npcPos.Territory}(%.1f{npcPos.X}, %.1f{npcPos.Y})"
 
             for propId in row.ENpcData.AsInts() do
                 if propId <> 0 then

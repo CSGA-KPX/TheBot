@@ -28,7 +28,7 @@ type SpecialShopCollection private () =
     override x.IsExpired = false
 
     override x.InitializeCollection() =
-        x.DbCollection.EnsureIndex(LiteDB.BsonExpression.Create("ReceiveItem"))
+        x.DbCollection.EnsureIndex(BsonExpression.Create("ReceiveItem"))
         |> ignore
 
         let col = BotDataInitializer.XivCollectionChs
@@ -51,7 +51,7 @@ type SpecialShopCollection private () =
                 for i = rItem.GetLowerBound(0) to rItem.GetUpperBound(0) do
                     for j = rItem.GetLowerBound(1) to rItem.GetUpperBound(1) do
                         let key =
-                            sprintf "%i%i" rItem.[i, j].Key.Main cItem.[i, j]
+                            $"%i{rItem.[i, j].Key.Main}%i{cItem.[i, j]}"
                         if not <| (existed.Contains(key))
                            && cItem.[i, j] > 0
                            && rItem.[i, j].Key.Main > 0

@@ -20,7 +20,7 @@ type MarketInfo =
       Item : XivItem }
 
     override x.ToString() =
-        sprintf "%i/%i" x.World.WorldId x.Item.Id
+        $"%i{x.World.WorldId}/%i{x.Item.Id}"
 
     static member FromString(str : string) =
         let ret = str.Split('/')
@@ -94,9 +94,9 @@ type MarketInfoCollection private () =
         let info = MarketInfo.FromString(info)
 
         let url =
-            sprintf "https://universalis.app/api/%i/%i" info.World.WorldId info.Item.Id
+            $"https://universalis.app/api/%i{info.World.WorldId}/%i{info.Item.Id}"
 
-        x.Logger.Info(sprintf "正在访问 %s" url)
+        x.Logger.Info $"正在访问 %s{url}"
 
         let resp =
             hc
@@ -106,7 +106,7 @@ type MarketInfoCollection private () =
                 .GetResult()
 
         if not resp.IsSuccessStatusCode then
-            x.Logger.Warn(sprintf "Universalis返回错误%s:%A/%A" resp.ReasonPhrase info.World info.Item)
+            x.Logger.Warn $"Universalis返回错误%s{resp.ReasonPhrase}:%A{info.World}/%A{info.Item}"
 
             match resp.StatusCode with
             | Net.HttpStatusCode.NotFound ->

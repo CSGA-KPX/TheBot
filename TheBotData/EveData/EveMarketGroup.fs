@@ -1,8 +1,6 @@
 ﻿namespace KPX.TheBot.Data.EveData.EveMarketGroup
 
-open System
 open System.IO
-open System.Collections.Generic
 
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq

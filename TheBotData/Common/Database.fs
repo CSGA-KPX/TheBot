@@ -25,7 +25,7 @@ module Helpers =
             let ret = x.FindById(BsonValue(id))
 
             if isNull (box ret) then
-                let msg = sprintf "不能在%s中找到%A" x.Name id
+                let msg = $"不能在%s{x.Name}中找到%A{id}"
                 raise <| KeyNotFoundException(msg)
 
             ret
@@ -37,9 +37,9 @@ module Helpers =
     let getLiteDB (name : string) =
         if not <| dbCache.ContainsKey(name) then
             let path =
-                IO.Path.Combine([| ".."; "static"; name |])
+                Path.Combine([| ".."; "static"; name |])
 
-            let dbFile = sprintf "Filename=%s;" path
+            let dbFile = $"Filename=%s{path};"
             let db = new LiteDatabase(dbFile)
             dbCache.Add(name, db)
 
@@ -64,7 +64,7 @@ type BotDataCollection<'Key, 'Item>(dbName) as x =
     /// 对在TheBotData外定义的项目无效
     abstract Depends : Type []
 
-    member val Logger = NLog.LogManager.GetLogger(sprintf "%s:%s" dbName colName)
+    member val Logger = NLog.LogManager.GetLogger $"%s{dbName}:%s{colName}"
 
     /// 获取数据库集合供复杂操作
     member x.DbCollection =
@@ -88,7 +88,7 @@ type BotDataCollection<'Key, 'Item>(dbName) as x =
             x.DbCollection.FindAll().GetEnumerator() :> Collections.IEnumerator
 
 
-    interface Collections.Generic.IEnumerable<'Item> with
+    interface IEnumerable<'Item> with
         member x.GetEnumerator() =
             x.DbCollection.FindAll().GetEnumerator()
 
@@ -229,14 +229,14 @@ type BotDataInitializer private () =
                 if not <| resolved.ContainsKey(dep) then
                     if unsolved.ContainsKey(dep) then failwithf "CR!"
                     if not <| left.ContainsKey(dep) then failwithf "Not found!"
-                    doJob (left.[dep])
+                    doJob left.[dep]
 
             resolved.Add(m.GetType(), m)
             unsolved.Remove(m.GetType()) |> ignore
             output.Enqueue(m)
 
         for m in other do
-            doJob (m)
+            doJob m
 
         output.ToArray()
 
@@ -250,9 +250,9 @@ type BotDataInitializer private () =
                  && t.GetGenericTypeDefinition().Name = generic.Name then
                 true
             else
-                check (t.BaseType)
+                check t.BaseType
 
-        check (toCheck)
+        check toCheck
 
     /// 初始化该THeBotData定义的所有数据集，
     /// 对在TheBotData外定义的项目无效
@@ -260,14 +260,14 @@ type BotDataInitializer private () =
         Assembly.GetExecutingAssembly().GetTypes()
         |> Array.filter
             (fun t ->
-                (typeof<IInitializationInfo>.IsAssignableFrom (t)
-                 && (not (t.IsAbstract))))
+                (typeof<IInitializationInfo>.IsAssignableFrom t
+                 && (not t.IsAbstract)))
         |> Array.map
             (fun t ->
                 let p =
                     t.GetProperty("Instance", BindingFlags.Public ||| BindingFlags.Static)
 
-                if isNull p then failwithf "%O.Instance is Null!" t
+                if isNull p then failwithf $"{t}.Instance is Null!"
                 p.GetValue(null) :?> IInitializationInfo)
         |> BotDataInitializer.SolveDependency
         |> Array.iter
@@ -278,7 +278,7 @@ type BotDataInitializer private () =
                 let isCollection =
                     BotDataInitializer.IsSubclassOfRawGeneric(gt, t)
 
-                printfn "正在处理：%s" t.FullName
+                printfn $"正在处理：%s{t.FullName}"
 
                 if isCollection then
                     t
@@ -292,7 +292,7 @@ type BotDataInitializer private () =
 
     /// 删除所有数据，不释放空间
     static member ClearCache() =
-        let db = getLiteDB (DefaultDB)
+        let db = getLiteDB DefaultDB
         // 避免删除以后影响之后的序列
         for name in db.GetCollectionNames() |> Seq.cache do
             db.DropCollection(name) |> ignore

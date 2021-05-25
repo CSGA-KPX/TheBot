@@ -14,10 +14,10 @@ type NpcCorporation =
       Id : int
       CorporationName : string }
 
-type NpcCorporationoCollection private () =
+type NpcCorporationCollection private () =
     inherit CachedTableCollection<int, NpcCorporation>(DefaultDB)
 
-    static let instance = NpcCorporationoCollection()
+    static let instance = NpcCorporationCollection()
 
     static member Instance = instance
 
