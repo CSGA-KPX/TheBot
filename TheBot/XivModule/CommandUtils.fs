@@ -32,7 +32,7 @@ type XivOption() as x =
 
                    let ss =
                        World.GetWorldsByDC(dc)
-                       |> Seq.map (fun x -> sprintf "world:%s" x.WorldName)
+                       |> Seq.map (fun x -> $"world:%s{x.WorldName}")
 
                    yield! ss
                else

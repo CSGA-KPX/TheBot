@@ -1,15 +1,14 @@
 ﻿module KPX.TheBot.Utils.EmbeddedResource
 
 open System
-open System.Collections.Generic
 open System.Text.RegularExpressions
 open System.Reflection
 
 
-let GetResourceManager (str) =
+let GetResourceManager str =
     Resources.ResourceManager("TheBot.Resources." + str, Assembly.GetExecutingAssembly())
 
-let GetResFileStream (filename) =
+let GetResFileStream filename =
     let resName = "TheBot.Resources." + filename
     let assembly = Assembly.GetExecutingAssembly()
     assembly.GetManifestResourceStream(resName)
@@ -41,7 +40,7 @@ type StringResource(resxName : string) =
         x.GetLines(key)
         |> Array.filter (fun line -> not <| line.StartsWith(cmtStart))
 
-    member x.GetWordsWithouComment(key : string, ?cmdStart : string) =
+    member x.GetWordsWithoutComment(key : string, ?cmdStart : string) =
         [| let cmtStart = defaultArg cmdStart "//"
 
            for line in x.GetLinesWithoutComment(key, cmtStart) do

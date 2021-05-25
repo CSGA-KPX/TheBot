@@ -5,7 +5,6 @@ open System
 open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Testing
 
-open KPX.FsCqHttp.Utils.UserOption
 open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.TextTable
 
@@ -27,7 +26,7 @@ type CombatSiteInfo =
 type EveMiscModule() =
     inherit CommandHandlerBase()
 
-    [<CommandHandlerMethodAttribute("#evehelp", "EVE星系成本指数查询", "")>]
+    [<CommandHandlerMethod("#evehelp", "EVE星系成本指数查询", "")>]
     member x.HandleEvehelp(cmdArg : CommandEventArgs) =
         let cfg = EveConfigParser()
         cfg.Parse(Array.empty)
@@ -49,7 +48,7 @@ type EveMiscModule() =
         let tc = TestContext(x)
         tc.ShouldNotThrow("#evehelp")
 
-    [<CommandHandlerMethodAttribute("#evesci", "EVE星系成本指数查询", "")>]
+    [<CommandHandlerMethod("#evesci", "EVE星系成本指数查询", "")>]
     member x.HandleSci(cmdArg : CommandEventArgs) =
         let sc =
             SolarSystems.SolarSystemCollection.Instance
@@ -67,12 +66,12 @@ type EveMiscModule() =
             let sys = sc.TryGetBySolarSystem(arg)
 
             if sys.IsNone then
-                tt.AddPreTable(sprintf "%s不是有效星系名称" arg)
+                tt.AddPreTable $"%s{arg}不是有效星系名称"
             else
                 let sci = scc.TryGetBySystem(sys.Value)
 
                 if sci.IsNone then
-                    tt.AddPreTable(sprintf "没有%s的指数信息" arg)
+                    tt.AddPreTable $"没有%s{arg}的指数信息"
                 else
                     let sci = sci.Value
 
@@ -113,8 +112,8 @@ type EveMiscModule() =
                              CombatSiteInfo.FoundIn = f
                              CombatSiteInfo.Name = n } |]
 
-    [<CommandHandlerMethodAttribute("#eve异常", "EVE异常/死亡表 可接信号名称", "")>]
-    [<CommandHandlerMethodAttribute("#eve死亡", "EVE异常/死亡表 可接信号名称", "")>]
+    [<CommandHandlerMethod("#eve异常", "EVE异常/死亡表 可接信号名称", "")>]
+    [<CommandHandlerMethod("#eve死亡", "EVE异常/死亡表 可接信号名称", "")>]
     member x.HandleUnrated(cmdArg : CommandEventArgs) =
         if cmdArg.Arguments.Length = 0 then
             let mgr =
@@ -143,7 +142,7 @@ type EveMiscModule() =
 
                 if not found then ret.WriteLine("{0}：未找到相关信息", arg)
 
-    [<CommandHandlerMethodAttribute("#eveinv", "记录材料数据供#er和#err使用", "", IsHidden = true)>]
+    [<CommandHandlerMethod("#eveinv", "记录材料数据供#er和#err使用", "", IsHidden = true)>]
     member x.HandleEveInv(cmdArg : CommandEventArgs) =
         let opt = EveConfigParser()
         // 默认值必须是不可能存在的值，比如空格
@@ -193,4 +192,4 @@ type EveMiscModule() =
         tt.AddPreTable("此前数据已经清除")
         tt.AddPreTable("会保留到下次机器人重启前")
         using (cmdArg.OpenResponse(opt.ResponseType)) (fun ret -> ret.Write(tt))
-        cmdArg.Reply(sprintf "录入到： id:%s" guid)
+        cmdArg.Reply $"录入到： id:%s{guid}"

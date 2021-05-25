@@ -10,7 +10,7 @@ open KPX.TheBot.Utils.Config
 [<Literal>]
 let private instanceOwnerKey = "InstanceOwner"
 
-let private botAdminKey (uid : uint64) = sprintf "BotAdmins:%i" uid
+let private botAdminKey (uid : uint64) = $"BotAdmins:%i{uid}"
 
 type CqEventArgs with
 

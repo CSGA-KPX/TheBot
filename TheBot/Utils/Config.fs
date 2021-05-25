@@ -37,13 +37,13 @@ type ConfigManager(owner : ConfigOwner) =
     static let sysCfg = ConfigManager(ConfigOwner.System)
 
     member x.Get<'T>(name : string, defVal : 'T) =
-        let id = sprintf "%s:%O" name owner
+        let id = $"%s{name}:{owner}"
         let ret = col.FindById(BsonValue(id))
 
         if isNull (box ret) then defVal else JsonConvert.DeserializeObject<'T>(ret.Value)
 
     member x.Put(name : string, value : 'T) =
-        let id = sprintf "%s:%O" name owner
+        let id = $"%s{name}:{owner}"
 
         let obj =
             { Id = id

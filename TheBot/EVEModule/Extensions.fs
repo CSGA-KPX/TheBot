@@ -91,11 +91,11 @@ type EveProcess with
 
             let importFee =
                 proc.Input
-                |> Array.fold (fun acc mr -> acc + mr.Quantity * (getBaseCost (mr.Item) * 0.5)) 0.0
+                |> Array.fold (fun acc mr -> acc + mr.Quantity * (getBaseCost mr.Item * 0.5)) 0.0
 
             let exportFee =
                 proc.Output
-                |> Array.fold (fun acc mr -> acc + mr.Quantity * (getBaseCost (mr.Item))) 0.0
+                |> Array.fold (fun acc mr -> acc + mr.Quantity * (getBaseCost mr.Item)) 0.0
 
             (importFee + exportFee) * 0.1 // NPC税率10%
         | ProcessType.Invalid -> raise <| System.NotImplementedException("非法过程")

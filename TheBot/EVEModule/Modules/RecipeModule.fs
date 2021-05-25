@@ -30,7 +30,7 @@ type EveRecipeModule() =
 
     let ic = InventoryCollection.Instance
 
-    [<CommandHandlerMethodAttribute("#eme", "EVE蓝图材料效率计算", "")>]
+    [<CommandHandlerMethod("#eme", "EVE蓝图材料效率计算", "")>]
     member x.HandleME(cmdArg : CommandEventArgs) =
         let cfg = EveConfigParser()
         cfg.Parse(cmdArg.Arguments)
@@ -79,11 +79,11 @@ type EveRecipeModule() =
         tc.ShouldThrow("#eme 军用馒头蓝图")
         tc.ShouldThrow("#eme 军用馒头")
 
-    [<CommandHandlerMethodAttribute("#er",
+    [<CommandHandlerMethod("#er",
                                     "EVE蓝图材料计算",
                                     "可以使用表达式，多个物品需用+连接。可选参数见#evehelp。如：
 #r 帝国海军散热槽*10+机器人技术*9999")>]
-    [<CommandHandlerMethodAttribute("#err",
+    [<CommandHandlerMethod("#err",
                                     "EVE蓝图基础材料计算",
                                     "可以使用表达式，多个物品需用+连接。可选参数见#evehelp。如：
 #rr 帝国海军散热槽*10+机器人技术*9999")>]
@@ -113,7 +113,7 @@ type EveRecipeModule() =
             tt.AddPreTable(sprintf "输入效率：%i%% " cfg.InputMe)
         else
             tt.AddPreTable(sprintf "输入效率：%i%% 默认效率：%i%%" cfg.InputMe cfg.DerivativetMe)
-            tt.AddPreTable(sprintf "展开行星材料：%b 展开反应公式：%b" cfg.ExpandPlanet cfg.ExpandReaction)
+            tt.AddPreTable $"展开行星材料：%b{cfg.ExpandPlanet} 展开反应公式：%b{cfg.ExpandReaction}"
 
         let final = ItemAccumulator<EveType>()
         let mutable totalInputVolume = 0.0
@@ -180,7 +180,7 @@ type EveRecipeModule() =
 
             let needStr = 
                 if need <= 0.0 then PaddingRight
-                else HumanReadableInteger (need)
+                else HumanReadableInteger need
 
             tt.RowBuilder {
                 yield mr.Item.Name
@@ -221,7 +221,7 @@ type EveRecipeModule() =
         tc.ShouldNotThrow("#err 恶狼级")
         tc.ShouldNotThrow("#err 恶狼级蓝图 ime:10")
 
-    [<CommandHandlerMethodAttribute("#errc",
+    [<CommandHandlerMethod("#errc",
                                     "EVE蓝图成本计算",
                                     "不支持表达式，但仅限一个物品。可选参数见#evehelp。如：
 #errc 帝国海军散热槽*10")>]
@@ -276,7 +276,7 @@ type EveRecipeModule() =
                     cfg.StructureTax
             )
 
-            tt.AddPreTable(sprintf "展开行星材料：%b 展开反应公式：%b" cfg.ExpandPlanet cfg.ExpandReaction)
+            tt.AddPreTable $"展开行星材料：%b{cfg.ExpandPlanet} 展开反应公式：%b{cfg.ExpandReaction}"
 
             tt.AddPreTable("产品：")
             let priceTable = Utils.MarketUtils.EveMarketPriceTable()
@@ -384,12 +384,12 @@ type EveRecipeModule() =
         tc.ShouldNotThrow("#errc 恶狼级")
         tc.ShouldNotThrow("#errc 恶狼级蓝图 ime:10")
 
-    [<CommandHandlerMethodAttribute("#EVE舰船II", "T2舰船制造总览", "可选参数见#evehelp。")>]
-    [<CommandHandlerMethodAttribute("#EVE舰船", "T1舰船制造总览", "可选参数见#evehelp。")>]
-    [<CommandHandlerMethodAttribute("#EVE组件", "T2和旗舰组件制造总览", "可选参数见#evehelp。")>]
-    [<CommandHandlerMethodAttribute("#EVE种菜", "EVE种菜利润", "可选参数见#evehelp。")>]
-    [<CommandHandlerMethodAttribute("#EVE装备II", "EVET2装备利润", "可以使用by:搜索物品组名称。其他可选参数见#evehelp。")>]
-    [<CommandHandlerMethodAttribute("#EVE燃料块", "EVE燃料块", "可选参数见#evehelp。")>]
+    [<CommandHandlerMethod("#EVE舰船II", "T2舰船制造总览", "可选参数见#evehelp。")>]
+    [<CommandHandlerMethod("#EVE舰船", "T1舰船制造总览", "可选参数见#evehelp。")>]
+    [<CommandHandlerMethod("#EVE组件", "T2和旗舰组件制造总览", "可选参数见#evehelp。")>]
+    [<CommandHandlerMethod("#EVE种菜", "EVE种菜利润", "可选参数见#evehelp。")>]
+    [<CommandHandlerMethod("#EVE装备II", "EVET2装备利润", "可以使用by:搜索物品组名称。其他可选参数见#evehelp。")>]
+    [<CommandHandlerMethod("#EVE燃料块", "EVE燃料块", "可选参数见#evehelp。")>]
     member x.HandleManufacturingOverview(cmdArg : CommandEventArgs) =
         let cfg = EveConfigParser()
 
@@ -413,7 +413,7 @@ type EveRecipeModule() =
                 cfg.StructureTax
         )
 
-        ret.WriteLine(sprintf "展开行星材料：%b 展开反应公式：%b" cfg.ExpandPlanet cfg.ExpandReaction)
+        ret.WriteLine $"展开行星材料：%b{cfg.ExpandPlanet} 展开反应公式：%b{cfg.ExpandReaction}"
 
         let searchCond =
             match cmdArg.CommandName with

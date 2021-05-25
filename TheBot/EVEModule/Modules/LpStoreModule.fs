@@ -51,9 +51,7 @@ type EveLpStoreModule() =
         let minVol = cfg.MinimalVolume
         let minVal = cfg.MinimalValue
 
-        tt.AddPreTable(
-            sprintf "最低交易量比(vol)：%g 最低LP价值(val)：%g 结果上限(count)：%i" minVol minVal cfg.RecordCount
-        )
+        tt.AddPreTable $"最低交易量比(vol)：%g{minVol} 最低LP价值(val)：%g{minVal} 结果上限(count)：%i{cfg.RecordCount}"
 
         tt.AddPreTable("警告：请参考交易量，利润很高的不一定卖得掉")
 
@@ -72,7 +70,7 @@ type EveLpStoreModule() =
                 let itemOffer = oProc.GetFirstProduct()
 
                 let offerStr =
-                    sprintf "%s*%g" itemOffer.Item.Name itemOffer.Quantity
+                    $"%s{itemOffer.Item.Name}*%g{itemOffer.Quantity}"
 
                 let mutable totalCost = 0.0 // 所有ISK开销（如果是蓝图，还有材料开销）
                 let mutable dailyVolume = 0.0 // 日均交易量
@@ -234,7 +232,7 @@ type EveLpStoreModule() =
 
         using (cmdArg.OpenResponse(cfg.ResponseType)) (fun x -> x.Write(tt))
 
-    [<CommandHandlerMethodAttribute("#eveLp",
+    [<CommandHandlerMethod("#eveLp",
                                     "EVE LP兑换计算。",
                                     "#evelp 军团名 [道具名] [vol:2] [val:2000] [count:50] [buy:]
 []内为可选参数。如果指定道具名则查询目标军团指定兑换的详细信息。

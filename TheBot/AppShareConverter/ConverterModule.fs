@@ -7,8 +7,6 @@ open KPX.FsCqHttp.Message.Sections
 
 open KPX.FsCqHttp.Handler
 
-open KPX.TheBot.Data.Common.Network
-
 
 type ConverterModule() =
     inherit HandlerModuleBase()
@@ -39,10 +37,10 @@ type ConverterModule() =
         for sec in msg.Event.Message do 
             match sec with 
             | :? XmlSection as xml ->
-                writeLog (sec)
+                writeLog sec
                 if msg.Event.IsPrivate then x.HandleXmlSection(msg, xml)
             | :? JsonSection as json -> 
-                writeLog (sec)
+                writeLog sec
                 if msg.Event.IsPrivate then x.HandleJsonSection(msg, json)
             | _ -> ()
 
@@ -69,7 +67,7 @@ type ConverterModule() =
                 |> Option.map (fun token -> token.ToObject<string>())
 
             if title.IsSome && url.IsSome then
-                x.ReplayMessage(msg, sprintf "%s\r%s" title.Value url.Value)
+                x.ReplayMessage(msg, $"%s{title.Value}\r%s{url.Value}")
 
         | "com.tencent.miniapp_01" ->
             let prompt = obj.GetValue("prompt").ToObject<string>()
@@ -87,7 +85,7 @@ type ConverterModule() =
                 
                 if desc.IsSome && qqUrl.IsSome then
                     let url = qqUrl.Value.Substring(0, qqUrl.Value.IndexOf("?"))
-                    x.ReplayMessage(msg, sprintf "%s\r%s" desc.Value url)
+                    x.ReplayMessage(msg, $"%s{desc.Value}\r%s{url}")
             | _ -> ()
         | _ -> ()
 

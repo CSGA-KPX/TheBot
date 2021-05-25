@@ -22,12 +22,12 @@ type SudoModule() =
     inherit CommandHandlerBase()
 
     let allowList = Collections.Generic.HashSet<string>()
-    let allowQqFmt (self : uint64) (uid : uint64) = sprintf "%i:qq:%i" self uid
-    let allowGroupFmt (self : uint64) (gid : uint64) = sprintf "%i:group:%i" self gid
+    let allowQqFmt (self : uint64) (uid : uint64) = $"%i{self}:qq:%i{uid}"
+    let allowGroupFmt (self : uint64) (gid : uint64) = $"%i{self}:group:%i{gid}"
 
     let mutable isSuUsed = false
 
-    [<CommandHandlerMethodAttribute("##selftest", "(超管) 返回系统信息", "", IsHidden = true)>]
+    [<CommandHandlerMethod("##selftest", "(超管) 返回系统信息", "", IsHidden = true)>]
     member x.HandleSelfTest(cmdArg : CommandEventArgs) =
         cmdArg.EnsureSenderOwner()
         let caller = cmdArg.ApiCaller
@@ -42,7 +42,7 @@ type SudoModule() =
 
         cmdArg.Reply(info)
 
-    [<CommandHandlerMethodAttribute("##rebuilddatacache", "(超管) 重建数据缓存", "", IsHidden = true)>]
+    [<CommandHandlerMethod("##rebuilddatacache", "(超管) 重建数据缓存", "", IsHidden = true)>]
     member x.HandleRebuildXivDb(cmdArg : CommandEventArgs) =
         cmdArg.EnsureSenderOwner()
         BotDataInitializer.ClearCache()
@@ -51,7 +51,7 @@ type SudoModule() =
         BotDataInitializer.InitializeAllCollections()
         cmdArg.Reply("重建数据库完成")
 
-    [<CommandHandlerMethodAttribute("##su", "提交凭据，添加当前用户为超管", "", IsHidden = true)>]
+    [<CommandHandlerMethod("##su", "提交凭据，添加当前用户为超管", "", IsHidden = true)>]
     member x.HandleSu(cmdArg : CommandEventArgs) =
         if isSuUsed then
             cmdArg.Reply("本次认证已被使用")
@@ -76,7 +76,7 @@ type SudoModule() =
 
             isSuUsed <- true
 
-    [<CommandHandlerMethodAttribute("##grant", "（超管）添加用户为管理员", "", IsHidden = true)>]
+    [<CommandHandlerMethod("##grant", "（超管）添加用户为管理员", "", IsHidden = true)>]
     member x.HandleGrant(cmdArg : CommandEventArgs) =
         cmdArg.EnsureSenderOwner()
 
@@ -90,19 +90,19 @@ type SudoModule() =
             if uid <> 0UL then
                 cmdArg.GrantBotAdmin(uid)
 
-                sb.AppendLine(sprintf "已添加userId = %i" uid)
+                sb.AppendLine $"已添加userId = %i{uid}"
                 |> ignore
 
         cmdArg.Reply(sb.ToString())
 
-    [<CommandHandlerMethodAttribute("##admins", "（超管）显示当前机器人管理账号", "", IsHidden = true)>]
+    [<CommandHandlerMethod("##admins", "（超管）显示当前机器人管理账号", "", IsHidden = true)>]
     member x.HandleShowBotAdmins(cmdArg : CommandEventArgs) =
         cmdArg.EnsureSenderOwner()
         let admins = cmdArg.GetBotAdmins()
         let ret = String.Join("\r\n", admins)
         cmdArg.Reply(ret)
 
-    [<CommandHandlerMethodAttribute("##showgroups", "（超管）检查加群信息", "", IsHidden = true)>]
+    [<CommandHandlerMethod("##showgroups", "（超管）检查加群信息", "", IsHidden = true)>]
     member x.HandleShowGroups(cmdArg : CommandEventArgs) =
         cmdArg.EnsureSenderOwner()
         let api = cmdArg.ApiCaller.CallApi<GetGroupList>()
@@ -114,14 +114,14 @@ type SudoModule() =
 
         cmdArg.Reply(tt.ToString())
 
-    [<CommandHandlerMethodAttribute("##abortall", "（超管）断开所有WS连接", "", IsHidden = true)>]
+    [<CommandHandlerMethod("##abortall", "（超管）断开所有WS连接", "", IsHidden = true)>]
     member x.HandleShowAbortAll(cmdArg : CommandEventArgs) =
         cmdArg.EnsureSenderOwner()
 
         for ctx in KPX.FsCqHttp.Instance.CqWsContextPool.Instance do
             ctx.Stop()
 
-    [<CommandHandlerMethodAttribute("##allow", "(管理) 允许好友、加群请求", "", IsHidden = true)>]
+    [<CommandHandlerMethod("##allow", "(管理) 允许好友、加群请求", "", IsHidden = true)>]
     member x.HandleAllow(cmdArg : CommandEventArgs) =
         
         let uo = OptionBase()
@@ -133,18 +133,18 @@ type SudoModule() =
             cmdArg.EnsureSenderAdmin()
 
             let key =
-                allowGroupFmt cmdArg.BotUserId (group.Value)
+                allowGroupFmt cmdArg.BotUserId group.Value
 
             allowList.Add(key) |> ignore
-            cmdArg.Reply(sprintf "接受来自[%s]的邀请" key)
+            cmdArg.Reply $"接受来自[%s{key}]的邀请"
         elif qq.IsDefined then
             cmdArg.EnsureSenderAdmin()
 
             let key =
-                allowQqFmt cmdArg.BotUserId (qq.Value)
+                allowQqFmt cmdArg.BotUserId qq.Value
 
             allowList.Add(key) |> ignore
-            cmdArg.Reply(sprintf "接受来自[%s]的邀请" key)
+            cmdArg.Reply $"接受来自[%s{key}]的邀请"
         else
             let sb = Text.StringBuilder()
             Printf.bprintf sb "设置群白名单： group:群号\r\n"

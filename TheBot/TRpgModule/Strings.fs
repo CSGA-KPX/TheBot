@@ -53,9 +53,9 @@ type TrpgStringTemplate(de : DiceExpression) =
             if expression.IsNone then invalidArg "args" "找不到表达式"
 
             if ShowExpr then
-                sprintf "{%s = %O}" (expression.Value) (de.Eval(expression.Value).Sum)
+                $"{{%s{expression.Value} = {de.Eval(expression.Value).Sum}}}"
             else
-                sprintf "%O" (de.Eval(expression.Value).Sum)
+                $"{de.Eval(expression.Value).Sum}"
         | "randomItem" -> // \{randomItem 数组名称 个数}
             try
                 let name = args |> Array.tryHead
@@ -70,7 +70,7 @@ type TrpgStringTemplate(de : DiceExpression) =
                 let input = StringData.GetLines(name.Value)
                 let items = de.Dicer.GetArrayItem(input, count)
                 String.Join(" ", items)
-            with e -> failwithf "找不到请求的数据集 %s : %s" name e.Message
+            with e -> failwithf $"找不到请求的数据集 %s{name} : %s{e.Message}"
         | "randomItemOpt" -> // \{randomItemOpt 数组名称 阈值|50 } 1D100
             try
                 let name = args |> Array.tryHead
@@ -82,11 +82,11 @@ type TrpgStringTemplate(de : DiceExpression) =
                     |> Option.defaultValue "50"
                     |> Int32.Parse
 
-                let d100 = de.Dicer.GetPostive(100)
+                let d100 = de.Dicer.GetPositive(100)
 
                 if d100 >= threshold then
                     de.Dicer.GetArrayItem(StringData.GetLines(name.Value))
                 else
                     ""
-            with e -> failwithf "找不到请求的数据集 %s : %s" name e.Message
+            with e -> failwithf $"找不到请求的数据集 %s{name} : %s{e.Message}"
         | other -> invalidArg (nameof name) ("未知指令名称" + other)

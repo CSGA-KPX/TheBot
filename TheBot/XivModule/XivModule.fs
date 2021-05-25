@@ -39,7 +39,7 @@ type MiscModule() =
     let itemCol = ItemCollection.Instance
 
     let isNumber (str : string) =
-        if str.Length <> 0 then String.forall (Char.IsDigit) str else false
+        if str.Length <> 0 then String.forall Char.IsDigit str else false
 
     let buildDfc () =
         ContentFinderCondition.XivContentCollection.Instance.GetAll()
@@ -49,14 +49,14 @@ type MiscModule() =
 
     let mutable dfcRoulettes = buildDfc ()
 
-    [<CommandHandlerMethodAttribute("#纷争前线", "今日轮转查询", "")>]
+    [<CommandHandlerMethod("#纷争前线", "今日轮转查询", "")>]
     member x.HandleDailyFrontlineChallenge(cmdArg : CommandEventArgs) =
         let opt = DfcOption()
         opt.Parse(cmdArg)
 
         if opt.RebuildData.IsDefined then
             dfcRoulettes <- buildDfc ()
-            cmdArg.Reply(sprintf "重建完成，当前有%i个副本" dfcRoulettes.Length)
+            cmdArg.Reply $"重建完成，当前有%i{dfcRoulettes.Length}个副本"
         else
             if dfcRoulettes.Length = 0 then 
                 cmdArg.Abort(
@@ -87,7 +87,7 @@ type MiscModule() =
                 (jst - jst.TimeOfDay)
                     .ToOffset(TimeSpan.FromHours(8.0))
 
-            tt.AddPreTable(sprintf "当前为：%s" (getString (startDate)))
+            tt.AddPreTable $"当前为：%s{getString startDate}"
 
             let list = opt.ListCount.Value
 
@@ -98,7 +98,7 @@ type MiscModule() =
                 let dateStr =
                     startDate.AddDays(float i).ToString(dateFmt)
 
-                let contentStr = getString (date)
+                let contentStr = getString date
                 tt.AddRow(dateStr, contentStr)
 
             using (cmdArg.OpenResponse(ForceImage)) (fun ret -> ret.Write(tt))
@@ -108,7 +108,7 @@ type MiscModule() =
         let tc = TestContext(x)
         tc.ShouldNotThrow("#纷争前线")
 
-    [<CommandHandlerMethodAttribute("#幻想药", "洗个啥？", "")>]
+    [<CommandHandlerMethod("#幻想药", "洗个啥？", "")>]
     member x.HandleFantasia(cmdArg : CommandEventArgs) =
         let choices =
             [| "屯着别用"
@@ -135,13 +135,13 @@ type MiscModule() =
             | AtUserType.User _ -> cmdArg.Abort(ModuleError, "暂不支持")
 
         let dicer =
-            new Dicer(SeedOption.SeedByUserDay(cmdArg.MessageEvent))
+            Dicer(SeedOption.SeedByUserDay(cmdArg.MessageEvent))
 
         let tt = TextTable(RightAlignCell "D100", "选项")
 
         choices
-        |> Array.map (fun str -> str, dicer.GetPostive(100u, str))
-        |> Array.sortBy (snd)
+        |> Array.map (fun str -> str, dicer.GetPositive(100u, str))
+        |> Array.sortBy snd
         |> Array.iter (fun (str, d) -> tt.AddRow(d, str))
 
         cmdArg.Reply(tt.ToString())
@@ -151,7 +151,7 @@ type MiscModule() =
         let tc = TestContext(x)
         tc.ShouldNotThrow("#幻想药")
 
-    [<CommandHandlerMethodAttribute("#cgss",
+    [<CommandHandlerMethod("#cgss",
                                     "查找指定职业和品级的套装。用于#r/rr/rc/rrc计算",
                                     "#cgss 职业 品级
 勉强能用。也不打算改")>]
@@ -163,7 +163,7 @@ type MiscModule() =
             ClassJobMapping.ClassJobMappingCollection.Instance
 
         for item in cmdArg.Arguments do
-            if isNumber (item) then
+            if isNumber item then
                 iLv <- Some(Int32.Parse(item))
             else
                 let ret =
@@ -186,7 +186,7 @@ type MiscModule() =
                     let item =
                         ItemCollection.Instance.GetByItemId(g.Id)
 
-                    if item.Name.Contains(" ") then sprintf "#%i" item.Id else item.Name)
+                    if item.Name.Contains(" ") then $"#%i{item.Id}" else item.Name)
 
         if ret.Length <> 0 then
             cmdArg.Reply(String.Join("+", ret))
@@ -198,12 +198,12 @@ type MiscModule() =
         let tc = TestContext(x)
         tc.ShouldNotThrow("#cgss 占星 510")
 
-    [<CommandHandlerMethodAttribute("#is", "（FF14）查找名字包含字符的物品", "关键词（大小写敏感）")>]
+    [<CommandHandlerMethod("#is", "（FF14）查找名字包含字符的物品", "关键词（大小写敏感）")>]
     member x.HandleItemSearch(cmdArg : CommandEventArgs) =
         let tt = TextTable(RightAlignCell "Id", "物品名")
         let i = String.Join(" ", cmdArg.Arguments)
 
-        if isNumber (i) then
+        if isNumber i then
             let ret = itemCol.TryGetByItemId(i |> int32)
             if ret.IsSome then tt.AddRow(ret.Value.Id, ret.Value.Name)
         else
@@ -226,14 +226,14 @@ type MiscModule() =
         tc.ShouldNotThrow("#is 风之水晶")
         tc.ShouldThrow("#is 第三期")
 
-    [<CommandHandlerMethodAttribute("#gate", "挖宝选门", "")>]
+    [<CommandHandlerMethod("#gate", "挖宝选门", "")>]
     member x.HandleGate(cmdArg : CommandEventArgs) =
         let tt = TextTable("1D100", "门")
 
         [| "左"; "中"; "右" |]
-        |> Array.map (fun door -> door, Dicer.RandomDicer.GetPostive(100u, door))
-        |> Array.sortBy (snd)
-        |> Array.iter (fun (door, score) -> tt.AddRow((sprintf "%03i" score), door))
+        |> Array.map (fun door -> door, Dicer.RandomDicer.GetPositive(100u, door))
+        |> Array.sortBy snd
+        |> Array.iter (fun (door, score) -> tt.AddRow( $"%03i{score}", door))
 
         cmdArg.Reply(tt.ToString())
 
@@ -242,10 +242,10 @@ type MiscModule() =
         let tc = TestContext(x)
         tc.ShouldNotThrow("#gate")
 
-    [<CommandHandlerMethodAttribute("#仙人彩", "仙人彩周常", "")>]
+    [<CommandHandlerMethod("#仙人彩", "仙人彩周常", "")>]
     member x.HandleCactpot(cmdArg : CommandEventArgs) =
         let nums =
-            Seq.initInfinite (fun _ -> sprintf "%04i" (Dicer.RandomDicer.GetPostive(10000u) - 1u))
+            Seq.initInfinite (fun _ -> $"%04i{Dicer.RandomDicer.GetPositive(10000u) - 1u}")
             |> Seq.distinctBy (fun numStr -> numStr.[3])
             |> Seq.take 3
 
@@ -256,8 +256,8 @@ type MiscModule() =
         let tc = TestContext(x)
         tc.ShouldNotThrow("#仙人彩")
 
-    [<CommandHandlerMethodAttribute("#nuannuan", "暖暖", "")>]
-    [<CommandHandlerMethodAttribute("#nrnr", "暖暖", "")>]
+    [<CommandHandlerMethod("#nuannuan", "暖暖", "")>]
+    [<CommandHandlerMethod("#nrnr", "暖暖", "")>]
     member x.HandleNrnr(cmdArg : CommandEventArgs) =
         let handler = new Net.Http.HttpClientHandler()
         handler.AutomaticDecompression <- Net.DecompressionMethods.GZip
@@ -295,7 +295,7 @@ type MiscModule() =
         let title = item.Value<string>("title")
 
         let url =
-            sprintf "https://www.bilibili.com/video/%s" bvid
+            $"https://www.bilibili.com/video/%s{bvid}"
 
         let html =
             hc
@@ -327,7 +327,7 @@ type MiscModule() =
         tc.ShouldNotThrow("#nrnr")
         tc.ShouldNotThrow("#nuannuan")
 
-    [<CommandHandlerMethodAttribute("#海钓",
+    [<CommandHandlerMethod("#海钓",
                                     "FF14海钓攻略",
                                     "next:查阅n个CD后的信息，list:查阅n个时间窗的信息。如：
 #海钓 next:2

@@ -30,7 +30,7 @@ type XivExpression() as x =
             )
 
         itemOperator.IsBinary <- false
-        x.Operatos.Add(itemOperator)
+        x.Operators.Add(itemOperator)
 
     override x.TryGetItemByName(str) =
         ItemCollection.Instance.TryGetByName(str.TrimEnd(CommandUtils.XivSpecialChars))

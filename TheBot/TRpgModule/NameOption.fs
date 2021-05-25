@@ -17,7 +17,7 @@ type private NameTypeCell(cb : OptionImpl, name, def) =
         | "英文" -> StringData.Key_EngName
         | "英中" -> StringData.Key_EngChsName
         | "日文" -> StringData.Key_JpnName
-        | _ -> invalidArg (nameof lang) (sprintf "%s不是允许值" lang)
+        | _ -> invalidArg (nameof lang) $"%s{lang}不是允许值"
 
 type NameOption() as x =
     inherit OptionImpl()
@@ -45,9 +45,9 @@ type NameOption() as x =
             let m = arg |> aliases.TryMap
 
             if m.IsSome then
-                lst.Add(sprintf "lang:%s" m.Value)
+                lst.Add $"lang:%s{m.Value}"
             else
                 let succ, i = Int32.TryParse(arg)
-                if succ then lst.Add(sprintf "c:%i" i) else lst.Add(arg)
+                if succ then lst.Add $"c:%i{i}" else lst.Add(arg)
 
         lst.ToArray()

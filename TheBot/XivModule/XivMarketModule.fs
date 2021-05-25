@@ -31,12 +31,12 @@ type XivMarketModule() =
 
     let isNumber (str : string) =
         if str.Length <> 0 then
-            String.forall (Char.IsDigit) str
+            String.forall Char.IsDigit str
         else
             false
 
     let strToItem (str : string) =
-        if isNumber (str) then
+        if isNumber str then
             itemCol.TryGetByItemId(Convert.ToInt32(str))
         else
             itemCol.TryGetByName(str.TrimEnd(CommandUtils.XivSpecialChars))
@@ -46,11 +46,11 @@ type XivMarketModule() =
         let ret = gilShop.TryLookupByItem(item)
 
         if ret.IsSome then
-            sprintf "%s(%i)" item.Name ret.Value.Ask
+            $"%s{item.Name}(%i{ret.Value.Ask})"
         else
             item.Name
 
-    [<CommandHandlerMethodAttribute("#ffsrv", "检查Bot可用的FF14服务器/大区名称", "")>]
+    [<CommandHandlerMethod("#ffsrv", "检查Bot可用的FF14服务器/大区名称", "")>]
     member x.HandleFFCmdHelp(cmdArg : CommandEventArgs) =
         use ret = cmdArg.OpenResponse(PreferImage)
 
@@ -69,7 +69,7 @@ type XivMarketModule() =
 
             let rows =
                 append
-                |> Seq.append (strs |> Seq.map (box))
+                |> Seq.append (strs |> Seq.map box)
                 |> Seq.chunkBySize colsNum
                 |> Seq.toArray
 
@@ -82,9 +82,9 @@ type XivMarketModule() =
             tt
 
 
-        let mainTable = mkTable (World.WorldNames)
+        let mainTable = mkTable World.WorldNames
         mainTable.AddPreTable("可用大区及缩写有：")
-        mainTable.AddPreTable(mkTable (World.DataCenterNames))
+        mainTable.AddPreTable(mkTable World.DataCenterNames)
         mainTable.AddPreTable(" ")
         mainTable.AddPreTable("可用服务器及缩写有：")
 
@@ -95,7 +95,7 @@ type XivMarketModule() =
         let tc = TestContext(x)
         tc.ShouldNotThrow("#ffsrv")
 
-    [<CommandHandlerMethodAttribute("#fm",
+    [<CommandHandlerMethod("#fm",
                                     "FF14市场查询。可以使用 采集重建/魔晶石/水晶 快捷组",
                                     "接受以下参数：
 text 以文本格式输出结果
@@ -137,12 +137,12 @@ text 以文本格式输出结果
             let ret =
                 opt.NonOptionStrings
                 |> Seq.tryItem 1
-                |> Option.map MarketUtils.MateriaAliasMapper.TryMap
+                |> Option.map MateriaAliasMapper.TryMap
                 |> Option.flatten
 
             if ret.IsNone then
                 let tt =
-                    MarketUtils.MateriaAliasMapper.GetValueTable()
+                    MateriaAliasMapper.GetValueTable()
 
                 tt.AddPreTable("请按以下方案选择合适的魔晶石类别")
                 using (cmdArg.OpenResponse(ForceImage)) (fun ret -> ret.Write(tt))
@@ -150,12 +150,10 @@ text 以文本格式输出结果
             else
                 let key = ret.Value
 
-                for grade in MarketUtils.MateriaGrades do
+                for grade in MateriaGrades do
                     acc.Update(
                         itemCol
-                            .TryGetByName(
-                                sprintf "%s魔晶石%s" key grade
-                            )
+                            .TryGetByName($"%s{key}魔晶石%s{grade}")
                             .Value
                     )
         | Some "重建采集" ->
@@ -171,7 +169,7 @@ text 以文本格式输出结果
             for str in opt.NonOptionStrings do
                 match xivExpr.TryEval(str) with
                 | Error err -> raise err
-                | Ok (Number i) -> tt.AddPreTable(sprintf "计算结果为数字%f，物品Id请加#" i)
+                | Ok (Number i) -> tt.AddPreTable $"计算结果为数字%f{i}，物品Id请加#"
                 | Ok (Accumulator a) ->
                     for i in a do
                         acc.Update(i)
@@ -247,21 +245,21 @@ text 以文本格式输出结果
         using (cmdArg.OpenResponse(opt.ResponseType)) (fun ret -> ret.Write(tt))
 
     [<TestFixture>]
-    member x.TestXivMatket() =
+    member x.TestXivMarket() =
         let tc = TestContext(x)
         tc.ShouldNotThrow("#fm 风之水晶")
         tc.ShouldNotThrow("#fm 风之水晶 拉诺西亚")
         tc.ShouldNotThrow("#fm 风之水晶 一区")
 
-    [<CommandHandlerMethodAttribute("#r", "根据表达式汇总多个物品的材料，不查询价格", "可以使用text:选项返回文本。如#r 白钢锭 text:")>]
-    [<CommandHandlerMethodAttribute("#rr",
+    [<CommandHandlerMethod("#r", "根据表达式汇总多个物品的材料，不查询价格", "可以使用text:选项返回文本。如#r 白钢锭 text:")>]
+    [<CommandHandlerMethod("#rr",
                                     "根据表达式汇总多个物品的基础材料，不查询价格",
                                     "可以使用text:选项返回文本。如#rr 白钢锭 text:")>]
-    [<CommandHandlerMethodAttribute("#rc",
+    [<CommandHandlerMethod("#rc",
                                     "计算物品基础材料成本",
                                     "可以使用text:选项返回文本。
 可以设置查询服务器，已有服务器见#ff14help")>]
-    [<CommandHandlerMethodAttribute("#rrc",
+    [<CommandHandlerMethod("#rrc",
                                     "计算物品基础材料成本",
                                     "可以使用text:选项返回文本。
 可以设置查询服务器，已有服务器见#ff14help")>]
@@ -295,7 +293,7 @@ text 以文本格式输出结果
                 TextTable("物品", RightAlignCell "数量")
 
         if doCalculateCost then
-            tt.AddPreTable(sprintf "服务器：%s" world.WorldName)
+            tt.AddPreTable $"服务器：%s{world.WorldName}"
 
         let product = XivExpression.ItemAccumulator()
         let acc = XivExpression.ItemAccumulator()
@@ -307,10 +305,10 @@ text 以文本格式输出结果
             | Ok (Accumulator a) ->
                 for mr in a do
                     product.Update(mr)
-                    let recipe = materialFunc (mr.Item) // 一个物品的材料
+                    let recipe = materialFunc mr.Item // 一个物品的材料
 
                     if recipe.IsNone then
-                        tt.AddPreTable(sprintf "%s 没有生产配方" mr.Item.Name)
+                        tt.AddPreTable $"%s{mr.Item.Name} 没有生产配方"
                     else
                         for m in recipe.Value.Input do
                             acc.Update(m.Item, m.Quantity * mr.Quantity)
@@ -318,7 +316,7 @@ text 以文本格式输出结果
         if acc.Count = 0 then
             cmdArg.Abort(InputError, "缺少表达式")
 
-        let mutable sum = MarketUtils.StdEv.Zero
+        let mutable sum = StdEv.Zero
 
         for mr in acc |> Seq.sortBy (fun kv -> kv.Item.Id) do
             let market =
@@ -422,7 +420,7 @@ text 以文本格式输出结果
         tc.ShouldNotThrow("#rc 野马级船体 拉诺西亚")
         tc.ShouldNotThrow("#rrc 野马级船体 拉诺西亚")
 
-    [<CommandHandlerMethodAttribute("#ssc",
+    [<CommandHandlerMethod("#ssc",
                                     "计算部分道具兑换的价格",
                                     "兑换所需道具的名称或ID，只处理1个
 可以设置查询服务器，已有服务器见#ff14help")>]
@@ -467,7 +465,7 @@ text 以文本格式输出结果
 
             using (cmdArg.OpenResponse(ForceImage)) (fun x -> x.Write(tt))
         else
-            let ret = strToItem (opt.NonOptionStrings.[0])
+            let ret = strToItem opt.NonOptionStrings.[0]
 
             match ret with
             | None -> cmdArg.Abort(ModuleError, "找不到物品{0}", opt.NonOptionStrings.[0])
@@ -486,9 +484,7 @@ text 以文本格式输出结果
                         RightAlignCell "更新时间"
                     )
 
-                tt.AddPreTable(
-                    sprintf "兑换道具:%s 土豆：%s/%s" reqi.Name world.DataCenter world.WorldName
-                )
+                tt.AddPreTable $"兑换道具:%s{reqi.Name} 土豆：%s{world.DataCenter}/%s{world.WorldName}"
 
                 ia
                 |> Array.map
@@ -533,7 +529,7 @@ text 以文本格式输出结果
         tc.ShouldNotThrow("#ssc")
         tc.ShouldNotThrow("#ssc 盐酸")
 
-    [<CommandHandlerMethodAttribute("#理符",
+    [<CommandHandlerMethod("#理符",
                                     "计算制作理符利润（只查询70级以上的基础材料）",
                                     "#理符 [职业名] [服务器名]",
                                     Disabled = true)>]
@@ -545,9 +541,9 @@ text 以文本格式输出结果
             opt.NonOptionStrings
             |> Seq.tryHead
             |> Option.map
-                (fun x -> ClassJobMapping.ClassJobMappingCollection.Instance.TrySearchByName(x))
+                ClassJobMapping.ClassJobMappingCollection.Instance.TrySearchByName
             |> Option.flatten
-            |> Option.map (fun job -> CraftLeve.CraftLeveInfoCollection.Instance.GetByClassJob(job))
+            |> Option.map CraftLeve.CraftLeveInfoCollection.Instance.GetByClassJob
 
         if leves.IsNone then
             cmdArg.Abort(InputError, "未设置职业或职业无效")

@@ -27,8 +27,8 @@ type RPNToken<'T> =
 
     override x.ToString() =
         match x with
-        | Operand i -> sprintf "(Operand %O)" i
-        | Operator o -> sprintf "(Operator %O)" o
+        | Operand i -> $"(Operand {i})"
+        | Operator o -> $"(Operator {o})"
 
 [<AbstractClass>]
 type GenericRPNParser<'Operand>(ops : seq<_>) =
@@ -56,7 +56,7 @@ type GenericRPNParser<'Operand>(ops : seq<_>) =
     /// 获得操作符集合
     ///
     /// 写入会破坏线程安全
-    member x.Operatos = opsDict
+    member x.Operators = opsDict
 
     member private x.SplitString(str : string) =
         let ret = List<_>()
@@ -65,7 +65,7 @@ type GenericRPNParser<'Operand>(ops : seq<_>) =
         for i = 0 to str.Length - 1 do
             let c = str.[i]
 
-            if x.Operatos.Contains(c) then
+            if x.Operators.Contains(c) then
                 let isEscaped =
                     // 前一个字符还不能是转义符号
                     if i = 0 then
@@ -83,7 +83,7 @@ type GenericRPNParser<'Operand>(ops : seq<_>) =
                     if not <| String.IsNullOrWhiteSpace(token) then
                         ret.Add(x.Tokenize(token))
 
-                    ret.Add(Operator x.Operatos.[c])
+                    ret.Add(Operator x.Operators.[c])
             else
                 sb.Append(c) |> ignore
 
@@ -142,7 +142,7 @@ type GenericRPNParser<'Operand>(ops : seq<_>) =
             stack.Pop()
         with :? InvalidOperationException ->
             let operators =
-                x.Operatos |> Seq.map (fun op -> op.Char)
+                x.Operators |> Seq.map (fun op -> op.Char)
 
             raise
             <| ModuleException(

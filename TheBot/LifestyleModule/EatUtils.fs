@@ -18,10 +18,10 @@ module private Data =
     let hotpot_dish = mgr.GetWords("火锅配菜") |> Array.distinct
 
     let snacks =
-        mgr.GetWordsWithouComment("零食") |> Array.distinct
+        mgr.GetWordsWithoutComment("零食") |> Array.distinct
 
     let drinks =
-        mgr.GetWordsWithouComment("饮料") |> Array.distinct
+        mgr.GetWordsWithoutComment("饮料") |> Array.distinct
 
     let dinnerTypes = [| "早餐"; "午餐"; "晚餐"; "加餐" |]
 
@@ -58,25 +58,25 @@ type MappedOption =
         | _ -> raise <| ArgumentOutOfRangeException("value")
 
     /// 转换为带有值的字符串形式
-    override x.ToString() = sprintf "%s(%i)" x.Original x.Value
+    override x.ToString() = $"%s{x.Original}(%i{x.Value})"
 
     static member Create(dicer : Dicer, option : string) =
         { Original = option
           Mapped = option
-          Value = dicer.GetPostive(diceSides, option) |> int}
+          Value = dicer.GetPositive(diceSides, option) |> int}
 
     static member Create(dicer : Dicer, option : string, prefix) =
         let mapped = prefix + option
 
         { Original = option
           Mapped = mapped
-          Value = dicer.GetPostive(diceSides, mapped) |> int}
+          Value = dicer.GetPositive(diceSides, mapped) |> int}
 
 type EatChoices(options : seq<string>, dicer : Dicer, ?prefix : string) =
     let prefix = defaultArg prefix ""
 
     let mapped =
-        if not dicer.IsFreezed then invalidArg (nameof dicer) "Dicer没有固定"
+        if not dicer.IsFrozen then invalidArg (nameof dicer) "Dicer没有固定"
 
         options
         |> Seq.map
@@ -87,33 +87,33 @@ type EatChoices(options : seq<string>, dicer : Dicer, ?prefix : string) =
 
     member x.MappedOptions = mapped |> Seq.readonly
 
-    /// 获取所有小于等于threadhold的选项
-    member x.GetGoodOptions(threadhold) =
+    /// 获取所有小于等于threshold的选项
+    member x.GetGoodOptions(threshold) =
         mapped
-        |> Seq.filter (fun opt -> opt.Value <= threadhold)
+        |> Seq.filter (fun opt -> opt.Value <= threshold)
 
-    /// 获取所有大于等于threadhold的选项(默认51)
-    member x.GetBadOptions(threadhold) =
+    /// 获取所有大于等于threshold的选项(默认51)
+    member x.GetBadOptions(threshold) =
         mapped
-        |> Seq.filter (fun opt -> opt.Value >= threadhold)
+        |> Seq.filter (fun opt -> opt.Value >= threshold)
         |> Seq.rev
 
 /// 根据早中晚加分别打分
 ///
 /// 如果只有一个选项就给评价，多个选项只有打分
 let scoreByMeals (dicer : Dicer) (options : string []) (ret : IO.TextWriter) =
-    if not dicer.IsFreezed then invalidArg (nameof dicer) "Dicer没有固定"
+    if not dicer.IsFrozen then invalidArg (nameof dicer) "Dicer没有固定"
 
     match options.Length with
     | 0 -> invalidArg (nameof options) "没有可选项"
     | 1 ->
         for t in dinnerTypes do
-            let str = sprintf "%s吃%s" t options.[0]
+            let str = $"%s{t}吃%s{options.[0]}"
             let opt = MappedOption.Create(dicer, str)
-            ret.WriteLine(sprintf "%s : %s(%i)" str (opt.DescribeValue()) opt.Value)
+            ret.WriteLine $"%s{str} : %s{opt.DescribeValue()}(%i{opt.Value})"
     | _ ->
         for t in dinnerTypes do
-            let prefix = sprintf "%s吃" t
+            let prefix = $"%s{t}吃"
 
             let mapped =
                 EatChoices(options, dicer, prefix).MappedOptions
@@ -173,11 +173,11 @@ let private saizeriyaFunc (dicer : Dicer) (ret : IO.TextWriter) =
 
     scoreByMeals dicer (Array.singleton "萨莉亚") ret
 
-    ret.WriteLine() |> ignore
+    ret.WriteLine()
 
     let prefix = "萨莉亚吃"
 
-    for (section, options) in saizeriya do
+    for section, options in saizeriya do
         let opts =
             EatChoices(options, dicer, prefix)
                 .GetGoodOptions(49)
@@ -199,7 +199,7 @@ let eatAlias =
            "饮料", Array.empty |]
 
     seq {
-        for (key, aliases) in map do
+        for key, aliases in map do
             yield key, key
 
             for alias in aliases do

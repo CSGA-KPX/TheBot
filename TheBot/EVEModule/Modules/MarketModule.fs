@@ -27,8 +27,8 @@ type EveMarketModule() =
 
     let er = EveExpression.EveExpression()
 
-    [<CommandHandlerMethodAttribute("#eve矿物", "查询矿物价格", "")>]
-    [<CommandHandlerMethodAttribute("#em", "查询物品价格", "可以使用表达式，多个物品需要用+连接。
+    [<CommandHandlerMethod("#eve矿物", "查询矿物价格", "")>]
+    [<CommandHandlerMethod("#em", "查询物品价格", "可以使用表达式，多个物品需要用+连接。
 #em 帝国海军散热槽*5+帝国海军多频晶体 L*1000")>]
     member x.HandleEveMarket(cmdArg : CommandEventArgs) =
         let mutable argOverride = None
@@ -47,7 +47,7 @@ type EveMarketModule() =
         | Accumulator a ->
             for mr in a do
                 att.AddObject(mr.Item, mr.Quantity)
-        | _ -> cmdArg.Abort(InputError, sprintf "求值失败，结果是%A" t)
+        | _ -> cmdArg.Abort(InputError, $"求值失败，结果是%A{t}")
 
         let cfg = EveConfigParser()
         cfg.Parse(cmdArg.Arguments)
@@ -62,8 +62,8 @@ type EveMarketModule() =
         tc.ShouldThrow("#em 三铜合金")
         tc.ShouldThrow("#em 三铁合金")
 
-    [<CommandHandlerMethodAttribute("#EVE采矿", "EVE挖矿利润，仅供参考", "")>]
-    [<CommandHandlerMethodAttribute("#EVE挖矿", "EVE挖矿利润，仅供参考", "")>]
+    [<CommandHandlerMethod("#EVE采矿", "EVE挖矿利润，仅供参考", "")>]
+    [<CommandHandlerMethod("#EVE挖矿", "EVE挖矿利润，仅供参考", "")>]
     member x.HandleOreMining(cmdArg : CommandEventArgs) =
         let mineSpeed = 10.0 // m^3/s
         let refineYield = 0.70
@@ -81,7 +81,7 @@ type EveMarketModule() =
             )
 
         tt.AddPreTable(ToolWarning)
-        tt.AddPreTable(sprintf "采集能力：%g m3/s 精炼效率:%g" mineSpeed refineYield)
+        tt.AddPreTable $"采集能力：%g{mineSpeed} m3/s 精炼效率:%g{refineYield}"
 
         let getSubTypes (names : string) =
             names.Split(',')

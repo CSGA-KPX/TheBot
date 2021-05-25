@@ -167,7 +167,7 @@ type MarketAnalyzer(item : XivItem, world : World, data : MarketData []) =
                    yield data.[0]
                | false, false ->
                    for record in samples do
-                       let takeCount = min rest (record.Quantity)
+                       let takeCount = min rest record.Quantity
 
                        if takeCount <> 0 then
                            rest <- rest - takeCount
@@ -177,14 +177,14 @@ type MarketAnalyzer(item : XivItem, world : World, data : MarketData []) =
 type UniversalisRecord with
     member x.GetListingAnalyzer() =
         let data =
-            x.Listings |> Array.map (MarketData.Order)
+            x.Listings |> Array.map MarketData.Order
 
         let info = x.GetInfo()
         MarketAnalyzer(info.Item, info.World, data)
 
     member x.GetTradeLogAnalyzer() =
         let data =
-            x.TradeLogs |> Array.map (MarketData.Trade)
+            x.TradeLogs |> Array.map MarketData.Trade
 
         let info = x.GetInfo()
         MarketAnalyzer(info.Item, info.World, data)

@@ -8,5 +8,5 @@ open KPX.FsCqHttp.Handler
 type TestModule() =
     inherit CommandHandlerBase()
 
-    [<CommandHandlerMethodAttribute("#test", "", "", IsHidden = true, Disabled = true)>]
+    [<CommandHandlerMethod("#test", "", "", IsHidden = true, Disabled = true)>]
     member x.HandleTest(cmdArg : CommandEventArgs) = ()

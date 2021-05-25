@@ -44,7 +44,7 @@ type private DRng(seeds : seq<SeedOption>) =
     let hash =
         Security.Cryptography.MD5.Create() :> Security.Cryptography.HashAlgorithm
 
-    let mutable freeze = false
+    let mutable frozen = false
 
     let mutable seed =
         SeedOption.GetSeedString(seeds)
@@ -52,12 +52,12 @@ type private DRng(seeds : seq<SeedOption>) =
         |> hash.ComputeHash
 
     let iterate () =
-        if not freeze then seed <- hash.ComputeHash(seed)
+        if not frozen then seed <- hash.ComputeHash(seed)
 
     /// 指示该DRng是否继续衍生
-    member x.Freeze() = freeze <- true
+    member x.Freeze() = frozen <- true
 
-    member x.IsFreezed = freeze
+    member x.IsFrozen = frozen
 
     member x.GetInt32() = BitConverter.ToInt32(x.GetBytes(), 0)
     member x.GetUInt32() = BitConverter.ToUInt32(x.GetBytes(), 0)
@@ -70,14 +70,14 @@ type private DRng(seeds : seq<SeedOption>) =
     member x.GetUInt64(str) = BitConverter.ToUInt64(x.GetBytes(str), 0)
 
     member private x.GetBytes() = 
-        if freeze then
+        if frozen then
             seed
         else
             iterate()
             seed
 
     member private x.GetBytes(str : string) =
-        if freeze then
+        if frozen then
             Array.append seed (utf8.GetBytes(str))
             |> hash.ComputeHash
         else
@@ -95,7 +95,7 @@ type Dicer(seeds : seq<SeedOption>) =
 
     member x.Freeze() = drng.Freeze()
 
-    member x.IsFreezed = drng.IsFreezed
+    member x.IsFrozen = drng.IsFrozen
 
     member x.GetInteger(min : uint32, max : uint32) =
         drng.GetUInt32() % (max - min + 1u) + min
@@ -130,20 +130,20 @@ type Dicer(seeds : seq<SeedOption>) =
     member x.GetNatural(upper) = x.GetInteger(0u, upper)
     member x.GetNatural(upper) = x.GetInteger(0UL, upper)
     
-    member x.GetPostive(upper) = x.GetInteger(1, upper)
-    member x.GetPostive(upper) = x.GetInteger(1L, upper)
-    member x.GetPostive(upper) = x.GetInteger(1u, upper)
-    member x.GetPostive(upper) = x.GetInteger(1UL, upper)
+    member x.GetPositive(upper) = x.GetInteger(1, upper)
+    member x.GetPositive(upper) = x.GetInteger(1L, upper)
+    member x.GetPositive(upper) = x.GetInteger(1u, upper)
+    member x.GetPositive(upper) = x.GetInteger(1UL, upper)
 
     member x.GetNatural(upper, str) = x.GetInteger(0, upper, str)
     member x.GetNatural(upper, str) = x.GetInteger(0L, upper, str)
     member x.GetNatural(upper, str) = x.GetInteger(0u, upper, str)
     member x.GetNatural(upper, str) = x.GetInteger(0UL, upper, str)
     
-    member x.GetPostive(upper, str) = x.GetInteger(1, upper, str)
-    member x.GetPostive(upper, str) = x.GetInteger(1L, upper, str)
-    member x.GetPostive(upper, str) = x.GetInteger(1u, upper, str)
-    member x.GetPostive(upper, str) = x.GetInteger(1UL, upper, str)
+    member x.GetPositive(upper, str) = x.GetInteger(1, upper, str)
+    member x.GetPositive(upper, str) = x.GetInteger(1L, upper, str)
+    member x.GetPositive(upper, str) = x.GetInteger(1u, upper, str)
+    member x.GetPositive(upper, str) = x.GetInteger(1UL, upper, str)
 
     member x.GetIntegerArray(lower : int, upper : int, count : int, unique : bool) =
         if count < 0 then invalidArg "count" "数量不能小于0"
@@ -166,7 +166,7 @@ type Dicer(seeds : seq<SeedOption>) =
     member x.GetNaturalArray(upper : int, count : int, ?unique : bool) = 
         x.GetIntegerArray(0, upper, count, defaultArg unique false)
 
-    member x.GetPostiveArray(upper : int, count : int, ?unique : bool) = 
+    member x.GetPositiveArray(upper : int, count : int, ?unique : bool) = 
         x.GetIntegerArray(1, upper, count, defaultArg unique false)
 
     member x.GetArrayItem(items : 'T []) = 

@@ -20,8 +20,8 @@ open KPX.TheBot.Module.DiceModule.Utils
 type DiceModule() =
     inherit CommandHandlerBase()
 
-    [<CommandHandlerMethodAttribute(".c", "同#c，但每次结果随机", "")>]
-    [<CommandHandlerMethodAttribute("#c",
+    [<CommandHandlerMethod(".c", "同#c，但每次结果随机", "")>]
+    [<CommandHandlerMethod("#c",
                                     "对多个选项1d100",
                                     "#c 选项1 选项2 选项3
 可以使用X不X类的短语。如'#c 能不能吃肉'等同于'#c 能吃肉 不能吃肉'
@@ -79,22 +79,22 @@ type DiceModule() =
 
                 let dicer = Dicer(seed)
                 dicer.Freeze()
-                (c, dicer.GetPostive(100u, c)))
+                (c, dicer.GetPositive(100u, c)))
         |> Array.sortBy snd
-        |> Array.iter (fun (c, n) -> tt.AddRow((sprintf "%03i" n), c))
+        |> Array.iter (fun (c, n) -> tt.AddRow( $"%03i{n}", c))
 
         sw.Write(tt)
 
-    [<CommandHandlerMethodAttribute(".jrrp", "（兼容）今日人品值", "")>]
-    [<CommandHandlerMethodAttribute("#jrrp", "今日人品值", "")>]
+    [<CommandHandlerMethod(".jrrp", "（兼容）今日人品值", "")>]
+    [<CommandHandlerMethod("#jrrp", "今日人品值", "")>]
     member x.HandleJrrp(cmdArg : CommandEventArgs) =
         let dicer =
             Dicer(SeedOption.SeedByUserDay(cmdArg.MessageEvent))
 
-        let jrrp = dicer.GetPostive(100u)
-        cmdArg.Reply(sprintf "%s今日人品值是：%i" cmdArg.MessageEvent.DisplayName jrrp)
+        let jrrp = dicer.GetPositive(100u)
+        cmdArg.Reply $"%s{cmdArg.MessageEvent.DisplayName}今日人品值是：%i{jrrp}"
 
-    [<CommandHandlerMethodAttribute("#cal",
+    [<CommandHandlerMethod("#cal",
                                     "计算器",
                                     "支持加减乘除操作和DK操作符，可以测试骰子表达式。
 如#c (1D2+5D5K3)/2*3D6")>]
@@ -106,7 +106,7 @@ type DiceModule() =
 
         match ret with
         | Error e ->
-            sb.Append(sprintf "对%s求值失败：%s" arg e.Message)
+            sb.Append $"对%s{arg}求值失败：%s{e.Message}"
             |> ignore
         | Ok i ->
             let sum =
@@ -116,15 +116,15 @@ type DiceModule() =
 
         cmdArg.Reply(sb.ToString())
 
-    [<CommandHandlerMethodAttribute("#选择题", "考试专用", "")>]
+    [<CommandHandlerMethod("#选择题", "考试专用", "")>]
     member x.HandleChoice(cmdArg : CommandEventArgs) =
         let mutable count = 10
 
         for arg in cmdArg.Arguments do
-            let (succ, i) = UInt32.TryParse(arg)
+            let succ, i = UInt32.TryParse(arg)
 
             if succ then
-                let i = int (i)
+                let i = int i
 
                 if i > 100 then
                     cmdArg.Abort(InputError, "最多100道")
@@ -143,7 +143,7 @@ type DiceModule() =
 
         cmdArg.Reply(String.Join("\r\n", chunks))
 
-    [<CommandHandlerMethodAttribute("#gacha",
+    [<CommandHandlerMethod("#gacha",
                                     "抽10连 概率3%",
                                     "接受数字参数。
 小于10的记为概率，大于等于10记为抽数，以最后一次出现的为准。
@@ -153,10 +153,10 @@ type DiceModule() =
         let mutable count = 10
 
         for arg in cmdArg.Arguments do
-            let (succ, i) = UInt32.TryParse(arg)
+            let succ, i = UInt32.TryParse(arg)
 
             if succ then
-                let i = int (i)
+                let i = int i
 
                 if i > 300 then
                     cmdArg.Abort(InputError, "一井还不够你用？")
@@ -166,10 +166,10 @@ type DiceModule() =
                     cutoff <- i
 
         let ret =
-            Array.init count (fun _ -> Dicer.RandomDicer.GetPostive(100u) |> int)
+            Array.init count (fun _ -> Dicer.RandomDicer.GetPositive(100u) |> int)
             |> Array.countBy (fun x -> if x <= cutoff then "红" else "黑")
-            |> Array.sortBy (fst)
-            |> Array.map (fun (s, c) -> sprintf "%s(%i)" s c)
+            |> Array.sortBy fst
+            |> Array.map (fun (s, c) -> $"%s{s}(%i{c})")
 
         let reply =
             Text

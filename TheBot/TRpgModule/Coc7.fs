@@ -38,7 +38,7 @@ type RollResult =
 /// 大成功：0+offset 大失败：101-offset
 type RollResultRule(offset : int) =
 
-    member x.Descript(i : int, threshold : int) =
+    member x.Describe(i : int, threshold : int) =
         match i with
         | _ when i <= 0 + offset -> Critical
         | _ when i <= threshold / 5 -> Extreme
@@ -46,4 +46,4 @@ type RollResultRule(offset : int) =
         | _ when i <= threshold -> Regular
         | _ when i >= 101 - offset -> Fumble
         | _ when i > threshold -> Fail
-        | _ -> invalidArg "dice" (sprintf "骰值%i不再允许范围内" i)
+        | _ -> invalidArg "dice" $"骰值%i{i}不再允许范围内"

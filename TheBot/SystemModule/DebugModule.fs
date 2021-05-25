@@ -21,7 +21,7 @@ type DebugModule() =
     static let nlogMemoryTarget =
         NLog.LogManager.Configuration.FindTargetByName("memory") :?> NLog.Targets.MemoryTarget
 
-    [<CommandHandlerMethodAttribute("##showconfig", "(超管) 返回配置信息", "", IsHidden = true)>]
+    [<CommandHandlerMethod("##showconfig", "(超管) 返回配置信息", "", IsHidden = true)>]
     member x.HandleShowConfig(cmdArg : CommandEventArgs) =
         cmdArg.EnsureSenderOwner()
 
@@ -41,16 +41,16 @@ type DebugModule() =
 
             for p in ps do
                 let v = p.GetValue(null)
-                let pname = sprintf "%s.%s" t.Name p.Name
+                let pname = $"%s{t.Name}.%s{p.Name}"
 
                 if v.GetType().IsPrimitive || (v :? String) then
-                    tt.AddRow(pname, sprintf "%A" v)
+                    tt.AddRow(pname, $"%A{v}")
                 else
                     tt.AddRow(pname, "{复杂类型}")
 
         using (cmdArg.OpenResponse(PreferImage)) (fun ret -> ret.Write(tt))
 
-    [<CommandHandlerMethodAttribute("##setlog",
+    [<CommandHandlerMethod("##setlog",
                                     "(超管) 设置日志设置",
                                     "event, api, command",
                                     IsHidden = true)>]
@@ -79,16 +79,11 @@ type DebugModule() =
         Config.Logging.LogCommandCall <- command.Value
 
         let ret =
-            sprintf
-                "日志选项已设定为：##setlog event:%b api:%b apijson:%b command:%b"
-                Config.Logging.LogEventPost
-                Config.Logging.LogApiCall
-                Config.Logging.LogApiJson
-                Config.Logging.LogCommandCall
+            $"日志选项已设定为：##setlog event:%b{Config.Logging.LogEventPost} api:%b{Config.Logging.LogApiCall} apijson:%b{Config.Logging.LogApiJson} command:%b{Config.Logging.LogCommandCall}"
 
         cmdArg.Reply(ret)
 
-    [<CommandHandlerMethodAttribute("##showlog", "(超管) 显示日志", "", IsHidden = true)>]
+    [<CommandHandlerMethod("##showlog", "(超管) 显示日志", "", IsHidden = true)>]
     member x.HandleShowLogging(cmdArg : CommandEventArgs) =
         cmdArg.EnsureSenderOwner()
 
@@ -106,7 +101,7 @@ type DebugModule() =
 
             logs.Clear()
 
-    [<CommandHandlerMethodAttribute("##cmdtest", "（超管）单元测试", "")>]
+    [<CommandHandlerMethod("##cmdtest", "（超管）单元测试", "")>]
     member x.HandleCommandTest(cmdArg : CommandEventArgs) =
         cmdArg.EnsureSenderOwner()
         
