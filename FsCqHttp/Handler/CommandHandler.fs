@@ -58,10 +58,6 @@ type CommandEventArgs(args : CqMessageEventArgs, attr : CommandHandlerMethodAttr
             StringSplitOptions.RemoveEmptyEntries
         )
 
-    do
-        for line in lines do 
-            printfn $"调试信息：%s{line}"
-
     /// 除开指令行（第一行）以外的文本信息
     member x.MsgBodyLines = lines |> Seq.tail
 

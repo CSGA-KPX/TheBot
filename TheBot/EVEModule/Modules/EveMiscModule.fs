@@ -1,7 +1,5 @@
 ﻿namespace KPX.TheBot.Module.EveModule
 
-open System
-
 open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Testing
 
@@ -9,12 +7,9 @@ open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.TextTable
 
 open KPX.TheBot.Data.EveData
-open KPX.TheBot.Data.EveData.EveType
-
 open KPX.TheBot.Utils.EmbeddedResource
 
 open KPX.TheBot.Module.EveModule.Utils.Config
-open KPX.TheBot.Module.EveModule.Utils.UserInventory
 
 
 type CombatSiteInfo =
@@ -141,55 +136,3 @@ type EveMiscModule() =
                         ret.WriteLine("	安等：{0}", site.FoundIn)
 
                 if not found then ret.WriteLine("{0}：未找到相关信息", arg)
-
-    [<CommandHandlerMethod("#eveinv", "记录材料数据供#er和#err使用", "", IsHidden = true)>]
-    member x.HandleEveInv(cmdArg : CommandEventArgs) =
-        let opt = EveConfigParser()
-        // 默认值必须是不可能存在的值，比如空格
-        let keyOpt = opt.RegisterOption<string>("id", "\r\n")
-        opt.Parse(cmdArg)
-
-        let guid, acc =
-            let i = InventoryCollection.Instance
-
-            if keyOpt.IsDefined then
-                let key = keyOpt.Value
-                let ret = i.TryGet(key)
-                if ret.IsSome then ret.Value else i.Create(key)
-            else
-                i.Create()
-
-        let tt = TextTable("材料", RightAlignCell "数量")
-
-        acc.Clear()
-
-        for line in cmdArg.MsgBodyLines do
-            match line.Split("	", 2, StringSplitOptions.RemoveEmptyEntries) with
-            | [||] -> () // 忽略空行
-            | [| name |] -> // 只有名字，按1个录入
-                let item =
-                    EveTypeCollection.Instance.GetByName(name)
-
-                acc.Update(item)
-                tt.AddRow(item.Name, 1)
-            | [| name; q |] ->
-                let ns =
-                    Globalization.NumberStyles.AllowThousands
-
-                let ic =
-                    Globalization.CultureInfo.InvariantCulture
-
-                let succ, quantity = Int32.TryParse(q, ns, ic)
-                if not succ then cmdArg.Abort(InputError, "格式非法，{0}不是数字", q)
-
-                let item =
-                    EveTypeCollection.Instance.GetByName(name)
-
-                acc.Update(item, quantity |> float)
-                tt.AddRow(item.Name, quantity)
-            | _ -> cmdArg.Abort(InputError, "格式非法，应为'道具名	数量'")
-
-        tt.AddPreTable("此前数据已经清除")
-        tt.AddPreTable("会保留到下次机器人重启前")
-        using (cmdArg.OpenResponse(opt.ResponseType)) (fun ret -> ret.Write(tt))
-        cmdArg.Reply $"录入到： id:%s{guid}"

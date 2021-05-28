@@ -4,6 +4,7 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net5.0</TargetFramework>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -54,6 +55,7 @@
     <Compile Include="EVEModule\Modules\MarketModule.fs" />
     <Compile Include="EVEModule\Modules\LpStoreModule.fs" />
     <Compile Include="EVEModule\Modules\RecipeModule.fs" />
+    <Compile Include="EVEModule\Modules\EveInvModule.fs" />
     <Compile Include="EVEModule\Modules\EveMiscModule.fs" />
     <Compile Include="SystemModule\DebugModule.fs" />
     <Compile Include="SystemModule\TestModule.fs" />

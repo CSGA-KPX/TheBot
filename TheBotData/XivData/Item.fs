@@ -51,7 +51,7 @@ type ItemCollection private () =
 
     member x.TryGetByName(name : string) =
         let ret =
-            x.DbCollection.FindOne(LiteDB.Query.EQ("Name", new LiteDB.BsonValue(name)))
+            x.DbCollection.FindOne(LiteDB.Query.EQ("Name", LiteDB.BsonValue(name)))
 
         if isNull (box ret) then None else Some ret
 
