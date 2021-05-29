@@ -74,7 +74,7 @@ type HelpModuleBase() =
 
     member x.HelpCommandImpl(cmdArg : CommandEventArgs) =
         let cfg = HelpOption()
-        cfg.Parse(cmdArg.Arguments)
+        cfg.Parse(cmdArg.HeaderArgs)
 
         if cfg.NonOptionStrings.Count = 0 then
             x.ShowCommandList(cfg, cmdArg)

@@ -59,16 +59,16 @@ type EatModule() =
         let dicer = Dicer(seed)
         dicer.Freeze()
 
-        match cmdArg.Arguments.Length with
+        match cmdArg.HeaderArgs.Length with
         | _ when eatFuncs.ContainsKey(cmdArg.CommandAttrib.Command) ->
             let func = eatFuncs.[cmdArg.CommandAttrib.Command]
             func dicer ret
         | 0 -> ret.Abort(InputError, "自选输菜名，预设套餐：早/中/晚/加/火锅/萨莉亚")
-        | 1 when eatAlias.ContainsKey(cmdArg.Arguments.[0]) ->
-            let key = eatAlias.[cmdArg.Arguments.[0]]
+        | 1 when eatAlias.ContainsKey(cmdArg.HeaderArgs.[0]) ->
+            let key = eatAlias.[cmdArg.HeaderArgs.[0]]
             let func = eatFuncs.[key]
             func dicer ret
-        | _ -> scoreByMeals dicer cmdArg.Arguments ret
+        | _ -> scoreByMeals dicer cmdArg.HeaderArgs ret
 
     [<TestFixture>]
     member x.TestEat() = 

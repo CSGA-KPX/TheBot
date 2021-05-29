@@ -104,7 +104,7 @@ text 以文本格式输出结果
 #fm 拉诺 紫水 风之水晶")>]
     member x.HandleXivMarket(cmdArg : CommandEventArgs) =
         let opt = CommandUtils.XivOption()
-        opt.Parse(cmdArg)
+        opt.Parse(cmdArg.HeaderArgs)
 
         let tt =
             TextTable(
@@ -276,7 +276,7 @@ text 以文本格式输出结果
                 fun (item : XivItem) -> rm.TryGetRecipe(item)
 
         let opt = CommandUtils.XivOption()
-        opt.Parse(cmdArg)
+        opt.Parse(cmdArg.HeaderArgs)
 
         let world = opt.World.Value
 
@@ -428,7 +428,7 @@ text 以文本格式输出结果
         let sc = SpecialShopCollection.Instance
 
         let opt = CommandUtils.XivOption()
-        opt.Parse(cmdArg)
+        opt.Parse(cmdArg.HeaderArgs)
         let world = opt.World.Value
 
         if opt.NonOptionStrings.Count = 0 then
@@ -535,7 +535,7 @@ text 以文本格式输出结果
                                     Disabled = true)>]
     member x.HandleCraftLeve(cmdArg : CommandEventArgs) =
         let opt = CommandUtils.XivOption()
-        opt.Parse(cmdArg)
+        opt.Parse(cmdArg.HeaderArgs)
 
         let leves =
             opt.NonOptionStrings

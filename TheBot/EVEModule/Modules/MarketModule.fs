@@ -37,7 +37,7 @@ type EveMarketModule() =
 
         let t =
             let str =
-                if argOverride.IsSome then argOverride.Value else String.Join(" ", cmdArg.Arguments)
+                if argOverride.IsSome then argOverride.Value else String.Join(" ", cmdArg.HeaderArgs)
 
             er.Eval(str)
 
@@ -50,7 +50,7 @@ type EveMarketModule() =
         | _ -> cmdArg.Abort(InputError, $"求值失败，结果是%A{t}")
 
         let cfg = EveConfigParser()
-        cfg.Parse(cmdArg.Arguments)
+        cfg.Parse(cmdArg.HeaderArgs)
         using (cmdArg.OpenResponse(cfg.ResponseType)) (fun x -> x.Write(att))
 
     [<TestFixture>]

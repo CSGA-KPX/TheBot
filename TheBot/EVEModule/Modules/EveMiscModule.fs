@@ -52,7 +52,7 @@ type EveMiscModule() =
             SystemCostIndexCache.SystemCostIndexCollection.Instance
 
         let cfg = EveConfigParser()
-        cfg.Parse(cmdArg.Arguments)
+        cfg.Parse(cmdArg.HeaderArgs)
 
         let tt =
             TextTable("星系", "制造%", "材料%", "时间%", "拷贝%", "发明%", "反应%")
@@ -110,7 +110,7 @@ type EveMiscModule() =
     [<CommandHandlerMethod("#eve异常", "EVE异常/死亡表 可接信号名称", "")>]
     [<CommandHandlerMethod("#eve死亡", "EVE异常/死亡表 可接信号名称", "")>]
     member x.HandleUnrated(cmdArg : CommandEventArgs) =
-        if cmdArg.Arguments.Length = 0 then
+        if cmdArg.HeaderArgs.Length = 0 then
             let mgr =
                 StringResource("EVE").GetLines("战斗空间信号")
                 |> Array.map (fun line -> line.Split('\t') |> Array.map box)
@@ -124,7 +124,7 @@ type EveMiscModule() =
         else
             use ret = cmdArg.OpenResponse(ForceText)
 
-            for arg in cmdArg.Arguments do
+            for arg in cmdArg.HeaderArgs do
                 let mutable found = false
 
                 for site in x.EveCombatSites do

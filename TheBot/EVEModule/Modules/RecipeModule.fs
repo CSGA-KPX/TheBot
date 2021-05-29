@@ -33,7 +33,7 @@ type EveRecipeModule() =
     [<CommandHandlerMethod("#eme", "EVE蓝图材料效率计算", "")>]
     member x.HandleME(cmdArg : CommandEventArgs) =
         let cfg = EveConfigParser()
-        cfg.Parse(cmdArg.Arguments)
+        cfg.Parse(cmdArg.HeaderArgs)
 
 
         let item =
@@ -91,7 +91,7 @@ type EveRecipeModule() =
         let cfg = EveConfigParser()
         // 默认值必须是不可能存在的值，比如空格
         let idOpt = cfg.RegisterOption<string>("id", "\r\n")
-        cfg.Parse(cmdArg.Arguments)
+        cfg.Parse(cmdArg.HeaderArgs)
 
         let tt =
             if idOpt.IsDefined then
@@ -227,7 +227,7 @@ type EveRecipeModule() =
 #errc 帝国海军散热槽*10")>]
     member x.HandleERRCV2(cmdArg : CommandEventArgs) =
         let cfg = EveConfigParser()
-        cfg.Parse(cmdArg.Arguments)
+        cfg.Parse(cmdArg.HeaderArgs)
 
         match er.Eval(cfg.GetNonOptionString()) with
         | Number n -> cmdArg.Abort(InputError, "结算结果为数字: {0}", n)
@@ -399,7 +399,7 @@ type EveRecipeModule() =
                     override x.ConvertValue(opt) = opt = "group" }
             )
 
-        cfg.Parse(cmdArg.Arguments)
+        cfg.Parse(cmdArg.HeaderArgs)
 
         use ret = cmdArg.OpenResponse(cfg.ResponseType)
         ret.WriteLine(ToolWarning)

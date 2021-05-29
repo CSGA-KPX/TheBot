@@ -72,7 +72,7 @@ type TRpgModule() =
                                     "如果没有定义当前san，则从#coc7结果车卡计算。",
                                     IsHidden = true)>]
     member x.HandleSanCheck(cmdArg : CommandEventArgs) =
-        let args = cmdArg.Arguments // 参数检查
+        let args = cmdArg.HeaderArgs // 参数检查
 
         if args.Length = 0 || args.Length > 2 then
             cmdArg.Abort(InputError, "此指令需要1/2个参数 .sc 成功/失败 [当前san]")
@@ -134,7 +134,7 @@ type TRpgModule() =
     member x.HandleEn(cmdArg : CommandEventArgs) =
         let current = ref 0
 
-        match cmdArg.Arguments with
+        match cmdArg.HeaderArgs with
         | [| attr; value |] when Int32.TryParse(value, current) ->
             use ret = cmdArg.OpenResponse()
 
@@ -192,7 +192,7 @@ type TRpgModule() =
         match cmdArg.CommandName with
         // rd [原因]
         | ".rd" ->
-            let args = cmdArg.Arguments
+            let args = cmdArg.HeaderArgs
             if args.Length <> 0 then reason <- String.Join(" ", args)
 
         // rh/r [表达式] [原因]
@@ -200,7 +200,7 @@ type TRpgModule() =
         | ".r" ->
             if cmdArg.CommandName = ".rh" then isPrivate <- true
 
-            match cmdArg.Arguments with
+            match cmdArg.HeaderArgs with
             | [||] -> ()
             | [| arg |] when String.forall operators.Contains arg -> expr <- arg
             | [| arg |] -> reason <- arg
@@ -214,7 +214,7 @@ type TRpgModule() =
             let t = ref 0
             if cmdArg.CommandName = ".ra" then offset <- 5
 
-            match cmdArg.Arguments with
+            match cmdArg.HeaderArgs with
             | [| attName; value |] when Int32.TryParse(value, t) ->
                 reason <- attName
                 needDescription <- Some !t
@@ -272,7 +272,7 @@ type TRpgModule() =
         // 属性/技能名 属性/技能值
         let test = ref 1
 
-        match cmdArg.Arguments with
+        match cmdArg.HeaderArgs with
         | [||] -> ()
         | [| value |] when Int32.TryParse(value, test) ->
 
@@ -314,7 +314,7 @@ type TRpgModule() =
     [<CommandHandlerMethod(".name", "生成人物背景", "")>]
     member x.HandleChrName(cmdArg : CommandEventArgs) =
         let opt = NameOption()
-        opt.Parse(cmdArg)
+        opt.Parse(cmdArg.HeaderArgs)
 
         if opt.NameCount > 20 then
             cmdArg.Abort(InputError, "数量太多")
@@ -364,7 +364,7 @@ type TRpgModule() =
         let rx =
             Text.RegularExpressions.Regex(@"([^\s\|0-9]+)([0-9]+)")
 
-        let input = String.Join("", cmdArg.Arguments)
+        let input = String.Join("", cmdArg.HeaderArgs)
 
         let chr =
             { CharacterCard.Id = 0L
@@ -400,7 +400,7 @@ type TRpgModule() =
 
     [<CommandHandlerMethodAttribute("pc", "人物卡管理", "", AltCommandStart = ".", IsHidden = true)>]
     member x.HandlePC(cmdArg : CommandEventArgs) =
-        match cmdArg.Arguments |> Array.tryItem 0 with
+        match cmdArg.HeaderArgs |> Array.tryItem 0 with
         | None -> cmdArg.QuickMessageReply("list/use/rename")
         | Some (cmd) ->
             match cmd.ToLowerInvariant() with
@@ -420,7 +420,7 @@ type TRpgModule() =
                 cmdArg.QuickMessageReply(ret.ToString())
 
             | "use" ->
-                let cardName = cmdArg.Arguments |> Array.tryItem 1
+                let cardName = cmdArg.HeaderArgs |> Array.tryItem 1
 
                 if cardName.IsNone then cmdArg.AbortExecution(InputError, "缺少参数：角色卡")
 
@@ -435,7 +435,7 @@ type TRpgModule() =
                 cmdArg.QuickMessageReply("已设置")
 
             | "rename" ->
-                let cardName = cmdArg.Arguments |> Array.tryItem 1
+                let cardName = cmdArg.HeaderArgs |> Array.tryItem 1
                 let current = cmdArg.GetChrCard()
 
                 UpsertCard(
@@ -447,7 +447,7 @@ type TRpgModule() =
 
             | "copy" ->
                 let cardName =
-                    cmdArg.Arguments
+                    cmdArg.HeaderArgs
                     |> Array.tryItem 1
                     |> Option.defaultValue "新建人物卡"
 

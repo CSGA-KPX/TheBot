@@ -50,7 +50,7 @@ type EveInvModule() =
         let acc =
             defaultArg acc (ItemAccumulator<EveType>())
 
-        for line in cmdArg.MsgBodyLines do
+        for line in cmdArg.BodyLines do
             match line.Split("	", 2, StringSplitOptions.RemoveEmptyEntries) with
             | [||] -> () // 忽略空行
             | [| name |] -> acc.Update(EveTypeCollection.Instance.GetByName(name))
@@ -70,7 +70,7 @@ type EveInvModule() =
     member x.HandleEveInv(cmdArg : CommandEventArgs) =
         let opt = EveConfigParser()
         let keyOpt = opt.RegisterOption(InvKeyOpt(opt))
-        opt.Parse(cmdArg)
+        opt.Parse(cmdArg.HeaderArgs)
 
         let guid, acc = x.GetInv(keyOpt)
 
@@ -94,7 +94,7 @@ type EveInvModule() =
     member x.HandleInvCal(cmdArg : CommandEventArgs) =
         let opt = EveConfigParser()
         let keyOpt = opt.RegisterOption(InvKeyOpt(opt))
-        opt.Parse(cmdArg)
+        opt.Parse(cmdArg.HeaderArgs)
 
         let _, inv = x.GetInv(keyOpt)
         let list = x.ReadCommandBody(cmdArg)

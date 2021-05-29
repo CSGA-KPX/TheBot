@@ -52,7 +52,7 @@ type MiscModule() =
     [<CommandHandlerMethod("#纷争前线", "今日轮转查询", "")>]
     member x.HandleDailyFrontlineChallenge(cmdArg : CommandEventArgs) =
         let opt = DfcOption()
-        opt.Parse(cmdArg)
+        opt.Parse(cmdArg.HeaderArgs)
 
         if opt.RebuildData.IsDefined then
             dfcRoulettes <- buildDfc ()
@@ -162,7 +162,7 @@ type MiscModule() =
         let cjm =
             ClassJobMapping.ClassJobMappingCollection.Instance
 
-        for item in cmdArg.Arguments do
+        for item in cmdArg.HeaderArgs do
             if isNumber item then
                 iLv <- Some(Int32.Parse(item))
             else
@@ -201,7 +201,7 @@ type MiscModule() =
     [<CommandHandlerMethod("#is", "（FF14）查找名字包含字符的物品", "关键词（大小写敏感）")>]
     member x.HandleItemSearch(cmdArg : CommandEventArgs) =
         let tt = TextTable(RightAlignCell "Id", "物品名")
-        let i = String.Join(" ", cmdArg.Arguments)
+        let i = String.Join(" ", cmdArg.HeaderArgs)
 
         if isNumber i then
             let ret = itemCol.TryGetByItemId(i |> int32)
@@ -312,7 +312,7 @@ type MiscModule() =
             doc.DocumentNode.SelectSingleNode("//div[@id = \"v_desc\"]")
 
         let cfg = Utils.CommandUtils.XivOption()
-        cfg.Parse(cmdArg)
+        cfg.Parse(cmdArg.HeaderArgs)
 
         using
             (cmdArg.OpenResponse(cfg.ResponseType))
@@ -334,7 +334,7 @@ type MiscModule() =
 #海钓 list:50")>]
     member x.HandleOceanFishing(cmdArg : CommandEventArgs) =
         let opt = SeaFishingOption()
-        opt.Parse(cmdArg)
+        opt.Parse(cmdArg.HeaderArgs)
 
         let dateFmt = "yyyy/MM/dd HH:00"
         use ret = cmdArg.OpenResponse(ForceImage)

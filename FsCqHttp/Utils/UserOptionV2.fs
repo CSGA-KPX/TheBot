@@ -126,13 +126,10 @@ type OptionImpl() =
     abstract PreParse : string [] -> string []
     default x.PreParse(args) = args
 
-    member x.Parse(cmdArg : CommandEventArgs) = x.Parse(cmdArg.Arguments)
-
     member x.Parse(input : string []) =
         data.Clear()
         nonOption.Clear()
         isParsed <- false
-
         let defKeys =
             if localOpts.Count = 0 then
                 x.TryGenerateOptionCache()

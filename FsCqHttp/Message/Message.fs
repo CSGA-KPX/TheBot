@@ -74,12 +74,19 @@ type Message(items : seq<MessageSection>) =
 
     /// 提取所有文本段为字符串
     override x.ToString() =
-        let sb = Text.StringBuilder()
+        let sec =
+            x.GetSections<TextSection>() |> Seq.toArray
 
-        for item in x.GetSections<TextSection>() do
-            sb.Append(item.Text) |> ignore
+        match sec.Length with
+        | 0 -> String.Empty
+        | 1 -> sec.[0].Text
+        | _ ->
+            let sb = Text.StringBuilder()
 
-        sb.ToString()
+            for item in sec do
+                sb.Append(item.Text) |> ignore
+
+            sb.ToString()
 
     member x.ToCqString() =
         let escape (str : string) =

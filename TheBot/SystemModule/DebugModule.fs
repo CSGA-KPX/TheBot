@@ -71,7 +71,7 @@ type DebugModule() =
         let command =
             cfg.RegisterOption("command", Config.Logging.LogCommandCall)
 
-        cfg.Parse(cmdArg)
+        cfg.Parse(cmdArg.HeaderArgs)
 
         Config.Logging.LogEventPost <- event.Value
         Config.Logging.LogApiCall <- api.Value

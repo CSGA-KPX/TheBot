@@ -239,7 +239,7 @@ type EveLpStoreModule() =
 参数说明：vol 最低交易量比，val 最低LP价值，count 结果数量上限，buy 更改为买单价格")>]
     member x.HandleEveLp(cmdArg : CommandEventArgs) =
         let cfg = LpConfigParser()
-        cfg.Parse(cmdArg.Arguments)
+        cfg.Parse(cmdArg.HeaderArgs)
 
         match cfg.NonOptionStrings.Count with
         | 0 -> cmdArg.Abort(InputError, "请输入目标军团名称")

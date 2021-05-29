@@ -65,7 +65,7 @@ type SudoModule() =
                     .Replace("-", "")
 
             let isMatch =
-                cmdArg.RawMessage.ToUpperInvariant().Contains(hex)
+                cmdArg.HeaderLine.ToUpperInvariant().Contains(hex)
 
             if isMatch then
                 let uid = cmdArg.MessageEvent.UserId
@@ -82,7 +82,7 @@ type SudoModule() =
 
         let uo = OptionBase()
         let qq = uo.RegisterOption("qq", 0UL)
-        uo.Parse(cmdArg)
+        uo.Parse(cmdArg.HeaderArgs)
 
         let sb = Text.StringBuilder()
 
@@ -127,7 +127,7 @@ type SudoModule() =
         let uo = OptionBase()
         let qq = uo.RegisterOption("qq", 0UL)
         let group = uo.RegisterOption("group", 0UL)
-        uo.Parse(cmdArg)
+        uo.Parse(cmdArg.HeaderArgs)
 
         if group.IsDefined then
             cmdArg.EnsureSenderAdmin()

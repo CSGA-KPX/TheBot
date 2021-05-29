@@ -36,9 +36,10 @@ type DiceModule() =
             match atUser.Value with
             | AtUserType.All -> sw.Abort(InputError, "公共事件请at bot账号")
             | AtUserType.User x when
+                // TODO: 应该使用AllLines轮询
                 x = cmdArg.BotUserId
                 && not
-                   <| cmdArg.RawMessage.Contains(loginInfo.Nickname) -> sw.WriteLine("公投：")
+                   <| cmdArg.HeaderLine.Contains(loginInfo.Nickname) -> sw.WriteLine("公投：")
             | AtUserType.User x ->
                 let atUserInfo =
                     GetGroupMemberInfo(cmdArg.MessageEvent.GroupId, x)
@@ -52,7 +53,7 @@ type DiceModule() =
 
         let tt = TextTable("1D100", "选项")
 
-        [| for arg in cmdArg.Arguments do
+        [| for arg in cmdArg.HeaderArgs do
                let m = ChoiceHelper.YesOrNoRegex.Match(arg)
 
                if m.Success then
@@ -101,7 +102,7 @@ type DiceModule() =
     member x.HandleCalculator(cmdArg : CommandEventArgs) =
         let sb = Text.StringBuilder()
         let parser = DiceExpression.DiceExpression()
-        let arg = String.Join(" ", cmdArg.Arguments)
+        let arg = String.Join(" ", cmdArg.HeaderArgs)
         let ret = parser.TryEval(arg)
 
         match ret with
@@ -120,7 +121,7 @@ type DiceModule() =
     member x.HandleChoice(cmdArg : CommandEventArgs) =
         let mutable count = 10
 
-        for arg in cmdArg.Arguments do
+        for arg in cmdArg.HeaderArgs do
             let succ, i = UInt32.TryParse(arg)
 
             if succ then
@@ -152,7 +153,7 @@ type DiceModule() =
         let mutable cutoff = 3
         let mutable count = 10
 
-        for arg in cmdArg.Arguments do
+        for arg in cmdArg.HeaderArgs do
             let succ, i = UInt32.TryParse(arg)
 
             if succ then
