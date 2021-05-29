@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="Config.fs" />
+    <Compile Include="ConfigBase.fs" />
     <Compile Include="Message\MessageTypes.fs" />
     <Compile Include="Message\MessageSection.fs" />
     <Compile Include="Message\Message.fs" />
@@ -75,6 +75,7 @@
     <Compile Include="Testing\DummyReverseClient.fs" />
     <Compile Include="Testing\TestContext.fs" />
     <Compile Include="Modules\HelpModule.fs" />
+    <Compile Include="FsCqHttpConfigParser.fs" />
   </ItemGroup>
 
   <ItemGroup>

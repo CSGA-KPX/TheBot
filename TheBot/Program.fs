@@ -2,39 +2,31 @@ module KPX.TheBot.Program
 
 open System
 
+open KPX.FsCqHttp
 open KPX.FsCqHttp.Instance
-open KPX.FsCqHttp.Utils.UserOption
 
 
-let logger = NLog.LogManager.GetCurrentClassLogger()
+let logger =
+    NLog.LogManager.GetLogger("KPX.TheBot.Program")
 
 [<EntryPoint>]
 let main argv =
-    let cfg = OptionImpl()
+    let cfgFile =
+        IO.Path.Join(KPX.TheBot.Data.Common.Resource.StaticDataPath, "thebot.txt")
 
-    let endpoint = cfg.RegisterOption("endpoint", "")
-    let token = cfg.RegisterOption("token", "")
-    let reverse = cfg.RegisterOption("reverse", 5004)
+    let cfg = FsCqHttpConfigParser()
 
-    cfg.Parse(argv)
-
-    if reverse.IsDefined && token.IsDefined then
-        let endpoint =
-            $"http://localhost:%i{reverse.Value}/"
-
-        let wss =
-            new CqWebSocketServer(endpoint, token.Value)
-
-        wss.Start()
-    elif endpoint.IsDefined && token.IsDefined then
-        let uri = Uri(endpoint.Value)
-        let token = token.Value
-        let aws = ActiveWebsocket(uri, token)
-        let ctx = aws.GetContext()
-        logger.Info $"已连接:[%i{ctx.BotUserId}:%s{ctx.BotNickname}]"
-        CqWsContextPool.Instance.AddContext(ctx)
+    if argv.Length <> 0 then
+        cfg.Parse(argv)
+    elif IO.File.Exists(cfgFile) then
+        cfg.Parse(IO.File.ReadAllLines(cfgFile))
     else
-        printfn "需要定义endpoint&token或者reverse&token"
+        cfg.ParseEnvironment()
+
+    for arg in cfg.DumpDefinedOptions() do
+        logger.Info("启动参数：{0}", arg)
+
+    cfg.Start()
 
     use mtx = new Threading.ManualResetEvent(false)
     AppDomain.CurrentDomain.ProcessExit.Add(fun _ -> mtx.Set() |> ignore)

@@ -109,12 +109,6 @@ type EveRecipeModule() =
         let isR = cmdArg.CommandAttrib.Command = "#er"
         let useInv = idOpt.IsDefined
 
-        //if isR then
-        //    tt.AddPreTable(sprintf "输入效率：%i%% " cfg.InputMe)
-        //else
-        //    tt.AddPreTable(sprintf "输入效率：%i%% 衍生效率：%i%%" cfg.InputMe cfg.DerivationMe)
-        //    tt.AddPreTable $"展开行星材料：%b{cfg.ExpandPlanet} 展开反应公式：%b{cfg.ExpandReaction}"
-
         let inputAcc = ItemAccumulator<EveType>()
         let outputAcc = ItemAccumulator<EveType>()
         let mutable totalInputVolume = 0.0
@@ -127,8 +121,8 @@ type EveRecipeModule() =
                 RightAlignCell "体积",
                 RightAlignCell "ime",
                 RightAlignCell "dme",
-                "r",
-                "p"
+                RightAlignCell "r",
+                RightAlignCell "p"
             )
 
         for args in cmdArg.AllArgs do
@@ -180,8 +174,8 @@ type EveRecipeModule() =
             HumanReadableInteger totalOutputVolume,
             PaddingRight,
             PaddingRight,
-            PaddingLeft,
-            PaddingLeft
+            PaddingRight,
+            PaddingRight
         )
         // 产物和材料的分隔行
         outputTable.AddPostTable(" ")
@@ -222,6 +216,9 @@ type EveRecipeModule() =
             yield HumanReadableInteger totalInputVolume
         }
         |> tt.AddRow
+
+        if inputAcc.Count = 0 then
+            cmdArg.Abort(InputError, "计算结果为空")
 
         using (cmdArg.OpenResponse(respType)) (fun x -> x.Write(tt))
 

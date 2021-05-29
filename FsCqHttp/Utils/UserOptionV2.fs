@@ -21,8 +21,7 @@ type OptionCell(cb : OptionImpl, key : string) =
         if cb.IsDefined(key) then
             Some key
         else
-            x.Aliases
-            |> Array.tryFind cb.IsDefined
+            x.Aliases |> Array.tryFind cb.IsDefined
 
 [<AbstractClass>]
 type OptionCell<'T>(cb : OptionImpl, key : string, defValue : 'T) =
@@ -128,16 +127,8 @@ type OptionImpl() =
         data.Clear()
         nonOption.Clear()
         isParsed <- false
-        let defKeys =
-            if localOpts.Count = 0 then
-                x.TryGenerateOptionCache()
-            else
-                let defined = x.TryGenerateOptionCache()
-                let cap = localOpts.Count + defined.Count
-                let ret = HashSet<_>(cap)
-                ret.UnionWith(defined)
-                ret.UnionWith(localOpts)
-                ret
+
+        let defKeys : HashSet<string> = x.GetDefinedKeys()
 
         for item in x.PreParse(input) do
             let isOption = item.IndexOfAny(separators) <> -1
@@ -154,10 +145,8 @@ type OptionImpl() =
                 else
                     match x.UndefinedOptionHandling with
                     | UndefinedOptionHandling.Ignore -> ()
-                    | UndefinedOptionHandling.Raise -> 
-                        invalidArg key "不是有效的选项名称"
-                    | UndefinedOptionHandling.AsNonOption ->
-                        nonOption.Add(item)
+                    | UndefinedOptionHandling.Raise -> invalidArg key "不是有效的选项名称"
+                    | UndefinedOptionHandling.AsNonOption -> nonOption.Add(item)
             else
                 nonOption.Add(item)
 
@@ -166,6 +155,29 @@ type OptionImpl() =
     member x.NonOptionStrings = nonOption :> IReadOnlyList<_>
 
     member x.GetNonOptionString() = String.Join(' ', x.NonOptionStrings)
+
+    /// 以文本形式转储非默认选项
+    member x.DumpDefinedOptions() =
+        [| for kv in data do
+               for value in kv.Value do
+                   yield $"{kv.Key}:{value}" |]
+
+    /// 以文本形式转储选项模板
+    member x.DumpTemplate() =
+        [| for key in x.GetDefinedKeys() do
+               yield $"{key}:" |]
+
+    /// 获取已经定义的键名
+    member private x.GetDefinedKeys() =
+        if localOpts.Count = 0 then
+            x.TryGenerateOptionCache()
+        else
+            let defined = x.TryGenerateOptionCache()
+            let cap = localOpts.Count + defined.Count
+            let ret = HashSet<_>(cap)
+            ret.UnionWith(defined)
+            ret.UnionWith(localOpts)
+            ret
 
     member private x.TryGenerateOptionCache() : HashSet<string> =
         let key = x.GetType().FullName
