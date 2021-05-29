@@ -1,14 +1,13 @@
 ﻿namespace KPX.FsCqHttp.Utils.TextTable
 
+open KPX.FsCqHttp
 
 [<Sealed>]
 [<AutoOpen>]
 type GeneralHelpers() =
-    static let padLeft =
-        LeftAlignCell KPX.FsCqHttp.Config.Output.TextTable.CellPadding
+    static let padLeft = LeftAlignCell Config.TableCellPadding
 
-    static let padRight =
-        RightAlignCell KPX.FsCqHttp.Config.Output.TextTable.CellPadding
+    static let padRight = RightAlignCell Config.TableCellPadding
 
     /// 预定义的左对齐填充单元格 Config.Output.TextTable.CellPadding
     static member PaddingLeft = padLeft

@@ -3,6 +3,7 @@
 open System
 open System.Collections.Generic
 
+open KPX.FsCqHttp
 open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Instance
 
@@ -44,7 +45,7 @@ module internal TaskScheduler =
                     let cmdArgs =
                         CommandEventArgs(args, ci.CommandAttribute)
 
-                    if KPX.FsCqHttp.Config.Logging.LogCommandCall then
+                    if Config.LogCommandCall then
                         args.Logger.Info(
                             "Calling handler {0}\r\n Command Context {1}",
                             ci.MethodName,

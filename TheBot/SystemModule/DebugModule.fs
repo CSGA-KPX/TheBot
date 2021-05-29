@@ -1,8 +1,6 @@
 ﻿namespace KPX.TheBot.Module.DebugModule
 
 open System
-open System.Reflection
-
 open KPX.FsCqHttp
 open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Api.Context
@@ -25,61 +23,49 @@ type DebugModule() =
     member x.HandleShowConfig(cmdArg : CommandEventArgs) =
         cmdArg.EnsureSenderOwner()
 
-        let cp = typeof<Config.ConfigPlaceholder>
-
-        let prefix = cp.FullName.Replace(cp.Name, "")
-
-        let configTypes =
-            typeof<Config.ConfigPlaceholder>.Assembly.GetTypes ()
-            |> Array.filter (fun t -> t.FullName.StartsWith(prefix))
-
         let tt = TextTable("名称", "值")
 
-        for t in configTypes do
-            let ps =
-                t.GetProperties(BindingFlags.Static ||| BindingFlags.Public)
+        let cfg = Config
 
-            for p in ps do
-                let v = p.GetValue(null)
-                let pname = $"%s{t.Name}.%s{p.Name}"
+        for p in cfg.GetType().GetProperties() do
+            let v = p.GetValue(cfg)
 
-                if v.GetType().IsPrimitive || (v :? String) then
-                    tt.AddRow(pname, $"%A{v}")
-                else
-                    tt.AddRow(pname, "{复杂类型}")
+            if v.GetType().IsPrimitive || (v :? String) then
+                tt.AddRow(p.Name, $"%A{v}")
+            else
+                tt.AddRow(p.Name, "{复杂类型}")
 
         using (cmdArg.OpenResponse(PreferImage)) (fun ret -> ret.Write(tt))
 
-    [<CommandHandlerMethod("##setlog",
-                                    "(超管) 设置日志设置",
-                                    "event, api, command",
-                                    IsHidden = true)>]
+    [<CommandHandlerMethod("##setlog", "(超管) 设置日志设置", "event, api, command", IsHidden = true)>]
     member x.HandleSetLogging(cmdArg : CommandEventArgs) =
         cmdArg.EnsureSenderOwner()
 
         let cfg = OptionBase()
 
         let event =
-            cfg.RegisterOption("event", Config.Logging.LogEventPost)
+            cfg.RegisterOption("event", Config.LogEventPost)
 
         let api =
-            cfg.RegisterOption("api", Config.Logging.LogApiCall)
+            cfg.RegisterOption("api", Config.LogApiCall)
 
         let apiJson =
-            cfg.RegisterOption("apijson", Config.Logging.LogApiJson)
+            cfg.RegisterOption("apijson", Config.LogApiJson)
 
         let command =
-            cfg.RegisterOption("command", Config.Logging.LogCommandCall)
+            cfg.RegisterOption("command", Config.LogCommandCall)
 
         cfg.Parse(cmdArg.HeaderArgs)
 
-        Config.Logging.LogEventPost <- event.Value
-        Config.Logging.LogApiCall <- api.Value
-        Config.Logging.LogApiJson <- apiJson.Value
-        Config.Logging.LogCommandCall <- command.Value
+        Config.LogEventPost <- event.Value
+        Config.LogApiCall <- api.Value
+        Config.LogApiJson <- apiJson.Value
+        Config.LogCommandCall <- command.Value
 
         let ret =
-            $"日志选项已设定为：##setlog event:%b{Config.Logging.LogEventPost} api:%b{Config.Logging.LogApiCall} apijson:%b{Config.Logging.LogApiJson} command:%b{Config.Logging.LogCommandCall}"
+            $"日志选项已设定为：##setlog event:%b{Config.LogEventPost} api:%b{Config.LogApiCall} apijson:%b{
+                                                                                                       Config.LogApiJson
+            } command:%b{Config.LogCommandCall}"
 
         cmdArg.Reply(ret)
 
@@ -104,7 +90,7 @@ type DebugModule() =
     [<CommandHandlerMethod("##cmdtest", "（超管）单元测试", "")>]
     member x.HandleCommandTest(cmdArg : CommandEventArgs) =
         cmdArg.EnsureSenderOwner()
-        
+
         // 备份测试前的日志信息
         let logs = nlogMemoryTarget.Logs |> Seq.toArray
 
@@ -117,8 +103,7 @@ type DebugModule() =
             |> Array.iter (fun test -> test.Invoke())
 
             cmdArg.Reply("成功完成")
-        with e -> 
-            using (cmdArg.OpenResponse(PreferImage)) (fun ret -> ret.Write(sprintf "%O" e))
+        with e -> using (cmdArg.OpenResponse(PreferImage)) (fun ret -> ret.Write(sprintf "%O" e))
 
         nlogMemoryTarget.Logs.Clear()
 

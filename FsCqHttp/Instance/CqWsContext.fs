@@ -6,6 +6,7 @@ open System.Collections.Concurrent
 open System.Threading
 open System.Net.WebSockets
 
+open KPX.FsCqHttp
 open KPX.FsCqHttp.Api
 open KPX.FsCqHttp.Api.System
 open KPX.FsCqHttp.Handler
@@ -167,10 +168,10 @@ type CqWsContext(ws : WebSocket) =
 
                 apiPending.TryAdd(echo, (mre, httpApi)) |> ignore
 
-                if KPX.FsCqHttp.Config.Logging.LogApiCall then
+                if Config.LogApiCall then
                     logger.Trace $"%s{x.BotIdString}请求API：%s{httpApi.ActionName}"
 
-                    if KPX.FsCqHttp.Config.Logging.LogApiJson then
+                    if Config.LogApiJson then
                         logger.Trace $"%s{x.BotIdString}请求API：%s{json}"
 
                 let data = json |> utf8.GetBytes
@@ -210,7 +211,7 @@ type CqWsContext(ws : WebSocket) =
             let ctx = EventContext(JObject.Parse(json))
 
             if (ctx.Event.ContainsKey("post_type")) then //消息上报
-                if KPX.FsCqHttp.Config.Logging.LogEventPost then
+                if Config.LogEventPost then
                     logger.Trace $"%s{x.BotIdString}收到上报：{ctx}"
 
                 match CqEventArgs.Parse(x, ctx) with
@@ -223,7 +224,7 @@ type CqWsContext(ws : WebSocket) =
                 | args -> TaskScheduler.enqueue (x.Modules, args)
 
             elif ctx.Event.ContainsKey("retcode") then //API调用结果
-                if KPX.FsCqHttp.Config.Logging.LogApiCall then
+                if Config.LogApiCall then
                     logger.Trace $"%s{x.BotIdString}收到API调用结果： {ctx}"
 
                 x.HandleApiResponse(ctx.Event.ToObject<ApiResponse>())

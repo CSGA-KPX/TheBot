@@ -2,6 +2,7 @@ namespace KPX.FsCqHttp.Handler
 
 open System
 
+open KPX.FsCqHttp
 open KPX.FsCqHttp.Event
 open KPX.FsCqHttp.Handler
 
@@ -33,7 +34,7 @@ type CommandEventArgs(args : CqMessageEventArgs, attr : CommandHandlerMethodAttr
     let splitString (str : string) =
         str.Split(
             [| ' '
-               KPX.FsCqHttp.Config.Output.TextTable.FullWidthSpace |],
+               Config.FullWidthSpace |],
             StringSplitOptions.RemoveEmptyEntries
         )
 

@@ -3,8 +3,6 @@
 open System
 open System.Collections.Generic
 
-open KPX.FsCqHttp.Handler
-
 open KPX.FsCqHttp.Utils.TextResponse
 
 
@@ -24,7 +22,7 @@ type OptionCell(cb : OptionImpl, key : string) =
             Some key
         else
             x.Aliases
-            |> Array.tryFind (fun alias -> cb.IsDefined(alias))
+            |> Array.tryFind cb.IsDefined
 
 [<AbstractClass>]
 type OptionCell<'T>(cb : OptionImpl, key : string, defValue : 'T) =
@@ -123,10 +121,10 @@ type OptionImpl() =
             localOpts.Add(alias) |> ignore
 
     /// 解析前的前处理操作
-    abstract PreParse : string [] -> string []
+    abstract PreParse : seq<string> -> seq<string>
     default x.PreParse(args) = args
 
-    member x.Parse(input : string []) =
+    member x.Parse(input : seq<string>) =
         data.Clear()
         nonOption.Clear()
         isParsed <- false

@@ -22,7 +22,8 @@ type private NameTypeCell(cb : OptionImpl, name, def) =
 type NameOption() as x =
     inherit OptionImpl()
 
-    let nameTypeCell = NameTypeCell(x, "lang", StringData.Key_EngChsName)
+    let nameTypeCell =
+        NameTypeCell(x, "lang", StringData.Key_EngChsName)
 
     let countCell = OptionCellSimple<uint32>(x, "c", 5u)
 
@@ -39,15 +40,13 @@ type NameOption() as x =
     member x.NameCount = countCell.Value |> int
 
     override x.PreParse(args) =
-        let lst = ResizeArray<string>()
+        seq {
+            for arg in args do
+                let m = arg |> aliases.TryMap
 
-        for arg in args do
-            let m = arg |> aliases.TryMap
-
-            if m.IsSome then
-                lst.Add $"lang:%s{m.Value}"
-            else
-                let succ, i = Int32.TryParse(arg)
-                if succ then lst.Add $"c:%i{i}" else lst.Add(arg)
-
-        lst.ToArray()
+                if m.IsSome then
+                    yield $"lang:%s{m.Value}"
+                else
+                    let succ, i = Int32.TryParse(arg)
+                    if succ then yield $"c:%i{i}" else yield arg
+        }

@@ -3,6 +3,8 @@
 open System
 open System.Collections.Generic
 
+open KPX.FsCqHttp
+
 
 /// 延迟TextTable的求值时间点，便于在最终输出前对TextTable的参数进行调整
 type private DelayedTableItem =
@@ -31,7 +33,7 @@ type TextTable([<ParamArray>] header : Object []) =
                 else
                     cols.[i].SetRightAlignment())
 
-    member val ColumnPaddingChar = KPX.FsCqHttp.Config.Output.TextTable.FullWidthSpace with get, set
+    member val ColumnPaddingChar = Config.FullWidthSpace with get, set
 
     member x.AddPreTable(str : string) = preTableLines.Add(StringItem str)
     member x.AddPreTable(tt : TextTable) = preTableLines.Add(TableItem tt)
@@ -65,8 +67,7 @@ type TextTable([<ParamArray>] header : Object []) =
         for i = 0 to objs.Length - 1 do
             cols.[i].Add(TableCell.CreateFrom(objs.[i]))
 
-        let def =
-            box KPX.FsCqHttp.Config.Output.TextTable.CellPadding
+        let def = box Config.TableCellPadding
 
         for i = objs.Length to colCount - 1 do
             cols.[i].AddDefaultAlignment(def)
@@ -104,4 +105,4 @@ type TextTable([<ParamArray>] header : Object []) =
            yield! expand postTableLines |]
 
     override x.ToString() =
-        String.Join(KPX.FsCqHttp.Config.Output.NewLine, x.ToLines())
+        String.Join(Config.NewLine, x.ToLines())

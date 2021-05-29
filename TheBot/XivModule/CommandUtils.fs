@@ -24,16 +24,18 @@ type XivOption() as x =
 
     override x.PreParse(args) =
         // 将服务器名称转换为指令，同时展开大区查询
-        [| for arg in args do
-               if World.DefinedWorld(arg) then
-                   yield "world:" + arg
-               elif World.DefinedDC(arg) then
-                   let dc = World.GetDCByName(arg)
+        seq {
+            for arg in args do
+                if World.DefinedWorld(arg) then
+                    yield "world:" + arg
+                elif World.DefinedDC(arg) then
+                    let dc = World.GetDCByName(arg)
 
-                   let ss =
-                       World.GetWorldsByDC(dc)
-                       |> Seq.map (fun x -> $"world:%s{x.WorldName}")
+                    let ss =
+                        World.GetWorldsByDC(dc)
+                        |> Seq.map (fun x -> $"world:%s{x.WorldName}")
 
-                   yield! ss
-               else
-                   yield arg |]
+                    yield! ss
+                else
+                    yield arg
+        }

@@ -2,6 +2,7 @@
 
 open System
 
+open KPX.FsCqHttp
 open KPX.FsCqHttp.Message
 open KPX.FsCqHttp.Event
 
@@ -90,7 +91,7 @@ type CqMessageEventArgs(api : IApiCallProvider, ctx : EventContext, e) =
     member x.Reply(msg : Message, ?atUser : bool) =
         let atUser = defaultArg atUser false
 
-        if msg.ToString().Length > KPX.FsCqHttp.Config.Output.TextLengthLimit then
+        if msg.ToString().Length > Config.TextLengthLimit then
             invalidOp "回复字数超过上限。"
 
         if x.Event.IsDiscuss then

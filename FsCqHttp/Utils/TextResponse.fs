@@ -7,6 +7,7 @@ open System.IO
 open System.Text
 open System.Text.RegularExpressions
 
+open KPX.FsCqHttp
 open KPX.FsCqHttp.Message
 open KPX.FsCqHttp.Api.System
 
@@ -24,11 +25,7 @@ type internal ImageHelper private () =
 
     static let mutable tmpImg = Graphics.FromImage(new Bitmap(1, 1))
 
-    static member val Font =
-        new Font(
-            KPX.FsCqHttp.Config.Output.ImageOutputFont,
-            KPX.FsCqHttp.Config.Output.ImageOutputSize
-        )
+    static member val Font = new Font(Config.ImageOutputFont, Config.ImageOutputSize)
 
     static member val StringFormat =
         let sf =
@@ -42,8 +39,7 @@ type internal ImageHelper private () =
         sf
 
     static member val private SingleColumnWidth =
-        let str =
-            string KPX.FsCqHttp.Config.Output.TextTable.FullWidthSpace
+        let str = string Config.FullWidthSpace
 
         let ret = ImageHelper.MeasureByGraphic(str)
         (int ret.Width) / 2
@@ -58,7 +54,7 @@ type internal ImageHelper private () =
     /// 使用Output.TextTable.UseGraphicStringMeasure计算宽度。
     /// 返回宽度按栏数计算。
     static member MeasureWidthByConfig(str : string) =
-        if KPX.FsCqHttp.Config.Output.TextTable.UseGraphicStringMeasure then
+        if Config.TableGraphicMeasure then
             let ret =
                 ImageHelper.MeasureByGraphic(str).Width |> int
 
@@ -89,23 +85,22 @@ type TextResponse(args : CqMessageEventArgs, respType : ResponseType) =
 
     let mutable isUsed = false
 
-    let sizeLimit =
-        KPX.FsCqHttp.Config.Output.TextLengthLimit - 100
+    let sizeLimit = Config.TextLengthLimit - 100
 
     let buf = Queue<string>()
     let sb = StringBuilder()
 
     let canSendImage =
-        lazy args.ApiCaller.CallApi<CanSendImage>().Can
+        lazy (args.ApiCaller.CallApi<CanSendImage>().Can)
 
     member x.DoSendAsImage =
         match respType with
         | ForceText -> false
-        | PreferImage when KPX.FsCqHttp.Config.Output.ForceImageAvailable -> true
+        | PreferImage when Config.ImageIgnoreSendCheck -> true
         | PreferImage -> canSendImage.Force()
         | ForceImage -> true
 
-    override x.NewLine = KPX.FsCqHttp.Config.Output.NewLine
+    override x.NewLine = Config.NewLine
 
     override x.Write(c : char) =
         if not isUsed then isUsed <- true
@@ -147,7 +142,7 @@ type TextResponse(args : CqMessageEventArgs, respType : ResponseType) =
         let pages =
             [| let mutable pageSize = 0
                let page = List<string>()
-               let newline = KPX.FsCqHttp.Config.Output.NewLine
+               let newline = Config.NewLine
 
                while buf.Count <> 0 do
                    let line = buf.Dequeue()
