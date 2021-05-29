@@ -7,8 +7,8 @@ open KPX.TheBot.Data.EveData.Process
 
 
 type IEveCalculatorConfig =
-    abstract InputME : int
-    abstract DerivedME : int
+    abstract InputMe : int
+    abstract DerivationMe : int
     abstract ExpandPlanet : bool
     abstract ExpandReaction : bool
 
@@ -24,8 +24,8 @@ type EveProcessManager(cfg : IEveCalculatorConfig) as x =
     static let instance =
         EveProcessManager(
             { new IEveCalculatorConfig with
-                member x.InputME = 0
-                member x.DerivedME = 0
+                member x.InputMe = 0
+                member x.DerivationMe = 0
                 member x.ExpandPlanet = false
                 member x.ExpandReaction = false }
         )
@@ -43,10 +43,10 @@ type EveProcessManager(cfg : IEveCalculatorConfig) as x =
                       TargetQuantity = quantity })
 
     /// 获取指定数量的0效率配方
-    override x.TryGetRecipe(item, quantity) = x.TryGetRecipe(item, quantity, cfg.InputME)
+    override x.TryGetRecipe(item, quantity) = x.TryGetRecipe(item, quantity, cfg.InputMe)
 
     /// 获取1流程，0效率的配方
-    override x.TryGetRecipe(item) = x.TryGetRecipe(item, ByRun 1.0, cfg.InputME)
+    override x.TryGetRecipe(item) = x.TryGetRecipe(item, ByRun 1.0, cfg.InputMe)
 
     /// 检查在当前条件下是否可以被展开
     member x.CanExpand (recipe : EveProcess) = 
@@ -58,8 +58,8 @@ type EveProcessManager(cfg : IEveCalculatorConfig) as x =
 
     /// 获取指定数量、IMe/DMe效率的递归配方
     member x.TryGetRecipeRecMe(item : EveType, quantity : ProcessQuantity, ?ime : int, ?dme : int) =
-        let ime = defaultArg ime cfg.InputME
-        let dme = defaultArg dme cfg.DerivedME
+        let ime = defaultArg ime cfg.InputMe
+        let dme = defaultArg dme cfg.DerivationMe
 
         x.TryGetRecipe(item)
         |> Option.map

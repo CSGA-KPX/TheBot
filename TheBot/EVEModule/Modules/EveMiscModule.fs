@@ -28,7 +28,7 @@ type EveMiscModule() =
 
         let tt = TextTable("名称", "意义", "默认")
         tt.AddRow("ime", "输入蓝图材料效率", cfg.InputMe)
-        tt.AddRow("dme", "衍生蓝图材料效率", cfg.DerivativetMe)
+        tt.AddRow("dme", "衍生蓝图材料效率", cfg.DerivationMe)
         tt.AddRow("sci", "星系成本指数", cfg.SystemCostIndex)
         tt.AddRow("tax", "设施税率", cfg.StructureTax)
         tt.AddRow("p", "设置后展开行星材料", cfg.ExpandPlanet)

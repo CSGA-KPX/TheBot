@@ -21,7 +21,7 @@ type EveConfigParser() as x =
 
     member x.InputMe = ime.Value
 
-    member x.DerivativetMe = dme.Value
+    member x.DerivationMe = dme.Value
 
     member x.SystemCostIndex = sci.Value
 
@@ -35,7 +35,7 @@ type EveConfigParser() as x =
         if buy.IsDefined then PriceFetchMode.BuyWithTax else PriceFetchMode.Sell
 
     interface KPX.TheBot.Data.EveData.Process.IEveCalculatorConfig with
-        member x.InputME = x.InputMe
-        member x.DerivedME = x.DerivativetMe
+        member x.InputMe = x.InputMe
+        member x.DerivationMe = x.DerivationMe
         member x.ExpandPlanet = x.ExpandPlanet
         member x.ExpandReaction = x.ExpandReaction

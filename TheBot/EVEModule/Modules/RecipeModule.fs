@@ -1,5 +1,6 @@
 ﻿namespace KPX.TheBot.Module.EveModule
 
+open System
 open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Testing
 open KPX.FsCqHttp.Utils.TextResponse
@@ -54,10 +55,7 @@ type EveRecipeModule() =
         let tt =
             TextTable(RightAlignCell "材料等级", RightAlignCell "节省")
 
-        tt.AddPreTable(
-            "直接材料总价："
-            + System.String.Format("{0:N0}", ceil me0Price)
-        )
+        tt.AddPreTable("直接材料总价：" + String.Format("{0:N0}", ceil me0Price))
 
         for me = 0 to 10 do
             let cost =
@@ -80,12 +78,12 @@ type EveRecipeModule() =
         tc.ShouldThrow("#eme 军用馒头")
 
     [<CommandHandlerMethod("#er",
-                                    "EVE蓝图材料计算",
-                                    "可以使用表达式，多个物品需用+连接。可选参数见#evehelp。如：
+                           "EVE蓝图材料计算",
+                           "可以使用表达式，多个物品需用+连接。可选参数见#evehelp。如：
 #r 帝国海军散热槽*10+机器人技术*9999")>]
     [<CommandHandlerMethod("#err",
-                                    "EVE蓝图基础材料计算",
-                                    "可以使用表达式，多个物品需用+连接。可选参数见#evehelp。如：
+                           "EVE蓝图基础材料计算",
+                           "可以使用表达式，多个物品需用+连接。可选参数见#evehelp。如：
 #rr 帝国海军散热槽*10+机器人技术*9999")>]
     member x.HandleRRR(cmdArg : CommandEventArgs) =
         let cfg = EveConfigParser()
@@ -95,7 +93,7 @@ type EveRecipeModule() =
 
         let tt =
             if idOpt.IsDefined then
-                TextTable("名称", RightAlignCell "数量", RightAlignCell "需求", RightAlignCell "总体积")
+                TextTable("名称", RightAlignCell "数量", RightAlignCell "缺少", RightAlignCell "总体积")
             else
                 TextTable("名称", RightAlignCell "数量", RightAlignCell "体积")
 
@@ -107,68 +105,90 @@ type EveRecipeModule() =
                 snd (ic.TryGet(idOpt.Value).Value)
             | true -> cmdArg.Abort(InputError, "没有和id关联的材料表")
 
+        let respType = cfg.ResponseType
         let isR = cmdArg.CommandAttrib.Command = "#er"
+        let useInv = idOpt.IsDefined
 
-        if isR then
-            tt.AddPreTable(sprintf "输入效率：%i%% " cfg.InputMe)
-        else
-            tt.AddPreTable(sprintf "输入效率：%i%% 默认效率：%i%%" cfg.InputMe cfg.DerivativetMe)
-            tt.AddPreTable $"展开行星材料：%b{cfg.ExpandPlanet} 展开反应公式：%b{cfg.ExpandReaction}"
+        //if isR then
+        //    tt.AddPreTable(sprintf "输入效率：%i%% " cfg.InputMe)
+        //else
+        //    tt.AddPreTable(sprintf "输入效率：%i%% 衍生效率：%i%%" cfg.InputMe cfg.DerivationMe)
+        //    tt.AddPreTable $"展开行星材料：%b{cfg.ExpandPlanet} 展开反应公式：%b{cfg.ExpandReaction}"
 
-        let final = ItemAccumulator<EveType>()
+        let inputAcc = ItemAccumulator<EveType>()
+        let outputAcc = ItemAccumulator<EveType>()
         let mutable totalInputVolume = 0.0
         let mutable totalOutputVolume = 0.0
 
-        match er.Eval(cfg.GetNonOptionString()) with
-        | Number n -> cmdArg.Abort(InputError, "结算结果为数字: {0}", n)
-        | Accumulator a ->
-            let pm = EveProcessManager(cfg)
+        let outputTable =
+            TextTable(
+                "产出",
+                RightAlignCell "数量",
+                RightAlignCell "体积",
+                RightAlignCell "ime",
+                RightAlignCell "dme",
+                "r",
+                "p"
+            )
 
-            for mr in a do
-                let proc =
-                    if isR then
-                        pm.TryGetRecipe(mr.Item, ByRun mr.Quantity)
-                        |> Option.map (fun ret -> ret.ApplyFlags(MeApplied))
-                    else
-                        pm.TryGetRecipeRecMe(mr.Item, ByRun mr.Quantity)
-                        |> Option.map (fun ret -> ret.FinalProcess)
+        for args in cmdArg.AllArgs do
+            cfg.Parse(args)
+            let str = cfg.GetNonOptionString()
 
-                if proc.IsNone then
-                    cmdArg.Abort(InputError, "找不到配方：{0}", mr.Item.Name)
+            if not <| String.IsNullOrWhiteSpace(str) then
+                match er.Eval(cfg.GetNonOptionString()) with
+                | Number n -> cmdArg.Abort(InputError, "结算结果为数字: {0}", n)
+                | Accumulator a ->
+                    let pm = EveProcessManager(cfg)
 
-                let product = proc.Value.GetFirstProduct()
+                    for mr in a do
+                        let proc =
+                            if isR then
+                                pm.TryGetRecipe(mr.Item, ByRun mr.Quantity)
+                                |> Option.map (fun ret -> ret.ApplyFlags(MeApplied))
+                            else
+                                pm.TryGetRecipeRecMe(mr.Item, ByRun mr.Quantity)
+                                |> Option.map (fun ret -> ret.FinalProcess)
 
-                let outputVolume = product.Item.Volume * product.Quantity
-                totalOutputVolume <- totalOutputVolume + outputVolume
+                        if proc.IsNone then
+                            cmdArg.Abort(InputError, "找不到配方：{0}", mr.Item.Name)
 
-                tt.RowBuilder {
-                    yield "产出：" + product.Item.Name
-                    yield HumanReadableInteger product.Quantity
-                    if idOpt.IsDefined then yield PaddingRight
-                    yield HumanReadableInteger outputVolume
-                }
-                |> tt.AddRow
+                        let product = proc.Value.GetFirstProduct()
+                        outputAcc.Update(product)
 
-                for m in proc.Value.Input do
-                    final.Update(m)
+                        let outputVolume = product.Item.Volume * product.Quantity
+                        totalOutputVolume <- totalOutputVolume + outputVolume
 
-        tt.RowBuilder {
-            yield "产出：总体积"
-            yield PaddingRight
-            if idOpt.IsDefined then yield PaddingRight
-            yield HumanReadableInteger totalOutputVolume
-        }
-        |> tt.AddRow
+                        outputTable.RowBuilder {
+                            yield product.Item.Name
+                            yield HumanReadableInteger product.Quantity
+                            yield HumanReadableInteger outputVolume
+                            yield cfg.InputMe
+                            yield cfg.DerivationMe
+                            if cfg.ExpandReaction then yield 1 else yield 0
+                            if cfg.ExpandPlanet then yield 1 else yield 0
+                        }
+                        |> outputTable.AddRow
 
-        tt.RowBuilder {
-            yield PaddingLeft
-            yield PaddingRight
-            if idOpt.IsDefined then yield PaddingRight
-            yield PaddingRight
-        }
-        |> tt.AddRow
+                        for m in proc.Value.Input do
+                            inputAcc.Update(m)
 
-        for mr in final
+        // 生成产物信息
+        outputTable.AddRow(
+            "总计",
+            PaddingRight,
+            HumanReadableInteger totalOutputVolume,
+            PaddingRight,
+            PaddingRight,
+            PaddingLeft,
+            PaddingLeft
+        )
+        // 产物和材料的分隔行
+        outputTable.AddPostTable(" ")
+        tt.AddPreTable(outputTable)
+
+        // 生成材料信息
+        for mr in inputAcc
                   |> Seq.sortBy (fun x -> x.Item.MarketGroupId) do
             let sumVolume = mr.Item.Volume * mr.Quantity
 
@@ -178,29 +198,32 @@ type EveRecipeModule() =
                 else
                     mr.Quantity
 
-            let needStr = 
-                if need <= 0.0 then PaddingRight
-                else HumanReadableInteger need
+            let needStr =
+                if need <= 0.0 then
+                    PaddingRight
+                else
+                    HumanReadableInteger need
 
             tt.RowBuilder {
                 yield mr.Item.Name
                 yield HumanReadableInteger mr.Quantity
-                if idOpt.IsDefined then yield needStr
+                if useInv then yield needStr
                 yield HumanReadableInteger sumVolume
             }
             |> tt.AddRow
 
             totalInputVolume <- totalInputVolume + sumVolume
 
+        // 总材料信息
         tt.RowBuilder {
             yield "材料体积"
             yield PaddingRight
-            if idOpt.IsDefined then yield PaddingRight
+            if useInv then yield PaddingRight
             yield HumanReadableInteger totalInputVolume
         }
         |> tt.AddRow
 
-        using (cmdArg.OpenResponse(cfg.ResponseType)) (fun x -> x.Write(tt))
+        using (cmdArg.OpenResponse(respType)) (fun x -> x.Write(tt))
 
     [<TestFixture>]
     member x.TestRRR() =
@@ -222,8 +245,8 @@ type EveRecipeModule() =
         tc.ShouldNotThrow("#err 恶狼级蓝图 ime:10")
 
     [<CommandHandlerMethod("#errc",
-                                    "EVE蓝图成本计算",
-                                    "不支持表达式，但仅限一个物品。可选参数见#evehelp。如：
+                           "EVE蓝图成本计算",
+                           "不支持表达式，但仅限一个物品。可选参数见#evehelp。如：
 #errc 帝国海军散热槽*10")>]
     member x.HandleERRCV2(cmdArg : CommandEventArgs) =
         let cfg = EveConfigParser()
@@ -271,7 +294,7 @@ type EveRecipeModule() =
                 sprintf
                     "输入效率：%i%% 默认效率：%i%% 成本指数：%i%% 设施税率%i%%"
                     cfg.InputMe
-                    cfg.DerivativetMe
+                    cfg.DerivationMe
                     cfg.SystemCostIndex
                     cfg.StructureTax
             )
@@ -304,8 +327,8 @@ type EveRecipeModule() =
                     pm.TryGetRecipeRecMe(
                         mr.Item,
                         ByItem mr.Quantity,
-                        cfg.DerivativetMe,
-                        cfg.DerivativetMe
+                        cfg.DerivationMe,
+                        cfg.DerivationMe
                     )
 
                 if
@@ -408,7 +431,7 @@ type EveRecipeModule() =
             sprintf
                 "输入效率：%i%% 默认效率：%i%% 成本指数：%i%% 设施税率%i%%"
                 cfg.InputMe
-                cfg.DerivativetMe
+                cfg.DerivationMe
                 cfg.SystemCostIndex
                 cfg.StructureTax
         )
@@ -462,7 +485,7 @@ type EveRecipeModule() =
                                 product.Item,
                                 ByRun 1.0,
                                 cfg.InputMe,
-                                cfg.DerivativetMe
+                                cfg.DerivationMe
                             )
                             .Value
 

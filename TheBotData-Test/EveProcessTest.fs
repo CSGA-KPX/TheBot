@@ -14,8 +14,8 @@ let ec = EveTypeCollection.Instance
 let rm =
     EveProcessManager(
         { new IEveCalculatorConfig with
-            member x.InputME = 3
-            member x.DerivedME = 10
+            member x.InputMe = 3
+            member x.DerivationMe = 10
             member x.ExpandPlanet = false
             member x.ExpandReaction = false }
     )
