@@ -26,7 +26,11 @@ type CommandHandlerMethodAttribute(command : string, desc, lh) =
 
     /// 指示改指令是否在help等指令中隐藏
     member val IsHidden = false with get, set
-
+    
+    /// 只是该指令是否无视调度器，尽快执行
+    /// 适用于极端条件下的指令
+    member val ExecuteImmediately = false with get, set
+    
 [<Sealed>]
 type CommandEventArgs(args : CqMessageEventArgs, attr : CommandHandlerMethodAttribute) =
     inherit CqMessageEventArgs(args.ApiCaller, args.RawEvent, args.Event)

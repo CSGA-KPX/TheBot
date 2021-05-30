@@ -128,7 +128,7 @@ type OptionImpl() =
         nonOption.Clear()
         isParsed <- false
 
-        let defKeys : HashSet<string> = x.GetDefinedKeys()
+        let defKeys : HashSet<string> = x.GetOptionKeys()
 
         for item in x.PreParse(input) do
             let isOption = item.IndexOfAny(separators) <> -1
@@ -156,19 +156,21 @@ type OptionImpl() =
 
     member x.GetNonOptionString() = String.Join(' ', x.NonOptionStrings)
 
-    /// 以文本形式转储非默认选项
+    /// 以文本形式转储已经被设定的选项
     member x.DumpDefinedOptions() =
+        if not isParsed then invalidOp "没有解析过数据"
+
         [| for kv in data do
                for value in kv.Value do
                    yield $"{kv.Key}:{value}" |]
 
-    /// 以文本形式转储选项模板
+    /// 以文本形式转储选项模板，不包含运行时添加的选项。
     member x.DumpTemplate() =
-        [| for key in x.GetDefinedKeys() do
-               yield $"{key}:" |]
+        [| for cell in x.GetOptions() do
+               yield $"%s{cell.KeyName}:" |]
 
     /// 获取已经定义的键名
-    member private x.GetDefinedKeys() =
+    member private x.GetOptionKeys() =
         if localOpts.Count = 0 then
             x.TryGenerateOptionCache()
         else
@@ -179,13 +181,10 @@ type OptionImpl() =
             ret.UnionWith(localOpts)
             ret
 
-    member private x.TryGenerateOptionCache() : HashSet<string> =
-        let key = x.GetType().FullName
-
-        if not <| optCache.ContainsKey(key) then
-            optCache.[key] <- HashSet<_>(StringComparer.OrdinalIgnoreCase)
-
-            let flags =
+    /// 获取类在设计时定义的选项
+    member private x.GetOptions() : seq<OptionCell> =
+        seq {
+            let flag =
                 Reflection.BindingFlags.Instance
                 ||| Reflection.BindingFlags.NonPublic
 
@@ -194,17 +193,26 @@ type OptionImpl() =
             // 获取Fields而不是Properties是因为这样可以使用let绑定
             // 隐藏Cell类型。这样可以同时兼容let绑定和member val声明。
             // 可以在下游需要的时候再将let换成member val进行操作。
-            for f in x.GetType().GetFields(flags) do
+            for f in x.GetType().GetFields(flag) do
                 let ft = f.FieldType
 
+                // 不检查重复值方便下游应用可以
+                // 设置同名选项来重写一些行为
                 if ft.IsSubclassOf(targetType) || ft = targetType then
-                    // 不检查重复值意味着下游应用可以
-                    // 设置同名选项来重写一些行为
-                    let cell = f.GetValue(x) :?> OptionCell
-                    optCache.[key].Add(cell.KeyName) |> ignore
+                    yield f.GetValue(x) :?> OptionCell
+        }
 
-                    for item in cell.Aliases do
-                        optCache.[key].Add(item) |> ignore
+    member private x.TryGenerateOptionCache() : HashSet<string> =
+        let key = x.GetType().FullName
+
+        if not <| optCache.ContainsKey(key) then
+            optCache.[key] <- HashSet<_>(StringComparer.OrdinalIgnoreCase)
+
+            for cell in x.GetOptions() do
+                optCache.[key].Add(cell.KeyName) |> ignore
+
+                for item in cell.Aliases do
+                    optCache.[key].Add(item) |> ignore
 
         optCache.[key]
 

@@ -221,6 +221,20 @@ type CqWsContext(ws : WebSocket) =
                 | :? CqMessageEventArgs as args when
                     (x.Modules.TryCommand(args).IsNone)
                     && x.Modules.MessageCallbacks.Count = 0 -> ()
+                | :? CqMessageEventArgs as args ->
+                    let isCmd = x.Modules.TryCommand(args)
+
+                    if isCmd.IsSome then
+                        if isCmd.Value.CommandAttribute.ExecuteImmediately then
+                            // 需要立刻执行的指令，不通过调度器
+                            CommandEventArgs(args, isCmd.Value.CommandAttribute)
+                            |> isCmd.Value.MethodAction.Invoke
+                        else
+                            // 正常指令走调度器
+                            TaskScheduler.enqueue (x.Modules, args)
+                    else if x.Modules.MessageCallbacks.Count <> 0 then
+                        // 如果有其他类需要监听消息事件
+                        TaskScheduler.enqueue (x.Modules, args)
                 | args -> TaskScheduler.enqueue (x.Modules, args)
 
             elif ctx.Event.ContainsKey("retcode") then //API调用结果

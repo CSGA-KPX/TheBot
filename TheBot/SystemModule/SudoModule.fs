@@ -7,6 +7,7 @@ open System.Security.Cryptography
 
 open KPX.FsCqHttp.Api.System
 open KPX.FsCqHttp.Api.Group
+open KPX.FsCqHttp.Api.Context
 
 open KPX.FsCqHttp.Event
 open KPX.FsCqHttp.Handler
@@ -90,8 +91,7 @@ type SudoModule() =
             if uid <> 0UL then
                 cmdArg.GrantBotAdmin(uid)
 
-                sb.AppendLine $"已添加userId = %i{uid}"
-                |> ignore
+                sb.AppendLine $"已添加userId = %i{uid}" |> ignore
 
         cmdArg.Reply(sb.ToString())
 
@@ -123,7 +123,7 @@ type SudoModule() =
 
     [<CommandHandlerMethod("##allow", "(管理) 允许好友、加群请求", "", IsHidden = true)>]
     member x.HandleAllow(cmdArg : CommandEventArgs) =
-        
+
         let uo = OptionBase()
         let qq = uo.RegisterOption("qq", 0UL)
         let group = uo.RegisterOption("group", 0UL)
@@ -140,8 +140,7 @@ type SudoModule() =
         elif qq.IsDefined then
             cmdArg.EnsureSenderAdmin()
 
-            let key =
-                allowQqFmt cmdArg.BotUserId qq.Value
+            let key = allowQqFmt cmdArg.BotUserId qq.Value
 
             allowList.Add(key) |> ignore
             cmdArg.Reply $"接受来自[%s{key}]的邀请"
@@ -151,9 +150,34 @@ type SudoModule() =
             Printf.bprintf sb "设置好友： qq:群号\r\n"
             cmdArg.Reply(sb.ToString())
 
+    [<CommandHandlerMethod("##紧急停止", "停止所有指令和事件处理", "", IsHidden = true)>]
+    member x.HandleShutdown(cmdArg : CommandEventArgs) =
+        cmdArg.EnsureSenderOwner()
+
+        let m =
+            cmdArg
+                .ApiCaller
+                .CallApi<GetCtxModuleInfo>()
+                .ModuleInfo
+
+        m.MetaCallbacks.Clear()
+        m.NoticeCallbacks.Clear()
+        m.RequestCallbacks.Clear()
+        m.TestCallbacks.Clear()
+        m.MessageCallbacks.Clear()
+
+        let act =
+            Action<CommandEventArgs>(fun cmdArg -> cmdArg.Reply("Bot故障：信息处理已禁用"))
+
+        for kv in m.Commands do
+            m.Commands.[kv.Key] <- { kv.Value with MethodAction = act }
+
+        x.Logger.Fatal("已完成紧急停止操作")
+        cmdArg.Reply("已完成紧急停止操作")
+
     override x.OnRequest = Some x.HandleRequest
 
-    member x.HandleRequest(args)=
+    member x.HandleRequest(args) =
         match args.Event with
         | FriendRequest req ->
             let inList =
