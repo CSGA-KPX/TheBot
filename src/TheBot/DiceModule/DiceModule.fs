@@ -22,8 +22,8 @@ type DiceModule() =
 
     [<CommandHandlerMethod(".c", "同#c，但每次结果随机", "")>]
     [<CommandHandlerMethod("#c",
-                                    "对多个选项1d100",
-                                    "#c 选项1 选项2 选项3
+                           "对多个选项1d100",
+                           "#c 选项1 选项2 选项3
 可以使用X不X类的短语。如'#c 能不能吃肉'等同于'#c 能吃肉 不能吃肉'
 可以@一个群友帮他选")>]
     member x.HandleChoices(cmdArg : CommandEventArgs) =
@@ -68,6 +68,9 @@ type DiceModule() =
                        + m.Groups.[4].Value
                else
                    yield arg |]
+        |> (fun args ->
+            if args.Length = 0 then cmdArg.Abort(InputError, "没有选项")
+            args)
         |> Array.map
             (fun c ->
                 let seed =
@@ -82,7 +85,7 @@ type DiceModule() =
                 dicer.Freeze()
                 (c, dicer.GetPositive(100u, c)))
         |> Array.sortBy snd
-        |> Array.iter (fun (c, n) -> tt.AddRow( $"%03i{n}", c))
+        |> Array.iter (fun (c, n) -> tt.AddRow($"%03i{n}", c))
 
         sw.Write(tt)
 
@@ -96,8 +99,8 @@ type DiceModule() =
         cmdArg.Reply $"%s{cmdArg.MessageEvent.DisplayName}今日人品值是：%i{jrrp}"
 
     [<CommandHandlerMethod("#cal",
-                                    "计算器",
-                                    "支持加减乘除操作和DK操作符，可以测试骰子表达式。
+                           "计算器",
+                           "支持加减乘除操作和DK操作符，可以测试骰子表达式。
 如#c (1D2+5D5K3)/2*3D6")>]
     member x.HandleCalculator(cmdArg : CommandEventArgs) =
         let sb = Text.StringBuilder()
@@ -106,9 +109,7 @@ type DiceModule() =
         let ret = parser.TryEval(arg)
 
         match ret with
-        | Error e ->
-            sb.Append $"对%s{arg}求值失败：%s{e.Message}"
-            |> ignore
+        | Error e -> sb.Append $"对%s{arg}求值失败：%s{e.Message}" |> ignore
         | Ok i ->
             let sum =
                 String.Format("{0:N2}", i.Sum).Replace(".00", "")
@@ -145,8 +146,8 @@ type DiceModule() =
         cmdArg.Reply(String.Join("\r\n", chunks))
 
     [<CommandHandlerMethod("#gacha",
-                                    "抽10连 概率3%",
-                                    "接受数字参数。
+                           "抽10连 概率3%",
+                           "接受数字参数。
 小于10的记为概率，大于等于10记为抽数，以最后一次出现的为准。
 如#gacha 6 300或#gacha 300 6")>]
     member x.HandleGacha(cmdArg : CommandEventArgs) =
@@ -159,12 +160,9 @@ type DiceModule() =
             if succ then
                 let i = int i
 
-                if i > 300 then
-                    cmdArg.Abort(InputError, "一井还不够你用？")
-                elif i >= 10 then
-                    count <- i
-                else
-                    cutoff <- i
+                if i > 300 then cmdArg.Abort(InputError, "一井还不够你用？")
+                elif i >= 10 then count <- i
+                else cutoff <- i
 
         let ret =
             Array.init count (fun _ -> Dicer.RandomDicer.GetPositive(100u) |> int)
