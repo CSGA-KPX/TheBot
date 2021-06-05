@@ -10,16 +10,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <OtherFlags>--warnon:1182</OtherFlags>
     <Tailcalls>true</Tailcalls>
-    <OutputPath>bin\Debug\</OutputPath>
+    <OutputPath>..\..\build\Debug\</OutputPath>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <OutputPath>bin\Release\</OutputPath>
+    <OutputPath>..\..\build\Release\</OutputPath>
   </PropertyGroup>
-
-  <ItemGroup>
-    <None Remove="C:\Users\dmmik\.nuget\packages\nlog.config\4.6.7\contentFiles\any\any\NLog.config" />
-  </ItemGroup>
 
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
@@ -76,12 +72,10 @@
     <PackageReference Include="HtmlAgilityPack" Version="1.11.32" />
     <PackageReference Include="LiteDB" Version="5.0.10" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-    <PackageReference Include="NLog.Config" Version="4.7.8" />
     <PackageReference Include="System.Net.WebSockets.Client" Version="4.3.2" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\LibFFXIV\LibFFXIV.GameData\LibFFXIV.GameData.fsproj" />
     <ProjectReference Include="..\FsCqHttp\FsCqHttp.fsproj" />
     <ProjectReference Include="..\TheBotData\TheBotData.fsproj" />
   </ItemGroup>

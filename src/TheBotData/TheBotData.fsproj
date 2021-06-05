@@ -58,7 +58,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\LibFFXIV\LibFFXIV.GameData\LibFFXIV.GameData.fsproj" />
+    <ProjectReference Include="..\..\..\LibFFXIV\LibFFXIV.GameData\LibFFXIV.GameData.fsproj" />
   </ItemGroup>
 
   <ItemGroup>

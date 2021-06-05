@@ -2,30 +2,26 @@
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
-    <RootNamespace>TheBot_Test</RootNamespace>
+    <RootNamespace>FSCqHttp_Test</RootNamespace>
 
     <IsPackable>false</IsPackable>
     <GenerateProgramFile>false</GenerateProgramFile>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="nunit" Version="3.13.1" />
+    <PackageReference Include="NUnit" Version="3.13.1" />
     <PackageReference Include="NUnit3TestAdapter" Version="3.17.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.9.1" />
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="InitCollection.fs" />
-    <Compile Include="XivItemTest.fs" />
-    <Compile Include="XivRecipeTest.fs" />
-    <Compile Include="XivMiscText.fs" />
-    <Compile Include="EveItemTest.fs" />
-    <Compile Include="EveProcessTest.fs" />
+    <Compile Include="MessageTest.fs" />
+    <Compile Include="UserOptionV2Test.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\TheBot\TheBot.fsproj" />
+    <ProjectReference Include="..\..\src\FsCqHttp\FsCqHttp.fsproj" />
   </ItemGroup>
 
   <ItemGroup>

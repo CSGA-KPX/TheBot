@@ -342,3 +342,10 @@ healthchecksdb
 
 # 隐藏服务器信息
 /.vscode/DebugArgs.txt
+/build/static/BotDataCache-log.db
+/build/static/BotDataCache.db
+/build/static/thebot_config-log.db
+/build/static/thebot_config.db
+/build/static/trpg.db
+/build/staticData/EVEData.zip
+/build/staticData/ffxiv-datamining-cn-master.zip

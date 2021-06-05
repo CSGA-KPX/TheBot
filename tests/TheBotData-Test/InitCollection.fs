@@ -10,7 +10,7 @@ let mutable private initCollection = true
 let Setup () =
     try
         if initCollection then
-            Environment.CurrentDirectory <- @"K:\Source\Repos\TheBot\TheBot\bin\Debug\net5.0"
+            Environment.CurrentDirectory <- __SOURCE_DIRECTORY__ + "/../../build/staticData/"
             BotDataInitializer.ClearCache()
             BotDataInitializer.ShrinkCache()
             BotDataInitializer.InitializeAllCollections()

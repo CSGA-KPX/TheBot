@@ -3,15 +3,15 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29215.179
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "TheBot", "TheBot\TheBot.fsproj", "{3C4E3455-9CBA-4450-AB7B-85956A7C86F0}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "TheBot", "src\TheBot\TheBot.fsproj", "{3C4E3455-9CBA-4450-AB7B-85956A7C86F0}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "FFXIVNetwork", "FFXIVNetwork", "{23438C37-1119-422B-8EC9-D0BB0ED93EFB}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FsCqHttp", "FsCqHttp\FsCqHttp.fsproj", "{3E558F6E-6A04-4912-837F-AF00CC91AFAE}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FsCqHttp", "src\FsCqHttp\FsCqHttp.fsproj", "{3E558F6E-6A04-4912-837F-AF00CC91AFAE}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "LibFFXIV.GameData", "..\LibFFXIV\LibFFXIV.GameData\LibFFXIV.GameData.fsproj", "{EE879DDD-F086-4496-A802-94347995BC9C}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "TheBotData", "TheBotData\TheBotData.fsproj", "{7249154C-B925-4006-88AA-192DACB0ACA3}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "TheBotData", "src\TheBotData\TheBotData.fsproj", "{7249154C-B925-4006-88AA-192DACB0ACA3}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{6416453A-AD84-4DCB-A883-2843110521FD}"
 	ProjectSection(SolutionItems) = preProject
@@ -19,9 +19,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "TheBotData-Test", "TheBotData-Test\TheBotData-Test.fsproj", "{787150A5-2986-4AA1-B96E-6731AA6FAC61}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "TheBotData-Test", "tests\TheBotData-Test\TheBotData-Test.fsproj", "{787150A5-2986-4AA1-B96E-6731AA6FAC61}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSCqHttp-Test", "FSCqHttp-Test\FSCqHttp-Test.fsproj", "{FF530083-BB65-4011-A990-1D4C41226D27}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSCqHttp-Test", "tests\FSCqHttp-Test\FSCqHttp-Test.fsproj", "{FF530083-BB65-4011-A990-1D4C41226D27}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
