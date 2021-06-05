@@ -9,23 +9,20 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NUnit" Version="3.13.1" />
-    <PackageReference Include="NUnit3TestAdapter" Version="3.17.0" />
+    <PackageReference Include="altcover" Version="8.2.821" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.9.1" />
+    <PackageReference Include="YoloDev.Expecto.TestSdk" Version="0.11.1" />
+    <PackageReference Update="FSharp.Core" Version="5.0.1" />
   </ItemGroup>
 
   <ItemGroup>
     <Compile Include="MessageTest.fs" />
-    <Compile Include="UserOptionV2Test.fs" />
-    <Compile Include="Program.fs" />
+    <Compile Include="UserOptionTest.fs" />
+    <Compile Include="Main.fs" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\FsCqHttp\FsCqHttp.fsproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Update="FSharp.Core" Version="5.0.1" />
   </ItemGroup>
 
 </Project>

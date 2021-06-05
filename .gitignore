@@ -355,3 +355,4 @@ healthchecksdb
 
 tmp/
 output/
+coverage.xml
