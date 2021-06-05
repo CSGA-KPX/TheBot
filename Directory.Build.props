@@ -1,0 +1,20 @@
+<Project>
+  <PropertyGroup>
+    <!-- summary is not migrated from project.json, but you can use the <Description> property for that if needed. -->
+    <PackageTags>f#, fsharp</PackageTags>
+    <PackageProjectUrl>https://CSGA-KPX.github.io/TheBot/</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/CSGA-KPX/TheBot/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <RepositoryType>git</RepositoryType>
+    <Authors>CSGA-KPX</Authors>
+    <RepositoryUrl>https://github.com/CSGA-KPX/TheBot</RepositoryUrl>
+    <!-- owners is not supported in MSBuild -->
+    
+    <!-- FsDocs -->
+    <FsDocsLicenseLink>https://github.com/CSGA-KPX/TheBot/blob/master/LICENSE</FsDocsLicenseLink>
+    <FsDocsReleaseNotesLink>https://github.com/CSGA-KPX/TheBot/blob/master/CHANGELOG.md</FsDocsReleaseNotesLink>
+    <FsDocsNavbarPosition>fixed-left</FsDocsNavbarPosition>
+    <FsDocsTheme>default</FsDocsTheme>
+    
+  </PropertyGroup>
+</Project>
