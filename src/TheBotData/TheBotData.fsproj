@@ -10,6 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Common\Resource.fs" />
     <Compile Include="Common\Database.fs" />
     <Compile Include="Common\Network.fs" />

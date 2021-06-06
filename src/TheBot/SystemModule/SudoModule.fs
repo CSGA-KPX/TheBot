@@ -16,6 +16,7 @@ open KPX.FsCqHttp.Utils.UserOption
 
 open KPX.TheBot.Utils.HandlerUtils
 
+open KPX.TheBot.Data.Common.Resource
 open KPX.TheBot.Data.Common.Database
 
 
@@ -57,25 +58,31 @@ type SudoModule() =
         if isSuUsed then
             cmdArg.Reply("本次认证已被使用")
         else
-            let path = Assembly.GetExecutingAssembly().Location
-            let md5 = MD5.Create()
+            let file = GetStaticFile("su.txt")
+            
+            if File.Exists(file) then
+                let data = File.ReadAllBytes(file)
+                let hex =
+                    BitConverter
+                        .ToString(SHA256.Create().ComputeHash(data))
+                        .Replace("-", "")
 
-            let hex =
-                BitConverter
-                    .ToString(md5.ComputeHash(File.OpenRead(path)))
-                    .Replace("-", "")
+                let isMatch =
+                    cmdArg.HeaderLine.ToUpperInvariant().Contains(hex)
 
-            let isMatch =
-                cmdArg.HeaderLine.ToUpperInvariant().Contains(hex)
+                if isMatch then
+                    let uid = cmdArg.MessageEvent.UserId
+                    x.Logger.Info("添加超管和管理员权限{0}", uid)
+                    cmdArg.SetInstanceOwner(uid)
+                    cmdArg.GrantBotAdmin(uid)
+                    cmdArg.Reply("完毕")
+                
+                File.Delete(file)
+                isSuUsed <- true
+            else
 
-            if isMatch then
-                let uid = cmdArg.MessageEvent.UserId
-                x.Logger.Info("添加超管和管理员权限{0}", uid)
-                cmdArg.SetInstanceOwner(uid)
-                cmdArg.GrantBotAdmin(uid)
-                cmdArg.Reply("完毕")
-
-            isSuUsed <- true
+                File.WriteAllText(file, Guid.NewGuid().ToString())
+                cmdArg.Reply($"请提供SHA256(%s{file})")
 
     [<CommandHandlerMethod("##grant", "（超管）添加用户为管理员", "", IsHidden = true)>]
     member x.HandleGrant(cmdArg : CommandEventArgs) =

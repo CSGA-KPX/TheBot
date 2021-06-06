@@ -36,9 +36,7 @@ module Helpers =
 
     let getLiteDB (name : string) =
         if not <| dbCache.ContainsKey(name) then
-            let path =
-                Path.Combine([| ".."; "static"; name |])
-
+            let path = GetStaticFile(name)
             let dbFile = $"Filename=%s{path};"
             let db = new LiteDatabase(dbFile)
             dbCache.Add(name, db)

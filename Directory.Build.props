@@ -1,4 +1,4 @@
-<Project>
+﻿<Project>
   <PropertyGroup>
     <!-- summary is not migrated from project.json, but you can use the <Description> property for that if needed. -->
     <PackageTags>f#, fsharp</PackageTags>
@@ -16,5 +16,13 @@
     <FsDocsNavbarPosition>fixed-left</FsDocsNavbarPosition>
     <FsDocsTheme>default</FsDocsTheme>
     
+  </PropertyGroup>
+  <PropertyGroup>
+    <Authors>KPX</Authors>
+    <Company>KPX</Company>
+    <Copyright>Copyright © KPX 2019-2021</Copyright>
+    <AssemblyVersion>1.0.1.0</AssemblyVersion>
+    <FileVersion>1.0.1.0</FileVersion>
+    <Version>1.0.1.0</Version>
   </PropertyGroup>
 </Project>
