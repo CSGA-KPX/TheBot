@@ -1,4 +1,4 @@
-﻿module InitDatabase
+﻿module BotDataTest.InitDatabase
 
 open System
 
@@ -14,7 +14,6 @@ let initDatabase =
     <| fun _ ->
         try
             if initCollection then
-                Environment.CurrentDirectory <- IO.Path.Join(__SOURCE_DIRECTORY__, "/../../build/static/")
                 BotDataInitializer.ClearCache()
                 BotDataInitializer.ShrinkCache()
                 BotDataInitializer.InitializeAllCollections()

@@ -99,11 +99,10 @@ type DebugModule() =
                 cmdArg.ApiCaller.CallApi<GetCtxModuleInfo>()
 
             mi.ModuleInfo.TestCallbacks
-            |> Seq.toArray
-            |> Array.iter (fun test -> test.Invoke())
+            |> Seq.iter (fun (_, test) -> test.Invoke())
 
             cmdArg.Reply("成功完成")
-        with e -> using (cmdArg.OpenResponse(PreferImage)) (fun ret -> ret.Write(sprintf "%O" e))
+        with e -> using (cmdArg.OpenResponse(PreferImage)) (fun ret -> ret.Write $"{e}")
 
         nlogMemoryTarget.Logs.Clear()
 

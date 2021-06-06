@@ -1,4 +1,4 @@
-﻿module EveTest
+﻿module BotDataTest.EveTest
 
 open KPX.TheBot.Data.CommonModule.Recipe
 

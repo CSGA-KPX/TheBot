@@ -16,9 +16,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="InitCollection.fs" />
-    <Compile Include="XivItemTest.fs" />
-    <Compile Include="EveTest.fs" />
+    <Compile Include="TheBotData\InitCollection.fs" />
+    <Compile Include="TheBotData\XivItemTest.fs" />
+    <Compile Include="TheBotData\EveTest.fs" />
+    <Compile Include="BotCommandTest\Generator.fs" />
     <Compile Include="Main.fs" />
   </ItemGroup>
 

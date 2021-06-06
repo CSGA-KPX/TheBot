@@ -1,4 +1,4 @@
-﻿module XivTest
+﻿module BotDataTest.XivTest
 
 open System
 

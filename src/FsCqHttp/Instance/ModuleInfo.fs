@@ -19,7 +19,7 @@ type ContextModuleInfo() =
 
     member val MetaCallbacks = ResizeArray<CqMetaEventArgs -> unit>() :> IList<_>
 
-    member val TestCallbacks = ResizeArray<Action>() :> IList<_>
+    member val TestCallbacks = ResizeArray<string * Action>() :> IList<_>
 
     member val Commands =
         Dictionary<string, CommandInfo>(StringComparer.OrdinalIgnoreCase) :> IDictionary<_, _>
@@ -71,5 +71,7 @@ type ContextModuleInfo() =
                     method.GetCustomAttributes(typeof<TestFixtureAttribute>, true)
 
                 if attr.Length <> 0 then
-                    method.CreateDelegate(typeof<Action>, m) :?> Action
-                    |> x.TestCallbacks.Add
+                    let methodName = method.Name
+                    let action = method.CreateDelegate(typeof<Action>, m) :?> Action
+                    x.TestCallbacks.Add(methodName, action)
+                    

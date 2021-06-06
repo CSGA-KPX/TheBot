@@ -51,3 +51,5 @@ type DefaultContextModuleLoader() =
     inherit ContextModuleLoader()
 
     override x.GetModulesFor _ = x.AllDefinedModules |> Seq.cast
+    
+    member x.GetModules() = x.AllDefinedModules |> Seq.cast
