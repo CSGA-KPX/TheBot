@@ -42,10 +42,10 @@ type EveProcessManager(cfg : IEveCalculatorConfig) as x =
                       TargetMe = me
                       TargetQuantity = quantity })
 
-    /// 获取指定数量的0效率配方
+    /// 获取指定数量的ime效率配方
     override x.TryGetRecipe(item, quantity) = x.TryGetRecipe(item, quantity, cfg.InputMe)
 
-    /// 获取1流程，0效率的配方
+    /// 获取1流程，ime效率的配方
     override x.TryGetRecipe(item) = x.TryGetRecipe(item, ByRun 1.0, cfg.InputMe)
 
     /// 检查在当前条件下是否可以被展开

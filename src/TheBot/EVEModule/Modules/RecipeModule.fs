@@ -245,153 +245,154 @@ type EveRecipeModule() =
                            "EVE蓝图成本计算",
                            "不支持表达式，但仅限一个物品。可选参数见#evehelp。如：
 #errc 帝国海军散热槽*10")>]
-    member x.HandleERRCV2(cmdArg : CommandEventArgs) =
+    member x.HandleERRCV3(cmdArg : CommandEventArgs) =
         let cfg = EveConfigParser()
         cfg.Parse(cmdArg.HeaderArgs)
 
+        let accIn = ItemAccumulator<EveType>()
+        let accOut = ItemAccumulator<EveType>()
+        let mutable accInstallCost = 0.0
+
+        let pm = EveProcessManager(cfg)
+
         match er.Eval(cfg.GetNonOptionString()) with
         | Number n -> cmdArg.Abort(InputError, "结算结果为数字: {0}", n)
+        | Accumulator a when a.Count = 0 -> cmdArg.Abort(InputError, "没有可供计算的物品")
         | Accumulator a ->
-            if a.Count > 1 then
-                cmdArg.Abort(InputError, "#errc只允许计算一个物品")
+            for mr in a do
+                let ime = cfg.GetImeAuto(mr.Item)
 
-            let mr = a |> Seq.tryHead
+                let recipe =
+                    pm.TryGetRecipe(mr.Item, ByRun mr.Quantity, ime)
 
-            if mr.IsNone then cmdArg.Abort(InputError, "没有可供计算的物品")
+                if recipe.IsNone then
+                    cmdArg.Abort(InputError, "找不到配方:{0}", mr.Item.Name)
 
-            match mr.Value.Item.MetaGroupId with
-            | 1
-            | 54 -> 10 // T1装备建筑默认10
-            | 2
-            | 14
-            | 53 -> 2 // T2/T3装备 建筑默认2
-            | _ -> 0 // 其他默认0
-            // TODO : 这个功能应该汇入上级，可以供dme使用
-            |> cfg.SetDefaultInputMe
+                let proc = recipe.Value.ApplyFlags(MeApplied)
 
-            let pm = EveProcessManager(cfg)
+                accInstallCost <-
+                    accInstallCost
+                    + recipe.Value.GetInstallationCost(cfg)
 
-            let recipe =
-                pm.TryGetRecipe(mr.Value.Item, ByRun mr.Value.Quantity)
+                for mr in proc.Input do
+                    accIn.Update(mr)
 
-            if recipe.IsNone then
-                cmdArg.Abort(InputError, "找不到配方:{0}", mr.Value.Item.Name)
+                for mr in proc.Output do
+                    accOut.Update(mr)
 
-            let tt =
-                TextTable(
-                    LeftAlignCell "材料",
-                    RightAlignCell "数量",
-                    RightAlignCell(cfg.MaterialPriceMode.ToString()),
-                    RightAlignCell "生产"
+        let tt =
+            TextTable(
+                LeftAlignCell "材料",
+                RightAlignCell "数量",
+                RightAlignCell(cfg.MaterialPriceMode.ToString()),
+                RightAlignCell "生产"
+            )
+
+        tt.AddPreTable(ToolWarning)
+
+        tt.AddPreTable(
+            sprintf
+                "输入效率：%i%% 默认效率：%i%% 成本指数：%i%% 设施税率%i%%"
+                cfg.InputMe
+                cfg.DerivationMe
+                cfg.SystemCostIndex
+                cfg.StructureTax
+        )
+
+        tt.AddPreTable $"展开行星材料：%b{cfg.ExpandPlanet} 展开反应公式：%b{cfg.ExpandReaction}"
+
+        tt.AddPreTable("产品：")
+
+        let priceTable = Utils.MarketUtils.EveMarketPriceTable()
+
+        for mr in accOut do
+            priceTable.AddObject(mr)
+
+        tt.AddPreTable(priceTable)
+
+        tt.AddPreTable("材料：")
+
+        tt.AddRow("制造费用", PaddingRight, HumanReadableSig4Float accInstallCost, PaddingRight)
+
+        let mutable optCost = accInstallCost
+        let mutable allCost = accInstallCost
+
+        for mr in accIn
+                  |> Seq.sortBy (fun x -> x.Item.MarketGroupId) do
+            let price = // 市场价格
+                mr.Item.GetPrice(cfg.MaterialPriceMode)
+                * mr.Quantity
+
+            let mrProc =
+                pm.TryGetRecipeRecMe(
+                    mr.Item,
+                    ByItem mr.Quantity,
+                    cfg.DerivationMe,
+                    cfg.DerivationMe
                 )
 
-            tt.AddPreTable(ToolWarning)
+            if
+                mrProc.IsSome
+                && pm.CanExpand(mrProc.Value.InputProcess)
+            then
+                let mrInstall =
+                    mrProc.Value.IntermediateProcess
+                    |> Array.fold (fun acc proc -> acc + proc.GetInstallationCost(cfg)) 0.0
 
-            tt.AddPreTable(
-                sprintf
-                    "输入效率：%i%% 默认效率：%i%% 成本指数：%i%% 设施税率%i%%"
-                    cfg.InputMe
-                    cfg.DerivationMe
-                    cfg.SystemCostIndex
-                    cfg.StructureTax
-            )
+                let mrCost =
+                    mrProc.Value.FinalProcess.Input.GetPrice(cfg.MaterialPriceMode)
 
-            tt.AddPreTable $"展开行星材料：%b{cfg.ExpandPlanet} 展开反应公式：%b{cfg.ExpandReaction}"
+                let mrAll = mrInstall + mrCost
+                allCost <- allCost + mrAll
 
-            tt.AddPreTable("产品：")
-            let priceTable = Utils.MarketUtils.EveMarketPriceTable()
+                optCost <-
+                    optCost
+                    + (if (mrAll >= price) && (price <> 0.0) then price else mrAll)
 
-            let proc = recipe.Value.ApplyFlags(MeApplied)
-            let product = proc.GetFirstProduct()
-            priceTable.AddObject(product.Item, product.Quantity)
-            tt.AddPreTable(priceTable)
+                tt.AddRow(
+                    mr.Item.Name,
+                    HumanReadableInteger mr.Quantity,
+                    HumanReadableSig4Float price,
+                    HumanReadableSig4Float mrAll
+                )
+            else
+                optCost <- optCost + price
+                allCost <- allCost + price
 
-            tt.AddPreTable("材料：")
-
-            let installFee = recipe.Value.GetInstallationCost(cfg)
-            tt.AddRow("制造费用", PaddingRight, HumanReadableSig4Float installFee, PaddingRight)
-
-            let mutable optCost = installFee
-            let mutable allCost = installFee
-
-            for mr in proc.Input
-                      |> Seq.sortBy (fun x -> x.Item.MarketGroupId) do
-                let price = // 市场价格
-                    mr.Item.GetPrice(cfg.MaterialPriceMode)
-                    * mr.Quantity
-
-                let mrProc =
-                    pm.TryGetRecipeRecMe(
-                        mr.Item,
-                        ByItem mr.Quantity,
-                        cfg.DerivationMe,
-                        cfg.DerivationMe
-                    )
-
-                if
-                    mrProc.IsSome
-                    && pm.CanExpand(mrProc.Value.InputProcess)
-                then
-                    let mrInstall =
-                        mrProc.Value.IntermediateProcess
-                        |> Array.fold (fun acc proc -> acc + proc.GetInstallationCost(cfg)) 0.0
-
-                    let mrCost =
-                        mrProc.Value.FinalProcess.Input.GetPrice(cfg.MaterialPriceMode)
-
-                    let mrAll = mrInstall + mrCost
-                    allCost <- allCost + mrAll
-
-                    optCost <-
-                        optCost
-                        + (if (mrAll >= price) && (price <> 0.0) then price else mrAll)
-
-                    tt.AddRow(
-                        mr.Item.Name,
-                        HumanReadableInteger mr.Quantity,
-                        HumanReadableSig4Float price,
-                        HumanReadableSig4Float mrAll
-                    )
-                else
-                    optCost <- optCost + price
-                    allCost <- allCost + price
-
-                    tt.AddRow(
-                        mr.Item.Name,
-                        HumanReadableInteger mr.Quantity,
-                        HumanReadableSig4Float price,
-                        PaddingRight
-                    )
+                tt.AddRow(
+                    mr.Item.Name,
+                    HumanReadableInteger mr.Quantity,
+                    HumanReadableSig4Float price,
+                    PaddingRight
+                )
 
 
-            let sell =
-                proc.Output.GetPrice(PriceFetchMode.Sell)
+        let sell = priceTable.TotalSellPrice
 
-            let sellWithTax =
-                proc.Output.GetPrice(PriceFetchMode.SellWithTax)
+        let sellWithTax = priceTable.TotalSellPriceWithTax
 
-            tt.AddRow(
-                "卖出/税后",
-                PaddingRight,
-                HumanReadableSig4Float sell,
-                HumanReadableSig4Float sellWithTax
-            )
+        tt.AddRow(
+            "卖出/税后",
+            PaddingRight,
+            HumanReadableSig4Float sell,
+            HumanReadableSig4Float sellWithTax
+        )
 
-            tt.AddRow(
-                "材料/最佳",
-                PaddingRight,
-                HumanReadableSig4Float allCost,
-                HumanReadableSig4Float optCost
-            )
+        tt.AddRow(
+            "材料/最佳",
+            PaddingRight,
+            HumanReadableSig4Float allCost,
+            HumanReadableSig4Float optCost
+        )
 
-            tt.AddRow(
-                "税后 利润",
-                PaddingRight,
-                HumanReadableSig4Float(sellWithTax - allCost),
-                HumanReadableSig4Float(sellWithTax - optCost)
-            )
+        tt.AddRow(
+            "税后 利润",
+            PaddingRight,
+            HumanReadableSig4Float(sellWithTax - allCost),
+            HumanReadableSig4Float(sellWithTax - optCost)
+        )
 
-            using (cmdArg.OpenResponse(cfg.ResponseType)) (fun ret -> ret.Write(tt))
+        using (cmdArg.OpenResponse(cfg.ResponseType)) (fun ret -> ret.Write(tt))
 
     [<TestFixture>]
     member x.TestERRC() =

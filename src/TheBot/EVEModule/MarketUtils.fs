@@ -6,6 +6,7 @@ open KPX.TheBot.Data.CommonModule.Recipe
 open KPX.TheBot.Data.EveData.Utils
 open KPX.TheBot.Data.EveData.EveType
 
+open KPX.TheBot.Module.EveModule.Utils.Helpers
 open KPX.TheBot.Module.EveModule.Utils.Extensions
 
 
@@ -19,6 +20,21 @@ type EveMarketPriceTable() =
                       RightAlignCell "日均交易",
                       RightAlignCell "更新时间")
 
+    let mutable tSell = 0.0
+    let mutable tBuy = 0.0
+    let mutable tAdj = 0.0
+
+    member x.TotalAdjustPrice = tAdj
+
+    member x.TotalSellPrice = tSell
+
+    member x.TotalBuyPrice = tBuy
+
+    member x.TotalSellPriceWithTax = tSell * (float (100 - EveSellTax)) / 100.0
+
+    member x.TotalBuyPriceWithTax = tBuy * (float (100 + EveBuyTax)) / 100.0
+
+
     member x.AddObject(t : EveType, q : float) =
         x.RowBuilder {
             yield t.Name
@@ -26,27 +42,26 @@ type EveMarketPriceTable() =
 
             let adjPrice =
                 t.GetPrice(PriceFetchMode.AveragePrice) * q
-
-            let nt =
-                HumanReadableSig4Float(t.GetPrice(PriceFetchMode.Sell) * q)
-
-            yield nt
+            tAdj <- tAdj + adjPrice
+            
+            let sell = t.GetPrice(PriceFetchMode.Sell) * q
+            tSell <- tSell + sell
+            yield HumanReadableSig4Float sell
 
             let ntPct =
-                ((t.GetPrice(PriceFetchMode.Sell) * q) - adjPrice)
+                (sell - adjPrice)
                 / adjPrice
                 * 100.0
                 |> HumanReadableSig4Float
 
             yield sprintf "%s%%" ntPct.Text |> RightAlignCell
 
-            let nt =
-                HumanReadableSig4Float(t.GetPrice(PriceFetchMode.Buy) * q)
-
-            yield nt
+            let buy = t.GetPrice(PriceFetchMode.Buy) * q
+            tBuy <- tBuy + buy
+            yield HumanReadableSig4Float buy
 
             let ntPct =
-                ((t.GetPrice(PriceFetchMode.Buy) * q) - adjPrice)
+                (buy - adjPrice)
                 / adjPrice
                 * 100.0
                 |> HumanReadableSig4Float
