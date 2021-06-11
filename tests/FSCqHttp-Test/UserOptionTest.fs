@@ -6,7 +6,7 @@ open Expecto
 
 
 type TestConfig() as x =
-    inherit OptionBase()
+    inherit CommandOption()
 
     let privateCell = OptionCellSimple<int>(x, "private", 5)
 
@@ -56,7 +56,7 @@ let ConfigTests =
 
           testCase "TestArray"
           <| fun _ ->
-              let cfg = OptionBase()
+              let cfg = CommandOption()
               let arr = cfg.RegisterOption("array", 1)
               cfg.Parse("array: array:5 array:10 array:20".Split(" "))
               Expect.equal 1 arr.Value ""
@@ -68,7 +68,7 @@ let ConfigTests =
 
           testCase "TestComplexCell_default"
           <| fun _ ->
-              let cfg = OptionBase()
+              let cfg = CommandOption()
 
               let opt =
                   cfg.RegisterOption(ComplexCell(cfg, "complex", 10))
@@ -78,7 +78,7 @@ let ConfigTests =
 
           testCase "TestComplexCell_defined"
           <| fun _ ->
-              let cfg = OptionBase()
+              let cfg = CommandOption()
 
               let opt =
                   cfg.RegisterOption(ComplexCell(cfg, "complex", 10))
@@ -88,7 +88,7 @@ let ConfigTests =
 
           testCase "TestComplexCell_array"
           <| fun _ ->
-              let cfg = OptionBase()
+              let cfg = CommandOption()
 
               let opt =
                   cfg.RegisterOption(ComplexCell(cfg, "complex", 10))

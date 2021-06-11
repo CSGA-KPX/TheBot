@@ -20,14 +20,14 @@ open KPX.TheBot.Module.XivModule
 
 
 type DfcOption() as x = 
-    inherit OptionBase()
+    inherit CommandOption()
 
     member val ListCount = OptionCellSimple<int>(x, "list", 7)
 
     member val RebuildData = OptionCell(x, "rebuild")
 
 type SeaFishingOption() as x = 
-    inherit OptionBase() 
+    inherit CommandOption() 
     
     member val ListCount = OptionCellSimple<int>(x, "list", 7)
 

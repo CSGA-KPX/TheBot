@@ -13,7 +13,7 @@ type private ColorCell(cb, name, def) =
     override x.ConvertValue(str) = Color.FromName(str)
 
 type FsCqHttpConfigParser() as x =
-    inherit OptionImpl()
+    inherit OptionBase()
 
     do x.UndefinedOptionHandling <- UndefinedOptionHandling.Ignore
 

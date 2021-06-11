@@ -7,7 +7,7 @@ open KPX.TheBot.Data.EveData.Utils
 
 
 type EveConfigParser() as x = 
-    inherit OptionBase()
+    inherit CommandOption()
 
     let ime = OptionCellSimple(x, "ime", 2)
     let dme = OptionCellSimple(x, "dme", 10)

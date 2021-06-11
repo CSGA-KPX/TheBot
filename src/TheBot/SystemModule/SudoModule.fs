@@ -88,7 +88,7 @@ type SudoModule() =
     member x.HandleGrant(cmdArg : CommandEventArgs) =
         cmdArg.EnsureSenderOwner()
 
-        let uo = OptionBase()
+        let uo = CommandOption()
         let qq = uo.RegisterOption("qq", 0UL)
         uo.Parse(cmdArg.HeaderArgs)
 
@@ -131,7 +131,7 @@ type SudoModule() =
     [<CommandHandlerMethod("##allow", "(管理) 允许好友、加群请求", "", IsHidden = true)>]
     member x.HandleAllow(cmdArg : CommandEventArgs) =
 
-        let uo = OptionBase()
+        let uo = CommandOption()
         let qq = uo.RegisterOption("qq", 0UL)
         let group = uo.RegisterOption("group", 0UL)
         uo.Parse(cmdArg.HeaderArgs)

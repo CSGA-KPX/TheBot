@@ -8,7 +8,7 @@ open KPX.FsCqHttp.Utils.UserOption
 open KPX.TheBot.Module.TRpgModule.Strings
 
 
-type private NameTypeCell(cb : OptionImpl, name, def) =
+type private NameTypeCell(cb : OptionBase, name, def) =
     inherit OptionCell<string>(cb, name, def)
 
     override x.ConvertValue(lang) =
@@ -20,7 +20,7 @@ type private NameTypeCell(cb : OptionImpl, name, def) =
         | _ -> invalidArg (nameof lang) $"%s{lang}不是允许值"
 
 type NameOption() as x =
-    inherit OptionImpl()
+    inherit OptionBase()
 
     let nameTypeCell =
         NameTypeCell(x, "lang", StringData.Key_EngChsName)

@@ -41,7 +41,7 @@ type DebugModule() =
     member x.HandleSetLogging(cmdArg : CommandEventArgs) =
         cmdArg.EnsureSenderOwner()
 
-        let cfg = OptionBase()
+        let cfg = CommandOption()
 
         let event =
             cfg.RegisterOption("event", Config.LogEventPost)

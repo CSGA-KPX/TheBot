@@ -6,7 +6,7 @@ open System.Collections.Generic
 open KPX.FsCqHttp.Utils.TextResponse
 
 
-type OptionCell(cb : OptionImpl, key : string) =
+type OptionCell(cb : OptionBase, key : string) =
     /// 该选项的主要键名
     member x.KeyName = key
 
@@ -24,15 +24,19 @@ type OptionCell(cb : OptionImpl, key : string) =
             x.Aliases |> Array.tryFind cb.IsDefined
 
 [<AbstractClass>]
-type OptionCell<'T>(cb : OptionImpl, key : string, defValue : 'T) =
+type OptionCell<'T>(cb : OptionBase, key : string, defValue : 'T) =
     inherit OptionCell(cb, key)
 
     /// 获取或更改该选项的默认值
     member val Default = defValue with get, set
 
+    /// 是否从OptionBase的TryIndex中读取值
+    member val ArgIndex : int option = None with get, set
+
     abstract ConvertValue : string -> 'T
 
     member private x.ValueSequence =
+        // 首先从K:V里读值
         x.TryGetRealKey()
         |> Option.map
             (fun kn ->
@@ -43,8 +47,15 @@ type OptionCell<'T>(cb : OptionImpl, key : string, defValue : 'T) =
                             x.Default
                         else
                             x.ConvertValue(item)))
-
-        |> Option.defaultValue (Seq.singleton x.Default)
+        // 如果K:V不存在，尝试从ArgIndex读值
+        // 如果还是不行，返回默认值
+        |> Option.defaultWith
+            (fun () ->
+                x.ArgIndex
+                |> Option.map (fun idx -> cb.TryIndexed(idx) |> Option.map x.ConvertValue)
+                |> Option.flatten
+                |> Option.defaultValue x.Default
+                |> Seq.singleton)
 
     /// 获取第一个设定值，如果没有则返回默认值
     member x.Value = x.ValueSequence |> Seq.head
@@ -52,7 +63,7 @@ type OptionCell<'T>(cb : OptionImpl, key : string, defValue : 'T) =
     /// 获取所有设定值，如果没有则返回默认值
     member x.Values = x.ValueSequence |> Seq.toArray
 
-type OptionCellSimple<'T when 'T :> IConvertible>(cb : OptionImpl, key : string, defValue : 'T) =
+type OptionCellSimple<'T when 'T :> IConvertible>(cb : OptionBase, key : string, defValue : 'T) =
     inherit OptionCell<'T>(cb, key, defValue)
 
     override x.ConvertValue value =
@@ -69,7 +80,7 @@ type UndefinedOptionHandling =
     | AsNonOption
 
 /// 不提供任何默认选项
-type OptionImpl() =
+type OptionBase() =
     static let optCache = Dictionary<string, HashSet<string>>()
 
     static let separators = [| ';'; '；'; '：'; ':' |]
@@ -169,6 +180,19 @@ type OptionImpl() =
         [| for cell in x.GetOptions() do
                yield $"%s{cell.KeyName}:" |]
 
+    /// 尝试获取OptionStrings指定位置的值
+    member x.TryIndexed(idx) =
+        if idx >= nonOption.Count then
+            None
+        else
+            Some nonOption.[idx]
+
+    /// 尝试从OptionStrings的指定位置解析参数
+    member x.TryIndexed<'T when 'T :> IConvertible>(idx : int, defValue : 'T) =
+        x.TryIndexed(idx)
+        |> Option.map (fun value -> Convert.ChangeType(value, typeof<'T>) :?> 'T)
+        |> Option.defaultValue defValue
+
     /// 获取已经定义的键名
     member private x.GetOptionKeys() =
         if localOpts.Count = 0 then
@@ -223,8 +247,8 @@ type OptionImpl() =
         data.[key].Add(value)
 
 /// 命令常用：提供 text选项和ResponseType属性
-type OptionBase() as x =
-    inherit OptionImpl()
+type CommandOption() as x =
+    inherit OptionBase()
 
     let shouldTextOutput = OptionCell(x, "text")
 

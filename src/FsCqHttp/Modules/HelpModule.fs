@@ -12,7 +12,7 @@ open KPX.FsCqHttp.Utils.UserOption
 
 
 type HelpOption() as x =
-    inherit OptionBase()
+    inherit CommandOption()
 
     let hidden = OptionCell(x, "hidden")
 

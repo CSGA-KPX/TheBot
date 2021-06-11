@@ -9,13 +9,13 @@ let XivSpecialChars =
     [| '\ue03c' // HQ
        '\ue03d' |] //收藏品
 
-type XivWorldOpt(cb : OptionBase, key, defVal) =
+type XivWorldOpt(cb : CommandOption, key, defVal) =
     inherit OptionCell<World>(cb, key, defVal)
 
     override x.ConvertValue(name) = World.GetWorldByName(name)
 
 type XivOption() as x =
-    inherit OptionBase(UndefinedOptionHandling = UndefinedOptionHandling.AsNonOption)
+    inherit CommandOption(UndefinedOptionHandling = UndefinedOptionHandling.AsNonOption)
 
     static let defaultServer = World.GetWorldByName("拉诺西亚")
 
