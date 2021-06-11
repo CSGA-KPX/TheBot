@@ -1,6 +1,7 @@
 ﻿module UserOptionTest
 
 open KPX.FsCqHttp.Utils.UserOption
+open KPX.FsCqHttp.Utils.Subcommands
 
 open Expecto
 
@@ -18,6 +19,31 @@ type ComplexCell(cb, key, def) =
     inherit OptionCell<int>(cb, key, def)
 
     override x.ConvertValue(input) = input |> int
+
+type Test1CommandOption() as x =
+    inherit OptionBase()
+
+    let testBoolOpt = OptionCell(x, "isTest1")
+
+    let testValueOpt =
+        OptionCellSimple(x, "test1Val", 0, ArgIndex = Some 0)
+
+    member x.BoolVal = testBoolOpt.IsDefined
+
+    member x.ValueOpt = testValueOpt.Value
+
+
+type TestSubcommands =
+    | Test1 of Test1CommandOption
+    | Test2
+    | Test3
+
+    interface ISubcommandTemplate with
+        member x.Usage =
+            match x with
+            | Test1 _ -> "Test1"
+            | Test2 -> "Test2"
+            | Test3 -> "Test3"
 
 [<Tests>]
 let ConfigTests =
@@ -103,4 +129,33 @@ let ConfigTests =
               Expect.equal 10 a.[0] ""
               Expect.equal 0 a.[1] ""
               Expect.equal 5 a.[2] ""
-              Expect.equal 10 a.[3] "" ]
+              Expect.equal 10 a.[3] ""
+
+          testCase "TestIndexed"
+          <| fun _ ->
+              let testArgs = [| "test1"; "isTest1:"; "12341234" |]
+
+              match SubcommandParser.Parse<TestSubcommands>(testArgs) with
+              | Some (Test1 ob) ->
+                  Expect.isTrue ob.BoolVal ""
+                  Expect.equal ob.ValueOpt 12341234 ""
+              | Some Test2 -> failwith "Wrong match"
+              | Some Test3 -> failwith "Wrong match"
+              | None -> failwith "Wrong match"
+
+          testCase "TestNonIndexed"
+          <| fun _ ->
+              let testArgs =
+                  [| "test1"
+                     "isTest1:"
+                     "test1Val:12341234" |]
+
+              match SubcommandParser.Parse<TestSubcommands>(testArgs) with
+              | Some (Test1 ob) ->
+                  Expect.isTrue ob.BoolVal ""
+                  Expect.equal ob.ValueOpt 12341234 ""
+              | Some Test2 -> failwith "Wrong match"
+              | Some Test3 -> failwith "Wrong match"
+              | None -> failwith "Wrong match"
+
+          ]

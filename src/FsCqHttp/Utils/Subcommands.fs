@@ -58,23 +58,14 @@ type private SubCommandCaseInfo =
           OptionParser = ob }
 
 type SubcommandParser private () =
-    static let tmplInfoCache =
-        Dictionary<string, SubCommandCaseInfo []>()
-
     static member Parse<'T when 'T :> ISubcommandTemplate>(args : string []) =
         // 生成指令模板
         let subs =
-            let key = typeof<'T>.FullName
+            FSharpType.GetUnionCases(typeof<'T>, false)
+            |> Array.map (SubCommandCaseInfo.Parse)
 
-            if not <| tmplInfoCache.ContainsKey(key) then
-                tmplInfoCache.[key] <-
-                    FSharpType.GetUnionCases(typeof<'T>, false)
-                    |> Array.map (SubCommandCaseInfo.Parse)
 
-            tmplInfoCache.[key]
-        
-        
-        
+
         args
         |> Array.tryHead
         |> Option.map
@@ -93,9 +84,10 @@ type SubcommandParser private () =
                             ob.Parse(Seq.empty)
                         else
                             ob.Parse(args |> Array.tail)
-                        FSharpValue.MakeUnion(info.UnionCase, Array.singleton<obj> ob):?> 'T)
+
+                        FSharpValue.MakeUnion(info.UnionCase, Array.singleton<obj> ob) :?> 'T)
                 |> Option.defaultWith
-                    (fun () -> FSharpValue.MakeUnion(info.UnionCase, Array.empty):?> 'T))
-    
+                    (fun () -> FSharpValue.MakeUnion(info.UnionCase, Array.empty) :?> 'T))
+
     static member Parse<'T when 'T :> ISubcommandTemplate>(cmdArg : CommandEventArgs) =
         SubcommandParser.Parse<'T>(cmdArg.HeaderArgs)
