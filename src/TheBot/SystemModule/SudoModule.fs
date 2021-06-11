@@ -182,6 +182,14 @@ type SudoModule() =
         x.Logger.Fatal("已完成紧急停止操作")
         cmdArg.Reply("已完成紧急停止操作")
 
+    [<CommandHandlerMethod("##combo", "一次执行多个命令", "", IsHidden = true)>]
+    member x.HandleCombo(cmdArg : CommandEventArgs) =
+        cmdArg.EnsureSenderAdmin()
+        
+        let api = RewriteCommand(cmdArg, cmdArg.AllLines)
+        
+        cmdArg.ApiCaller.CallApi(api) |> ignore
+    
     override x.OnRequest = Some x.HandleRequest
 
     member x.HandleRequest(args) =

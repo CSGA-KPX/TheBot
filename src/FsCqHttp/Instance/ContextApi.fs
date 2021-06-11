@@ -5,7 +5,10 @@
 namespace KPX.FsCqHttp.Api.Context
 
 open KPX.FsCqHttp.Instance
+open KPX.FsCqHttp.Handler
+open KPX.FsCqHttp.Message
 
+open Newtonsoft.Json.Linq
 
 type GetCtxModuleInfo() =
     inherit WsContextApiBase()
@@ -48,3 +51,28 @@ type TryGetCommand(cmdName : string) =
 
             ctx.Commands
             |> Seq.tryFind (fun cmd -> cmp.Equals(cmd.CommandAttribute.Command, cmdName))
+
+/// 将制定CommandEventArgs事件重写为其他指令
+/// 强制使用调度器
+type RewriteCommand(e : CommandEventArgs, messages : seq<Message>) =
+    inherit WsContextApiBase()
+
+    new(e, cmdLines : seq<string>) =
+        RewriteCommand(
+            e,
+            cmdLines
+            |> Seq.map
+                (fun cmd ->
+                    let msg = Message()
+                    msg.Add(cmd)
+                    msg)
+        )
+
+    override x.Invoke(ctx) =
+        for msg in messages do
+            let obj = e.RawEvent.Event.DeepClone() :?> JObject
+            obj.["message"] <- JToken.FromObject(msg) :?> JArray
+            obj.["raw_message"] <- JValue(msg.ToCqString())
+            
+            let ex = CqEventArgs.Parse(ctx, EventContext(obj))
+            TaskScheduler.enqueue (ctx.Modules, ex)

@@ -23,6 +23,8 @@ type internal ImageHelper private () =
     static let CharDisplayLengthAdj =
         Regex(@"\p{IsBasicLatin}|\p{IsGeneralPunctuation}|±|·", RegexOptions.Compiled)
 
+    static let syncObj = obj ()
+
     static let mutable tmpImg = Graphics.FromImage(new Bitmap(1, 1))
 
     static member val Font = new Font(Config.ImageOutputFont, Config.ImageOutputSize)
@@ -49,7 +51,9 @@ type internal ImageHelper private () =
         |> Array.sumBy (fun c -> if CharDisplayLengthAdj.IsMatch(c.ToString()) then 1 else 2)
 
     static member MeasureByGraphic(str : string) : SizeF =
-        tmpImg.MeasureString(str, ImageHelper.Font, 0, ImageHelper.StringFormat)
+        lock
+            syncObj
+            (fun () -> tmpImg.MeasureString(str, ImageHelper.Font, 0, ImageHelper.StringFormat))
 
     /// 使用Output.TextTable.UseGraphicStringMeasure计算宽度。
     /// 返回宽度按栏数计算。
@@ -68,7 +72,7 @@ type internal ImageHelper private () =
                 // 对于含有颜文字的文字会计算错误
                 // 需要用老式方法计算并且替换graphic
                 width <- ImageHelper.MeasureByChar(str)
-                tmpImg <- Graphics.FromImage(new Bitmap(1, 1))
+                lock syncObj (fun () -> tmpImg <- Graphics.FromImage(new Bitmap(1, 1)))
 
             //printfn ">%s< -> %i" str width
             width

@@ -14,7 +14,8 @@ type private TaskSchedulerMessage =
 
 [<RequireQualifiedAccess>]
 module internal TaskScheduler =
-    let private logger = NLog.LogManager.GetLogger("TaskScheduler")
+    let private logger =
+        NLog.LogManager.GetLogger("TaskScheduler")
 
     let rec private getRootExn (exn : exn) =
         if isNull exn.InnerException then
@@ -53,7 +54,7 @@ module internal TaskScheduler =
                         )
 
                     ci.MethodAction.Invoke(cmdArgs)
-            | _ -> invalidArg "args" $"HandleEvent: 未知事件类型:%s{args.GetType().FullName}"
+            | _ -> invalidArg "args" $"未知事件类型:%s{args.GetType().FullName}，请使用CqEventArgs.Parse"
 
         with e ->
             let rootExn = getRootExn e
