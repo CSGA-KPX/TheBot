@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <OtherFlags>--warnon:1182</OtherFlags>
+    <OtherFlags>--warnon:1182 --sig:temp.fsi</OtherFlags>
   </PropertyGroup>
 
   <ItemGroup>
@@ -51,6 +51,7 @@
     <Compile Include="Api\Group\SetGroupSpecialTitle.fs" />
     <Compile Include="Api\Group\SetDiscussLeave.fs" />
     <Compile Include="Handler\HandlerErrorHandling.fs" />
+    <Compile Include="Handler\CqEvent.fsi" />
     <Compile Include="Handler\CqEvent.fs" />
     <Compile Include="Handler\HandlerBase.fs" />
     <Compile Include="Handler\CommandHandler.fs" />

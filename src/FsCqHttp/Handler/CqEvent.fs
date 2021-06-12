@@ -78,7 +78,10 @@ type CqEventArgs(api, ctx) =
             CqRequestEventArgs(api, ctx, ctx.Event.ToObject<RequestEvent>()) :> CqEventArgs
         | "meta_event" -> CqMetaEventArgs(api, ctx, MetaEvent.FromJObject(ctx.Event)) :> CqEventArgs
         | other -> raise <| ArgumentException("未知上报类型：" + other)
-
+    
+    static member Parse(api, eventJson : string) =
+        CqEventArgs.Parse(api, EventContext(JObject.Parse(eventJson)))
+        
 type CqMessageEventArgs(api : IApiCallProvider, ctx : EventContext, e) =
     inherit CqEventArgs(api, ctx)
 

@@ -54,7 +54,7 @@ module internal TaskScheduler =
                         )
 
                     ci.MethodAction.Invoke(cmdArgs)
-            | _ -> invalidArg "args" $"未知事件类型:%s{args.GetType().FullName}，请使用CqEventArgs.Parse"
+            | _ -> invalidArg "args" $"未知事件类型:%s{args.GetType().FullName}"
 
         with e ->
             let rootExn = getRootExn e
