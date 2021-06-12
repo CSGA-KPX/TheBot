@@ -1,5 +1,7 @@
 ﻿namespace KPX.TheBot.Module.EveModule
 
+open System
+open System.Collections.Generic
 open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Testing
 
@@ -124,9 +126,26 @@ type EveMiscModule() =
         else
             use ret = cmdArg.OpenResponse(ForceText)
 
-            for arg in cmdArg.HeaderArgs do
+            let names = HashSet<string>()
+
+            for line in cmdArg.AllLines do
+                let split =
+                    line.Split('\t', StringSplitOptions.None)
+
+                if split.Length = 1 then
+                    names.Add(split.[0]) |> ignore
+                elif split.Length = 6 then
+                    // EVE扫描格式
+                    // ID 类型 类型 名称 信号强度 距离
+                    names.Add(split.[3]) |> ignore
+
+            if names.Contains(String.Empty) then
+                names.Remove(String.Empty) |> ignore
+
+            for arg in names do
                 let mutable found = false
 
+                // 一个名称有多重匹配，不能用
                 for site in x.EveCombatSites do
                     if site.Name = arg then
                         found <- true
