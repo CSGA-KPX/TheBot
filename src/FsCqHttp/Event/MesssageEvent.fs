@@ -17,8 +17,6 @@ type MessageEvent =
       UserId : uint64
       [<JsonProperty("message")>]
       Message : KPX.FsCqHttp.Message.Message
-      [<JsonProperty("raw_message")>]
-      RawMessage : string
       [<JsonProperty("font")>]
       Font : int32
       [<JsonProperty("sender")>]

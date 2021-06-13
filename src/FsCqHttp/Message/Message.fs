@@ -201,5 +201,5 @@ type MessageConverter() =
                 msg.Add(MessageSection.CreateFrom(t, d))
 
             msg
-        | JsonToken.String -> Message.FromCqString(r.ReadAsString())
+        | JsonToken.String -> Message.FromCqString(r.Value :?> string)
         | other -> failwithf $"未知消息类型:%A{other} --> {r}"
