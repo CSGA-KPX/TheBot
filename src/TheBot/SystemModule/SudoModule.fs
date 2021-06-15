@@ -2,10 +2,8 @@ namespace KPX.TheBot.Module.SudoModule
 
 open System
 open System.IO
-open System.Reflection
 open System.Security.Cryptography
 
-open KPX.FsCqHttp.Api.System
 open KPX.FsCqHttp.Api.Group
 open KPX.FsCqHttp.Api.Context
 
@@ -28,21 +26,6 @@ type SudoModule() =
     let allowGroupFmt (self : uint64) (gid : uint64) = $"%i{self}:group:%i{gid}"
 
     let mutable isSuUsed = false
-
-    [<CommandHandlerMethod("##selftest", "(超管) 返回系统信息", "", IsHidden = true)>]
-    member x.HandleSelfTest(cmdArg : CommandEventArgs) =
-        cmdArg.EnsureSenderOwner()
-        let caller = cmdArg.ApiCaller
-
-        let info =
-            "\r\n"
-            + caller.CallApi<GetLoginInfo>().ToString()
-            + "\r\n"
-            + caller.CallApi<GetStatus>().ToString()
-            + "\r\n"
-            + caller.CallApi<GetVersionInfo>().ToString()
-
-        cmdArg.Reply(info)
 
     [<CommandHandlerMethod("##rebuilddatacache", "(超管) 重建数据缓存", "", IsHidden = true)>]
     member x.HandleRebuildXivDb(cmdArg : CommandEventArgs) =

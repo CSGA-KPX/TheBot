@@ -29,8 +29,6 @@
     <Compile Include="Api\ApiBase.fs" />
     <Compile Include="Api\System\QuickOperation.fs" />
     <Compile Include="Api\System\GetLoginInfo.fs" />
-    <Compile Include="Api\System\GetStatus.fs" />
-    <Compile Include="Api\System\GetVersionInfo.fs" />
     <Compile Include="Api\System\CanSend.fs" />
     <Compile Include="Api\System\SendMsg.fs" />
     <Compile Include="Api\System\RevokeMsg.fs" />
@@ -38,7 +36,6 @@
     <Compile Include="Api\Private\SetFriendAddRequest.fs" />
     <Compile Include="Api\Private\SendPrivateMsg.fs" />
     <Compile Include="Api\Group\SendGroupMsg.fs" />
-    <Compile Include="Api\Group\SendDiscussMsg.fs" />
     <Compile Include="Api\Group\GetGroupList.fs" />
     <Compile Include="Api\Group\GetGroupMemberInfo.fs" />
     <Compile Include="Api\Group\GetGroupMemberList.fs" />
@@ -52,7 +49,6 @@
     <Compile Include="Api\Group\SetGroupCard.fs" />
     <Compile Include="Api\Group\SetGroupLeave.fs" />
     <Compile Include="Api\Group\SetGroupSpecialTitle.fs" />
-    <Compile Include="Api\Group\SetDiscussLeave.fs" />
     <Compile Include="Handler\HandlerErrorHandling.fs" />
     <Compile Include="Handler\CqEvent.fsi" />
     <Compile Include="Handler\CqEvent.fs" />
