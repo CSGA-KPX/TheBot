@@ -28,6 +28,11 @@ type SingleCaseInlineConverter<'T>() =
         FSharpValue.MakeUnion(caseCache, Array.singleton obj, false) :?> 'T
 
 
+type AltStringEnumValue(value : string) =
+    inherit Attribute()
+    
+    member x.Value = value
+    
 type StringEnumConverter<'T>() =
     inherit JsonConverter<'T>()
 
@@ -39,13 +44,22 @@ type StringEnumConverter<'T>() =
             FSharpType.GetUnionCases(typeof<'T>, false)
 
         for f in fields do
-            fieldDict.Add(f.Name, f)
+            let attrs = f.GetCustomAttributes(typeof<AltStringEnumValue>)
+            if attrs.Length = 0 then
+                fieldDict.Add(f.Name, f)
+            else
+                let n = (attrs.[0] :?> AltStringEnumValue).Value
+                fieldDict.Add(n, f)
 
     override this.WriteJson(writer : JsonWriter, value : 'T, _ : JsonSerializer) : unit =
         let ui, _ =
             FSharpValue.GetUnionFields(value, typeof<'T>)
-
-        writer.WriteRawValue(ui.Name)
+        
+        let attrs = ui.GetCustomAttributes(typeof<AltStringEnumValue>)
+        if attrs.Length = 0 then
+            writer.WriteRawValue(ui.Name)
+        else
+            writer.WriteRawValue((attrs.[0] :?> AltStringEnumValue).Value)
 
     override this.ReadJson(reader, objectType, _, _, _) =
         let v = reader.Value :?> string
