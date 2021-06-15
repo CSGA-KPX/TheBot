@@ -10,10 +10,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="DomainTypes.fs" />
     <Compile Include="ConfigBase.fs" />
     <Compile Include="Message\MessageTypes.fs" />
     <Compile Include="Message\MessageSection.fs" />
     <Compile Include="Message\Message.fs" />
+    <Compile Include="V11\EventBase.fs" />
+    <Compile Include="V11\MessageEvent.fs" />
     <Compile Include="Event\NoticeEventTypes.fs" />
     <Compile Include="Event\NoticeEvent.fs" />
     <Compile Include="Event\MessageEventTypes.fs" />
