@@ -14,3 +14,9 @@ type GroupSenderRole =
     | Admin
     /// 群成员
     | Member
+    
+    /// 该成员是否具有管理权限
+    member x.CanAdmin =
+        match x with
+        | Member -> false
+        | _ -> true

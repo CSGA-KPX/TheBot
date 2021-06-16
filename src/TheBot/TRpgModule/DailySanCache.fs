@@ -20,8 +20,8 @@ type DailySanCacheCollection private () =
 
     member x.SetValue(cmdArg : CommandEventArgs, newVal : int) =
         let uid = cmdArg.MessageEvent.UserId
-        let current = cache.[uid]
-        cache.TryUpdate(uid, {current with San = newVal}, current) |> ignore
+        let current = cache.[uid.Value]
+        cache.TryUpdate(uid.Value, {current with San = newVal}, current) |> ignore
 
     member x.GetValue(cmdArg : CommandEventArgs) =
         let seed =
@@ -30,7 +30,7 @@ type DailySanCacheCollection private () =
         let uid = cmdArg.MessageEvent.UserId
         let seedString = SeedOption.GetSeedString(seed)
 
-        let succ, item = cache.TryGetValue(uid)
+        let succ, item = cache.TryGetValue(uid.Value)
 
         // 不存在或者不匹配都需要更新
         if not succ || (item.Key <> seedString) then
@@ -44,9 +44,9 @@ type DailySanCacheCollection private () =
 
             let newItem = { Key = seedString; San = initSan }
 
-            cache.AddOrUpdate(uid, newItem, (fun _ _ -> newItem))
+            cache.AddOrUpdate(uid.Value, newItem, (fun _ _ -> newItem))
             |> ignore
 
-        cache.[uid].San
+        cache.[uid.Value].San
 
     static member val Instance = DailySanCacheCollection()

@@ -34,7 +34,7 @@ type CqWsContextBase() =
     abstract BotNickname : string
 
     /// 获取登录号信息
-    abstract BotUserId : uint64
+    abstract BotUserId : UserId
 
     /// 获取登录号标识符
     abstract BotIdString : string
@@ -68,7 +68,7 @@ type CqWsContextPool private () =
     let logger = NLog.LogManager.GetCurrentClassLogger()
 
     let pool =
-        ConcurrentDictionary<uint64, CqWsContextBase>()
+        ConcurrentDictionary<UserId, CqWsContextBase>()
 
     member x.AddContext(context : CqWsContextBase) =
         pool.TryAdd(context.BotUserId, context) |> ignore
@@ -118,7 +118,7 @@ type CqWsContext(ws : WebSocket) =
 
     override x.BotIdString =
         if self.IsExecuted then
-            $"[%i{self.UserId}:%s{self.Nickname}]"
+            $"[%i{self.UserId.Value}:%s{self.Nickname}]"
         else
             "[--:--]"
 
@@ -148,9 +148,9 @@ type CqWsContext(ws : WebSocket) =
         else
             try
                 let ret =
-                    (x :> IApiCallProvider).CallApi<GetStatus>()
+                    (x :> IApiCallProvider).CallApi<GetLoginInfo>()
 
-                ret.Online && ret.Good
+                not <| isNull ret.Nickname
             with _ -> false
 
     override x.CallApi(req) =

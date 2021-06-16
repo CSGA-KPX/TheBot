@@ -21,18 +21,18 @@ type SingleCaseInlineConverter<'T>() =
 
         writer.WriteRawValue(obj.ToString())
 
-    override this.ReadJson(reader, objectType, _, _, _) =
-        let v = reader.Value :?> string
-        let obj = Convert.ChangeType(v, objectType)
+    override this.ReadJson(reader, _, _, _, _) =
+        let obj =
+            Convert.ChangeType(reader.Value, fieldCache.PropertyType)
 
         FSharpValue.MakeUnion(caseCache, Array.singleton obj, false) :?> 'T
 
 
 type AltStringEnumValue(value : string) =
     inherit Attribute()
-    
+
     member x.Value = value
-    
+
 type StringEnumConverter<'T>() =
     inherit JsonConverter<'T>()
 
@@ -44,7 +44,9 @@ type StringEnumConverter<'T>() =
             FSharpType.GetUnionCases(typeof<'T>, false)
 
         for f in fields do
-            let attrs = f.GetCustomAttributes(typeof<AltStringEnumValue>)
+            let attrs =
+                f.GetCustomAttributes(typeof<AltStringEnumValue>)
+
             if attrs.Length = 0 then
                 fieldDict.Add(f.Name, f)
             else
@@ -54,14 +56,16 @@ type StringEnumConverter<'T>() =
     override this.WriteJson(writer : JsonWriter, value : 'T, _ : JsonSerializer) : unit =
         let ui, _ =
             FSharpValue.GetUnionFields(value, typeof<'T>)
-        
-        let attrs = ui.GetCustomAttributes(typeof<AltStringEnumValue>)
+
+        let attrs =
+            ui.GetCustomAttributes(typeof<AltStringEnumValue>)
+
         if attrs.Length = 0 then
             writer.WriteRawValue(ui.Name)
         else
             writer.WriteRawValue((attrs.[0] :?> AltStringEnumValue).Value)
 
-    override this.ReadJson(reader, objectType, _, _, _) =
+    override this.ReadJson(reader, _, _, _, _) =
         let v = reader.Value :?> string
         let succ, ui = fieldDict.TryGetValue(v)
 
@@ -75,15 +79,27 @@ type StringEnumConverter<'T>() =
 type UserId =
     | UserId of uint64
     static member Zero = UserId 0UL
-    
+
+    member x.Value =
+        let (UserId value) = x
+        value
+
 [<Struct>]
 [<JsonConverter(typeof<SingleCaseInlineConverter<GroupId>>)>]
 type GroupId =
     | GroupId of uint64
     static member Zero = GroupId 0UL
 
+    member x.Value =
+        let (GroupId value) = x
+        value
+
 [<Struct>]
 [<JsonConverter(typeof<SingleCaseInlineConverter<MessageId>>)>]
 type MessageId =
     | MessageId of int32
     static member Zero = MessageId 0
+
+    member x.Value =
+        let (MessageId value) = x
+        value

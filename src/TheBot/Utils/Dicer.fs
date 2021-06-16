@@ -25,7 +25,7 @@ type SeedOption =
 
     static member SeedByUserDay(msg : MessageEvent) =
         [| SeedDate
-           SeedCustom(msg.UserId.ToString()) |]
+           SeedCustom(msg.UserId.Value.ToString()) |]
 
     static member SeedByAtUserDay(msg : MessageEvent) =
         [| SeedDate

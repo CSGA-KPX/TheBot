@@ -18,7 +18,6 @@ type EventResponse =
         kick : bool *
         ban : bool *
         ban_duration : int
-    | DiscusMessageResponse of reply : Message * at_sender : bool
     | FriendAddResponse of approve : bool * remark : string
     | GroupAddResponse of approve : bool * reason : string
 

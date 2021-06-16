@@ -4,6 +4,7 @@ open System
 open System.IO
 open System.Text
 
+open KPX.FsCqHttp
 open Newtonsoft.Json
 
 
@@ -27,9 +28,11 @@ type ApiBase() =
         let props =
             x
                 .GetType()
-                .GetProperties(Reflection.BindingFlags.Instance
-                               ||| Reflection.BindingFlags.Public
-                               ||| Reflection.BindingFlags.DeclaredOnly)
+                .GetProperties(
+                    Reflection.BindingFlags.Instance
+                    ||| Reflection.BindingFlags.Public
+                    ||| Reflection.BindingFlags.DeclaredOnly
+                )
 
         let header = $"%s{x.GetType().Name}---"
         sb.AppendLine(header) |> ignore
@@ -82,7 +85,7 @@ type CqHttpApiBase(action : string) =
     default x.WriteParams(_, _) = ()
 
 type IApiCallProvider =
-    abstract CallerUserId : uint64
+    abstract CallerUserId : UserId
     abstract CallerId : string
     abstract CallerName : string
 

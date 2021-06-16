@@ -1,5 +1,6 @@
 ﻿namespace KPX.FsCqHttp.Api.System
 
+open KPX.FsCqHttp
 open KPX.FsCqHttp.Api
 
 
@@ -9,7 +10,7 @@ type GetLoginInfo() =
 
     let mutable data = [||] |> readOnlyDict
 
-    member x.UserId = data.["user_id"] |> uint64
+    member x.UserId = data.["user_id"] |> uint64 |> UserId
 
     member x.Nickname = data.["nickname"]
 

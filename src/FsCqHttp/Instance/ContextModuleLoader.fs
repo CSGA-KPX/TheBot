@@ -5,6 +5,7 @@ open System.Collections.Generic
 
 open System.Threading
 
+open KPX.FsCqHttp
 open KPX.FsCqHttp.Handler
 
 
@@ -39,12 +40,12 @@ type ContextModuleLoader() =
 
     member x.AllDefinedModules = moduleInstanceCache :> IReadOnlyList<_>
 
-    member x.RegisterModuleFor(botUserId : uint64, mi : ContextModuleInfo) =
+    member x.RegisterModuleFor(botUserId : UserId, mi : ContextModuleInfo) =
         for m in x.GetModulesFor(botUserId) do
             logger.Debug("为{0}加载模块{1}", botUserId, m.GetType().FullName)
             mi.RegisterModule(m)
 
-    abstract GetModulesFor : botUserId : uint64 -> seq<HandlerModuleBase>
+    abstract GetModulesFor : botUserId : UserId -> seq<HandlerModuleBase>
 
 /// 默认加载FsCqHttp项目和EntryAssembly中的所有模块。
 type DefaultContextModuleLoader() =

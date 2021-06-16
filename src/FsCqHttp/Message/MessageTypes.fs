@@ -1,10 +1,12 @@
 ﻿namespace KPX.FsCqHttp.Message
 
+open KPX.FsCqHttp
+
 
 [<RequireQualifiedAccess>]
 type AtUserType =
     | All
-    | User of uint64
+    | User of UserId
 
     override x.ToString() =
         match x with
@@ -13,4 +15,4 @@ type AtUserType =
 
     /// 将CQ码中字符串转换为AtUserType
     static member internal FromString(str : string) =
-        if str = "all" then All else User(str |> uint64)
+        if str = "all" then All else User(str |> uint64 |> UserId)

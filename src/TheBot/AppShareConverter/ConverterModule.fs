@@ -3,6 +3,7 @@
 open System
 open System.IO
 
+open KPX.FsCqHttp.Event.Message
 open KPX.FsCqHttp.Message.Sections
 
 open KPX.FsCqHttp.Handler
@@ -38,14 +39,14 @@ type ConverterModule() =
             match sec with 
             | :? XmlSection as xml ->
                 writeLog sec
-                if msg.Event.IsPrivate then x.HandleXmlSection(msg, xml)
+                if msg.Event.MessageType = MessageType.Private then x.HandleXmlSection(msg, xml)
             | :? JsonSection as json -> 
                 writeLog sec
-                if msg.Event.IsPrivate then x.HandleJsonSection(msg, json)
+                if msg.Event.MessageType = MessageType.Private then x.HandleJsonSection(msg, json)
             | _ -> ()
 
     member private x.ReplayMessage(e : CqMessageEventArgs, msg : string) = 
-        if e.Event.IsPrivate then
+        if e.Event.MessageType = MessageType.Private then
             e.Reply(msg)
 
     member private x.HandleXmlSection(_ : CqMessageEventArgs, _ : XmlSection) = 

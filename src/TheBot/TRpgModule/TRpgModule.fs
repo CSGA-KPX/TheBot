@@ -2,6 +2,7 @@
 
 open System
 
+open KPX.FsCqHttp.Event.Message
 open KPX.FsCqHttp.Message
 open KPX.FsCqHttp.Event
 open KPX.FsCqHttp.Handler
@@ -243,7 +244,7 @@ type TRpgModule() =
                 let ret = Message()
                 ret.Add(msg)
 
-                SendPrivateMsg(cmdArg.MessageEvent.UserId, ret)
+                SendPrivateMsg(cmdArg.MessageEvent.UserId.Value, ret)
                 |> cmdArg.ApiCaller.CallApi
                 |> ignore
             else
@@ -265,7 +266,8 @@ type TRpgModule() =
 
     [<CommandHandlerMethod(".crule", "查询/设置当前房规区间（不稳定）", "", Disabled = true)>]
     member x.HandleRollRule(cmdArg : CommandEventArgs) =
-        if cmdArg.MessageEvent.IsPrivate then
+        
+        if cmdArg.MessageEvent.MessageType = MessageType.Private then
             cmdArg.Abort(InputError, "此指令仅私聊无效")
 
 

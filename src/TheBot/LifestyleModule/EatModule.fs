@@ -2,6 +2,7 @@
 
 open System
 open KPX.FsCqHttp.Api.Group
+open KPX.FsCqHttp.Event
 open KPX.FsCqHttp.Message
 open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Utils.TextResponse
@@ -49,9 +50,10 @@ type EatModule() =
 
         | Some (AtUserType.User uid) ->
             seed <- SeedOption.SeedByAtUserDay(cmdArg.MessageEvent)
-
+            // 私聊不会有at，所以肯定是群聊消息
+            let gEvent = cmdArg.MessageEvent.AsGroup()
             let atUserInfo =
-                GetGroupMemberInfo(cmdArg.MessageEvent.GroupId, uid)
+                GetGroupMemberInfo(gEvent.GroupId, uid)
                 |> cmdArg.ApiCaller.CallApi
 
             ret.WriteLine("{0} 为 {1} 投掷：", cmdArg.MessageEvent.DisplayName, atUserInfo.DisplayName)

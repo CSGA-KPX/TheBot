@@ -4,6 +4,8 @@ open System
 
 open KPX.FsCqHttp.Message
 
+open KPX.FsCqHttp.Event
+
 open KPX.FsCqHttp.Api.System
 open KPX.FsCqHttp.Api.Group
 
@@ -42,7 +44,8 @@ type DiceModule() =
                    <| cmdArg.HeaderLine.Contains(loginInfo.Nickname) -> sw.WriteLine("公投：")
             | AtUserType.User x ->
                 let atUserInfo =
-                    GetGroupMemberInfo(cmdArg.MessageEvent.GroupId, x)
+                    let gEvent = cmdArg.MessageEvent.AsGroup()
+                    GetGroupMemberInfo(gEvent.GroupId, x)
                     |> cmdArg.ApiCaller.CallApi
 
                 sw.WriteLine(

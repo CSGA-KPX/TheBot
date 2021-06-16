@@ -82,7 +82,7 @@ type CqEventArgs(api, ctx) =
     static member Parse(api, eventJson : string) =
         CqEventArgs.Parse(api, EventContext(JObject.Parse(eventJson)))
         
-type CqMessageEventArgs(api : IApiCallProvider, ctx : EventContext, e) =
+type CqMessageEventArgs(api : IApiCallProvider, ctx : EventContext, e : MessageEvent) =
     inherit CqEventArgs(api, ctx)
 
     member x.Event : MessageEvent = e
@@ -91,25 +91,16 @@ type CqMessageEventArgs(api : IApiCallProvider, ctx : EventContext, e) =
         x.Reply(String.Format(fmt, args))
         base.Abort(level, fmt, args)
 
-    member x.Reply(msg : Message, ?atUser : bool) =
-        let atUser = defaultArg atUser false
-
+    member x.Reply(msg : Message) =
         if msg.ToString().Length > Config.TextLengthLimit then
             invalidOp "回复字数超过上限。"
+        
+        x.Reply(x.Event.Response(msg))
 
-        if x.Event.IsDiscuss then
-            x.Reply(DiscusMessageResponse(msg, atUser))
-        elif x.Event.IsGroup then
-            x.Reply(GroupMessageResponse(msg, atUser, false, false, false, 0))
-        elif x.Event.IsPrivate then
-            x.Reply(PrivateMessageResponse(msg))
-        else
-            raise <| InvalidOperationException("")
-
-    member x.Reply(str : string, ?atUser : bool) =
+    member x.Reply(str : string) =
         let msg = Message()
         msg.Add(str)
-        x.Reply(msg, defaultArg atUser false)
+        x.Reply(msg)
 
 type CqNoticeEventArgs(api, ctx, e) =
     inherit CqEventArgs(api, ctx)

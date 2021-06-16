@@ -27,7 +27,7 @@ and CqEventArgs =
         member ApiCaller : IApiCallProvider
         member BotId : string
         member BotNickname : string
-        member BotUserId : uint64
+        member BotUserId : UserId
         member internal Logger : NLog.Logger
         member RawEvent : EventContext
     end
@@ -37,8 +37,8 @@ and CqMessageEventArgs =
         inherit CqEventArgs
         new : api: IApiCallProvider * ctx: EventContext * e: MessageEvent -> CqMessageEventArgs
         member Abort : level: ErrorLevel * fmt: string * [<System.ParamArray>] args: obj [] -> 'T
-        member Reply : str: string * ?atUser: bool -> unit
-        member Reply : msg: Message.Message * ?atUser: bool -> unit
+        member Reply : str: string -> unit
+        member Reply : msg: Message.Message -> unit
         member Event : MessageEvent
     end
 

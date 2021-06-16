@@ -1,14 +1,15 @@
 ﻿namespace KPX.FsCqHttp.Api.Group
 
+open KPX.FsCqHttp
 open KPX.FsCqHttp.Api
 
 
-type GetGroupMemberInfo(groupId : uint64, userId : uint64, ?noCache : bool) =
+type GetGroupMemberInfo(groupId : GroupId, userId : UserId, ?noCache : bool) =
     inherit CqHttpApiBase("get_group_member_info")
     let noCache = defaultArg noCache false
 
-    member val GroupId = 0UL with get, set
-    member val UserId = 0UL with get, set
+    member val GroupId = GroupId 0UL with get, set
+    member val UserId = UserId 0UL with get, set
     member val NickName = "" with get, set
     member val Card = "" with get, set
     member val Sex = "" with get, set
@@ -37,8 +38,8 @@ type GetGroupMemberInfo(groupId : uint64, userId : uint64, ?noCache : bool) =
         w.WriteValue(noCache)
 
     override x.HandleResponse(r) =
-        x.GroupId <- r.Data.["group_id"] |> uint64
-        x.UserId <- r.Data.["user_id"] |> uint64
+        x.GroupId <- r.Data.["group_id"] |> uint64 |> GroupId
+        x.UserId <- r.Data.["user_id"] |> uint64 |> UserId
         x.NickName <- r.Data.["nickname"]
         x.Card <- r.Data.["card"]
         x.Sex <- r.Data.["sex"]

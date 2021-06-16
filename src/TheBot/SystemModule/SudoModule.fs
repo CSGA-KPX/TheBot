@@ -4,6 +4,7 @@ open System
 open System.IO
 open System.Security.Cryptography
 
+open KPX.FsCqHttp
 open KPX.FsCqHttp.Api.Group
 open KPX.FsCqHttp.Api.Context
 
@@ -22,8 +23,8 @@ type SudoModule() =
     inherit CommandHandlerBase()
 
     let allowList = Collections.Generic.HashSet<string>()
-    let allowQqFmt (self : uint64) (uid : uint64) = $"%i{self}:qq:%i{uid}"
-    let allowGroupFmt (self : uint64) (gid : uint64) = $"%i{self}:group:%i{gid}"
+    let allowQqFmt (self : UserId) (uid : UserId) = $"%i{self.Value}:qq:%i{uid.Value}"
+    let allowGroupFmt (self : UserId) (gid : GroupId) = $"%i{self.Value}:group:%i{gid.Value}"
 
     let mutable isSuUsed = false
 
@@ -79,7 +80,7 @@ type SudoModule() =
 
         for uid in qq.Values do
             if uid <> 0UL then
-                cmdArg.GrantBotAdmin(uid)
+                cmdArg.GrantBotAdmin(UserId uid)
 
                 sb.AppendLine $"已添加userId = %i{uid}" |> ignore
 
@@ -123,14 +124,14 @@ type SudoModule() =
             cmdArg.EnsureSenderAdmin()
 
             let key =
-                allowGroupFmt cmdArg.BotUserId group.Value
+                allowGroupFmt cmdArg.BotUserId (GroupId group.Value)
 
             allowList.Add(key) |> ignore
             cmdArg.Reply $"接受来自[%s{key}]的邀请"
         elif qq.IsDefined then
             cmdArg.EnsureSenderAdmin()
 
-            let key = allowQqFmt cmdArg.BotUserId qq.Value
+            let key = allowQqFmt cmdArg.BotUserId (UserId qq.Value)
 
             allowList.Add(key) |> ignore
             cmdArg.Reply $"接受来自[%s{key}]的邀请"
@@ -181,7 +182,7 @@ type SudoModule() =
             let inList =
                 allowList.Contains(allowQqFmt args.BotUserId req.UserId)
 
-            let isAdmin = args.GetBotAdmins().Contains(req.UserId)
+            let isAdmin = args.GetBotAdmins().Contains(req.UserId.Value)
             args.Reply(FriendAddResponse(inList || isAdmin, ""))
         | GroupRequest req ->
             let inList =

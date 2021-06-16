@@ -3,6 +3,7 @@
 open System
 open System.Collections.Generic
 
+open KPX.FsCqHttp
 open KPX.FsCqHttp.Message
 
 open KPX.FsCqHttp.Event
@@ -43,7 +44,7 @@ type TestContext(m : HandlerModuleBase, ?parent : CqWsContextBase) as x =
 
     static let logger = NLog.LogManager.GetCurrentClassLogger()
 
-    let botUserId = 10000UL
+    let botUserId = UserId 10000UL
     let botUserName = "测试用户"
 
     let apiResponse = Dictionary<string, obj>()
@@ -170,7 +171,7 @@ type TestContext(m : HandlerModuleBase, ?parent : CqWsContextBase) as x =
         if parent.IsSome then
             parent.Value.BotIdString
         else
-            $"[%i{x.BotUserId}:%s{x.BotNickname}]"
+            $"[%i{x.BotUserId.Value}:%s{x.BotNickname}]"
 
     override x.Start() = raise <| NotImplementedException()
 
