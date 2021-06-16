@@ -123,13 +123,13 @@ type TestContext(m : HandlerModuleBase, ?parent : CqWsContextBase) as x =
         let raw = JObject.Parse(Strings.msgEvent)
 
         // 更新Bot信息
-        raw.["self_id"] <- JValue(x.BotUserId)
+        raw.["self_id"] <- JValue.FromObject(x.BotUserId)
 
         // 更新发送时间
         raw.["time"] <- JValue(DateTimeOffset.Now.ToUnixTimeSeconds())
 
         // 更新发送者
-        let uid = JValue(x.BotUserId)
+        let uid = JValue.FromObject(x.BotUserId)
         raw.["user_id"] <- uid
         raw.["sender"].["nickname"] <- JValue(x.BotNickname)
         raw.["sender"].["user_id"] <- uid

@@ -19,7 +19,7 @@ type SingleCaseInlineConverter<'T>() =
         let obj =
             fieldCache.GetMethod.Invoke(value, Array.empty)
 
-        writer.WriteRawValue(obj.ToString())
+        writer.WriteValue(obj.ToString())
 
     override this.ReadJson(reader, _, _, _, _) =
         let obj =
@@ -61,9 +61,9 @@ type StringEnumConverter<'T>() =
             ui.GetCustomAttributes(typeof<AltStringEnumValue>)
 
         if attrs.Length = 0 then
-            writer.WriteRawValue(ui.Name)
+            writer.WriteValue(ui.Name)
         else
-            writer.WriteRawValue((attrs.[0] :?> AltStringEnumValue).Value)
+            writer.WriteValue((attrs.[0] :?> AltStringEnumValue).Value)
 
     override this.ReadJson(reader, _, _, _, _) =
         let v = reader.Value :?> string
