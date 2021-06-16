@@ -18,5 +18,4 @@ let msgTest =
               Message.FromCqString(sampleCQCode) |> printfn "%A"
 
               Message.FromCqString(longCqCode) |> printfn "%A"
-              ()
           testCase "array_to_json" <| fun _ -> () ]

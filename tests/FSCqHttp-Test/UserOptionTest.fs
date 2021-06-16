@@ -131,31 +131,32 @@ let ConfigTests =
               Expect.equal 5 a.[2] ""
               Expect.equal 10 a.[3] ""
 
-          testCase "TestIndexed"
-          <| fun _ ->
-              let testArgs = [| "test1"; "isTest1:"; "12341234" |]
+          testSequencedGroup "TestSubcommands"
+          <| testList
+              "TestList"
+              [ testCase "TestIndexed"
+                <| fun _ ->
+                    let testArgs = [| "test1"; "isTest1:"; "12341234" |]
 
-              match SubcommandParser.Parse<TestSubcommands>(testArgs) with
-              | Some (Test1 ob) ->
-                  Expect.isTrue ob.BoolVal ""
-                  Expect.equal ob.ValueOpt 12341234 ""
-              | Some Test2 -> failwith "Wrong match"
-              | Some Test3 -> failwith "Wrong match"
-              | None -> failwith "Wrong match"
+                    match SubcommandParser.Parse<TestSubcommands>(testArgs) with
+                    | Some (Test1 ob) ->
+                        Expect.isTrue ob.BoolVal ""
+                        Expect.equal ob.ValueOpt 12341234 ""
+                    | Some Test2 -> failwith "Wrong match"
+                    | Some Test3 -> failwith "Wrong match"
+                    | None -> failwith "Wrong match"
 
-          testCase "TestNonIndexed"
-          <| fun _ ->
-              let testArgs =
-                  [| "test1"
-                     "isTest1:"
-                     "test1Val:12341234" |]
+                testCase "TestNonIndexed"
+                <| fun _ ->
+                    let testArgs =
+                        [| "test1"
+                           "isTest1:"
+                           "test1Val:12341234" |]
 
-              match SubcommandParser.Parse<TestSubcommands>(testArgs) with
-              | Some (Test1 ob) ->
-                  Expect.isTrue ob.BoolVal ""
-                  Expect.equal ob.ValueOpt 12341234 ""
-              | Some Test2 -> failwith "Wrong match"
-              | Some Test3 -> failwith "Wrong match"
-              | None -> failwith "Wrong match"
-
-          ]
+                    match SubcommandParser.Parse<TestSubcommands>(testArgs) with
+                    | Some (Test1 ob) ->
+                        Expect.isTrue ob.BoolVal ""
+                        Expect.equal ob.ValueOpt 12341234 ""
+                    | Some Test2 -> failwith "Wrong match"
+                    | Some Test3 -> failwith "Wrong match"
+                    | None -> failwith "Wrong match" ] ]

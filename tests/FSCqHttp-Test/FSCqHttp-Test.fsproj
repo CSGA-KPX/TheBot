@@ -16,7 +16,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="DomainTypeTests.fs" />
     <Compile Include="MessageTest.fs" />
+    <Compile Include="EventTest.fs" />
     <Compile Include="UserOptionTest.fs" />
     <Compile Include="Main.fs" />
   </ItemGroup>
