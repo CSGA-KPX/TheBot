@@ -57,10 +57,16 @@ type MessageEvent =
         match x with
         | MessageEvent.Private p -> p.Sender.Nickname
         | MessageEvent.Group g ->
-            if String.IsNullOrEmpty(g.Sender.Card) then
-                g.Sender.Nickname
+            if isNull <| box g.Anonymous then
+                if String.IsNullOrEmpty(g.Sender.Card) then
+                    // 否则取昵称
+                    g.Sender.Nickname
+                else
+                    // 如果群名片不为空，取群名片
+                    g.Sender.Card
             else
-                g.Sender.Card
+                // 如果有匿名字段，取匿名名称
+                g.Anonymous.Name
 
     member x.AsGroup() =
         match x with
