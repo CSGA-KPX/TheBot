@@ -98,10 +98,16 @@ type Dicer(seeds : seq<SeedOption>) =
     member x.IsFrozen = drng.IsFrozen
 
     member x.GetInteger(min : uint32, max : uint32) =
-        drng.GetUInt32() % (max - min + 1u) + min
+        if (max - min) = UInt32.MaxValue then
+            drng.GetUInt32()
+        else
+            drng.GetUInt32() % (max - min + 1u) + min
 
     member x.GetInteger(min : uint64, max : uint64) =
-        drng.GetUInt64() % (max - min + 1UL) + min
+        if (max - min) = UInt64.MaxValue then
+            drng.GetUInt64()
+        else
+            drng.GetUInt64() % (max - min + 1UL) + min
 
     member x.GetInteger(min : int, max : int) =
         let max = max - min
@@ -112,10 +118,16 @@ type Dicer(seeds : seq<SeedOption>) =
         (x.GetInteger(0UL, uint64 max) |> int64) + min
 
     member x.GetInteger(min : uint32, max : uint32, str : string) =
-        drng.GetUInt32(str) % (max - min + 1u) + min
+        if (max - min) = UInt32.MaxValue then
+            drng.GetUInt32(str)
+        else
+            drng.GetUInt32(str) % (max - min + 1u) + min
 
     member x.GetInteger(min : uint64, max : uint64, str : string) =
-        drng.GetUInt64(str) % (max - min + 1UL) + min
+        if (max - min) = UInt64.MaxValue then
+            drng.GetUInt64(str)
+        else
+            drng.GetUInt64(str) % (max - min + 1UL) + min
 
     member x.GetInteger(min : int, max : int, str : string) =
         let max = max - min
