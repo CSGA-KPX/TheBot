@@ -19,6 +19,7 @@ type NoticeEvent =
     | FriendRecall of FriendRecallEvent
     | GroupNotify of GroupNotifyEvent
     | GroupCardUpdate of GroupCardEvent
+    | GroupEssence of GroupEssence
 
 and NoticeEventConverter() =
     inherit JsonConverter<NoticeEvent>()
@@ -39,6 +40,7 @@ and NoticeEventConverter() =
         | "friend_recall" -> FriendRecall(obj.ToObject<FriendRecallEvent>())
         | "notify" -> GroupNotify(obj.ToObject<GroupNotifyEvent>())
         | "group_card" -> GroupCardUpdate(obj.ToObject<GroupCardEvent>())
+        | "essence" -> GroupEssence(obj.ToObject<GroupEssence>())
         | other ->
             NLog
                 .LogManager

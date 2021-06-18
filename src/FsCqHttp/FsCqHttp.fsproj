@@ -36,6 +36,7 @@
     <Compile Include="Event\NoticeTypes\GroupBanEvent.fs" />
     <Compile Include="Event\NoticeTypes\GroupNotifyEvent.fs" />
     <Compile Include="Event\NoticeTypes\GroupCardEvent.fs" />
+    <Compile Include="Event\NoticeTypes\GroupEssence.fs" />
     <Compile Include="Event\NoticeEvents.fs" />
     <Compile Include="Event\RequestEvents\FriendRequestEvent.fs" />
     <Compile Include="Event\RequestEvents\GroupRequestEvent.fs" />

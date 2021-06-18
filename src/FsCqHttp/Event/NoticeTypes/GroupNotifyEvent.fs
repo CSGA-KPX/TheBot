@@ -31,17 +31,17 @@ and GroupNotifyEventConverter() =
     override x.WriteJson(_ : JsonWriter, _ : GroupNotifyEvent, _ : JsonSerializer) =
         raise<unit> <| NotImplementedException()
 
-    override x.ReadJson(r : JsonReader, _ : Type, _ : GroupNotifyEvent, _ : bool, _ : JsonSerializer) =
+    override x.ReadJson(r : JsonReader, _ : Type, _ : GroupNotifyEvent, _ : bool, serializer : JsonSerializer) =
         let obj = JObject.Load(r)
-        let gid = obj.["group_id"].Value<GroupId>()
-        let uid = obj.["user_id"].Value<UserId>()
+        let gid = obj.["group_id"].ToObject<GroupId>(serializer)
+        let uid = obj.["user_id"].ToObject<UserId>(serializer)
 
         match obj.["sub_type"].Value<string>() with
         | "poke" ->
-            let tid = obj.["target_id"].Value<UserId>()
+            let tid = obj.["target_id"].ToObject<UserId>(serializer)
             Poke(gid, uid, tid)
         | "lucky_king" ->
-            let tid = obj.["target_id"].Value<UserId>()
+            let tid = obj.["target_id"].ToObject<UserId>(serializer)
             LuckKing(gid, uid, tid)
         | "honor" ->
             let h =
