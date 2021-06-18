@@ -1,4 +1,4 @@
-﻿namespace KPX.FsCqHttp.Instance
+﻿namespace rec KPX.FsCqHttp.Instance
 
 open System
 open System.Collections.Generic
@@ -46,6 +46,10 @@ type ContextModuleLoader() =
             mi.RegisterModule(m)
 
     abstract GetModulesFor : botUserId : UserId -> seq<HandlerModuleBase>
+
+    /// 获取或设置为Context添加模块的加载器
+    static member val Instance : ContextModuleLoader =
+        DefaultContextModuleLoader() :> ContextModuleLoader with get, set
 
 /// 默认加载FsCqHttp项目和EntryAssembly中的所有模块。
 type DefaultContextModuleLoader() =

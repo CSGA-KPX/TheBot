@@ -14,16 +14,6 @@ open KPX.FsCqHttp.Handler
 open Newtonsoft.Json.Linq
 
 
-[<Sealed>]
-type EventContext (ctx : JObject) = 
-    
-    let str = lazy (ctx.ToString(Newtonsoft.Json.Formatting.Indented))
-
-    member x.Event = ctx
-
-    /// 懒惰求值的字符串
-    override x.ToString() = str.Force()
-
 type CqEventArgs(api, ctx) =
 
     static let logger = NLog.LogManager.GetCurrentClassLogger()
@@ -32,7 +22,7 @@ type CqEventArgs(api, ctx) =
 
     member x.ApiCaller : IApiCallProvider = api
 
-    member x.RawEvent : EventContext = ctx
+    member x.RawEvent : PostContent = ctx
 
     member x.BotUserId = api.CallerUserId
 
@@ -63,26 +53,26 @@ type CqEventArgs(api, ctx) =
     member x.Reply(r : EventResponse) =
         if r <> EmptyResponse then
             let rep =
-                QuickOperation(ctx.ToString())
+                QuickOperation(ctx)
 
             rep.Reply <- r
             api.CallApi(rep) |> ignore
 
-    static member Parse(api, ctx : EventContext) =
-        match ctx.Event.["post_type"].Value<string>() with
+    static member Parse(api, ctx : PostContent) =
+        match ctx.RawEventPost.["post_type"].Value<string>() with
         | "message" ->
-            CqMessageEventArgs(api, ctx, ctx.Event.ToObject<MessageEvent>()) :> CqEventArgs
+            CqMessageEventArgs(api, ctx, ctx.RawEventPost.ToObject<MessageEvent>()) :> CqEventArgs
         | "notice" ->
-            CqNoticeEventArgs(api, ctx, ctx.Event.ToObject<NoticeEvent>()) :> CqEventArgs
+            CqNoticeEventArgs(api, ctx, ctx.RawEventPost.ToObject<NoticeEvent>()) :> CqEventArgs
         | "request" ->
-            CqRequestEventArgs(api, ctx, ctx.Event.ToObject<RequestEvent>()) :> CqEventArgs
-        | "meta_event" -> CqMetaEventArgs(api, ctx, MetaEvent.FromJObject(ctx.Event)) :> CqEventArgs
+            CqRequestEventArgs(api, ctx, ctx.RawEventPost.ToObject<RequestEvent>()) :> CqEventArgs
+        | "meta_event" -> CqMetaEventArgs(api, ctx, MetaEvent.FromJObject(ctx.RawEventPost)) :> CqEventArgs
         | other -> raise <| ArgumentException("未知上报类型：" + other)
     
     static member Parse(api, eventJson : string) =
-        CqEventArgs.Parse(api, EventContext(JObject.Parse(eventJson)))
+        CqEventArgs.Parse(api, PostContent(JObject.Parse(eventJson)))
         
-type CqMessageEventArgs(api : IApiCallProvider, ctx : EventContext, e : MessageEvent) =
+type CqMessageEventArgs(api : IApiCallProvider, ctx : PostContent, e : MessageEvent) =
     inherit CqEventArgs(api, ctx)
 
     member x.Event : MessageEvent = e

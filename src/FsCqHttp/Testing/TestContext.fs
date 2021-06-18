@@ -141,7 +141,7 @@ type TestContext(m : HandlerModuleBase, ?parent : CqWsContextBase) as x =
         raw.["message"] <- JToken.FromObject(msg) :?> JArray
         raw.["raw_message"] <- JValue(msg.ToCqString())
 
-        CqEventArgs.Parse(x, EventContext(raw)) :?> CqMessageEventArgs
+        CqEventArgs.Parse(x, PostContent(raw)) :?> CqMessageEventArgs
 
     override x.RestartContext
         with get () =

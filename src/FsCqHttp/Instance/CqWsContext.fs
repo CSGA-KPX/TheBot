@@ -77,7 +77,7 @@ type CqWsContextPool private () =
         ContextModuleLoader.CacheBuiltEvent.WaitOne()
         |> ignore
 
-        CqWsContextPool.ModuleLoader.RegisterModuleFor(context.BotUserId, context.Modules)
+        ContextModuleLoader.Instance.RegisterModuleFor(context.BotUserId, context.Modules)
 
     member x.RemoveContext(context : CqWsContextBase) =
         pool.TryRemove(context.BotUserId) |> ignore
@@ -91,10 +91,6 @@ type CqWsContextPool private () =
         member x.GetEnumerator() = pool.Values.GetEnumerator()
 
     static member val Instance = CqWsContextPool()
-
-    /// 获取或设置为Context添加模块的加载器
-    static member val ModuleLoader : ContextModuleLoader =
-        DefaultContextModuleLoader() :> ContextModuleLoader with get, set
 
 type CqWsContext(ws : WebSocket) =
     inherit CqWsContextBase()
@@ -208,9 +204,9 @@ type CqWsContext(ws : WebSocket) =
 
     member private x.HandleMessage(json : string) =
         try
-            let ctx = EventContext(JObject.Parse(json))
+            let ctx = PostContent(JObject.Parse(json))
 
-            if (ctx.Event.ContainsKey("post_type")) then //消息上报
+            if (ctx.RawEventPost.ContainsKey("post_type")) then //消息上报
                 if Config.LogEventPost then
                     logger.Trace $"%s{x.BotIdString}收到上报：{ctx}"
 
@@ -237,11 +233,11 @@ type CqWsContext(ws : WebSocket) =
                         TaskScheduler.enqueue (x.Modules, args)
                 | args -> TaskScheduler.enqueue (x.Modules, args)
 
-            elif ctx.Event.ContainsKey("retcode") then //API调用结果
+            elif ctx.RawEventPost.ContainsKey("retcode") then //API调用结果
                 if Config.LogApiCall then
                     logger.Trace $"%s{x.BotIdString}收到API调用结果： {ctx}"
 
-                x.HandleApiResponse(ctx.Event.ToObject<ApiResponse>())
+                x.HandleApiResponse(ctx.RawEventPost.ToObject<ApiResponse>())
         with e -> logger.Warn $"%s{x.BotIdString}WS处理消息异常：\r\n%A{e}"
 
     member private x.StartMessageLoop() =

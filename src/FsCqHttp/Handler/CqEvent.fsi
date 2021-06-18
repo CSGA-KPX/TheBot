@@ -8,18 +8,9 @@ open KPX.FsCqHttp.Api
 open KPX.FsCqHttp.Handler
 
 
-[<Sealed>]
-type EventContext =
+type CqEventArgs =
     class
-        new : ctx: Newtonsoft.Json.Linq.JObject -> EventContext
-        /// 懒惰求值的字符串
-        override ToString : unit -> string
-        member Event : Newtonsoft.Json.Linq.JObject
-    end
-
-and CqEventArgs =
-    class
-        static member Parse : api: IApiCallProvider * ctx: EventContext -> CqEventArgs
+        static member Parse : api: IApiCallProvider * ctx: PostContent -> CqEventArgs
         static member Parse : api: IApiCallProvider * eventJson: string -> CqEventArgs
         /// 中断执行过程
         member Abort : level: ErrorLevel * fmt: string * [<System.ParamArray>] args: obj [] -> 'T
@@ -29,13 +20,13 @@ and CqEventArgs =
         member BotNickname : string
         member BotUserId : UserId
         member internal Logger : NLog.Logger
-        member RawEvent : EventContext
+        member RawEvent : PostContent
     end
 
 and CqMessageEventArgs =
     class
         inherit CqEventArgs
-        new : api: IApiCallProvider * ctx: EventContext * e: MessageEvent -> CqMessageEventArgs
+        new : api: IApiCallProvider * ctx: PostContent * e: MessageEvent -> CqMessageEventArgs
         member Abort : level: ErrorLevel * fmt: string * [<System.ParamArray>] args: obj [] -> 'T
         member Reply : str: string -> unit
         member Reply : msg: Message.Message -> unit
@@ -45,20 +36,20 @@ and CqMessageEventArgs =
 and CqNoticeEventArgs =
     class
         inherit CqEventArgs
-        new : api: IApiCallProvider * ctx: EventContext * e: NoticeEvent -> CqNoticeEventArgs
+        new : api: IApiCallProvider * ctx: PostContent * e: NoticeEvent -> CqNoticeEventArgs
         member Event : NoticeEvent
     end
 
 and CqRequestEventArgs =
     class
         inherit CqEventArgs
-        new : api: IApiCallProvider * ctx: EventContext * e: RequestEvent -> CqRequestEventArgs
+        new : api: IApiCallProvider * ctx: PostContent * e: RequestEvent -> CqRequestEventArgs
         member Event : RequestEvent
     end
 
 and CqMetaEventArgs =
     class
         inherit CqEventArgs
-        new : api: IApiCallProvider * ctx: EventContext * e: MetaEvent -> CqMetaEventArgs
+        new : api: IApiCallProvider * ctx: PostContent * e: MetaEvent -> CqMetaEventArgs
         member Event : MetaEvent
     end

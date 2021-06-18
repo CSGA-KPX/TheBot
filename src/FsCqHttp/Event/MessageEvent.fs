@@ -57,16 +57,17 @@ type MessageEvent =
         match x with
         | MessageEvent.Private p -> p.Sender.Nickname
         | MessageEvent.Group g ->
-            if isNull <| box g.Anonymous then
-                if String.IsNullOrEmpty(g.Sender.Card) then
-                    // 否则取昵称
-                    g.Sender.Nickname
-                else
-                    // 如果群名片不为空，取群名片
-                    g.Sender.Card
-            else
+            if g.IsAnonymous then
                 // 如果有匿名字段，取匿名名称
                 g.Anonymous.Name
+            else
+                if String.IsNullOrEmpty(g.Sender.Card) then
+                    // 如果群名片为空，则取昵称
+                    g.Sender.Nickname
+                else
+                    // 否则取群名片
+                    g.Sender.Card
+
 
     member x.AsGroup() =
         match x with
@@ -157,7 +158,9 @@ type GroupMessageEvent =
       Font : int32
       [<JsonProperty("sender")>]
       Sender : GroupSender }
-
+    
+    member x.IsAnonymous = x.Anonymous |> box |> isNull |> not
+    
     member x.Response
         (
             msg : Message,

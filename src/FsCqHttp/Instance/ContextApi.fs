@@ -4,11 +4,13 @@
 // 所以使用API的方式实现访问和并发控制
 namespace KPX.FsCqHttp.Api.Context
 
+open KPX.FsCqHttp
 open KPX.FsCqHttp.Instance
 open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Message
 
 open Newtonsoft.Json.Linq
+
 
 type GetCtxModuleInfo() =
     inherit WsContextApiBase()
@@ -70,9 +72,9 @@ type RewriteCommand(e : CommandEventArgs, messages : seq<Message>) =
 
     override x.Invoke(ctx) =
         for msg in messages do
-            let obj = e.RawEvent.Event.DeepClone() :?> JObject
+            let obj = e.RawEvent.RawEventPost.DeepClone() :?> JObject
             obj.["message"] <- JToken.FromObject(msg) :?> JArray
             obj.["raw_message"] <- JValue(msg.ToCqString())
             
-            let ex = CqEventArgs.Parse(ctx, EventContext(obj))
+            let ex = CqEventArgs.Parse(ctx, PostContent(obj))
             TaskScheduler.enqueue (ctx.Modules, ex)

@@ -82,7 +82,7 @@ type UndefinedOptionHandling =
 /// 不提供任何默认选项
 type OptionBase() =
     static let optCache = Dictionary<string, HashSet<string>>()
-
+    static let optSync = obj ()
     static let separators = [| ';'; '；'; '：'; ':' |]
 
     let localOpts = HashSet<string>()
@@ -227,18 +227,21 @@ type OptionBase() =
         }
 
     member private x.TryGenerateOptionCache() : HashSet<string> =
-        let key = x.GetType().FullName
+        lock
+            optSync
+            (fun () ->
+                let key = x.GetType().FullName
 
-        if not <| optCache.ContainsKey(key) then
-            optCache.[key] <- HashSet<_>(StringComparer.OrdinalIgnoreCase)
+                if not <| optCache.ContainsKey(key) then
+                    optCache.[key] <- HashSet<_>(StringComparer.OrdinalIgnoreCase)
 
-            for cell in x.GetOptions() do
-                optCache.[key].Add(cell.KeyName) |> ignore
+                    for cell in x.GetOptions() do
+                        optCache.[key].Add(cell.KeyName) |> ignore
 
-                for item in cell.Aliases do
-                    optCache.[key].Add(item) |> ignore
+                        for item in cell.Aliases do
+                            optCache.[key].Add(item) |> ignore
 
-        optCache.[key]
+                optCache.[key])
 
     member private x.OptAddOrAppend(key, value) =
         if not <| data.ContainsKey(key) then

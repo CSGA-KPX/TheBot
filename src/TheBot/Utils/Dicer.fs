@@ -40,7 +40,10 @@ type SeedOption =
 
 type private DRng(seeds : seq<SeedOption>) =
     static let utf8 = Text.Encoding.UTF8
-
+    
+    // 因为数据量很小，Md5和xxHash速度都差不多
+    // 而且DieHarder和rngtest测试结果也差不多
+    // 没有其他问题还是固定用Md5了
     let hash =
         Security.Cryptography.MD5.Create() :> Security.Cryptography.HashAlgorithm
 

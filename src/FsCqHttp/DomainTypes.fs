@@ -7,6 +7,7 @@ open Newtonsoft.Json
 open FSharp.Reflection
 
 
+/// 对包装用DU的Json转换器
 type SingleCaseInlineConverter<'T>() =
     inherit JsonConverter<'T>()
 
@@ -27,12 +28,13 @@ type SingleCaseInlineConverter<'T>() =
 
         FSharpValue.MakeUnion(caseCache, Array.singleton obj, false) :?> 'T
 
-
+/// 字符串枚举类型DU中不美观值进行重命名
 type AltStringEnumValue(value : string) =
     inherit Attribute()
 
     member x.Value = value
 
+/// 对字符串枚举类型DU的Json转换器
 type StringEnumConverter<'T>() =
     inherit JsonConverter<'T>()
 
@@ -76,6 +78,8 @@ type StringEnumConverter<'T>() =
 
 [<Struct>]
 [<JsonConverter(typeof<SingleCaseInlineConverter<UserId>>)>]
+/// 对OneBot中UserId的包装
+/// V12可能会调整为String
 type UserId =
     | UserId of uint64
     static member Zero = UserId 0UL
@@ -86,6 +90,8 @@ type UserId =
 
 [<Struct>]
 [<JsonConverter(typeof<SingleCaseInlineConverter<GroupId>>)>]
+/// 对OneBot中GroupId的包装
+/// V12可能会调整为String
 type GroupId =
     | GroupId of uint64
     static member Zero = GroupId 0UL
@@ -96,6 +102,7 @@ type GroupId =
 
 [<Struct>]
 [<JsonConverter(typeof<SingleCaseInlineConverter<MessageId>>)>]
+/// 对OneBot中MessageId的包装
 type MessageId =
     | MessageId of int32
     static member Zero = MessageId 0
@@ -103,3 +110,15 @@ type MessageId =
     member x.Value =
         let (MessageId value) = x
         value
+
+[<Sealed>]
+/// 包装OneBot上报的Json对象
+/// 同时提供缓存的ToString()方法避免多次求值
+type PostContent (ctx : Linq.JObject) = 
+    
+    let str = lazy (ctx.ToString(Formatting.Indented))
+
+    member x.RawEventPost = ctx
+
+    /// 懒惰求值的字符串
+    override x.ToString() = str.Force()
