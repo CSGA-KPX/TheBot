@@ -107,7 +107,8 @@ type MiscModule() =
     member x.TestXivDFC() = 
         let tc = TestContext(x)
         tc.ShouldNotThrow("#纷争前线")
-
+    
+    [<CommandHandlerMethod("#洗澡水", "", "", IsHidden = true)>]
     [<CommandHandlerMethod("#幻想药", "洗个啥？", "")>]
     member x.HandleFantasia(cmdArg : CommandEventArgs) =
         let choices =
