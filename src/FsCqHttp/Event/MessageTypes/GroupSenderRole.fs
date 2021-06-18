@@ -16,6 +16,7 @@ type GroupSenderRole =
     | Member
     
     /// 该成员是否具有管理权限
+    [<JsonIgnore>]
     member x.CanAdmin =
         match x with
         | Member -> false

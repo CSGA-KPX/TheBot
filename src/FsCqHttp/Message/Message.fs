@@ -24,7 +24,9 @@ type Message(items : seq<MessageSection>) =
     new() = Message(Seq.empty)
 
     new(sec : MessageSection) = Message(Seq.singleton sec)
-
+    
+    
+    [<JsonIgnore>]
     member x.Count = sections.Count
 
     member x.Add(sec : MessageSection) = sections.Add(sec)

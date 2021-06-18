@@ -17,42 +17,50 @@ type MessageEvent =
     | Private of PrivateMessageEvent
     | Group of GroupMessageEvent
     /// 字体
+    [<JsonIgnore>]
     member x.Font =
         match x with
         | MessageEvent.Group g -> g.Font
         | MessageEvent.Private p -> p.Font
     /// 消息
+    [<JsonIgnore>]
     member x.Message =
         match x with
         | MessageEvent.Group g -> g.Message
         | MessageEvent.Private p -> p.Message
     /// 消息Id
+    [<JsonIgnore>]
     member x.MessageId = 
         match x with
         | MessageEvent.Group g -> g.MessageId
         | MessageEvent.Private p -> p.MessageId
     /// 上报类型
+    [<JsonIgnore>]
     member x.MessageType = 
         match x with
         | MessageEvent.Group g -> g.MessageType
         | MessageEvent.Private p -> p.MessageType
     /// 收到事件的机器人 QQ 号
+    [<JsonIgnore>]
     member x.SelfId = 
         match x with
         | MessageEvent.Group g -> g.SelfId
         | MessageEvent.Private p -> p.SelfId
     /// 事件发生的时间戳
+    [<JsonIgnore>]
     member x.Time = 
         match x with
         | MessageEvent.Group g -> g.Time
         | MessageEvent.Private p -> p.Time
     /// 发送者 QQ 号
+    [<JsonIgnore>]
     member x.UserId = 
         match x with
         | MessageEvent.Group g -> g.UserId
         | MessageEvent.Private p -> p.UserId
     /// 显示在屏幕上的昵称
     /// 群消息优先使用群名片
+    [<JsonIgnore>]
     member x.DisplayName =
         match x with
         | MessageEvent.Private p -> p.Sender.Nickname
@@ -159,6 +167,7 @@ type GroupMessageEvent =
       [<JsonProperty("sender")>]
       Sender : GroupSender }
     
+    [<JsonIgnore>]
     member x.IsAnonymous = x.Anonymous |> box |> isNull |> not
     
     member x.Response
