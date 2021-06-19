@@ -1,4 +1,4 @@
-﻿namespace KPX.TheBot.Module.TRpgModule.Coc7.DailySan
+﻿namespace KPX.TheBot.Module.TRpgModule.DailySan
 
 open System.Collections.Concurrent
 
@@ -8,7 +8,7 @@ open KPX.TheBot.Utils.Dicer
 
 open KPX.TheBot.Module.DiceModule.Utils.DiceExpression
 
-open KPX.TheBot.Module.TRpgModule.Coc7.Coc7Utils
+open KPX.TheBot.Module.TRpgModule.Coc7
 
 
 type DailySanCacheItem = { Key : string; San : int }

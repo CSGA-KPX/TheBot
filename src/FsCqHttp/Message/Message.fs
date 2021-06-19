@@ -50,6 +50,7 @@ type Message(items : seq<MessageSection>) =
 
     member x.TryGetSection<'T when 'T :> MessageSection>() = x.GetSections<'T>() |> Seq.tryHead
 
+    /// 默认不含AtAll
     member x.TryGetAt(?allowAll : bool) =
         let allowAll = defaultArg allowAll false
 

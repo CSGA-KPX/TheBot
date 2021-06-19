@@ -33,6 +33,14 @@ module Helpers =
         member x.TryFindById(id : obj) =
             let ret = x.FindById(BsonValue(id))
             if isNull (box ret) then None else Some ret
+            
+        member x.TryFindOne(query : Query) =
+            let ret = x.FindOne(query)
+            if isNull (box ret) then None else Some ret
+            
+        member x.TryFindOne(expr : BsonExpression) =
+            let ret = x.FindOne(expr)
+            if isNull (box ret) then None else Some ret
 
     let getLiteDB (name : string) =
         if not <| dbCache.ContainsKey(name) then

@@ -36,6 +36,8 @@
     <Compile Include="TRpgModule\CharacterCard.fs" />
     <Compile Include="TRpgModule\CardManager.fs" />
     <Compile Include="TRpgModule\NameOption.fs" />
+    <Compile Include="TRpgModule\StCommand\PcSubcommands.fs" />
+    <Compile Include="TRpgModule\StCommand\TRpgStModule.fs" />
     <Compile Include="TRpgModule\TRpgModule.fs" />
     <Compile Include="XivModule\MarketUtils.fs" />
     <Compile Include="XivModule\CommandUtils.fs" />

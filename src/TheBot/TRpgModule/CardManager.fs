@@ -1,97 +1,93 @@
 ﻿/// 此模块用于角色卡的CRUD操作
+[<RequireQualifiedAccess>]
 module KPX.TheBot.Module.TRpgModule.CardManager
 
-open System
-
-open LiteDB
-
+open KPX.FsCqHttp
 open KPX.FsCqHttp.Handler
 
 open KPX.TheBot.Data.Common.Database
-
-open KPX.TheBot.Module.TRpgModule.Strings
 open KPX.TheBot.Module.TRpgModule.TRpgCharacterCard
 
-(*
-[<Literal>]
-let MAX_USER_CARDS = 16
+open LiteDB
 
-let private cardCol =
-    let col = TRpgDb.GetCollection<CharacterCard>()
-
-    col.EnsureIndex(BsonExpression.Create("UserId"), false)
-    |> ignore
-
-    col.EnsureIndex(BsonExpression.Create("ChrName"), false)
-    |> ignore
-
-    col
-
-let CardExists (c : CharacterCard) =
-    cardCol.TryFindById(BsonValue(c.Id)).IsSome
-
-let InsertCard (c : CharacterCard) = cardCol.Insert(c) |> ignore
-
-let UpsertCard (c : CharacterCard) = cardCol.Upsert(c) |> ignore
-
-let RemoveCard (c : CharacterCard) =
-    cardCol.Delete(BsonValue(c.Id)) |> ignore
 
 [<CLIMutable>]
+[<RequireQualifiedAccess>]
 type CurrentCard =
-    { [<BsonIdAttribute(false)>]
+    { [<BsonId(false)>]
       UserId : uint64
       CardId : int64 }
 
-let private currentCardCol = TRpgDb.GetCollection<CurrentCard>()
+    static member FromCard(c : CharacterCard) =
+        { CurrentCard.UserId = c.UserId
+          CurrentCard.CardId = c.Id }
 
-let SetCurrentCard (uid, card : CharacterCard) =
-    currentCardCol.Upsert(
-        { CurrentCard.UserId = uid
-          CurrentCard.CardId = card.Id }
-    )
+[<Literal>]
+let MAX_USER_CARDS = 16
+
+let private db = getLiteDB "TRpgModule.db"
+let private cardCol = db.GetCollection<CharacterCard>()
+let private currCol = db.GetCollection<CurrentCard>()
+
+let exists (c : CharacterCard) =
+    cardCol.TryFindById(BsonValue(c.Id)).IsSome
+
+let insert (c : CharacterCard) = cardCol.Insert(c) |> ignore
+
+let upsert (c : CharacterCard) = cardCol.Upsert(c) |> ignore
+
+let remove (c : CharacterCard) =
+    cardCol.Delete(BsonValue(c.Id)) |> ignore
+
+let setCurrent (c : CharacterCard) = currCol.Upsert(CurrentCard.FromCard(c)) |> ignore
+
+let count (uid : UserId) =
+    cardCol.Count(Query.EQ("UserId", BsonValue.op_Implicit uid.Value))
+
+let getCards (uid : UserId) =
+    cardCol.Find(Query.EQ("UserId", BsonValue.op_Implicit uid.Value))
+    |> Seq.toArray
+    
+let getByName (uid : UserId, name : string) =
+    let query =
+        Query.And(
+            Query.EQ("UserId", BsonValue.op_Implicit uid.Value),
+            Query.EQ("ChrName", BsonValue(name))
+        )
+        
+    cardCol.TryFindOne(query)
+
+let tryGetCurrentCard (uid : UserId) =
+    currCol.TryFindById(BsonValue.op_Implicit uid.Value)
+    |> Option.map
+        (fun ret ->
+            let key = ret.CardId
+            let card = cardCol.TryFindById(BsonValue(key))
+            if card.IsNone then
+                currCol.Delete(BsonValue.op_Implicit uid.Value) |> ignore
+            card)
+    |> Option.flatten
+
+let getCurrentCard (uid : UserId) =
+    let ret = tryGetCurrentCard uid
+    
+    if ret.IsSome then
+        ret.Value
+    else
+        raise <| ModuleException(InputError, "没有设置当前人物卡")
+    
+let nameExists (uid : UserId, name : string) =
+    let query =
+        Query.And(
+            Query.EQ("UserId.Value", BsonValue.op_Implicit uid.Value),
+            Query.EQ("ChrName", BsonValue(name))
+        )
+
+    cardCol.Exists(query)
+
+do
+    cardCol.EnsureIndex(BsonExpression.Create("UserId.Value"), false)
     |> ignore
 
-
-let CountUserCard (uid : uint64) =
-    cardCol.Count(Query.EQ("UserId", BsonValue.op_Implicit (uid)))
-
-type CommandEventArgs with
-
-    /// 获取发送用户的所有角色卡
-    member x.GetChrCards() =
-        let uid = x.MessageEvent.UserId
-
-        cardCol.Find(Query.EQ("UserId", BsonValue.op_Implicit (uid)))
-        |> Seq.toArray
-
-    /// 获取当前角色卡
-    member x.TryGetChrCard() =
-        let uid = x.MessageEvent.UserId
-        // TODO : TryFindById
-        let ret =
-            currentCardCol.FindById(BsonValue.op_Implicit (uid))
-
-        if isNull (box ret) then
-            None
-        else
-            let key = ret.CardId
-            let card = cardCol.FindById(BsonValue(key))
-
-            if isNull (box card) then
-                currentCardCol.Delete(BsonValue.op_Implicit (uid))
-                |> ignore
-
-                None
-            else
-                printfn "%A" card
-                Some card
-
-    /// 获取当前角色卡
-    member x.GetChrCard() =
-        let card = x.TryGetChrCard()
-
-        if card.IsNone then raise <| ModuleException(InputError, "没有设置当前角色卡")
-
-        card.Value
-*)
+    cardCol.EnsureIndex(BsonExpression.Create("ChrName"), false)
+    |> ignore
