@@ -2,7 +2,6 @@
 
 open System.Collections.Concurrent
 
-open KPX.FsCqHttp.Event
 open KPX.FsCqHttp.Handler
 
 open KPX.TheBot.Utils.Dicer

@@ -2,6 +2,7 @@
 
 open System
 open System.Collections.Generic
+open System.Collections.Concurrent
 
 open KPX.FsCqHttp.Utils.TextResponse
 
@@ -81,8 +82,9 @@ type UndefinedOptionHandling =
 
 /// 不提供任何默认选项
 type OptionBase() =
-    static let optCache = Dictionary<string, HashSet<string>>()
-    static let optSync = obj ()
+    static let conOptCache =
+        ConcurrentDictionary<string, HashSet<string>>()
+        
     static let separators = [| ';'; '；'; '：'; ':' |]
 
     let localOpts = HashSet<string>()
@@ -226,22 +228,22 @@ type OptionBase() =
                     yield f.GetValue(x) :?> OptionCell
         }
 
-    member private x.TryGenerateOptionCache() : HashSet<string> =
-        lock
-            optSync
-            (fun () ->
-                let key = x.GetType().FullName
+    member private x.TryGenerateOptionCache() =
+        let key = x.GetType().FullName
 
-                if not <| optCache.ContainsKey(key) then
-                    optCache.[key] <- HashSet<_>(StringComparer.OrdinalIgnoreCase)
+        conOptCache.GetOrAdd(
+            key,
+            fun _ ->
+                let ret = HashSet<string>()
 
-                    for cell in x.GetOptions() do
-                        optCache.[key].Add(cell.KeyName) |> ignore
+                for cell in x.GetOptions() do
+                    ret.Add(cell.KeyName) |> ignore
 
-                        for item in cell.Aliases do
-                            optCache.[key].Add(item) |> ignore
+                    for alias in cell.Aliases do
+                        ret.Add(alias) |> ignore
 
-                optCache.[key])
+                ret
+        )
 
     member private x.OptAddOrAppend(key, value) =
         if not <| data.ContainsKey(key) then

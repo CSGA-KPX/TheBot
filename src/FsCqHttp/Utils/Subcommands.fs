@@ -44,7 +44,7 @@ type private SubCommandCaseInfo =
                     || t = typeof<OptionBase>)
 
         if args.Length <> 0 then
-            raise <| NotImplementedException("暂不支持直接定义属性")
+            raise <| NotImplementedException("不支持直接定义属性")
 
         if obp.Length > 1 then invalidOp "不支持多个OptionBase类型"
 
