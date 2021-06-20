@@ -93,7 +93,13 @@ type StModule() =
 
             CardManager.remove card.Value
             cmdArg.Reply($"已删除角色%s{card.Value.ChrName}")
-        | Some Clear -> raise <| NotImplementedException("该指令尚未实现")
+        | Some Clear ->
+            let card = CardManager.getCurrentCard cmdArg.MessageEvent.UserId
+            card.Props.Clear()
+            
+            CardManager.upsert(card)
+            cmdArg.Reply("已清空所有数据")
+            
         | Some Get -> raise <| NotImplementedException("该指令尚未实现")
         | Some (Show opt) ->
             let card =

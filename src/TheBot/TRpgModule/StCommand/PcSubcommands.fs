@@ -40,7 +40,7 @@ type PcSubcommands =
             | New _ -> "创建空白卡"
             | List -> "看角色列表"
             | Remove _ -> "删除角色 remove 角色名称"
-            | Clear -> "（未实装）清空数据"
+            | Clear -> "清空数据"
             | Get -> "（未实装）获取当前角色属性"
             | Show _ -> "展示角色属性 show/show 属性名称"
             | Lock -> "（未实装）锁定当前角色"

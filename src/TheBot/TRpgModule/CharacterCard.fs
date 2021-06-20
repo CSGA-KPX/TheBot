@@ -46,11 +46,33 @@ type CharacterCard =
         tt.AddPreTable $"所有者:%i{x.UserId}"
         tt.AddPreTable $"角色名:%s{x.ChrName}"
 
-        for row in Seq.chunkBySize colCount x.Props do
+        let ordered =
+            seq {
+                // 复制字典
+                let clone = Dictionary<_, _>(x.Props)
+                // 基础和衍生属性
+                for key in Coc7AttrDisplayOrder do
+                    if clone.ContainsKey(key) then
+                        let value = clone.[key]
+                        yield key, value
+                        clone.Remove(key) |> ignore
+                // 技能, 如果不是默认值就不管了
+                for kv in clone do
+                    let key = kv.Key
+                    let value = kv.Value
+
+                    if DefaultSkillValues.ContainsKey(key) then
+                        if DefaultSkillValues.[key] <> value then yield key, value
+                    else
+                        // 比如自定义技能
+                        yield key, value
+            }
+
+        for row in Seq.chunkBySize colCount ordered do
             tt.AddRowFill(
-                [| for item in row do
-                       yield box <| item.Key
-                       yield box <| item.Value |]
+                [| for (key, value) in row do
+                       yield box <| key
+                       yield box <| value |]
             )
 
         tt
