@@ -16,14 +16,14 @@ open KPX.TheBot.Module.TRpgModule.TRpgCharacterCard
 type StModule() =
     inherit CommandHandlerBase()
 
-    [<CommandHandlerMethod(".st", "设置人物卡（不兼容子命令！）", "")>]
+    [<CommandHandlerMethod(".st", "设置角色（不兼容子命令！）", "")>]
     member x.HandleST(cmdArg : CommandEventArgs) =
-        // 检查当前人物卡数量
+        // 检查当前角色数量
         let cc =
             CardManager.count cmdArg.MessageEvent.UserId
 
         if cc >= CardManager.MAX_USER_CARDS then
-            cmdArg.Abort(InputError, "人物卡数量上限，你已经有{0}张，上限为{1}张。", cc, CardManager.MAX_USER_CARDS)
+            cmdArg.Abort(InputError, "角色数量上限，你已经有{0}张，上限为{1}张。", cc, CardManager.MAX_USER_CARDS)
 
         // 处理卡信息
         let regex =
@@ -48,10 +48,10 @@ type StModule() =
             (cmdArg.OpenResponse(ForceImage))
             (fun ret ->
                 let tt = card.ToTextTable()
-                tt.AddPreTable("已保存人物卡：")
+                tt.AddPreTable("已保存角色：")
                 ret.Write(tt))
 
-    [<CommandHandlerMethod(".pc", "人物卡操作", "")>]
+    [<CommandHandlerMethod(".pc", "角色操作", "")>]
     member x.HandlePC(cmdArg : CommandEventArgs) =
         match SubcommandParser.Parse<PcSubcommands>(cmdArg.HeaderArgs) with
         | None ->
@@ -71,7 +71,7 @@ type StModule() =
             let cards =
                 CardManager.getCards cmdArg.MessageEvent.UserId
 
-            ret.WriteLine($"当前有人物卡%i{cards.Length}张：")
+            ret.WriteLine($"当前有角色%i{cards.Length}张：")
 
             for c in cards do
                 ret.WriteLine(c.ChrName)
@@ -80,24 +80,24 @@ type StModule() =
                 CardManager.getByName (cmdArg.MessageEvent.UserId, name)
 
             if card.IsNone then
-                cmdArg.Abort(InputError, $"并不存在指定人物卡%s{name}")
+                cmdArg.Abort(InputError, $"并不存在指定角色%s{name}")
 
             CardManager.remove card.Value
-            cmdArg.Reply($"已删除人物卡%s{card.Value.ChrName}")
+            cmdArg.Reply($"已删除角色%s{card.Value.ChrName}")
         | Some Clear -> raise <| NotImplementedException("该指令尚未实现")
         | Some Get -> raise <| NotImplementedException("该指令尚未实现")
         | Some (Show opt) ->
             let card =
                 CardManager.getCurrentCard cmdArg.MessageEvent.UserId
-
+                
             match opt.SkillName with
             | None ->
                 using (cmdArg.OpenResponse(ForceImage)) (fun ret -> ret.Write(card.ToTextTable()))
             | Some propName ->
                 if card.Props.ContainsKey(propName) then
-                    cmdArg.Reply($"{propName}：${card.[propName]}")
+                    cmdArg.Reply($"{propName}：%i{card.[propName]}")
                 else
-                    cmdArg.Abort(InputError, $"人物卡中并不存在属性%s{propName}")
+                    cmdArg.Abort(InputError, $"角色中并不存在属性%s{propName}")
         | Some Lock -> raise <| NotImplementedException("该指令尚未实现")
         | Some Unlock -> raise <| NotImplementedException("该指令尚未实现")
         | Some (Rename name) ->
@@ -111,7 +111,7 @@ type StModule() =
                 CardManager.getByName (cmdArg.MessageEvent.UserId, name)
 
             if card.IsNone then
-                cmdArg.Abort(InputError, $"并不存在指定人物卡%s{name}")
+                cmdArg.Abort(InputError, $"并不存在指定角色%s{name}")
 
             match cmdArg.MessageEvent.Message.TryGetAt() with
             | None -> cmdArg.Abort(InputError, "需要at一个人作为接收方")
@@ -132,7 +132,7 @@ type StModule() =
                 CardManager.getByName (cmdArg.MessageEvent.UserId, name)
 
             if card.IsNone then
-                cmdArg.Abort(InputError, $"并不存在指定人物卡%s{name}")
+                cmdArg.Abort(InputError, $"并不存在指定角色%s{name}")
 
             CardManager.setCurrent card.Value
-            cmdArg.Reply($"已设定当前人物卡为：%s{card.Value.ChrName}")
+            cmdArg.Reply($"已设定当前角色为：%s{card.Value.ChrName}")

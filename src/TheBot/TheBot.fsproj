@@ -32,13 +32,13 @@
     <Compile Include="DiceModule\DiceModule.fs" />
     <Compile Include="TRpgModule\Strings.fs" />
     <Compile Include="TRpgModule\Coc7.fs" />
-    <Compile Include="TRpgModule\DailySanCache.fs" />
     <Compile Include="TRpgModule\CharacterCard.fs" />
     <Compile Include="TRpgModule\CardManager.fs" />
     <Compile Include="TRpgModule\NameOption.fs" />
     <Compile Include="TRpgModule\StCommand\PcSubcommands.fs" />
     <Compile Include="TRpgModule\StCommand\TRpgStModule.fs" />
     <Compile Include="TRpgModule\TRpgModule.fs" />
+    <Compile Include="TRpgModule\DailySanModule.fs" />
     <Compile Include="XivModule\MarketUtils.fs" />
     <Compile Include="XivModule\CommandUtils.fs" />
     <Compile Include="XivModule\XivExpression.fs" />

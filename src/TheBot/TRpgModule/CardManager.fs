@@ -74,7 +74,7 @@ let getCurrentCard (uid : UserId) =
     if ret.IsSome then
         ret.Value
     else
-        raise <| ModuleException(InputError, "没有设置当前人物卡")
+        raise <| ModuleException(InputError, "没有设置当前角色")
     
 let nameExists (uid : UserId, name : string) =
     let query =

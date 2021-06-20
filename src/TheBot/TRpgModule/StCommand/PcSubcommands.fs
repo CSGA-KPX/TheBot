@@ -2,6 +2,7 @@ namespace KPX.TheBot.Module.TRpgModule.StCommand
 
 open KPX.FsCqHttp.Utils.UserOption
 open KPX.FsCqHttp.Utils.Subcommands
+open KPX.TheBot.Module.TRpgModule.Coc7
 
 
 type StShowCommandOpts() as x =
@@ -11,7 +12,12 @@ type StShowCommandOpts() as x =
         OptionCellSimple(x, "skill", "", ArgIndex = Some 0)
 
     member x.SkillName =
-        if skillName.IsDefined then Some skillName.Value else None
+        if skillName.IsDefined then
+            let pn = skillName.Value
+            let succ, value = SkillNameAlias.TryGetValue(pn)
+            if succ then Some value else Some pn
+        else
+            None
 
 type PcSubcommands =
     | List
@@ -30,14 +36,14 @@ type PcSubcommands =
     interface ISubcommandTemplate with
         member x.Usage =
             match x with
-            
-            | List -> "看人物卡列表"
-            | Remove _ -> "删除人物卡 remove 人物卡名称"
+
+            | List -> "看角色列表"
+            | Remove _ -> "删除角色 remove 角色名称"
             | Clear -> "清空数据"
-            | Get -> "获取当前人物卡属性"
-            | Show _ -> "展示人物卡属性 show/show 属性名称"
-            | Lock -> "锁定当前人物卡"
-            | Unlock -> "解锁当前人物卡"
-            | Rename _ -> "人物卡改名 rename 新名字"
-            | Copy _ -> "人物卡复制 copy 人物卡名 @接收方"
-            | Set _ -> "设置当前人物卡 set 人物卡名"
+            | Get -> "获取当前角色属性"
+            | Show _ -> "展示角色属性 show/show 属性名称"
+            | Lock -> "锁定当前角色"
+            | Unlock -> "解锁当前角色"
+            | Rename _ -> "角色改名 rename 新名字"
+            | Copy _ -> "角色复制 copy 角色名 @接收方"
+            | Set _ -> "设置当前角色 set 角色名"

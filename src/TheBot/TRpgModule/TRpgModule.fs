@@ -19,14 +19,13 @@ open KPX.TheBot.Module.DiceModule.Utils.DiceExpression
 open KPX.TheBot.Module.TRpgModule
 open KPX.TheBot.Module.TRpgModule.Strings
 open KPX.TheBot.Module.TRpgModule.Coc7
-open KPX.TheBot.Module.TRpgModule.DailySan
 
 
 type TRpgModule() =
     inherit CommandHandlerBase()
 
     [<CommandHandlerMethod(".coc7", "coc第七版属性值，随机", "")>]
-    [<CommandHandlerMethod("#coc7", "coc第七版属性值，每日更新", "", IsHidden = true)>]
+    [<CommandHandlerMethod("#coc7", "coc第七版属性值，每日更新", "")>]
     member x.HandleCoc7(cmdArg : CommandEventArgs) =
         let isDotCommand = cmdArg.CommandAttrib.Command = ".coc7"
 
@@ -62,34 +61,38 @@ type TRpgModule() =
         using (cmdArg.OpenResponse()) (fun ret -> ret.Write(tt))
 
     [<TestFixture>]
-    member x.TestCoc7() = 
+    member x.TestCoc7() =
         let tc = TestContext(x)
         tc.ShouldNotThrow(".coc7")
         tc.ShouldNotThrow("#coc7")
 
-    [<CommandHandlerMethod(".sc",
-                                    "理智检定 .sc 成功/失败 [当前san]",
-                                    "如果没有定义当前san，则从#coc7结果车卡计算。",
-                                    IsHidden = true)>]
+    [<CommandHandlerMethod(".sc", "跑团用理智检定 .sc 成功/失败 [当前san]", "如当前san未定义，则取当前角色")>]
     member x.HandleSanCheck(cmdArg : CommandEventArgs) =
+        let card =
+            CardManager.tryGetCurrentCard cmdArg.MessageEvent.UserId
+
         let args = cmdArg.HeaderArgs // 参数检查
 
-        if args.Length = 0 || args.Length > 2 then
-            cmdArg.Abort(InputError, "此指令需要1/2个参数 .sc 成功/失败 [当前san]")
+        if args.Length = 0
+           || args.Length > 2
+           || (not <| args.[0].Contains("/")) then
+            cmdArg.Abort(InputError, $"参数错误，请参考指令帮助 #help %s{cmdArg.CommandAttrib.Command}")
 
-        if not <| args.[0].Contains("/") then
-            cmdArg.Abort(InputError, "成功/失败 表达式错误")
-
-        let isDaily, currentSan =
-            if args.Length = 2 then
-                let parseSucc, currentSan = Int32.TryParse(args.[1])
+        let san =
+            match args.Length with
+            | 1 ->
+                // 读角色
+                if card.IsNone then cmdArg.Abort(InputError, "当前没有绑定角色")
+                card.Value.["理智"]
+            | 2 ->
+                // 给定值
+                let parseSucc, value = Int32.TryParse(args.[1])
 
                 if parseSucc then
-                    false, currentSan
+                    value
                 else
-                    true, DailySanCacheCollection.Instance.GetValue(cmdArg)
-            else
-                true, DailySanCacheCollection.Instance.GetValue(cmdArg)
+                    cmdArg.Abort(InputError, $"无法将%s{args.[1]}转换为整数")
+            | _ -> cmdArg.Abort(InputError, $"参数错误，请参考指令帮助 #help %s{cmdArg.CommandAttrib.Command}")
 
         let succ, fail =
             let s = args.[0].Split("/")
@@ -98,72 +101,92 @@ type TRpgModule() =
         let de = DiceExpression()
         let check = de.Eval("1D100").Sum |> int
 
-        let status, lose =
-            match check with
-            | 1 ->
-                "大成功",
-                DiceExpression.ForceMinDiceing.Eval(succ).Sum
-                |> int
-            | 100 ->
-                "大失败",
-                DiceExpression.ForceMaxDiceing.Eval(fail).Sum
-                |> int
-            | _ when check <= currentSan -> "成功", de.Eval(succ).Sum |> int
-            | _ -> "失败", de.Eval(fail).Sum |> int
+        let status = RollResult.Describe(check, san)
+
+        let lose =
+            match status with
+            | RollResult.Critical -> DiceExpression.ForceMinDiceing.Eval(succ).Sum
+            | RollResult.Fumble -> DiceExpression.ForceMaxDiceing.Eval(fail).Sum
+            | _ when status.IsSuccess -> de.Eval(succ).Sum
+            | _ -> de.Eval(fail).Sum
+            |> int
+
+        let finalSan = max 0 (san - lose)
 
         use ret = cmdArg.OpenResponse(ForceText)
         ret.WriteLine("1D100 = {0}：{1}", check, status)
 
-        let finalSan = max 0 (currentSan - lose)
+        ret.WriteLine("San值减少{0}点，当前剩余{1}点。", lose, finalSan)
 
-        if isDaily then
-            DailySanCacheCollection.Instance.SetValue(cmdArg, finalSan)
-            ret.WriteLine("今日San值减少{0}点，当前剩余{1}点。", lose, finalSan)
-        else
-            ret.WriteLine("San值减少{0}点，当前剩余{1}点。", lose, finalSan)
+        if card.IsSome then
+            // 写回角色
+            card.Value.["理智"] <- finalSan
+            CardManager.upsert card.Value
 
     [<TestFixture>]
-    member x.TestSc() = 
+    member x.TestSc() =
         let tc = TestContext(x)
-        tc.ShouldNotThrow(".sc 100/100")
+        tc.ShouldNotThrow("#sc 100/100")
         tc.ShouldNotThrow(".sc 100/100 50")
-        tc.ShouldNotThrow(".sc 1D10/1D100")
+        tc.ShouldNotThrow("#sc 1D10/1D100")
         tc.ShouldNotThrow(".sc 1D10/1D100 50")
 
-    [<CommandHandlerMethod(".en", "技能/属性成长检定 .en 技能 成功率", "")>]
+    [<CommandHandlerMethod(".en", "技能/属性成长检定 .en 属性/技能名 属性/技能值", "")>]
     member x.HandleEn(cmdArg : CommandEventArgs) =
+        let card =
+            CardManager.tryGetCurrentCard cmdArg.MessageEvent.UserId
+
+        let mutable propName = ""
         let current = ref 0
 
         match cmdArg.HeaderArgs with
-        | [| attr; value |] when Int32.TryParse(value, current) ->
-            use ret = cmdArg.OpenResponse()
-
-            let dice = DiceExpression()
-            let roll0 = dice.Eval("1D100").Sum |> int
-            let usrName = cmdArg.MessageEvent.DisplayName
-
-
-            if roll0 > !current then // 成功
-                ret.WriteLine("{0} 对 {1} 的增强或成长鉴定： {{1D100 = {2}}} -> 成功", usrName, attr, roll0)
-                let add = dice.Eval("1D10").Sum |> int
-
-                ret.WriteLine(
-                    "其 {1} 增加了 {{1D10 = {2}}} 点，当前为{3} 点",
-                    usrName,
-                    attr,
-                    add,
-                    !current + add
-                )
-
-                if !current < 90 && !current + add >= 90 then
-                    let sanAdd = dice.Eval("2D6").Sum |> int
-                    ret.WriteLine("（可选）并为恢复了 {{2D6 = {0}}} 点理智", sanAdd)
+        | [| prop |] when card.IsSome ->
+            if card.Value.PropExists(prop) then
+                propName <- prop
+                current := card.Value.[prop]
             else
-                ret.WriteLine("{0} 对 {1} 的增强或成长鉴定： {{1D100 = {2}}} -> 失败", usrName, attr, roll0)
-        | _ -> cmdArg.Abort(InputError, "参数错误：.ra/.rc 属性/技能名 属性/技能值")
+                cmdArg.Abort(InputError, "角色中不存在指定属性")
+        | [| prop; value |] when Int32.TryParse(value, current) -> propName <- prop
+        | _ -> cmdArg.Abort(InputError, "参数错误")
+
+        use ret = cmdArg.OpenResponse()
+
+        let dice = DiceExpression()
+        let roll0 = dice.Eval("1D100").Sum |> int
+
+        let usrName =
+            if card.IsSome then
+                card.Value.ChrName
+            else
+                cmdArg.MessageEvent.DisplayName
+
+        if roll0 > !current then // 成功
+            ret.WriteLine("{0} 对 {1} 的增强或成长鉴定： {{1D100 = {2}}} -> 成功", usrName, propName, roll0)
+            let add = dice.Eval("1D10").Sum |> int
+
+            ret.WriteLine(
+                "其 {1} 增加了 {{1D10 = {2}}} 点，当前为{3} 点",
+                usrName,
+                propName,
+                add,
+                !current + add
+            )
+
+            if card.IsSome then card.Value.[propName] <- !current + add
+
+            if !current < 90 && !current + add >= 90 then
+                let sanAdd = dice.Eval("2D6").Sum |> int
+                ret.WriteLine("并为恢复了 {{2D6 = {0}}} 点理智", sanAdd)
+
+                if card.IsSome then
+                    card.Value.["理智"] <- card.Value.["理智"] + sanAdd
+
+            if card.IsSome then CardManager.upsert card.Value
+        else
+            ret.WriteLine("{0} 对 {1} 的增强或成长鉴定： {{1D100 = {2}}} -> 失败", usrName, propName, roll0)
 
     [<TestFixture>]
-    member x.TestEn() = 
+    member x.TestEn() =
         let tc = TestContext(x)
         tc.ShouldNotThrow(".en 测试 0")
         tc.ShouldNotThrow(".en 测试 100")
@@ -183,6 +206,10 @@ type TRpgModule() =
             }
             |> set
 
+        let card =
+            CardManager.tryGetCurrentCard cmdArg.MessageEvent.UserId
+
+        let mutable useCardName = false
         let mutable expr = "1D100"
         let mutable needDescription = None
         let mutable isPrivate = false
@@ -215,6 +242,13 @@ type TRpgModule() =
             if cmdArg.CommandName = ".ra" then offset <- 5
 
             match cmdArg.HeaderArgs with
+            | [| attName |] when card.IsSome ->
+                if card.Value.PropExists(attName) then
+                    reason <- attName
+                    needDescription <- Some card.Value.[attName]
+                    useCardName <- true
+                else
+                    cmdArg.Abort(InputError, "角色中不存在指定属性")
             | [| attName; value |] when Int32.TryParse(value, t) ->
                 reason <- attName
                 needDescription <- Some !t
@@ -227,7 +261,12 @@ type TRpgModule() =
         | Error e -> cmdArg.Reply $"对 %s{expr} 求值失败：%s{e.Message}"
         | Ok i ->
             let rolled = i.Sum |> int
-            let usrName = cmdArg.MessageEvent.DisplayName
+
+            let usrName =
+                if useCardName then
+                    card.Value.ChrName
+                else
+                    cmdArg.MessageEvent.DisplayName
 
             let msg =
                 if needDescription.IsSome then
@@ -250,7 +289,7 @@ type TRpgModule() =
                 cmdArg.Reply(msg)
 
     [<TestFixture>]
-    member x.TestR() = 
+    member x.TestR() =
         let tc = TestContext(x)
         tc.ShouldNotThrow(".r")
         tc.ShouldNotThrow(".r 测试")
@@ -265,7 +304,7 @@ type TRpgModule() =
 
     [<CommandHandlerMethod(".crule", "查询/设置当前房规区间（不稳定）", "", Disabled = true)>]
     member x.HandleRollRule(cmdArg : CommandEventArgs) =
-        
+
         if cmdArg.MessageEvent.MessageType = MessageType.Private then
             cmdArg.Abort(InputError, "此指令仅私聊无效")
 
@@ -317,8 +356,7 @@ type TRpgModule() =
         let opt = NameOption()
         opt.Parse(cmdArg.HeaderArgs)
 
-        if opt.NameCount > 20 then
-            cmdArg.Abort(InputError, "数量太多")
+        if opt.NameCount > 20 then cmdArg.Abort(InputError, "数量太多")
 
         let de = DiceExpression(Dicer.RandomDicer)
 
@@ -338,7 +376,7 @@ type TRpgModule() =
         cmdArg.Reply(ret)
 
     [<TestFixture>]
-    member x.TestGenerator() = 
+    member x.TestGenerator() =
         let tc = TestContext(x)
         tc.ShouldNotThrow(".li")
         tc.ShouldNotThrow(".ti")

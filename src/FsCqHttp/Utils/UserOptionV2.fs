@@ -12,7 +12,9 @@ type OptionCell(cb : OptionBase, key : string) =
     member x.KeyName = key
 
     /// 指示该选项是否已被设置
-    member x.IsDefined = x.TryGetRealKey().IsSome
+    abstract IsDefined : bool
+    
+    default x.IsDefined = x.TryGetRealKey().IsSome
 
     /// 获取或更改该选项的别名
     member val Aliases = Array.empty<string> with get, set
@@ -33,7 +35,12 @@ type OptionCell<'T>(cb : OptionBase, key : string, defValue : 'T) =
 
     /// 是否从OptionBase的TryIndex中读取值
     member val ArgIndex : int option = None with get, set
-
+    
+    override x.IsDefined =
+        let nonOpts : IReadOnlyList<string> = cb.NonOptionStrings
+        (x.ArgIndex.IsSome && (x.ArgIndex.Value < nonOpts.Count))
+        || base.IsDefined
+        
     abstract ConvertValue : string -> 'T
 
     member private x.ValueSequence =
