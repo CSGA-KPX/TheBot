@@ -65,12 +65,11 @@ type HelpModuleBase() =
 
         match api.CommandInfo with
         | None -> cmdArg.Reply $"该模块没有定义或不存在指令%s{cmd}"
-        | Some ci when String.IsNullOrEmpty(ci.CommandAttribute.LongHelp) ->
-            cmdArg.Reply $"%s{cmd}没有定义说明文本"
         | Some ci ->
             use ret = cmdArg.OpenResponse(ForceText)
             ret.WriteLine("{0} ： {1}", ci.CommandAttribute.Command, ci.CommandAttribute.HelpDesc)
-            ret.Write(ci.CommandAttribute.LongHelp)
+            if not <| String.IsNullOrEmpty(ci.CommandAttribute.LongHelp) then
+                ret.Write(ci.CommandAttribute.LongHelp)
 
     member x.HelpCommandImpl(cmdArg : CommandEventArgs) =
         let cfg = HelpOption()

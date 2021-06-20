@@ -62,7 +62,7 @@ type StModule() =
                 let tt = card.ToTextTable()
                 ret.Write(tt))
 
-    [<CommandHandlerMethod(".pc", "角色操作", "")>]
+    [<CommandHandlerMethod(".pc", "角色操作，不带参数查看帮助", "")>]
     member x.HandlePC(cmdArg : CommandEventArgs) =
         match SubcommandParser.Parse<PcSubcommands>(cmdArg.HeaderArgs) with
         | None ->
