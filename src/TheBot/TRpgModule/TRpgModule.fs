@@ -126,9 +126,7 @@ type TRpgModule() =
     [<TestFixture>]
     member x.TestSc() =
         let tc = TestContext(x)
-        tc.ShouldNotThrow("#sc 100/100")
         tc.ShouldNotThrow(".sc 100/100 50")
-        tc.ShouldNotThrow("#sc 1D10/1D100")
         tc.ShouldNotThrow(".sc 1D10/1D100 50")
 
     [<CommandHandlerMethod(".en", "技能/属性成长检定 .en 属性/技能名 属性/技能值", "")>]

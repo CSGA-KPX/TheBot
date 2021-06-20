@@ -19,6 +19,9 @@ type CurrentCard =
       CardId : int64 }
 
     static member FromCard(c : CharacterCard) =
+        if c.Id = 0L then
+            invalidArg "CharacterCard.Id" "角色卡ID为0！"
+            
         { CurrentCard.UserId = c.UserId
           CurrentCard.CardId = c.Id }
 

@@ -43,12 +43,23 @@ type StModule() =
             card.[prop] <- m.Groups.[2].Value |> int
 
         CardManager.insert card
+        
+        // insert不会改变卡ID，还得自己获取一次
+        let card =
+            CardManager
+                .getByName(
+                    cmdArg.MessageEvent.UserId,
+                    card.ChrName
+                )
+                .Value
+
+        CardManager.setCurrent card
 
         using
             (cmdArg.OpenResponse(ForceImage))
             (fun ret ->
                 let tt = card.ToTextTable()
-                tt.AddPreTable("已保存角色：")
+                tt.AddPreTable("已保存角色并设置为当前使用：")
                 ret.Write(tt))
 
     [<CommandHandlerMethod(".pc", "角色操作", "")>]
@@ -89,7 +100,7 @@ type StModule() =
         | Some (Show opt) ->
             let card =
                 CardManager.getCurrentCard cmdArg.MessageEvent.UserId
-                
+
             match opt.SkillName with
             | None ->
                 using (cmdArg.OpenResponse(ForceImage)) (fun ret -> ret.Write(card.ToTextTable()))

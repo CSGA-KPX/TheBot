@@ -4,6 +4,7 @@ open System.Collections.Concurrent
 
 open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Utils.TextResponse
+open KPX.FsCqHttp.Testing
 
 open KPX.TheBot.Utils.Dicer
 
@@ -89,3 +90,9 @@ type DailySanModule() =
         
         DailySanCacheCollection.Instance.SetValue(cmdArg, finalSan)
         ret.WriteLine("今日San值减少{0}点，当前剩余{1}点。", lose, finalSan)
+        
+    [<TestFixture>]
+    member x.TestDailySc() =
+        let tc = TestContext(x)
+        tc.ShouldNotThrow("#sc 100/100")
+        tc.ShouldNotThrow("#sc 1D10/1D100")
