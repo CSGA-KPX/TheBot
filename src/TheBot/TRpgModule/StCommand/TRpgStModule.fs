@@ -54,12 +54,12 @@ type StModule() =
                 .Value
 
         CardManager.setCurrent card
-
+        
+        cmdArg.Reply($"已保存并绑定角色，请检查属性，或使用.pc remove %s{card.ChrName}删除。")
         using
             (cmdArg.OpenResponse(ForceImage))
             (fun ret ->
                 let tt = card.ToTextTable()
-                tt.AddPreTable("已保存角色并设置为当前使用：")
                 ret.Write(tt))
 
     [<CommandHandlerMethod(".pc", "角色操作", "")>]

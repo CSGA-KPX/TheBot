@@ -94,7 +94,7 @@ type Dicer(seeds : seq<SeedOption>) =
     new(opt : SeedOption) = Dicer(Seq.singleton opt)
 
     /// 通用的随机骰子
-    static member val RandomDicer = Dicer(SeedOption.SeedRandom)
+    static member RandomDicer = Dicer(SeedOption.SeedRandom)
 
     member x.Freeze() = drng.Freeze()
 
