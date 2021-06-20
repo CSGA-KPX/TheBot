@@ -20,6 +20,7 @@ type StShowCommandOpts() as x =
             None
 
 type PcSubcommands =
+    | New of chrName : string
     | List
     | [<AltCommandName("rm")>] Remove of name : string
     | [<AltCommandName("clr")>] Clear
@@ -36,7 +37,7 @@ type PcSubcommands =
     interface ISubcommandTemplate with
         member x.Usage =
             match x with
-
+            | New _ -> "创建空白卡"
             | List -> "看角色列表"
             | Remove _ -> "删除角色 remove 角色名称"
             | Clear -> "（未实装）清空数据"

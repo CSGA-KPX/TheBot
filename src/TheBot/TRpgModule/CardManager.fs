@@ -35,7 +35,9 @@ let private currCol = db.GetCollection<CurrentCard>()
 let exists (c : CharacterCard) =
     cardCol.TryFindById(BsonValue(c.Id)).IsSome
 
-let insert (c : CharacterCard) = cardCol.Insert(c) |> ignore
+let insert (c : CharacterCard) =
+    let id = cardCol.Insert(c).AsInt64
+    {c with Id = id}
 
 let upsert (c : CharacterCard) = cardCol.Upsert(c) |> ignore
 
@@ -51,7 +53,7 @@ let getCards (uid : UserId) =
     cardCol.Find(Query.EQ("UserId", BsonValue.op_Implicit uid.Value))
     |> Seq.toArray
     
-let getByName (uid : UserId, name : string) =
+let getByName (uid : UserId) (name : string) =
     let query =
         Query.And(
             Query.EQ("UserId", BsonValue.op_Implicit uid.Value),
