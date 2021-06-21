@@ -14,24 +14,16 @@ open KPX.FsCqHttp.Api.System
 open KPX.FsCqHttp.Handler
 
 
-[<Sealed>]
-type internal ImageHelper private () =
-
-    /// 调整字符显示宽度。如果IsMatch=true则认为是1栏宽
-    ///
-    /// 需要设置RegexOptions.Compiled
-    static let CharDisplayLengthAdj =
+type internal ImageMeasurer() as x =
+    static let charDisplayLengthAdj =
         Regex(@"\p{IsBasicLatin}|\p{IsGeneralPunctuation}|±|·", RegexOptions.Compiled)
 
-    static let syncObj = obj ()
+    static let font =
+        new Font(Config.ImageOutputFont, Config.ImageOutputSize)
 
-    static let mutable tmpImg = Graphics.FromImage(new Bitmap(1, 1))
-
-    static member val Font = new Font(Config.ImageOutputFont, Config.ImageOutputSize)
-
-    static member val StringFormat =
+    static let stringFormat =
+        // 请勿使用StringFormat.GenericDefault
         let sf =
-            // 请勿使用StringFormat.GenericDefault
             new StringFormat(StringFormat.GenericTypographic)
 
         sf.FormatFlags <-
@@ -40,44 +32,49 @@ type internal ImageHelper private () =
 
         sf
 
-    static member val private SingleColumnWidth =
-        let str = string Config.FullWidthSpace
+    let mutable tmpImg = Graphics.FromImage(new Bitmap(1, 1))
 
-        let ret = ImageHelper.MeasureByGraphic(str)
-        (int ret.Width) / 2
+    let singleColumnWidth =
+        lazy
+            (let str = string Config.FullWidthSpace
 
-    static member MeasureByChar(str : string) =
+             let ret = x.MeasureByGraphic(str)
+             (int ret.Width) / 2)
+
+    member private x.SingleColumnWidth = singleColumnWidth.Value
+
+    member x.MeasureByChar(str : string) =
         str.ToCharArray()
-        |> Array.sumBy (fun c -> if CharDisplayLengthAdj.IsMatch(c.ToString()) then 1 else 2)
+        |> Array.sumBy (fun c -> if charDisplayLengthAdj.IsMatch(c.ToString()) then 1 else 2)
 
-    static member MeasureByGraphic(str : string) : SizeF =
-        lock
-            syncObj
-            (fun () -> tmpImg.MeasureString(str, ImageHelper.Font, 0, ImageHelper.StringFormat))
+    member x.MeasureByGraphic(str : string) : SizeF =
+        tmpImg.MeasureString(str, font, 0, stringFormat)
 
     /// 使用Output.TextTable.UseGraphicStringMeasure计算宽度。
     /// 返回宽度按栏数计算。
-    static member MeasureWidthByConfig(str : string) =
+    member x.MeasureWidthByConfig(str : string) =
         if Config.TableGraphicMeasure then
-            let ret =
-                ImageHelper.MeasureByGraphic(str).Width |> int
+            let ret = x.MeasureByGraphic(str).Width |> int
 
-            let mutable width = ret / ImageHelper.SingleColumnWidth
+            let mutable width = ret / x.SingleColumnWidth
 
-            if (ret % ImageHelper.SingleColumnWidth) <> 0 then
-                width <- width + 1
+            if (ret % x.SingleColumnWidth) <> 0 then width <- width + 1
 
             if width = 0 && str.Length <> 0 then
                 // 可能是上游Cairo和libgdiplus的bug
                 // 对于含有颜文字的文字会计算错误
                 // 需要用老式方法计算并且替换graphic
-                width <- ImageHelper.MeasureByChar(str)
-                lock syncObj (fun () -> tmpImg <- Graphics.FromImage(new Bitmap(1, 1)))
+                width <- x.MeasureByChar(str)
+                tmpImg <- Graphics.FromImage(new Bitmap(1, 1))
 
             //printfn ">%s< -> %i" str width
             width
         else
-            ImageHelper.MeasureByChar(str)
+            x.MeasureByChar(str)
+
+    member x.Font = font
+
+    member x.StringFormat = stringFormat
 
 type ResponseType =
     | ForceImage
@@ -94,8 +91,10 @@ type TextResponse(args : CqMessageEventArgs, respType : ResponseType) =
     let buf = Queue<string>()
     let sb = StringBuilder()
 
+    let measurer = ImageMeasurer()
+
     let canSendImage =
-        lazy args.ApiCaller.CallApi<CanSendImage>().Can
+        lazy (args.ApiCaller.CallApi<CanSendImage>().Can)
 
     member x.DoSendAsImage =
         match respType with
@@ -165,12 +164,12 @@ type TextResponse(args : CqMessageEventArgs, respType : ResponseType) =
 
     member private x.FlushImageMessage() =
         let DrawLines (lines : string []) =
-            let font = ImageHelper.Font
-            let sf = ImageHelper.StringFormat
+            let font = measurer.Font
+            let sf = measurer.StringFormat
 
             let fullSize =
                 let calc =
-                    lines |> Array.map ImageHelper.MeasureByGraphic
+                    lines |> Array.map measurer.MeasureByGraphic
 
                 let maxWidth = calc |> Array.maxBy (fun x -> x.Width)
                 let sumHeight = calc |> Array.sumBy (fun x -> x.Height)

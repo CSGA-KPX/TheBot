@@ -9,7 +9,9 @@ open KPX.FsCqHttp.Utils.TextResponse
 /// 表示表格内每列的内容
 type internal TextColumn() =
     inherit List<TableCell>()
-
+    
+    let measurer = ImageMeasurer()
+    
     let mutable defaultLeftAlignment = true
 
     /// 设置默认为左对齐
@@ -44,7 +46,7 @@ type internal TextColumn() =
 
     member x.GetMaxDisplayWidth() =
         x
-        |> Seq.map (fun cell -> cell.DisplayWidth)
+        |> Seq.map (fun cell -> cell.DisplayWidthOf(measurer))
         |> Seq.max
 
     /// 对齐到指定大小
@@ -52,14 +54,14 @@ type internal TextColumn() =
         let max = x.GetMaxDisplayWidth()
 
         let padCharLen =
-            ImageHelper.MeasureWidthByConfig(string padChar)
+            measurer.MeasureWidthByConfig(string padChar)
 
         if padCharLen = 0 then
             invalidArg (nameof padChar) $"字符长度计算错误： %c{padChar} 的栏位数为0"
 
         for i = 0 to x.Count - 1 do
             let cell = x.[i]
-            let width = cell.DisplayWidth
+            let width = cell.DisplayWidthOf(measurer)
             let padLen = (max - width) / padCharLen // 整数部分用padChar补齐
             let rstLen = (max - width) % padCharLen // 非整数部分用空格补齐
 

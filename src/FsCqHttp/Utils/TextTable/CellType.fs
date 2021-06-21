@@ -19,7 +19,7 @@ type TableCell =
     member x.IsLeftAlign = x.Align = CellAlign.Left
     member x.IsRightAlign = x.Align = CellAlign.Right
 
-    member x.DisplayWidth = ImageHelper.MeasureWidthByConfig(x.Text)
+    member internal x.DisplayWidthOf(measurer : ImageMeasurer) = measurer.MeasureWidthByConfig(x.Text)
 
     static member private GetDefaultAlign(o : obj) =
         match Type.GetTypeCode(o.GetType()) with
