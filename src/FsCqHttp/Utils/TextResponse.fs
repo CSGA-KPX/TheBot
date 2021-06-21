@@ -95,7 +95,7 @@ type TextResponse(args : CqMessageEventArgs, respType : ResponseType) =
     let sb = StringBuilder()
 
     let canSendImage =
-        lazy (args.ApiCaller.CallApi<CanSendImage>().Can)
+        lazy args.ApiCaller.CallApi<CanSendImage>().Can
 
     member x.DoSendAsImage =
         match respType with
@@ -132,11 +132,11 @@ type TextResponse(args : CqMessageEventArgs, respType : ResponseType) =
         invalidOp<unit> "已禁用WriteLine(object)，请手动调用WriteLine(object.ToString())。"
 
     /// 中断执行过程，中断文本输出
-    member x.Abort(level : ErrorLevel, fmt : string, [<ParamArray>] fmtargs : obj []) =
-        x.WriteLine()
-        buf.Clear()
-        isUsed <- false
-        args.Abort(level, fmt, fmtargs)
+    member x.Abort(level : ErrorLevel, fmt : string, [<ParamArray>] fmtArgs : obj []) =
+        x.WriteLine() // 清空当前行
+        buf.Clear() // 清空已有行
+        isUsed <- false // 设置为未使用禁止输出
+        args.Abort(level, fmt, fmtArgs)
 
     member x.WriteEmptyLine() = x.WriteLine("\u3000")
 
