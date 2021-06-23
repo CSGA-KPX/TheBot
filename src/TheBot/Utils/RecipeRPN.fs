@@ -58,10 +58,10 @@ type RecipeOperand<'Item when 'Item : equality> =
 [<AbstractClass>]
 type RecipeExpression<'Item when 'Item : equality>() =
     inherit GenericRPNParser<RecipeOperand<'Item>>(seq {
-                                                       GenericOperator<_>('+', 2, (+))
-                                                       GenericOperator<_>('-', 2, (-))
-                                                       GenericOperator<_>('*', 3, (*))
-                                                       GenericOperator<_>('/', 3, (/))
+                                                       GenericOperator<_>('+', 2, BinaryFunc = Some (+))
+                                                       GenericOperator<_>('-', 2, BinaryFunc = Some (-))
+                                                       GenericOperator<_>('*', 3, BinaryFunc = Some (*))
+                                                       GenericOperator<_>('/', 3, BinaryFunc = Some (/))
                                                    })
 
     /// 把物品名称转换为物品类型

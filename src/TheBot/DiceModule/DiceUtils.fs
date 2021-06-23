@@ -37,36 +37,46 @@ module DiceExpression =
 
     type DiceExpression(dicer : Dicer) as x =
         inherit GenericRPNParser<DicerOperand>(seq {
-                                                   GenericOperator<_>('+', 2, (+))
-                                                   GenericOperator<_>('-', 2, (-))
-                                                   GenericOperator<_>('*', 3, (*))
-                                                   GenericOperator<_>('/', 3, (/))
+                                                   GenericOperator<_>('+', 2, BinaryFunc = Some (+))
+                                                   GenericOperator<_>('-', 2, BinaryFunc = Some (-))
+                                                   GenericOperator<_>('*', 3, BinaryFunc = Some (*))
+                                                   GenericOperator<_>('/', 3, BinaryFunc = Some (/))
                                                })
 
         do
-            let dFunc (l : DicerOperand) (r : DicerOperand) =
-                let lsum = l.Sum |> int
-                let rsum = r.Sum |> uint32
-                if lsum > 100 then failwithf "投骰次数过多，目前上限为100。"
+            let binaryDiceFunc (l : DicerOperand) (r : DicerOperand) =
+                let lSum = l.Sum |> int
+                let rSum = r.Sum |> uint32
+                if lSum > 100 then failwithf "投骰次数过多，目前上限为100。"
 
                 let ret =
-                    Array.init lsum (fun _ -> dicer.GetPositive(rsum) |> float)
+                    Array.init lSum (fun _ -> dicer.GetPositive(rSum) |> float)
 
                 DicerOperand(ret)
+            
+            let unaryDiceFunc (r : DicerOperand) =
+                let lSum = 1
+                let rSum = r.Sum |> uint32
+                if lSum > 100 then failwithf "投骰次数过多，目前上限为100。"
 
-            x.Operators.Add(GenericOperator<_>('D', 5, dFunc))
-            x.Operators.Add(GenericOperator<_>('d', 5, dFunc))
+                let ret =
+                    Array.init lSum (fun _ -> dicer.GetPositive(rSum) |> float)
+
+                DicerOperand(ret)
+            
+            x.Operators.Add(GenericOperator<_>('D', 5, BinaryFunc = Some binaryDiceFunc, UnaryFunc = Some unaryDiceFunc))
+            x.Operators.Add(GenericOperator<_>('d', 5, BinaryFunc = Some binaryDiceFunc, UnaryFunc = Some unaryDiceFunc))
 
             let kFunc (l : DicerOperand) (r : DicerOperand) =
-                let rsum = r.Sum |> int
+                let rSum = r.Sum |> int
 
                 l.Value
                 |> Array.sortDescending
-                |> Array.truncate rsum
+                |> Array.truncate rSum
                 |> DicerOperand
 
-            x.Operators.Add(GenericOperator<_>('k', 4, kFunc))
-            x.Operators.Add(GenericOperator<_>('K', 4, kFunc))
+            x.Operators.Add(GenericOperator<_>('k', 4, BinaryFunc = Some kFunc))
+            x.Operators.Add(GenericOperator<_>('K', 4, BinaryFunc = Some kFunc))
 
         /// 创建一个随机骰子
         new() = DiceExpression(Dicer.RandomDicer)
@@ -83,10 +93,14 @@ module DiceExpression =
                 let ret = Array.init lsum (fun _ -> 1.0)
                 DicerOperand(ret)
 
+            let dFuncUnary (_ : DicerOperand) =
+                let ret = Array.init 1 (fun _ -> 1.0)
+                DicerOperand(ret)
+            
             x.Operators.Remove('d') |> ignore
             x.Operators.Remove('D') |> ignore
-            x.Operators.Add(GenericOperator<_>('D', 5, dFunc))
-            x.Operators.Add(GenericOperator<_>('d', 5, dFunc))
+            x.Operators.Add(GenericOperator<_>('D', 5, BinaryFunc = Some dFunc, UnaryFunc = Some dFuncUnary))
+            x.Operators.Add(GenericOperator<_>('d', 5, BinaryFunc = Some dFunc, UnaryFunc = Some dFuncUnary))
             x
 
         /// 返回一个新的实例，该实例所有D取最大值
@@ -98,11 +112,16 @@ module DiceExpression =
                 let rsum = r.Sum
                 let ret = Array.init lsum (fun _ -> rsum)
                 DicerOperand(ret)
+                
+            let dFuncUnary (r : DicerOperand) =
+                let rsum = r.Sum
+                let ret = Array.init 1 (fun _ -> rsum)
+                DicerOperand(ret)
 
             x.Operators.Remove('d') |> ignore
             x.Operators.Remove('D') |> ignore
-            x.Operators.Add(GenericOperator<_>('D', 5, dFunc))
-            x.Operators.Add(GenericOperator<_>('d', 5, dFunc))
+            x.Operators.Add(GenericOperator<_>('D', 5, BinaryFunc = Some dFunc, UnaryFunc = Some dFuncUnary))
+            x.Operators.Add(GenericOperator<_>('d', 5, BinaryFunc = Some dFunc, UnaryFunc = Some dFuncUnary))
             x
 
         override x.Tokenize(token) =

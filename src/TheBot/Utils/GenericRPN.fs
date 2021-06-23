@@ -6,29 +6,27 @@ open System.Collections.Generic
 open KPX.FsCqHttp.Handler
 
 
-type GenericOperator<'Operand>(c, p, f : 'Operand -> 'Operand -> 'Operand) =
+type GenericOperator<'Operand>(c, p) =
     member x.Char = c
     member x.Precedence = p
-    /// l -> r -> return
-    member x.Func = f
     member x.IsLeftParen = x.Char = '('
     member x.IsRightParen = x.Char = ')'
     member x.IsParen = x.IsLeftParen || x.IsRightParen
 
-    /// 一元运算符还是二元运算符
-    ///
-    /// 一元运算符时，Func中l=r
-    member val IsBinary = true with get, set
+    member val BinaryFunc : ('Operand -> 'Operand -> 'Operand) option = None with get, set
+
+    member val UnaryFunc : ('Operand -> 'Operand) option = None with get, set
+
     override x.ToString() = x.Char |> string
 
 type RPNToken<'T> =
     | Operand of 'T
-    | Operator of GenericOperator<'T>
+    | Operator of GenericOperator<'T> * isUnary : bool
 
     override x.ToString() =
         match x with
         | Operand i -> $"(Operand {i})"
-        | Operator o -> $"(Operator {o})"
+        | Operator (o, b) -> $"(Operator %A{o} : isUnary : %b{b})"
 
 [<AbstractClass>]
 type GenericRPNParser<'Operand>(ops : seq<_>) =
@@ -37,8 +35,8 @@ type GenericRPNParser<'Operand>(ops : seq<_>) =
             { new Collections.ObjectModel.KeyedCollection<char, GenericOperator<'Operand>>() with
                 member x.GetKeyForItem(item) = item.Char }
 
-        col.Add(GenericOperator<'Operand>('(', -1, (fun _ -> invalidOp "")))
-        col.Add(GenericOperator<'Operand>(')', -1, (fun _ -> invalidOp "")))
+        col.Add(GenericOperator<'Operand>('(', -1))
+        col.Add(GenericOperator<'Operand>(')', -1))
 
         for op in ops do
             col.Add(op)
@@ -82,8 +80,14 @@ type GenericRPNParser<'Operand>(ops : seq<_>) =
 
                     if not <| String.IsNullOrWhiteSpace(token) then
                         ret.Add(x.Tokenize(token))
-
-                    ret.Add(Operator x.Operators.[c])
+                    
+                    let isUnary =
+                        ret.Count = 0
+                        || match ret.[ret.Count - 1] with
+                           | Operand _ -> false
+                           | Operator (o, _) -> o.IsLeftParen
+                    
+                    ret.Add(Operator (x.Operators.[c], isUnary))
             else
                 sb.Append(c) |> ignore
 
@@ -95,25 +99,25 @@ type GenericRPNParser<'Operand>(ops : seq<_>) =
         ret.ToArray()
 
     member private x.InfixToPostfix(tokens : RPNToken<'Operand> []) =
-        let stack = Stack<GenericOperator<'Operand>>()
+        let stack = Stack<GenericOperator<'Operand> * bool>()
         let output = Queue<RPNToken<'Operand>>()
 
         for token in tokens do
             match token with
             | Operand _ -> output.Enqueue(token)
-            | Operator o when o.IsLeftParen -> stack.Push(o)
-            | Operator o when o.IsRightParen ->
-                while not (stack.Peek().IsLeftParen) do
+            | Operator (o, iU) when o.IsLeftParen -> stack.Push(o, iU)
+            | Operator (o, _) when o.IsRightParen ->
+                while not (fst <| stack.Peek()).IsLeftParen do
                     output.Enqueue(Operator(stack.Pop()))
 
-                if stack.Peek().IsLeftParen then stack.Pop() |> ignore
-            | Operator o ->
+                if (fst <| stack.Peek()).IsLeftParen then stack.Pop() |> ignore
+            | Operator (o, iU) ->
                 while (stack.Count <> 0)
-                      && (stack.Peek().Precedence >= o.Precedence)
-                      && (not <| stack.Peek().IsLeftParen) do
+                      && ((fst <| stack.Peek()).Precedence >= o.Precedence)
+                      && (not <| (fst <| stack.Peek()).IsLeftParen) do
                     output.Enqueue(Operator(stack.Pop()))
 
-                stack.Push(o)
+                stack.Push(o, iU)
 
         while stack.Count <> 0 do
             output.Enqueue(Operator(stack.Pop()))
@@ -122,7 +126,9 @@ type GenericRPNParser<'Operand>(ops : seq<_>) =
 
     member x.Eval(str) =
         let rpn = str |> x.SplitString |> x.InfixToPostfix
-
+        
+        printfn $"%A{rpn}"
+        
         if rpn.Length = 0 then
             raise <| ModuleException(InputError, "输入错误：表达式为空")
 
@@ -132,12 +138,13 @@ type GenericRPNParser<'Operand>(ops : seq<_>) =
             for token in rpn do
                 match token with
                 | Operand i -> stack.Push(i)
-                | Operator o when not o.IsBinary ->
-                    let l = stack.Pop()
-                    stack.Push(o.Func l l)
-                | Operator o ->
-                    let r, l = stack.Pop(), stack.Pop()
-                    stack.Push(o.Func l r)
+                | Operator (o, isUnary) ->
+                    if isUnary && o.UnaryFunc.IsSome then
+                        let l = stack.Pop()
+                        stack.Push(o.UnaryFunc.Value l)
+                    else
+                        let r, l = stack.Pop(), stack.Pop()
+                        stack.Push(o.BinaryFunc.Value l r)
 
             stack.Pop()
         with :? InvalidOperationException ->
