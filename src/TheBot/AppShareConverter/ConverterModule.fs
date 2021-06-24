@@ -9,6 +9,7 @@ open KPX.FsCqHttp.Message.Sections
 open KPX.FsCqHttp.Handler
 
 
+[<AbstractClass>]
 type ConverterModule() =
     inherit HandlerModuleBase()
 
