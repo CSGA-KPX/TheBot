@@ -127,8 +127,6 @@ type GenericRPNParser<'Operand>(ops : seq<_>) =
     member x.Eval(str) =
         let rpn = str |> x.SplitString |> x.InfixToPostfix
         
-        printfn $"%A{rpn}"
-        
         if rpn.Length = 0 then
             raise <| ModuleException(InputError, "输入错误：表达式为空")
 

@@ -65,9 +65,9 @@ type MessageEvent =
         match x with
         | MessageEvent.Private p -> p.Sender.Nickname
         | MessageEvent.Group g ->
-            if g.IsAnonymous then
+            if g.Anonymous.IsSome then
                 // 如果有匿名字段，取匿名名称
-                g.Anonymous.Name
+                g.Anonymous.Value.Name
             else
                 if String.IsNullOrEmpty(g.Sender.Card) then
                     // 如果群名片为空，则取昵称
@@ -159,16 +159,14 @@ type GroupMessageEvent =
       [<JsonProperty("user_id")>]
       UserId : UserId
       [<JsonProperty("anonymous")>]
-      Anonymous : AnonymousUser
+      [<JsonConverter(typeof<AnonymousUserOptionConverter>)>]
+      Anonymous : AnonymousUser option
       [<JsonProperty("message")>]
       Message : KPX.FsCqHttp.Message.Message
       [<JsonProperty("font")>]
       Font : int32
       [<JsonProperty("sender")>]
       Sender : GroupSender }
-    
-    [<JsonIgnore>]
-    member x.IsAnonymous = x.Anonymous |> box |> isNull |> not
     
     member x.Response
         (
