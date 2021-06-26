@@ -27,12 +27,12 @@ type GetGroupMemberInfo(groupId : GroupId, userId : UserId, ?noCache : bool) =
     member x.DisplayName =
         if System.String.IsNullOrEmpty(x.Card) then x.NickName else x.Card
 
-    override x.WriteParams(w, _) =
+    override x.WriteParams(w, js) =
         w.WritePropertyName("group_id")
-        w.WriteValue(groupId)
-
+        js.Serialize(w, groupId)
+        
         w.WritePropertyName("user_id")
-        w.WriteValue(userId)
+        js.Serialize(w, userId)
 
         w.WritePropertyName("no_cache")
         w.WriteValue(noCache)

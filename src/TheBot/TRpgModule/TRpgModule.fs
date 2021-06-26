@@ -280,7 +280,7 @@ type TRpgModule() =
                 let ret = Message()
                 ret.Add(msg)
 
-                SendPrivateMsg(cmdArg.MessageEvent.UserId.Value, ret)
+                SendPrivateMsg(cmdArg.MessageEvent.UserId, ret)
                 |> cmdArg.ApiCaller.CallApi
                 |> ignore
             else

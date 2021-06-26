@@ -1,11 +1,12 @@
 ﻿namespace KPX.FsCqHttp.Api.Group
 
+open KPX.FsCqHttp
 open KPX.FsCqHttp.Api
 
 
 type GroupInfo =
     { [<Newtonsoft.Json.JsonProperty("group_id")>]
-      GroupId : uint64
+      GroupId : GroupId
       [<Newtonsoft.Json.JsonProperty("group_name")>]
       GroupName : string }
 

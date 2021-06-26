@@ -1,14 +1,15 @@
 ﻿namespace KPX.FsCqHttp.Api.Private
 
+open KPX.FsCqHttp
 open KPX.FsCqHttp.Message
 open KPX.FsCqHttp.Api
 
 
-type SendPrivateMsg(userId : uint64, message : Message) =
+type SendPrivateMsg(userId : UserId, message : Message) =
     inherit CqHttpApiBase("send_private_msg")
 
     override x.WriteParams(w, js) =
         w.WritePropertyName("user_id")
-        w.WriteValue(userId)
+        js.Serialize(w, userId)
         w.WritePropertyName("message")
         js.Serialize(w, message)
