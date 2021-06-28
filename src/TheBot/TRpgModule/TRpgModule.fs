@@ -83,7 +83,10 @@ type TRpgModule() =
             | 1 ->
                 // 读角色
                 if card.IsNone then cmdArg.Abort(InputError, "当前没有绑定角色")
-                card.Value.["理智"]
+                if card.Value.PropExists("理智") then
+                    card.Value.["理智"]
+                else
+                    cmdArg.Abort(InputError, "角色不存在属性'理智'")
             | 2 ->
                 // 给定值
                 let parseSucc, value = Int32.TryParse(args.[1])
