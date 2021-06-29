@@ -20,7 +20,7 @@ type StModule() =
     member x.HandleST(cmdArg : CommandEventArgs) =
         // 处理卡信息
         let regex =
-            Text.RegularExpressions.Regex(@"([^\s\|0-9]+)([0-9]+)")
+            Text.RegularExpressions.Regex(@"([^\s\|0-9:：]+)[:：]?([0-9]+)")
 
         let card = CardManager.getCurrentCard cmdArg.MessageEvent.UserId
 
