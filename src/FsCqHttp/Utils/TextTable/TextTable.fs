@@ -3,7 +3,10 @@
 open System
 open System.Collections.Generic
 
+open System.Text
 open KPX.FsCqHttp
+
+open KPX.FsCqHttp.Utils.TextResponse
 
 
 /// 延迟TextTable的求值时间点，便于在最终输出前对TextTable的参数进行调整
@@ -17,6 +20,8 @@ type TextTable([<ParamArray>] header : Object []) =
 
     let colCount = header.Length
     let cols = List<TextColumn>(colCount)
+
+    let measurer = ImageMeasurer()
 
     do
         for _ = 0 to colCount - 1 do
@@ -73,34 +78,64 @@ type TextTable([<ParamArray>] header : Object []) =
             cols.[i].AddDefaultAlignment(def)
 
     member x.ToLines() =
-        [| let expand (l : List<DelayedTableItem>) =
-               seq {
-                   for item in l do
-                       match item with
-                       | StringItem str -> yield str
-                       | TableItem tt ->
-                           tt.ColumnPaddingChar <- x.ColumnPaddingChar
-                           yield! tt.ToLines()
-               }
+        let padCharLen =
+            measurer.MeasureWidthByConfig(string x.ColumnPaddingChar)
 
-           yield! expand preTableLines
+        if padCharLen = 0 then
+            invalidArg "ColumnPaddingChar" $"字符长度计算错误： %c{x.ColumnPaddingChar} 的栏位数为0"
 
-           for col in cols do
-               col.DoAlignment(x.ColumnPaddingChar)
+        let expand (l : List<DelayedTableItem>) =
+            seq {
+                for item in l do
+                    match item with
+                    | StringItem str -> yield str
+                    | TableItem tt ->
+                        tt.ColumnPaddingChar <- x.ColumnPaddingChar
+                        yield! tt.ToLines()
+            }
 
+        let writeCell (cell : TableCell) (targetLen : int) (out : StringBuilder) =
+            let width = cell.DisplayWidthOf(measurer)
+            let padLen = (targetLen - width) / padCharLen // 整数部分用padChar补齐
+            let rstLen = (targetLen - width) % padCharLen // 非整数部分用空格补齐
+
+            if padLen <> 0 || rstLen <> 0 then
+                if cell.IsLeftAlign then
+                    out
+                        .Append(cell.Text)
+                        .Append(x.ColumnPaddingChar, padLen)
+                        .Append(' ', rstLen)
+                    |> ignore
+                else
+                    out
+                        .Append(x.ColumnPaddingChar, padLen)
+                        .Append(' ', rstLen)
+                        .Append(cell.Text)
+                    |> ignore
+            else
+                out.Append(cell.Text) |> ignore
+
+        [| yield! expand preTableLines
+
+           // 每栏之间加入半角空格
+           // 方便文本选取
            let interColumnPadding = $" %c{x.ColumnPaddingChar} "
-           let sb = Text.StringBuilder()
+           let sb = StringBuilder()
+
+           let maxColLen =
+               cols
+               |> Seq.map (fun col -> col.GetMaxDisplayWidth(measurer))
+               |> Seq.toArray
 
            for row = 0 to cols.[0].Count - 1 do
-               sb.Clear().Append(cols.[0].[row].Text) |> ignore
+               writeCell cols.[0].[row] maxColLen.[0] sb
 
                for col = 1 to colCount - 1 do
-                   sb
-                       .Append(interColumnPadding)
-                       .Append(cols.[col].[row].Text)
-                   |> ignore
+                   sb.Append(interColumnPadding) |> ignore
+                   writeCell cols.[col].[row] maxColLen.[col] sb
 
                yield sb.ToString()
+               sb.Clear() |> ignore
 
            yield! expand postTableLines |]
 

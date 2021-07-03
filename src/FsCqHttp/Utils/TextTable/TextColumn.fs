@@ -1,6 +1,5 @@
 ﻿namespace KPX.FsCqHttp.Utils.TextTable
 
-open System
 open System.Collections.Generic
 
 open KPX.FsCqHttp.Utils.TextResponse
@@ -9,8 +8,6 @@ open KPX.FsCqHttp.Utils.TextResponse
 /// 表示表格内每列的内容
 type internal TextColumn() =
     inherit List<TableCell>()
-    
-    let measurer = ImageMeasurer()
     
     let mutable defaultLeftAlignment = true
 
@@ -44,33 +41,7 @@ type internal TextColumn() =
         for i = 0 to x.Count - 1 do
             x.[i] <- RightAlignCell x.[i].Text
 
-    member x.GetMaxDisplayWidth() =
+    member x.GetMaxDisplayWidth(measurer : ImageMeasurer) =
         x
         |> Seq.map (fun cell -> cell.DisplayWidthOf(measurer))
         |> Seq.max
-
-    /// 对齐到指定大小
-    member x.DoAlignment(padChar : char) =
-        let max = x.GetMaxDisplayWidth()
-
-        let padCharLen =
-            measurer.MeasureWidthByConfig(string padChar)
-
-        if padCharLen = 0 then
-            invalidArg (nameof padChar) $"字符长度计算错误： %c{padChar} 的栏位数为0"
-
-        for i = 0 to x.Count - 1 do
-            let cell = x.[i]
-            let width = cell.DisplayWidthOf(measurer)
-            let padLen = (max - width) / padCharLen // 整数部分用padChar补齐
-            let rstLen = (max - width) % padCharLen // 非整数部分用空格补齐
-
-            if padLen <> 0 || rstLen <> 0 then
-                let padding =
-                    String(padChar, padLen) + String(' ', rstLen)
-
-                x.[i] <-
-                    if cell.IsLeftAlign then
-                        LeftAlignCell(cell.Text + padding)
-                    else
-                        RightAlignCell(padding + cell.Text)
