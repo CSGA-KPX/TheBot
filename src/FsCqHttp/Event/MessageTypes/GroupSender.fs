@@ -4,6 +4,7 @@ open Newtonsoft.Json
 
 
 [<CLIMutable>]
+/// 群消息发送者类型
 type GroupSender =
     { [<JsonProperty("nickname")>]
       Nickname : string

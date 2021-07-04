@@ -8,6 +8,7 @@ open KPX.FsCqHttp
 [<RequireQualifiedAccess>]
 [<Struct>]
 [<JsonConverter(typeof<StringEnumConverter<MessageType>>)>]
+/// 消息事件类型
 type MessageType =
     /// 私聊消息
     | Private

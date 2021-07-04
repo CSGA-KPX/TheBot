@@ -7,6 +7,7 @@ open KPX.FsCqHttp
 
 [<Struct>]
 [<JsonConverter(typeof<StringEnumConverter<GroupMessageSubtype>>)>]
+/// 群信息子类型
 type GroupMessageSubtype =
     /// 正常消息
     | Normal

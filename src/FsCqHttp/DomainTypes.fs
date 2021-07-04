@@ -7,7 +7,7 @@ open Newtonsoft.Json
 open FSharp.Reflection
 
 
-/// 对包装用DU的Json转换器
+/// Json字符串值到DU的转换器
 type SingleCaseInlineConverter<'T>() =
     inherit JsonConverter<'T>()
 

@@ -7,6 +7,7 @@ open KPX.FsCqHttp
 
 [<Struct>]
 [<JsonConverter(typeof<StringEnumConverter<GroupSenderRole>>)>]
+/// 群消息事件发送者角色
 type GroupSenderRole =
     /// 群主
     | Owner

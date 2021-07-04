@@ -13,9 +13,12 @@ open Newtonsoft.Json.Linq
 
 [<RequireQualifiedAccess>]
 [<JsonConverter(typeof<MessageEventConverter>)>]
+[<Struct>]
+/// 对消息事件的简单包装
+/// 提供群事件和私聊事件的共同属性
 type MessageEvent =
-    | Private of PrivateMessageEvent
-    | Group of GroupMessageEvent
+    | Private of privateMsg : PrivateMessageEvent
+    | Group of groupMsg : GroupMessageEvent
     /// 字体
     [<JsonIgnore>]
     member x.Font =
@@ -76,27 +79,33 @@ type MessageEvent =
                     // 否则取群名片
                     g.Sender.Card
 
-
+    /// 强制转换为群事件
+    /// 非群事件抛出ArgumentException
     member x.AsGroup() =
         match x with
         | MessageEvent.Group g -> g
         | _ -> invalidArg "MessageEvent" "此消息不是群消息"
         
+    /// 强制转换为私聊事件
+    /// 非群事件抛出ArgumentException
     member x.AsPrivate() =
         match x with
         | MessageEvent.Private p -> p
         | _ -> invalidArg "MessageEvent" "此消息不是私聊消息"
     
+    /// 使用QuickOperation API应答事件
     member x.Response(msg : Message) =
         match x with
         | MessageEvent.Private _ -> PrivateMessageResponse(msg)
         | MessageEvent.Group _ -> GroupMessageResponse(msg, false, false, false, false, 0)
 
+    /// 使用QuickOperation API应答事件
     member x.Response(str : string) =
         let msg = Message()
         msg.Add(str)
         x.Response(msg)
 
+/// 包装后MessageEvent的Json转换器
 type MessageEventConverter() =
     inherit JsonConverter<MessageEvent>()
 
@@ -122,6 +131,7 @@ type MessageEventConverter() =
             |> MessageEvent.Private
 
 [<CLIMutable>]
+/// 私聊消息事件
 type PrivateMessageEvent =
     { [<JsonProperty("time")>]
       Time : int64
@@ -143,6 +153,7 @@ type PrivateMessageEvent =
       Sender : PrivateSender }
 
 [<CLIMutable>]
+/// 群消息事件
 type GroupMessageEvent =
     { [<JsonProperty("time")>]
       Time : int64

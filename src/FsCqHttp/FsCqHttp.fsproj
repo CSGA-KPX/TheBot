@@ -15,7 +15,6 @@
     <Compile Include="Message\MessageTypes.fs" />
     <Compile Include="Message\MessageSection.fs" />
     <Compile Include="Message\Message.fs" />
-    <Compile Include="Event\EventBase.fs" />
     <Compile Include="Event\EventResponse.fs" />
     <Compile Include="Event\MessageTypes\PrivateSender.fs" />
     <Compile Include="Event\MessageTypes\PrivateMessageSubtype.fs" />

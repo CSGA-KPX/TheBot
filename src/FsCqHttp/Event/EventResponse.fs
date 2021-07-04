@@ -8,6 +8,7 @@ open KPX.FsCqHttp.Message
 
 
 [<JsonConverter(typeof<EventResponseConverter>)>]
+/// 快速操作类型
 type EventResponse =
     | EmptyResponse
     | PrivateMessageResponse of reply : Message

@@ -4,6 +4,7 @@ open Newtonsoft.Json
 
 
 [<CLIMutable>]
+/// 私聊消息发送者信息
 type PrivateSender =
     { [<JsonProperty("nickname")>]
       Nickname : string

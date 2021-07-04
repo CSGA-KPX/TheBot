@@ -6,6 +6,8 @@ open KPX.FsCqHttp
 
 
 [<CLIMutable>]
+/// 群匿名用户类型
+/// Json转换请使用KPX.FsCqHttp.Event.Message.AnonymousUserOptionConverter
 type AnonymousUser =
     { /// 匿名用户 ID
       [<JsonProperty("id")>]

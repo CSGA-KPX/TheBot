@@ -7,6 +7,7 @@ open KPX.FsCqHttp
 
 [<Struct>]
 [<JsonConverter(typeof<StringEnumConverter<PrivateMessageSubtype>>)>]
+/// 私聊消息子类型
 type PrivateMessageSubtype =
     /// 好友消息
     | Friend
