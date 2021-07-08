@@ -47,6 +47,7 @@ type ApiBase() =
         sb.ToString()
 
 [<AbstractClass>]
+/// OneBot API基类
 type CqHttpApiBase(action : string) =
     inherit ApiBase()
 
@@ -84,9 +85,13 @@ type CqHttpApiBase(action : string) =
     default x.HandleResponse _ = ()
     default x.WriteParams(_, _) = ()
 
+/// 指示衍生类型可以提供API访问
 type IApiCallProvider =
+    [<Obsolete>]
     abstract CallerUserId : UserId
+    [<Obsolete>]
     abstract CallerId : string
+    [<Obsolete>]
     abstract CallerName : string
 
     abstract CallApi<'T when 'T :> ApiBase> : 'T -> 'T

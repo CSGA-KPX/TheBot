@@ -7,7 +7,7 @@ open KPX.TheBot.Utils.EmbeddedResource
 
 
 [<AutoOpen>]
-module private Data =
+module Data =
     let diceSides = 100u
 
     let private mgr = StringResource("Eat")
@@ -122,7 +122,7 @@ let scoreByMeals (dicer : Dicer) (options : string []) (ret : IO.TextWriter) =
             ret.WriteLine(sprintf "%s：%s" t (String.Join(" ", mapped)))
 
 /// 对 prefix+吃+option打分
-let private mealsFunc prefix options (dicer : Dicer) (ret : IO.TextWriter) =
+let mealsFunc prefix options (dicer : Dicer) (ret : IO.TextWriter) =
     let mapped = EatChoices(options, dicer, prefix + "吃")
 
     let eat =
@@ -136,7 +136,7 @@ let private mealsFunc prefix options (dicer : Dicer) (ret : IO.TextWriter) =
     ret.WriteLine("宜：{0}", String.Join(" ", eat))
     ret.WriteLine("忌：{0}", String.Join(" ", notEat))
 
-let private hotpotFunc (dicer : Dicer) (ret : IO.TextWriter) =
+let hotpotFunc (dicer : Dicer) (ret : IO.TextWriter) =
 
     scoreByMeals dicer (Array.singleton "火锅") ret
 
@@ -169,7 +169,7 @@ let private hotpotFunc (dicer : Dicer) (ret : IO.TextWriter) =
     ret.WriteLine("　宜：{0}", String.Join(" ", goodDish))
     ret.WriteLine("　忌：{0}", String.Join(" ", badDish))
 
-let private saizeriyaFunc (dicer : Dicer) (ret : IO.TextWriter) =
+let saizeriyaFunc (dicer : Dicer) (ret : IO.TextWriter) =
 
     scoreByMeals dicer (Array.singleton "萨莉亚") ret
 
@@ -186,35 +186,3 @@ let private saizeriyaFunc (dicer : Dicer) (ret : IO.TextWriter) =
             |> Seq.toArray
 
         if opts.Length <> 0 then ret.WriteLine("{0}：{1}", section, String.Join(" ", opts))
-
-let eatAlias =
-    let map =
-        [| "早餐", [| "早"; "早饭" |]
-           "午餐", [| "中"; "中饭"; "午" |]
-           "晚餐", [| "晚"; "晚饭" |]
-           "加餐", [| "加"; "夜宵" |]
-           "萨莉亚", [| "萨利亚" |]
-           "火锅", Array.empty
-           "零食", Array.empty
-           "饮料", Array.empty |]
-
-    seq {
-        for key, aliases in map do
-            yield key, key
-
-            for alias in aliases do
-                yield alias, key
-    }
-    |> readOnlyDict
-
-let eatFuncs : Collections.Generic.IReadOnlyDictionary<string, Dicer -> IO.TextWriter -> unit> =
-    [| "早餐", mealsFunc "早餐" breakfast
-       "加餐", mealsFunc "加餐" breakfast
-       "晚餐", mealsFunc "晚餐" dinner
-       "午餐", mealsFunc "午餐" dinner
-       "#零食", mealsFunc "零食" snacks
-       "#饮料", mealsFunc "饮料" drinks
-
-       "火锅", hotpotFunc
-       "萨莉亚", saizeriyaFunc |]
-    |> readOnlyDict

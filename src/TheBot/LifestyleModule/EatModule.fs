@@ -5,6 +5,8 @@ open KPX.FsCqHttp.Api.Group
 open KPX.FsCqHttp.Event
 open KPX.FsCqHttp.Message
 open KPX.FsCqHttp.Handler
+
+open KPX.FsCqHttp.Utils.Subcommands
 open KPX.FsCqHttp.Utils.TextResponse
 
 open KPX.FsCqHttp.Testing
@@ -14,66 +16,114 @@ open KPX.TheBot.Module.LifestyleModule.EatUtils
 open KPX.TheBot.Utils.Dicer
 
 
+type EatSubCommand =
+    | [<AltCommandName("早餐", "早饭", "早")>] Breakfast
+    | [<AltCommandName("午餐", "中", "中饭", "中")>] Lunch
+    | [<AltCommandName("晚餐", "晚餐", "晚")>] Dinner
+    | [<AltCommandName("加餐", "夜宵", "加")>] Extra
+    | [<AltCommandName("萨莉亚", "萨利亚")>] Saizeriya
+    | [<AltCommandName("火锅")>] Hotpot
+    | [<AltCommandName("饮料")>] Drinks
+    | [<AltCommandName("零食")>] Snacks
+
+    interface ISubcommandTemplate with
+        member x.Usage =
+            match x with
+            | Breakfast -> "早餐"
+            | Lunch -> "午餐"
+            | Dinner -> "晚餐"
+            | Extra -> "加餐"
+            | Saizeriya -> "萨莉亚点菜"
+            | Hotpot -> "火锅"
+            | Drinks -> "饮料"
+            | Snacks -> "零食"
+
 type EatModule() =
     inherit CommandHandlerBase()
 
     [<CommandHandlerMethod("#eat",
-                                    "投掷吃什么",
-                                    "#eat 食物名称或预设名单
+                           "投掷吃什么",
+                           "#eat 食物名称或预设名单
 预设名单：早 中 晚 加 火锅 萨莉亚
 可以@一个群友帮他选。")>]
-    //[<CommandHandlerMethodAttribute("零食", "", "")>]
-    [<CommandHandlerMethod("#饮料", "投掷喝什么饮料，可以@一个群友帮他选", "")>]
     member x.HandleEat(cmdArg : CommandEventArgs) =
-        let at = cmdArg.MessageEvent.Message.TryGetAt()
         use ret = cmdArg.OpenResponse()
 
-        let mutable seed =
-            SeedOption.SeedByUserDay(cmdArg.MessageEvent)
+        if cmdArg.HeaderArgs.Length = 0 then
+            let help =
+                SubcommandParser.GenerateHelp<EatSubCommand>()
 
-        match at with
-        | Some AtUserType.All //TryGetAt不接受@all，不会匹配
-        | None -> ()
-        | Some (AtUserType.User uid) when uid = cmdArg.BotUserId
-                                          || uid = cmdArg.MessageEvent.UserId ->
-            // @自己 @Bot 迷惑行为
-            use s =
-                KPX.TheBot.Utils.EmbeddedResource.GetResFileStream("Funny.jpg")
+            for line in help do
+                ret.WriteLine(line)
+        else
+            let mutable seed =
+                SeedOption.SeedByUserDay(cmdArg.MessageEvent)
 
-            use img =
-                Drawing.Bitmap.FromStream(s) :?> Drawing.Bitmap
+            let at = cmdArg.MessageEvent.Message.TryGetAt()
 
-            let msg = Message()
-            msg.Add(img)
-            cmdArg.Reply(msg)
-            ret.Abort(IgnoreError, "")
+            match at with
+            | Some AtUserType.All //TryGetAt不接受@all，不会匹配
+            | None -> ()
+            | Some (AtUserType.User uid) when
+                uid = cmdArg.BotUserId
+                || uid = cmdArg.MessageEvent.UserId ->
+                // @自己 @Bot 迷惑行为
+                use s =
+                    KPX.TheBot.Utils.EmbeddedResource.GetResFileStream("Funny.jpg")
 
-        | Some (AtUserType.User uid) ->
-            seed <- SeedOption.SeedByAtUserDay(cmdArg.MessageEvent)
-            // 私聊不会有at，所以肯定是群聊消息
-            let gEvent = cmdArg.MessageEvent.AsGroup()
-            let atUserInfo =
-                GetGroupMemberInfo(gEvent.GroupId, uid)
-                |> cmdArg.ApiCaller.CallApi
+                use img =
+                    Drawing.Bitmap.FromStream(s) :?> Drawing.Bitmap
 
-            ret.WriteLine("{0} 为 {1} 投掷：", cmdArg.MessageEvent.DisplayName, atUserInfo.DisplayName)
+                let msg = Message()
+                msg.Add(img)
+                cmdArg.Reply(msg)
+                ret.Abort(IgnoreError, "")
 
-        let dicer = Dicer(seed)
-        dicer.Freeze()
+            | Some (AtUserType.User uid) ->
+                seed <- SeedOption.SeedByAtUserDay(cmdArg.MessageEvent)
+                // 私聊不会有at，所以肯定是群聊消息
+                let gEvent = cmdArg.MessageEvent.AsGroup()
 
-        match cmdArg.HeaderArgs.Length with
-        | _ when eatFuncs.ContainsKey(cmdArg.CommandAttrib.Command) ->
-            let func = eatFuncs.[cmdArg.CommandAttrib.Command]
-            func dicer ret
-        | 0 -> ret.Abort(InputError, "自选输菜名，预设套餐：早/中/晚/加/火锅/萨莉亚")
-        | 1 when eatAlias.ContainsKey(cmdArg.HeaderArgs.[0]) ->
-            let key = eatAlias.[cmdArg.HeaderArgs.[0]]
-            let func = eatFuncs.[key]
-            func dicer ret
-        | _ -> scoreByMeals dicer cmdArg.HeaderArgs ret
+                let atUserInfo =
+                    GetGroupMemberInfo(gEvent.GroupId, uid)
+                    |> cmdArg.ApiCaller.CallApi
+
+                ret.WriteLine(
+                    "{0} 为 {1} 投掷：",
+                    cmdArg.MessageEvent.DisplayName,
+                    atUserInfo.DisplayName
+                )
+
+            let dicer = Dicer(seed)
+            dicer.Freeze()
+
+            match SubcommandParser.Parse<EatSubCommand>(cmdArg) with
+            | None -> scoreByMeals dicer cmdArg.HeaderArgs ret
+            | Some Breakfast -> mealsFunc "早餐" breakfast dicer ret
+            | Some Lunch -> mealsFunc "早餐" dinner dicer ret
+            | Some Dinner -> mealsFunc "早餐" dinner dicer ret
+            | Some Extra -> mealsFunc "加餐" breakfast dicer ret
+            | Some Saizeriya -> saizeriyaFunc dicer ret
+            | Some Hotpot -> hotpotFunc dicer ret
+            | Some Drinks -> mealsFunc "饮料" breakfast dicer ret
+            | Some Snacks -> mealsFunc "零食" breakfast dicer ret
+
+    [<CommandHandlerMethod("#饮料", "投掷喝什么饮料，可以@一个群友帮他选", "")>]
+    member x.HandleDrink(cmdArg : CommandEventArgs) =
+        let msg = cmdArg.MessageEvent.Message
+        let tmp = Message()
+        tmp.Add("#eat 饮料")
+
+        for at in msg.GetAts() do
+            tmp.Add(at)
+
+        let api =
+            KPX.FsCqHttp.Api.Context.RewriteCommand(cmdArg, Seq.singleton tmp)
+
+        cmdArg.ApiCaller.CallApi(api) |> ignore
 
     [<TestFixture>]
-    member x.TestEat() = 
+    member x.TestEat() =
         let tc = TestContext(x)
         tc.ShouldThrow("#eat")
         tc.ShouldNotThrow("#eat AAA")
