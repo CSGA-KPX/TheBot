@@ -47,9 +47,9 @@ type CqWsContextBase() =
     abstract CallApi<'T when 'T :> ApiBase> : 'T -> 'T
 
     interface IApiCallProvider with
-        member x.CallerUserId = x.BotUserId
-        member x.CallerId = x.BotIdString
-        member x.CallerName = x.BotNickname
+        member x.ProviderUserId = x.BotUserId
+        member x.ProviderId = x.BotIdString
+        member x.ProviderName = x.BotNickname
 
         member x.CallApi<'T when 'T :> ApiBase>(req : 'T) = x.CallApi(req)
 

@@ -78,7 +78,7 @@ type DummyReverseClient(server, token) as x =
         logger.Info("正在启动")
         x.ServerMessageLoop()
 
-    member x.SendMessage(msg : Message) =
+    member x.SendMessage(msg : ReadOnlyMessage) =
         let rawMsg = msg.ToCqString()
         let me = defMsgEvent.DeepClone() :?> JObject
         me.["message"] <- JArray.FromObject(msg)

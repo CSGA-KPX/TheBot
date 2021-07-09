@@ -9,12 +9,9 @@ open Newtonsoft.Json.Linq
 open KPX.FsCqHttp.Message.Sections
 
 
-[<JsonConverter(typeof<MessageConverter>)>]
-/// OneBot消息，由一个或多个MessageSection组成
-type Message(items : seq<MessageSection>) =
-    let sections = ResizeArray<MessageSection>()
-
-    do sections.AddRange(items)
+/// 只读OneBot消息，由一个或多个MessageSection组成
+[<JsonConverter(typeof<ReadOnlyMessageConverter>)>]
+type ReadOnlyMessage internal (sections : IReadOnlyList<MessageSection>) =
 
     static let cqStringReplace =
         [| "&", "&amp;"
@@ -22,38 +19,17 @@ type Message(items : seq<MessageSection>) =
            "]", "&#93;"
            ",", "&#44;" |]
 
-    new() = Message(Seq.empty)
-
-    new(sec : MessageSection) = Message(Seq.singleton sec)
-    
     [<JsonIgnore>]
     /// 消息段数量
     member x.Count = sections.Count
 
-    /// 添加消息段到末尾
-    member x.Add(sec : MessageSection) = sections.Add(sec)
-
-    /// 快速添加At消息段到末尾
-    member x.Add(at : AtUserType) = x.Add(AtSection.Create(at))
-
-    /// 快速添加文本消息段到末尾
-    member x.Add(msg : string) = x.Add(TextSection.Create(msg))
-
-    /// 快速添加图片消息段到末尾
-    member x.Add(img : Drawing.Bitmap) = x.Add(ImageSection.Create(img))
-
-    /// 清空所有消息段
-    member x.Clear() = sections.Clear()
-
     /// 检查是否含有指定消息段
-    member x.Contains(item) = sections.Contains(item)
-
-    /// 移除指定消息段
-    member x.Remove(item) = sections.Remove(item)
+    member x.Contains(item) =
+        sections |> Seq.exists (fun sec -> sec = item)
 
     /// 获取所有指定类型的消息段
     member x.GetSections<'T when 'T :> MessageSection>() =
-        x
+        sections
         |> Seq.filter (fun sec -> sec :? 'T)
         |> Seq.map (fun sec -> sec :?> 'T)
 
@@ -132,6 +108,54 @@ type Message(items : seq<MessageSection>) =
 
         sb.ToString()
 
+    /// 克隆该消息和消息段为可读写的Message类型
+    member x.CloneMutable() =
+        Message(x |> Seq.map (fun sec -> sec.DeepClone()))
+
+    interface IReadOnlyCollection<MessageSection> with
+        member x.Count = sections.Count
+
+        member x.GetEnumerator() =
+            (sections :> IEnumerable<_>).GetEnumerator()
+
+        member x.GetEnumerator() =
+            (sections :> Collections.IEnumerable)
+                .GetEnumerator()
+
+/// OneBot消息，由一个或多个MessageSection组成
+type Message private (sections : List<_>) =
+    inherit ReadOnlyMessage(sections)
+
+    new() = Message(List<_>())
+
+    new(sec : MessageSection) =
+        let items = List<_>()
+        items.Add(sec)
+        Message(items)
+
+    new(sections : seq<MessageSection>) =
+        let items = List<_>()
+        items.AddRange(sections)
+        Message(items)
+
+    /// 添加消息段到末尾
+    member x.Add(sec : MessageSection) = sections.Add(sec)
+
+    /// 快速添加At消息段到末尾
+    member x.Add(at : AtUserType) = x.Add(AtSection.Create(at))
+
+    /// 快速添加文本消息段到末尾
+    member x.Add(msg : string) = x.Add(TextSection.Create(msg))
+
+    /// 快速添加图片消息段到末尾
+    member x.Add(img : Drawing.Bitmap) = x.Add(ImageSection.Create(img))
+
+    /// 清空所有消息段
+    member x.Clear() = sections.Clear()
+
+    /// 移除指定消息段
+    member x.Remove(item) = sections.Remove(item)
+
     /// 解析cq码
     /// <remarks>OneBot v12移除</remarks>
     static member FromCqString(str : string) =
@@ -176,12 +200,12 @@ type Message(items : seq<MessageSection>) =
 
         member x.Remove(item) = sections.Remove(item)
 
-/// Message类型的转换器
+/// ReadOnlyMessage类型的转换器
 /// 可以自动识别string和array格式的消息类型
-type MessageConverter() =
-    inherit JsonConverter<Message>()
+type ReadOnlyMessageConverter() =
+    inherit JsonConverter<ReadOnlyMessage>()
 
-    override x.WriteJson(w : JsonWriter, r : Message, _ : JsonSerializer) =
+    override x.WriteJson(w : JsonWriter, r : ReadOnlyMessage, _ : JsonSerializer) =
         w.WriteStartArray()
 
         for sec in r do
@@ -200,7 +224,14 @@ type MessageConverter() =
 
         w.WriteEndArray()
 
-    override x.ReadJson(r : JsonReader, _ : Type, _ : Message, _ : bool, _ : JsonSerializer) =
+    override x.ReadJson
+        (
+            r : JsonReader,
+            _ : Type,
+            _ : ReadOnlyMessage,
+            _ : bool,
+            _ : JsonSerializer
+        ) =
 
         match r.TokenType with
         | JsonToken.StartArray ->
@@ -224,3 +255,4 @@ type MessageConverter() =
             msg
         | JsonToken.String -> Message.FromCqString(r.Value :?> string)
         | other -> failwithf $"未知消息类型:%A{other} --> {r}"
+        :> ReadOnlyMessage

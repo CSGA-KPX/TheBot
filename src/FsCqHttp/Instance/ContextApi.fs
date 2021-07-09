@@ -56,7 +56,7 @@ type TryGetCommand(cmdName : string) =
 
 /// 将制定CommandEventArgs事件重写为其他指令
 /// 强制使用调度器
-type RewriteCommand(e : CommandEventArgs, messages : seq<Message>) =
+type RewriteCommand(e : CommandEventArgs, messages : seq<ReadOnlyMessage>) =
     inherit WsContextApiBase()
 
     new(e, cmdLines : seq<string>) =
@@ -67,7 +67,7 @@ type RewriteCommand(e : CommandEventArgs, messages : seq<Message>) =
                 (fun cmd ->
                     let msg = Message()
                     msg.Add(cmd)
-                    msg)
+                    msg :> ReadOnlyMessage)
         )
 
     override x.Invoke(ctx) =

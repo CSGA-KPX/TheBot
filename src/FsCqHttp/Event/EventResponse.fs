@@ -11,9 +11,9 @@ open KPX.FsCqHttp.Message
 /// 快速操作类型
 type EventResponse =
     | EmptyResponse
-    | PrivateMessageResponse of reply : Message
+    | PrivateMessageResponse of reply : ReadOnlyMessage
     | GroupMessageResponse of
-        reply : Message *
+        reply : ReadOnlyMessage *
         at_sender : bool *
         delete : bool *
         kick : bool *

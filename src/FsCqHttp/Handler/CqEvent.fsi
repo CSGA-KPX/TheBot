@@ -29,7 +29,7 @@ and CqMessageEventArgs =
         new : api: IApiCallProvider * ctx: PostContent * e: MessageEvent -> CqMessageEventArgs
         member Abort : level: ErrorLevel * fmt: string * [<System.ParamArray>] args: obj [] -> 'T
         member Reply : str: string -> unit
-        member Reply : msg: Message.Message -> unit
+        member Reply : msg: Message.ReadOnlyMessage -> unit
         member Event : MessageEvent
     end
 

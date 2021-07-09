@@ -74,7 +74,7 @@ type TestContext(m : HandlerModuleBase, ?parent : CqWsContextBase) as x =
         msg.Add(cmdLine)
         x.InvokeCommand(msg)
 
-    member x.InvokeCommand(msg : Message) =
+    member x.InvokeCommand(msg : ReadOnlyMessage) =
         logger.Info("正在测试 : {0}", msg.ToCqString())
         let msgEvent = x.MakeEvent(msg)
 
@@ -119,7 +119,7 @@ type TestContext(m : HandlerModuleBase, ?parent : CqWsContextBase) as x =
 
         ret.Value.Contains(value)
 
-    member private x.MakeEvent(msg : Message) =
+    member private x.MakeEvent(msg : ReadOnlyMessage) =
         let raw = JObject.Parse(Strings.msgEvent)
 
         // 更新Bot信息

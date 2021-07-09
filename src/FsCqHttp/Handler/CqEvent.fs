@@ -24,11 +24,11 @@ type CqEventArgs(api, ctx) =
 
     member x.RawEvent : PostContent = ctx
 
-    member x.BotUserId = api.CallerUserId
+    member x.BotUserId = api.ProviderUserId
 
-    member x.BotNickname = api.CallerName
+    member x.BotNickname = api.ProviderName
 
-    member x.BotId = api.CallerId
+    member x.BotId = api.ProviderId
 
     /// 中断执行过程
     member x.Abort(level : ErrorLevel, fmt : string, [<ParamArray>] args : obj []) : 'T =
@@ -81,7 +81,7 @@ type CqMessageEventArgs(api : IApiCallProvider, ctx : PostContent, e : MessageEv
         x.Reply(String.Format(fmt, args))
         base.Abort(level, fmt, args)
 
-    member x.Reply(msg : Message) =
+    member x.Reply(msg : ReadOnlyMessage) =
         if msg.ToString().Length > Config.TextLengthLimit then
             invalidOp "回复字数超过上限。"
         

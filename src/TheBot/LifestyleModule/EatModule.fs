@@ -118,7 +118,7 @@ type EatModule() =
             tmp.Add(at)
 
         let api =
-            KPX.FsCqHttp.Api.Context.RewriteCommand(cmdArg, Seq.singleton tmp)
+            KPX.FsCqHttp.Api.Context.RewriteCommand(cmdArg, Seq.singleton<ReadOnlyMessage> tmp)
 
         cmdArg.ApiCaller.CallApi(api) |> ignore
 

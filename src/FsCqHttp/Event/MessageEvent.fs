@@ -94,7 +94,7 @@ type MessageEvent =
         | _ -> invalidArg "MessageEvent" "此消息不是私聊消息"
     
     /// 使用QuickOperation API应答事件
-    member x.Response(msg : Message) =
+    member x.Response(msg : ReadOnlyMessage) =
         match x with
         | MessageEvent.Private _ -> PrivateMessageResponse(msg)
         | MessageEvent.Group _ -> GroupMessageResponse(msg, false, false, false, false, 0)
@@ -146,7 +146,7 @@ type PrivateMessageEvent =
       [<JsonProperty("user_id")>]
       UserId : UserId
       [<JsonProperty("message")>]
-      Message : KPX.FsCqHttp.Message.Message
+      Message : ReadOnlyMessage
       [<JsonProperty("font")>]
       Font : int32
       [<JsonProperty("sender")>]
@@ -173,7 +173,7 @@ type GroupMessageEvent =
       [<JsonConverter(typeof<AnonymousUserOptionConverter>)>]
       Anonymous : AnonymousUser option
       [<JsonProperty("message")>]
-      Message : KPX.FsCqHttp.Message.Message
+      Message : ReadOnlyMessage
       [<JsonProperty("font")>]
       Font : int32
       [<JsonProperty("sender")>]
@@ -181,7 +181,7 @@ type GroupMessageEvent =
     
     member x.Response
         (
-            msg : Message,
+            msg : ReadOnlyMessage,
             ?atSender : bool,
             ?delete : bool,
             ?kick : bool,

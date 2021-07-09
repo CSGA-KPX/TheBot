@@ -87,12 +87,9 @@ type CqHttpApiBase(action : string) =
 
 /// 指示衍生类型可以提供API访问
 type IApiCallProvider =
-    [<Obsolete>]
-    abstract CallerUserId : UserId
-    [<Obsolete>]
-    abstract CallerId : string
-    [<Obsolete>]
-    abstract CallerName : string
+    abstract ProviderUserId : UserId
+    abstract ProviderId : string
+    abstract ProviderName : string
 
     abstract CallApi<'T when 'T :> ApiBase> : 'T -> 'T
     /// 调用一个不需要额外设定的api

@@ -45,14 +45,17 @@ type MessageSection(typeName : string) =
     member x.TryGetValue(name : string) =
         let succ, item = values.TryGetValue(name)
         if succ then Some item else None
-
+    
+    /// 深度复制该消息段
+    member x.DeepClone() =
+        MessageSection.CreateFrom(x.TypeName, values |> Seq.map (fun kv -> kv.Key, kv.Value))
 
     /// 从指定JObject对象解析消息段
     member internal x.ParseFrom(sec : JObject) =
         let typeName = sec.["type"].Value<string>()
 
-        if (x.TypeName <> "") && (x.TypeName <> typeName)
-        then invalidArg "type" $"type字段不匹配：需求%s{x.TypeName}，实际%s{typeName}"
+        if (x.TypeName <> "") && (x.TypeName <> typeName) then
+            invalidArg "type" $"type字段不匹配：需求%s{x.TypeName}，实际%s{typeName}"
 
         if sec.["data"].HasValues then
             let child = sec.["data"].Value<JObject>()
@@ -70,7 +73,8 @@ type MessageSection(typeName : string) =
     static member internal CreateFrom(typeName : string, values : seq<string * string>) =
         let mutable typeName = typeName
 
-        if String.IsNullOrEmpty(typeName) then invalidArg (nameof typeName) "消息段名称为空"
+        if String.IsNullOrEmpty(typeName) then
+            invalidArg (nameof typeName) "消息段名称为空"
 
         let section =
             if sectionInfoCache.ContainsKey(typeName) then
