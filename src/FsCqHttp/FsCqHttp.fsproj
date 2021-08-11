@@ -70,6 +70,7 @@
     <Compile Include="Handler\CqEvent.fs" />
     <Compile Include="Handler\HandlerBase.fs" />
     <Compile Include="Handler\CommandHandler.fs" />
+    <Compile Include="Utils\AuthLevel.fs" />
     <Compile Include="Utils\TextResponse.fs" />
     <Compile Include="Utils\TextResponseExtension.fs" />
     <Compile Include="Utils\TextTable\CellType.fs" />

@@ -7,6 +7,31 @@ open Newtonsoft.Json
 open FSharp.Reflection
 
 
+/// 提供该特性的框架规格
+type FeatureSpecification =
+    | Unknown = -1
+    | OneBot = 0
+    | FsCqHttp = 1
+    | GoCqHttp = 2
+    
+/// 标记特性的相关信息
+/// 运行过程中不使用，用来标记信息方便人工检查。
+type FeatureAnnotationAttribute(source, ver, reviewed) =
+    inherit Attribute()
+    
+    /// 特性的规格信息
+    member x.Source : FeatureSpecification = source
+    
+    /// 规格版本
+    member x.SourceVersion : string = ver
+    
+    /// 最后复核日期
+    member x.Reviewed : string = reviewed
+    
+/// 当前规范不含有需求的特性
+type FeatureNotSupportedException(msg) =
+    inherit Exception(msg)
+    
 /// Json字符串值到DU的转换器
 type SingleCaseInlineConverter<'T>() =
     inherit JsonConverter<'T>()

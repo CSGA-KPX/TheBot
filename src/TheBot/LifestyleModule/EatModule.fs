@@ -18,7 +18,7 @@ open KPX.TheBot.Utils.Dicer
 
 type EatSubCommand =
     | [<AltCommandName("早餐", "早饭", "早")>] Breakfast
-    | [<AltCommandName("午餐", "中", "中饭", "中")>] Lunch
+    | [<AltCommandName("午餐", "中", "中饭", "午")>] Lunch
     | [<AltCommandName("晚餐", "晚餐", "晚")>] Dinner
     | [<AltCommandName("加餐", "夜宵", "加")>] Extra
     | [<AltCommandName("萨莉亚", "萨利亚")>] Saizeriya

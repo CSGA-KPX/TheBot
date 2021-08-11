@@ -61,7 +61,7 @@ type CraftableGearCollection private () =
                 for row in sheet do
                     let j =
                         jobs
-                        |> Seq.filter (fun job -> row.As<bool>(job))
+                        |> Seq.filter (fun job -> (job <> String.Empty) && row.As<bool>(job))
 
                     yield row.Key.Main, String.Join(" ", j)
             }
