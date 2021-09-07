@@ -100,8 +100,8 @@ type EatModule() =
             match SubcommandParser.Parse<EatSubCommand>(cmdArg) with
             | None -> scoreByMeals dicer cmdArg.HeaderArgs ret
             | Some Breakfast -> mealsFunc "早餐" breakfast dicer ret
-            | Some Lunch -> mealsFunc "早餐" dinner dicer ret
-            | Some Dinner -> mealsFunc "早餐" dinner dicer ret
+            | Some Lunch -> mealsFunc "午餐" dinner dicer ret
+            | Some Dinner -> mealsFunc "晚餐" dinner dicer ret
             | Some Extra -> mealsFunc "加餐" breakfast dicer ret
             | Some Saizeriya -> saizeriyaFunc dicer ret
             | Some Hotpot -> hotpotFunc dicer ret

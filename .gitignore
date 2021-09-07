@@ -356,3 +356,6 @@ healthchecksdb
 tmp/
 output/
 coverage.xml
+/build/static/TRpgModule-log.db
+/build/static/TRpgModule.db
+/src/FsCqHttp/temp.fsi

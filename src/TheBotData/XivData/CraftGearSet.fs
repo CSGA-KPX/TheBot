@@ -36,7 +36,7 @@ type CraftableGearCollection private () =
         db.EnsureIndex(BsonExpression.Create("ItemLv"), false)
         |> ignore
 
-        let col = BotDataInitializer.XivCollectionChs
+        let col = XivProvider.XivCollectionChs
 
         (*let fields =
             [| "EquipSlotCategory"

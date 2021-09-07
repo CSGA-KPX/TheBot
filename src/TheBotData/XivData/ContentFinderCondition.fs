@@ -10,16 +10,7 @@ type XivContent =
     { [<BsonId(false)>]
       Id : int
       Name : string
-      IsHighEndDuty : bool
-      IsLevelingRoulette : bool
-      IsLevel5060Roulette : bool
-      IsMSQRoulette : bool
-      IsGuildHestRoulette : bool
-      IsExpertRoulette : bool
-      IsTrialRoulette : bool
-      IsDailyFrontlineChallengeRoulette : bool
-      IsLevel80Roulette : bool
-      IsMentorRoulette : bool }
+      IsDailyFrontlineChallengeRoulette : bool}
 
 type XivContentCollection private () =
     inherit CachedTableCollection<int, XivContent>(DefaultDB)
@@ -32,22 +23,14 @@ type XivContentCollection private () =
     override x.IsExpired = false
 
     override x.InitializeCollection() =
-        let col = BotDataInitializer.XivCollectionChs
+        let col = XivProvider.XivCollectionChs
         seq {
             for row in col.ContentFinderCondition.TypedRows do
                 yield
                     { Id = row.Key.Main
                       Name = row.Name.AsString()
-                      IsHighEndDuty = row.HighEndDuty.AsBool()
-                      IsLevelingRoulette = row.LevelingRoulette.AsBool()
-                      IsLevel5060Roulette = row.``Level50/60/70Roulette``.AsBool()
-                      IsMSQRoulette = row.MSQRoulette.AsBool()
-                      IsGuildHestRoulette = row.GuildHestRoulette.AsBool()
-                      IsExpertRoulette = row.ExpertRoulette.AsBool()
-                      IsTrialRoulette = row.TrialRoulette.AsBool()
-                      IsDailyFrontlineChallengeRoulette = row.DailyFrontlineChallenge.AsBool()
-                      IsLevel80Roulette = row.Level80Roulette.AsBool()
-                      IsMentorRoulette = row.MentorRoulette.AsBool() }
+                      // 5aa2afd1eb073f128be578f1b78e2b717f81a5be数据错误。
+                      IsDailyFrontlineChallengeRoulette = row.TrialRoulette.AsBool() }
         }
         |> x.DbCollection.InsertBulk
         |> ignore

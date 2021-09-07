@@ -19,16 +19,16 @@ open KPX.TheBot.Utils.Dicer
 open KPX.TheBot.Module.XivModule
 
 
-type DfcOption() as x = 
+type DfcOption() as x =
     inherit CommandOption()
 
     member val ListCount = OptionCellSimple<int>(x, "list", 7)
 
     member val RebuildData = OptionCell(x, "rebuild")
 
-type SeaFishingOption() as x = 
-    inherit CommandOption() 
-    
+type SeaFishingOption() as x =
+    inherit CommandOption()
+
     member val ListCount = OptionCellSimple<int>(x, "list", 7)
 
     member val NextCoolDown = OptionCellSimple<int>(x, "next", 0)
@@ -39,7 +39,10 @@ type MiscModule() =
     let itemCol = ItemCollection.Instance
 
     let isNumber (str : string) =
-        if str.Length <> 0 then String.forall Char.IsDigit str else false
+        if str.Length <> 0 then
+            String.forall Char.IsDigit str
+        else
+            false
 
     let buildDfc () =
         ContentFinderCondition.XivContentCollection.Instance.GetAll()
@@ -58,11 +61,8 @@ type MiscModule() =
             dfcRoulettes <- buildDfc ()
             cmdArg.Reply $"重建完成，当前有%i{dfcRoulettes.Length}个副本"
         else
-            if dfcRoulettes.Length = 0 then 
-                cmdArg.Abort(
-                    ModuleError,
-                    "模块错误：副本表为空。请使用rebuild"
-                )
+            if dfcRoulettes.Length = 0 then
+                cmdArg.Abort(ModuleError, "模块错误：副本表为空。请使用rebuild")
 
             let dateFmt = "yyyy/MM/dd HH:00"
             let JSTOffset = TimeSpan.FromHours(9.0)
@@ -92,6 +92,7 @@ type MiscModule() =
             let list = opt.ListCount.Value
 
             if list > 31 then cmdArg.Abort(InputError, "一个月还不够嘛？")
+
             for i = 0 to list do
                 let date = startDate.AddDays(float i)
 
@@ -104,10 +105,10 @@ type MiscModule() =
             using (cmdArg.OpenResponse(ForceImage)) (fun ret -> ret.Write(tt))
 
     [<TestFixture>]
-    member x.TestXivDFC() = 
+    member x.TestXivDFC() =
         let tc = TestContext(x)
         tc.ShouldNotThrow("#纷争前线")
-    
+
     [<CommandHandlerMethod("#洗澡水", "", "", IsHidden = true)>]
     [<CommandHandlerMethod("#幻想药", "洗个啥？", "")>]
     member x.HandleFantasia(cmdArg : CommandEventArgs) =
@@ -131,8 +132,7 @@ type MiscModule() =
         if atUser.IsSome then
             match atUser.Value with
             | AtUserType.All -> cmdArg.Abort(InputError, "全员发洗澡水？给我一瓶谢谢！")
-            | AtUserType.User i when i = cmdArg.BotUserId ->
-                cmdArg.Abort(InputError, "请联系开发者")
+            | AtUserType.User i when i = cmdArg.BotUserId -> cmdArg.Abort(InputError, "请联系开发者")
             | AtUserType.User _ -> cmdArg.Abort(ModuleError, "暂不支持")
 
         let dicer =
@@ -148,13 +148,13 @@ type MiscModule() =
         cmdArg.Reply(tt.ToString())
 
     [<TestFixture>]
-    member x.TestXivFantasia() = 
+    member x.TestXivFantasia() =
         let tc = TestContext(x)
         tc.ShouldNotThrow("#幻想药")
 
     [<CommandHandlerMethod("#cgss",
-                                    "查找指定职业和品级的套装。用于#r/rr/rc/rrc计算",
-                                    "#cgss 职业 品级
+                           "查找指定职业和品级的套装。用于#r/rr/rc/rrc计算",
+                           "#cgss 职业 品级
 勉强能用。也不打算改")>]
     member x.HandleCGSS(cmdArg : CommandEventArgs) =
         let mutable job = None
@@ -172,8 +172,8 @@ type MiscModule() =
 
                 if ret.IsSome then job <- Some(ret.Value.Value)
 
-        if job.IsNone
-        then cmdArg.Abort(InputError, "没有职业信息。职业可以使用：单字简称/全程/英文简称")
+        if job.IsNone then
+            cmdArg.Abort(InputError, "没有职业信息。职业可以使用：单字简称/全程/英文简称")
 
         if iLv.IsNone then cmdArg.Abort(InputError, "没有品级信息")
 
@@ -187,7 +187,10 @@ type MiscModule() =
                     let item =
                         ItemCollection.Instance.GetByItemId(g.Id)
 
-                    if item.Name.Contains(" ") then $"#%i{item.Id}" else item.Name)
+                    if item.Name.Contains(" ") then
+                        $"#%i{item.Id}"
+                    else
+                        item.Name)
 
         if ret.Length <> 0 then
             cmdArg.Reply(String.Join("+", ret))
@@ -195,7 +198,7 @@ type MiscModule() =
             cmdArg.Reply("没找到")
 
     [<TestFixture>]
-    member x.TestXivCGSS() = 
+    member x.TestXivCGSS() =
         let tc = TestContext(x)
         tc.ShouldNotThrow("#cgss 占星 510")
 
@@ -212,7 +215,8 @@ type MiscModule() =
                 itemCol.SearchByName(i)
                 |> Array.sortBy (fun x -> x.Id)
 
-            if ret.Length >= 50 then cmdArg.Abort(InputError, "结果太多，请优化关键词")
+            if ret.Length >= 50 then
+                cmdArg.Abort(InputError, "结果太多，请优化关键词")
 
             if ret.Length = 0 then cmdArg.Abort(InputError, "无结果")
 
@@ -222,7 +226,7 @@ type MiscModule() =
         using (cmdArg.OpenResponse()) (fun r -> r.Write(tt))
 
     [<TestFixture>]
-    member x.TestItemSearch() = 
+    member x.TestItemSearch() =
         let tc = TestContext(x)
         tc.ShouldNotThrow("#is 风之水晶")
         tc.ShouldThrow("#is 第三期")
@@ -234,12 +238,12 @@ type MiscModule() =
         [| "左"; "中"; "右" |]
         |> Array.map (fun door -> door, Dicer.RandomDicer.GetPositive(100u, door))
         |> Array.sortBy snd
-        |> Array.iter (fun (door, score) -> tt.AddRow( $"%03i{score}", door))
+        |> Array.iter (fun (door, score) -> tt.AddRow($"%03i{score}", door))
 
         cmdArg.Reply(tt.ToString())
 
     [<TestFixture>]
-    member x.TestGate() = 
+    member x.TestGate() =
         let tc = TestContext(x)
         tc.ShouldNotThrow("#gate")
 
@@ -253,7 +257,7 @@ type MiscModule() =
         cmdArg.Reply(sprintf "%s" (String.Join(" ", nums)))
 
     [<TestFixture>]
-    member x.TestCactpot() = 
+    member x.TestCactpot() =
         let tc = TestContext(x)
         tc.ShouldNotThrow("#仙人彩")
 
@@ -270,7 +274,7 @@ type MiscModule() =
         )
 
         hc.DefaultRequestHeaders.Referrer <-
-            new Uri("https://space.bilibili.com/15503317/channel/detail?cid=55877")
+            Uri("https://space.bilibili.com/15503317/channel/detail?cid=55877")
 
         let json =
             hc
@@ -323,14 +327,14 @@ type MiscModule() =
                 ret.Write(n.InnerText))
 
     [<TestFixture>]
-    member x.TestNrnr() = 
+    member x.TestNrnr() =
         let tc = TestContext(x)
         tc.ShouldNotThrow("#nrnr")
         tc.ShouldNotThrow("#nuannuan")
 
     [<CommandHandlerMethod("#海钓",
-                                    "FF14海钓攻略",
-                                    "next:查阅n个CD后的信息，list:查阅n个时间窗的信息。如：
+                           "FF14海钓攻略",
+                           "next:查阅n个CD后的信息，list:查阅n个时间窗的信息。如：
 #海钓 next:2
 #海钓 list:50")>]
     member x.HandleOceanFishing(cmdArg : CommandEventArgs) =
@@ -340,6 +344,7 @@ type MiscModule() =
         let dateFmt = "yyyy/MM/dd HH:00"
         use ret = cmdArg.OpenResponse(ForceImage)
         ret.WriteLine("警告：国服数据，世界服不一定适用。时间为中国标准时间。")
+
         let mutable now =
             DateTimeOffset.Now.ToOffset(TimeSpan.FromHours(8.0))
 
@@ -349,6 +354,7 @@ type MiscModule() =
                 let count = opt.ListCount.Value
 
                 if count > 12 * 31 then cmdArg.Abort(InputError, "那时间可太长了。")
+
                 for i = 0 to count - 1 do
                     let cd = now.AddHours((float i) * 2.0)
                     let info = OceanFishing.CalculateCooldown(cd)
@@ -392,7 +398,7 @@ type MiscModule() =
         with e -> ret.Abort(ModuleError, "CD计算错误，请通告管理员：\r\n{0}", e)
 
     [<TestFixture>]
-    member x.TestIKD() = 
+    member x.TestIKD() =
         let tc = TestContext(x)
         tc.ShouldNotThrow("#海钓")
         tc.ShouldNotThrow("#海钓 next:1")

@@ -25,8 +25,7 @@ type GilShopCollection private () =
     override x.IsExpired = false
 
     override x.InitializeCollection() =
-        let col = BotDataInitializer.XivCollectionChs
-
+        let col = XivProvider.XivCollectionChs
         // col.GetSheet("Item", [| AskKey; BidKey |])
 
         seq {

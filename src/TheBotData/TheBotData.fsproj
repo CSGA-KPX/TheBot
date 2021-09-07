@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.1</TargetFramework>
-    <OutputType>Library</OutputType>
+    <TargetFramework>net5.0</TargetFramework>
+    <OutputType>Exe</OutputType>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -12,10 +12,17 @@
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Common\Resource.fs" />
-    <Compile Include="Common\Database.fs" />
+    <Compile Include="Common\Testing.fs" />
+    <Compile Include="Common\Database\LiteDBExtensions.fs" />
+    <Compile Include="Common\Database\DbFile.fs" />
+    <Compile Include="Common\Database\BotDataCollection.fs" />
+    <Compile Include="Common\Database\CachedItemCollection.fs" />
+    <Compile Include="Common\Database\CachedTableCollection.fs" />
+    <Compile Include="Common\Database\Database.fs" />
     <Compile Include="Common\Network.fs" />
     <Compile Include="CommonModule\RecipeProvider.fs" />
     <Compile Include="CommonModule\RecipeManager.fs" />
+    <Compile Include="XivData\XivProvider.fs" />
     <Compile Include="XivData\Item.fs" />
     <Compile Include="XivData\Recipe\XivRecipe.fs" />
     <Compile Include="XivData\Recipe\CraftRecipeProvider.fs" />
@@ -49,6 +56,7 @@
     <Compile Include="EveData\GameInternalPriceCache.fs" />
     <Compile Include="EveData\SolarSystems.fs" />
     <Compile Include="EveData\SystemCostIndexCache.fs" />
+    <Compile Include="Program.fs" />
   </ItemGroup>
 
   <ItemGroup>

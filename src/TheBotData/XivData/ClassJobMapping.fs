@@ -23,7 +23,7 @@ type ClassJobMappingCollection private () =
 
     override x.InitializeCollection() =
         let db = x.DbCollection
-        let col = BotDataInitializer.XivCollectionChs
+        let col = KPX.TheBot.Data.XivData.XivProvider.XivCollectionChs
 
         seq {
             for row in col.ClassJob.TypedRows do

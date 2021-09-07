@@ -33,7 +33,7 @@ type ShopLocationCollection private () =
     override x.Depends = Array.empty
 
     override x.InitializeCollection() =
-        let col = BotDataInitializer.XivCollectionChs
+        let col = KPX.TheBot.Data.XivData.XivProvider.XivCollectionChs
 
         let level =
             seq {

@@ -34,7 +34,7 @@ type CraftLeveInfoCollection private () =
         db.EnsureIndex(BsonExpression.Create("ClassJob"))
         |> ignore
 
-        let col = BotDataInitializer.XivCollectionChs
+        let col = KPX.TheBot.Data.XivData.XivProvider.XivCollectionChs
 
         seq {
             let acc = ItemAccumulator<_>()

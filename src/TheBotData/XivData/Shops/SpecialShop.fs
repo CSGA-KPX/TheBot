@@ -31,7 +31,7 @@ type SpecialShopCollection private () =
         x.DbCollection.EnsureIndex(BsonExpression.Create("ReceiveItem"))
         |> ignore
 
-        let col = BotDataInitializer.XivCollectionChs
+        let col = XivProvider.XivCollectionChs
 
         //col.GetSheet("Item", [| "Name"; "IsUntradable" |])
         //|> ignore // 缓存
