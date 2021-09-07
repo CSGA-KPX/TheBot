@@ -4,6 +4,8 @@ open System
 open System.Collections.Generic
 open System.Reflection
 
+open KPX.TheBot.Data.Common.Testing
+
 
 type BotDataInitializer private () =
 
@@ -104,3 +106,23 @@ type BotDataInitializer private () =
     /// 整理数据库文件，释放多余空间
     static member ShrinkCache() =
         getLiteDB(DefaultDB).Rebuild() |> ignore
+
+    static member RunTests() =
+        for t in Assembly.GetExecutingAssembly().GetTypes() do
+            let hasTest =
+                (typeof<IDataTest>.IsAssignableFrom t
+                 && (not t.IsAbstract))
+
+            if hasTest then
+                if t.IsSubclassOf(typeof<DataTest>) then
+                    printfn $"执行测试类：%s{t.FullName}"
+
+                    (Activator.CreateInstance(t) :?> DataTest)
+                        .RunTest()
+                else
+                    let p =
+                        t.GetProperty("Instance", BindingFlags.Public ||| BindingFlags.Static)
+
+                    if isNull p then failwithf $"{t}.Instance is Null!"
+                    printfn $"执行测试接口：%s{t.FullName}"
+                    (p.GetValue(null) :?> IDataTest).RunTest()

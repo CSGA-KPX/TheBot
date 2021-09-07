@@ -9,6 +9,7 @@ let main _ =
         Database.BotDataInitializer.ClearCache()
         Database.BotDataInitializer.ShrinkCache()
         Database.BotDataInitializer.InitializeAllCollections()
+        Database.BotDataInitializer.RunTests()
         0
     with
     | e ->

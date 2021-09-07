@@ -2,7 +2,7 @@
 
 open System
 
-open KPX.TheBot.Data.Common.Database
+open KPX.TheBot.Data.Common.Testing
 open KPX.TheBot.Data.Common.Resource
 
 
@@ -46,7 +46,7 @@ let GetWindowMessage (key : string) =
 
 let CalculateCooldown (now : DateTimeOffset) =
     // 进位到最近的CD
-    let (next, now) =
+    let next, now =
         if (now.Hour % 2) = 0 && now.Minute <= 15 then
             false, now
         else // 错过了，调整到下一个CD
@@ -72,3 +72,11 @@ let CalculateCooldown (now : DateTimeOffset) =
        RouTableId = idx
        RouteId = rid
        Message = GetWindowMessage(msgKey) |}
+
+type OceanFishingTest() =
+    inherit DataTest()
+    
+    override x.RunTest() =
+         for i = 0 to 72 do
+             CalculateCooldown(DateTimeOffset.Now.AddHours((float i) * 2.0))
+             |> ignore

@@ -18,7 +18,7 @@
     <Compile Include="Common\Database\BotDataCollection.fs" />
     <Compile Include="Common\Database\CachedItemCollection.fs" />
     <Compile Include="Common\Database\CachedTableCollection.fs" />
-    <Compile Include="Common\Database\Database.fs" />
+    <Compile Include="Common\Database\BotDataInitializer.fs" />
     <Compile Include="Common\Network.fs" />
     <Compile Include="CommonModule\RecipeProvider.fs" />
     <Compile Include="CommonModule\RecipeManager.fs" />
@@ -49,6 +49,7 @@
     <Compile Include="EveData\EveProcess\RefineProcess.fs" />
     <Compile Include="EveData\EveProcess\ProcessManager.fs" />
     <Compile Include="EveData\EveProcess\ProcessSearchCache.fs" />
+    <Compile Include="EveData\EveProcess\ProcessTest.fs" />
     <Compile Include="EveData\NpcCorporation.fs" />
     <Compile Include="EveData\LoyaltyStoreOffer.fs" />
     <Compile Include="EveData\MarketPriceCache.fs" />

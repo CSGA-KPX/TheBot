@@ -2,6 +2,8 @@
 
 open KPX.TheBot.Data.Common.Database
 
+open KPX.TheBot.Data.Common.Testing
+
 
 [<CLIMutable>]
 type XivItem =
@@ -58,3 +60,14 @@ type ItemCollection private () =
     member x.SearchByName(str) =
         x.DbCollection.Find(LiteDB.Query.Contains("Name", str))
         |> Seq.toArray
+        
+    interface IDataTest with
+        member x.RunTest() =
+             Expect.equal (ItemCollection.Instance.GetByItemId(4).Name) "风之碎晶"
+
+             let ret =
+                 ItemCollection.Instance.TryGetByName("风之碎晶")
+
+             Expect.isSome ret
+             Expect.equal ret.Value.Name "风之碎晶"
+             Expect.equal ret.Value.Id 4

@@ -20,10 +20,7 @@ let BotDataTestGroup =
     testSequencedGroup "MainTestGroup"
     <| testList
         "MainTestGroupList"
-        [ yield BotDataTest.InitDatabase.initDatabase
-          yield BotDataTest.XivTest.xivTests
-          yield BotDataTest.EveTest.eveTests
-          yield BotCommandTest.GenerateTest() ]
+        [ yield BotCommandTest.GenerateTest() ]
 
 [<EntryPoint>]
 let main argv =

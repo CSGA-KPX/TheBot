@@ -6,6 +6,7 @@ open System.Collections.Generic
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 
+open KPX.TheBot.Data.Common.Testing
 open KPX.TheBot.Data.Common.Database
 open KPX.TheBot.Data.EveData.Group
 
@@ -22,7 +23,7 @@ type EveType =
       /// 用途不明，可能是最小精炼单位
       PortionSize : int
       MarketGroupId : int
-      BasePrice : float}
+      BasePrice : float }
 
 type EveTypeCollection private () =
     inherit CachedTableCollection<int, EveType>(DefaultDB)
@@ -68,21 +69,36 @@ type EveTypeCollection private () =
                         o.GetValue("typeName").ToObject<string>()
 
                     let vol =
-                        if o.ContainsKey("volume") then o.GetValue("volume").ToObject<float>() else nan
+                        if o.ContainsKey("volume") then
+                            o.GetValue("volume").ToObject<float>()
+                        else
+                            nan
 
                     let meta =
-                        if o.ContainsKey("metaGroupID") then o.GetValue("metaGroupID").ToObject<int>() else 1
+                        if o.ContainsKey("metaGroupID") then
+                            o.GetValue("metaGroupID").ToObject<int>()
+                        else
+                            1
 
                     let published = o.GetValue("published").ToObject<bool>()
 
                     let portionSize =
-                        if o.ContainsKey("portionSize") then o.GetValue("portionSize").ToObject<int>() else 0
+                        if o.ContainsKey("portionSize") then
+                            o.GetValue("portionSize").ToObject<int>()
+                        else
+                            0
 
                     let marketGroupId =
-                        if o.ContainsKey("marketGroupID") then o.GetValue("marketGroupID").ToObject<int>() else 0
+                        if o.ContainsKey("marketGroupID") then
+                            o.GetValue("marketGroupID").ToObject<int>()
+                        else
+                            0
 
-                    let basePrice = 
-                        if o.ContainsKey("basePrice") then o.GetValue("basePrice").ToObject<float>() else 0.0
+                    let basePrice =
+                        if o.ContainsKey("basePrice") then
+                            o.GetValue("basePrice").ToObject<float>()
+                        else
+                            0.0
 
                     if allow && published then
                         yield
@@ -116,3 +132,9 @@ type EveTypeCollection private () =
             x.DbCollection.FindOne(LiteDB.Query.EQ("Name", bson))
 
         if isNull (box ret) then None else Some(ret)
+
+    interface IDataTest with
+        member x.RunTest() =
+            Expect.equal (x.GetById(34).Name) "三钛合金"
+            Expect.equal (x.GetByName("三钛合金").Id) 34
+            Expect.equal (x.GetByName("三钛合金").Name) "三钛合金"

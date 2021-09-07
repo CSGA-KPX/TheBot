@@ -3,6 +3,8 @@
 open System
 open System.Collections.Generic
 
+open KPX.TheBot.Data.Common.Testing
+
 
 type World =
     { WorldId : uint16
@@ -234,3 +236,9 @@ module World =
 
             for alias in aliases.Split(",") do
                 dcNameMapping.TryAdd(alias, dc) |> ignore
+
+type WorldTest() =
+    inherit DataTest()
+    
+    override x.RunTest() =
+        World.GetWorldByName("拉诺西亚") |> ignore

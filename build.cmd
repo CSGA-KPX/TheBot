@@ -4,6 +4,14 @@ dotnet tool restore
 dotnet restore
 
 dotnet build
+pushd build\debug
+call TheBotData.exe
+if ERRORLEVEL 1 (
+    echo 数据缓存生成失败
+    goto :EOF
+)
+popd
+goto :EOF
 
 dotnet test /p:AltCover=true "/p:AltCoverTypeFilter=?KPX|ProviderImplementation.ProvidedTypes|LibFFXIV.GameData.Provider|StartupCode" "/p:AltCoverAssemblyExcludeFilter=Test|test" "/p:AltCoverReport=$(SolutionDir)/tmp/coverage_report/$(ProjectName).coverage.xml" -v n
 

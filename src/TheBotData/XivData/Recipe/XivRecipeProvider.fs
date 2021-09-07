@@ -1,5 +1,6 @@
 ﻿namespace KPX.TheBot.Data.XivData.Recipe
 
+open KPX.TheBot.Data.Common.Testing
 open KPX.TheBot.Data.CommonModule.Recipe
 
 open KPX.TheBot.Data.XivData
@@ -53,3 +54,41 @@ type XivRecipeManager private () =
                 Calc item (quantity.ToItems(r))
 
                 acc.AsRecipeProcess())
+    
+    interface IDataTest with
+        member x.RunTest() =
+             let ic = ItemCollection.Instance
+             let rm = XivRecipeManager.Instance
+             let ret = ic.TryGetByName("亚拉戈高位合成兽革")
+
+             Expect.isSome ret 
+             let recipe = rm.TryGetRecipe(ret.Value)
+             Expect.isSome recipe 
+
+             let input =
+                 recipe.Value.Input
+                 |> Array.map (fun m -> m.Item.Name, m.Quantity)
+                 |> readOnlyDict
+
+             Expect.equal input.["合成生物的粗皮"] 3.0 
+             Expect.equal input.["兽脂"] 9.0 
+             Expect.equal input.["黑明矾"] 3.0 
+             Expect.equal input.["土之晶簇"] 1.0 
+             Expect.equal input.["风之晶簇"] 1.0
+             
+             
+             let ret = ic.TryGetByName("奥德赛级船体")
+
+             Expect.isSome ret 
+             let recipe = rm.TryGetRecipe(ret.Value)
+             Expect.isSome recipe 
+
+             let input =
+                 recipe.Value.Input
+                 |> Array.map (fun m -> m.Item.Name, m.Quantity)
+                 |> readOnlyDict
+
+             Expect.equal input.["紫檀木材"] 24.0 
+             Expect.equal input.["翼胶"] 9.0 
+             
+             
