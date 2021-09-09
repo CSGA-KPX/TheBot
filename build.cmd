@@ -7,10 +7,18 @@ dotnet build
 pushd build\debug
 call TheBotData.exe
 if ERRORLEVEL 1 (
-    echo 鏁版嵁缂撳瓨鐢熸垚澶辫触
+    echo 数据缓存生成失败
+    pause
+    goto :EOF
+)
+call TheBot.exe runCmdTest:
+if ERRORLEVEL 1 (
+    echo 数据缓存生成失败
+    pause
     goto :EOF
 )
 popd
+pause
 goto :EOF
 
 dotnet test /p:AltCover=true "/p:AltCoverTypeFilter=?KPX|ProviderImplementation.ProvidedTypes|LibFFXIV.GameData.Provider|StartupCode" "/p:AltCoverAssemblyExcludeFilter=Test|test" "/p:AltCoverReport=$(SolutionDir)/tmp/coverage_report/$(ProjectName).coverage.xml" -v n

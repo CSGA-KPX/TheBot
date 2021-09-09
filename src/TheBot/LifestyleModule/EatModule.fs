@@ -125,7 +125,7 @@ type EatModule() =
     [<TestFixture>]
     member x.TestEat() =
         let tc = TestContext(x)
-        tc.ShouldThrow("#eat")
+        tc.ShouldNotThrow("#eat")
         tc.ShouldNotThrow("#eat AAA")
         tc.ShouldNotThrow("#eat 早")
         tc.ShouldNotThrow("#eat 中")
