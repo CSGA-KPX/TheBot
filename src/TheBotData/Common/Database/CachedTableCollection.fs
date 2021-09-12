@@ -6,7 +6,7 @@ open LiteDB
 
 
 [<CLIMutable>]
-type internal TableUpdateTime =
+type TableUpdateTime =
     { [<BsonId(false)>]
       Id : string
       Updated : DateTimeOffset }
