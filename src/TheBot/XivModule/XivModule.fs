@@ -278,7 +278,7 @@ type MiscModule() =
 
         let json =
             hc
-                .GetStreamAsync("https://api.bilibili.com/x/space/channel/video?mid=15503317&cid=55877&pn=1&ps=30&order=0")
+                .GetStreamAsync("https://api.bilibili.com/x/space/arc/search?mid=15503317&ps=30&tid=0&pn=1&keyword=&order=pubdate&jsonp=jsonp")
                 .ConfigureAwait(false)
                 .GetAwaiter()
                 .GetResult()
@@ -290,7 +290,7 @@ type MiscModule() =
             Newtonsoft.Json.Linq.JObject.Load(reader)
 
         let data =
-            json.SelectToken("data.list.archives") :?> Newtonsoft.Json.Linq.JArray
+            json.SelectToken("data.list.vlist") :?> Newtonsoft.Json.Linq.JArray
 
         let item =
             data
