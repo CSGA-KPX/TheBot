@@ -3,44 +3,43 @@
 open System
 open System.Collections.Generic
 
+open KPX.FsCqHttp
 open KPX.FsCqHttp.Event
+open KPX.FsCqHttp.Message
 
 
 type SeedOption =
-    | SeedDate
+    | SeedDate of DateTimeOffset
     | SeedRandom
     | SeedCustom of string
+    | SeedUserId of UserId
 
     override x.ToString() =
         match x with
-        | SeedDate ->
-            DateTimeOffset
-                .Now
+        | SeedDate date ->
+            date
                 .ToOffset(TimeSpan.FromHours(8.0))
                 .ToString("yyyyMMdd")
         | SeedRandom -> Guid.NewGuid().ToString()
         | SeedCustom s -> s
+        | SeedUserId uid -> uid.Value.ToString()
 
     static member GetSeedString(seeds : seq<SeedOption>) = String.Join("|", seeds)
 
     static member SeedByUserDay(msg : MessageEvent) =
-        [| SeedDate
-           SeedCustom(msg.UserId.Value.ToString()) |]
+        [| SeedDate DateTimeOffset.Now
+           SeedUserId msg.UserId |]
 
     static member SeedByAtUserDay(msg : MessageEvent) =
-        [| SeedDate
-           SeedCustom(
-               let at = msg.Message.TryGetAt()
-
-               if at.IsNone then
-                   raise <| InvalidOperationException("没有用户被At！")
-               else
-                   at.Value.ToString()
-           ) |]
+        [| yield SeedDate DateTimeOffset.Now
+           match msg.Message.TryGetAt() with
+           | None -> raise <| InvalidOperationException("没有用户被At！")
+           | Some AtUserType.All -> raise <| InvalidOperationException("At全员无效！")
+           | Some (AtUserType.User uid) -> yield SeedUserId uid |]
 
 type private DRng(seeds : seq<SeedOption>) =
     static let utf8 = Text.Encoding.UTF8
-    
+
     // 因为数据量很小，Md5和xxHash速度都差不多
     // 而且DieHarder和rngtest测试结果也差不多
     // 没有其他问题还是固定用Md5了
@@ -67,16 +66,23 @@ type private DRng(seeds : seq<SeedOption>) =
     member x.GetInt64() = BitConverter.ToInt64(x.GetBytes(), 0)
     member x.GetUInt64() = BitConverter.ToUInt64(x.GetBytes(), 0)
 
-    member x.GetInt32(str) = BitConverter.ToInt32(x.GetBytes(str), 0)
-    member x.GetUInt32(str) = BitConverter.ToUInt32(x.GetBytes(str), 0)
-    member x.GetInt64(str) = BitConverter.ToInt64(x.GetBytes(str), 0)
-    member x.GetUInt64(str) = BitConverter.ToUInt64(x.GetBytes(str), 0)
+    member x.GetInt32(str) =
+        BitConverter.ToInt32(x.GetBytes(str), 0)
 
-    member private x.GetBytes() = 
+    member x.GetUInt32(str) =
+        BitConverter.ToUInt32(x.GetBytes(str), 0)
+
+    member x.GetInt64(str) =
+        BitConverter.ToInt64(x.GetBytes(str), 0)
+
+    member x.GetUInt64(str) =
+        BitConverter.ToUInt64(x.GetBytes(str), 0)
+
+    member private x.GetBytes() =
         if frozen then
             seed
         else
-            iterate()
+            iterate ()
             seed
 
     member private x.GetBytes(str : string) =
@@ -84,7 +90,8 @@ type private DRng(seeds : seq<SeedOption>) =
             Array.append seed (utf8.GetBytes(str))
             |> hash.ComputeHash
         else
-            iterate()
+            iterate ()
+
             Array.append seed (utf8.GetBytes(str))
             |> hash.ComputeHash
 
@@ -138,13 +145,15 @@ type Dicer(seeds : seq<SeedOption>) =
 
     member x.GetInteger(min : int64, max : int64, str : string) =
         let max = max - min
-        (x.GetInteger(0UL, uint64 max, str) |> int64) + min
+
+        (x.GetInteger(0UL, uint64 max, str) |> int64)
+        + min
 
     member x.GetNatural(upper) = x.GetInteger(0, upper)
     member x.GetNatural(upper) = x.GetInteger(0L, upper)
     member x.GetNatural(upper) = x.GetInteger(0u, upper)
     member x.GetNatural(upper) = x.GetInteger(0UL, upper)
-    
+
     member x.GetPositive(upper) = x.GetInteger(1, upper)
     member x.GetPositive(upper) = x.GetInteger(1L, upper)
     member x.GetPositive(upper) = x.GetInteger(1u, upper)
@@ -154,7 +163,7 @@ type Dicer(seeds : seq<SeedOption>) =
     member x.GetNatural(upper, str) = x.GetInteger(0L, upper, str)
     member x.GetNatural(upper, str) = x.GetInteger(0u, upper, str)
     member x.GetNatural(upper, str) = x.GetInteger(0UL, upper, str)
-    
+
     member x.GetPositive(upper, str) = x.GetInteger(1, upper, str)
     member x.GetPositive(upper, str) = x.GetInteger(1L, upper, str)
     member x.GetPositive(upper, str) = x.GetInteger(1u, upper, str)
@@ -162,6 +171,7 @@ type Dicer(seeds : seq<SeedOption>) =
 
     member x.GetIntegerArray(lower : int, upper : int, count : int, unique : bool) =
         if count < 0 then invalidArg "count" "数量不能小于0"
+
         if unique && (upper - lower + 1) < count then
             invalidArg "count" "获取唯一数大于可能数"
 
@@ -178,16 +188,16 @@ type Dicer(seeds : seq<SeedOption>) =
         ret.CopyTo(r, 0)
         r
 
-    member x.GetNaturalArray(upper : int, count : int, ?unique : bool) = 
+    member x.GetNaturalArray(upper : int, count : int, ?unique : bool) =
         x.GetIntegerArray(0, upper, count, defaultArg unique false)
 
-    member x.GetPositiveArray(upper : int, count : int, ?unique : bool) = 
+    member x.GetPositiveArray(upper : int, count : int, ?unique : bool) =
         x.GetIntegerArray(1, upper, count, defaultArg unique false)
 
-    member x.GetArrayItem(items : 'T []) = 
+    member x.GetArrayItem(items : 'T []) =
         let idx = x.GetNatural(items.Length - 1)
         items.[idx]
 
-    member x.GetArrayItem(items : 'T [], count, ?unique : bool) = 
+    member x.GetArrayItem(items : 'T [], count, ?unique : bool) =
         x.GetNaturalArray(items.Length - 1, count, defaultArg unique false)
         |> Array.map (fun idx -> items.[idx])
