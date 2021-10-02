@@ -6,6 +6,8 @@ open System.Reflection
 
 open Newtonsoft.Json.Linq
 
+open SkiaSharp
+
 open KPX.FsCqHttp.Message
 
 
@@ -45,7 +47,7 @@ type MessageSection(typeName : string) =
     member x.TryGetValue(name : string) =
         let succ, item = values.TryGetValue(name)
         if succ then Some item else None
-    
+
     /// 深度复制该消息段
     member x.DeepClone() =
         MessageSection.CreateFrom(x.TypeName, values |> Seq.map (fun kv -> kv.Key, kv.Value))
@@ -133,12 +135,10 @@ type ImageSection() =
     /// 未实现
     member x.Timeout = raise<int> <| NotImplementedException()
 
-    static member Create(img : Drawing.Bitmap) =
-        use ms = new IO.MemoryStream()
-        img.Save(ms, Drawing.Imaging.ImageFormat.Jpeg)
-
+    static member Create(img : SKImage) =
+        let data = img.Encode(SKEncodedImageFormat.Png, 70).AsSpan()
         let b64 =
-            Convert.ToBase64String(ms.ToArray(), Base64FormattingOptions.None)
+            Convert.ToBase64String(data, Base64FormattingOptions.None)
 
         MessageSection.CreateFrom("image", [ "file", ("base64://" + b64) ])
 

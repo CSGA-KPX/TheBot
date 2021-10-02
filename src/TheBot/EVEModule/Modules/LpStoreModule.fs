@@ -5,7 +5,6 @@ open System
 open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Testing
 open KPX.FsCqHttp.Utils.TextResponse
-open KPX.FsCqHttp.Utils.TextTable
 open KPX.FsCqHttp.Utils.UserOption
 
 open KPX.TheBot.Data.CommonModule.Recipe
@@ -39,21 +38,36 @@ type EveLpStoreModule() =
     let pm = EveProcessManager.Default
 
     member x.ShowOverview(cmdArg : CommandEventArgs, cfg : LpConfigParser) =
-        let tt =
-            TextTable(
-                "兑换",
-                RightAlignCell "出售价格",
-                RightAlignCell "利润",
-                RightAlignCell "利润/LP",
-                RightAlignCell "交易量比"
-            )
-
         let minVol = cfg.MinimalVolume
         let minVal = cfg.MinimalValue
 
-        tt.AddPreTable $"最低交易量比(vol)：%g{minVol} 最低LP价值(val)：%g{minVal} 结果上限(count)：%i{cfg.RecordCount}"
+        use resp = cmdArg.OpenResponse(ForceImage)
 
-        tt.AddPreTable("警告：请参考交易量，利润很高的不一定卖得掉")
+        resp.Table {
+            $"最低交易量比(vol)：%g{minVol} 最低LP价值(val)：%g{minVal} 结果上限(count)：%i{cfg.RecordCount}"
+            "警告：请参考交易量，利润很高的不一定卖得掉"
+
+            [ CellBuilder() { literal "兑换" }
+              CellBuilder() {
+                  literal "出售价格"
+                  rightAlign
+              }
+              CellBuilder() {
+                  literal "利润"
+                  rightAlign
+              }
+              CellBuilder() {
+                  literal "利润/LP"
+                  rightAlign
+              }
+              CellBuilder() {
+                  literal "交易量比"
+                  rightAlign
+              } ]
+        }
+        |> ignore
+
+
 
         let corp =
             let cmd = cfg.GetNonOptionString()
@@ -115,16 +129,15 @@ type EveLpStoreModule() =
         |> Seq.truncate cfg.RecordCount
         |> Seq.iter
             (fun r ->
-                tt.RowBuilder {
-                    yield r.Name
-                    yield HumanReadableSig4Float r.SellPrice
-                    yield HumanReadableSig4Float r.Profit
-                    yield HumanReadableInteger r.ProfitPerLp
-                    yield HumanReadableInteger r.DailyOfferVolume
+                resp.Table {
+                    [ CellBuilder() { literal r.Name }
+                      CellBuilder() { floatSig4 r.SellPrice }
+                      CellBuilder() { floatSig4 r.Profit }
+                      CellBuilder() { integer r.ProfitPerLp }
+                      CellBuilder() { integer r.DailyOfferVolume } ]
                 }
-                |> tt.AddRow)
+                |> ignore)
 
-        using (cmdArg.OpenResponse(cfg.ResponseType)) (fun x -> x.Write(tt))
 
     member x.ShowSingleItem(cmdArg : CommandEventArgs, cfg : LpConfigParser) =
         let corp =
@@ -155,11 +168,56 @@ type EveLpStoreModule() =
 
         let mutable materialPriceSum = offer.Value.IskCost
 
-        let tt =
-            TextTable("物品", RightAlignCell "数量", RightAlignCell <| cfg.MaterialPriceMode.ToString())
+        use resp = cmdArg.OpenResponse(ForceImage)
 
-        tt.AddRow("忠诚点", HumanReadableInteger offer.Value.LpCost, PaddingRight)
-        tt.AddRow("星币", PaddingRight, HumanReadableSig4Float offer.Value.IskCost)
+        let profitTable =
+            TextTable() {
+                [ CellBuilder() { literal "名称" }
+                  CellBuilder() {
+                      literal "数量"
+                      rightAlign
+                  }
+                  CellBuilder() {
+                      literal "税后卖出"
+                      rightAlign
+                  }
+                  CellBuilder() {
+                      literal "交易量"
+                      rightAlign
+                  }
+                  CellBuilder() {
+                      literal "利润"
+                      rightAlign
+                  }
+                  CellBuilder() {
+                      literal "单LP价值"
+                      rightAlign
+                  } ]
+            }
+
+        resp.Table {
+            profitTable
+
+            ""
+
+            "材料："
+
+            [ CellBuilder() { literal "物品" }
+              CellBuilder() { literal "数量" }
+              CellBuilder() {
+                  literal cfg.MaterialPriceMode
+                  rightAlign
+              } ]
+
+            [ CellBuilder() { literal "忠诚点" }
+              CellBuilder() { integer offer.Value.LpCost }
+              CellBuilder() { rightPad } ]
+
+            [ CellBuilder() { literal "星币" }
+              CellBuilder() { rightPad }
+              CellBuilder() { number offer.Value.IskCost } ]
+        }
+        |> ignore
 
         let mProc = offer.Value.CastProcess()
 
@@ -167,20 +225,15 @@ type EveLpStoreModule() =
             let price = mr.Item.GetPrice(cfg.MaterialPriceMode)
             let total = price * mr.Quantity
             materialPriceSum <- materialPriceSum + total
-            tt.AddRow(mr.Item.Name, mr.Quantity, HumanReadableSig4Float total)
+
+            resp.Table {
+                [ CellBuilder() { literal mr.Item.Name }
+                  CellBuilder() { integer mr.Quantity }
+                  CellBuilder() { number total } ]
+            }
+            |> ignore
 
         let product = mProc.GetFirstProduct()
-
-        let profitTable =
-            TextTable(
-                "名称",
-                RightAlignCell "数量",
-                RightAlignCell "税后卖出",
-                RightAlignCell "交易量",
-                RightAlignCell "利润",
-                RightAlignCell "单LP价值"
-            )
-
 
         if product.Item.IsBlueprint then
             let proc =
@@ -193,7 +246,13 @@ type EveLpStoreModule() =
                 let price = mr.Item.GetPrice(cfg.MaterialPriceMode)
                 let total = price * mr.Quantity
                 materialPriceSum <- materialPriceSum + total
-                tt.AddRow(mr.Item.Name, mr.Quantity, HumanReadableSig4Float total)
+
+                resp.Table {
+                    [ CellBuilder() { literal mr.Item.Name }
+                      CellBuilder() { integer mr.Quantity }
+                      CellBuilder() { number total } ]
+                }
+                |> ignore
 
             materialPriceSum <- materialPriceSum + proc.GetInstallationCost(cfg)
 
@@ -203,38 +262,41 @@ type EveLpStoreModule() =
             let profit = sellPrice - materialPriceSum
             let bpProduct = recipe.GetFirstProduct()
 
-            profitTable.AddRow(
-                bpProduct.Item.Name,
-                HumanReadableInteger bpProduct.Quantity,
-                HumanReadableSig4Float sellPrice,
-                HumanReadableSig4Float(bpProduct.Item.GetTradeVolume()),
-                HumanReadableSig4Float profit,
-                HumanReadableSig4Float(profit / offer.Value.LpCost)
-            )
+            profitTable {
+                [ CellBuilder() { literal bpProduct.Item.Name }
+                  CellBuilder() { integer bpProduct.Quantity }
+                  CellBuilder() { number sellPrice }
+                  CellBuilder() { number (bpProduct.Item.GetTradeVolume()) }
+                  CellBuilder() { number profit }
+                  CellBuilder() { number (profit / offer.Value.LpCost) } ]
+            }
+            |> ignore
         else
             let sellPrice =
                 mProc.Output.GetPrice(PriceFetchMode.SellWithTax)
 
             let profit = sellPrice - materialPriceSum
 
-            profitTable.AddRow(
-                product.Item.Name,
-                HumanReadableInteger product.Quantity,
-                HumanReadableSig4Float sellPrice,
-                HumanReadableSig4Float(product.Item.GetTradeVolume()),
-                HumanReadableSig4Float profit,
-                HumanReadableSig4Float(profit / offer.Value.LpCost)
-            )
+            profitTable {
+                [ CellBuilder() { literal product.Item.Name }
+                  CellBuilder() { integer product.Quantity }
+                  CellBuilder() { number sellPrice }
+                  CellBuilder() { number (product.Item.GetTradeVolume()) }
+                  CellBuilder() { number profit }
+                  CellBuilder() { number (profit / offer.Value.LpCost) } ]
+            }
+            |> ignore
 
-        tt.AddPreTable(profitTable)
-        tt.AddPreTable("材料：")
-        tt.AddRow("合计", PaddingRight, HumanReadableSig4Float materialPriceSum)
-
-        using (cmdArg.OpenResponse(cfg.ResponseType)) (fun x -> x.Write(tt))
+        resp.Table {
+            [ CellBuilder() { literal "合计" }
+              CellBuilder() { rightPad }
+              CellBuilder() { number materialPriceSum } ]
+        }
+        |> ignore // 因为OpenResponse()
 
     [<CommandHandlerMethod("#eveLp",
-                                    "EVE LP兑换计算。",
-                                    "#evelp 军团名 [道具名] [vol:2] [val:2000] [count:50] [buy:]
+                           "EVE LP兑换计算。",
+                           "#evelp 军团名 [道具名] [vol:2] [val:2000] [count:50] [buy:]
 []内为可选参数。如果指定道具名则查询目标军团指定兑换的详细信息。
 参数说明：vol 最低交易量比，val 最低LP价值，count 结果数量上限，buy 更改为买单价格")>]
     member x.HandleEveLp(cmdArg : CommandEventArgs) =
@@ -247,7 +309,7 @@ type EveLpStoreModule() =
         | _ -> x.ShowSingleItem(cmdArg, cfg)
 
     [<TestFixture>]
-    member x.TestLP() = 
+    member x.TestLP() =
         let tc = TestContext(x)
         tc.ShouldNotThrow("#evelp 姐妹会 val:5 val:3000 count:999")
         tc.ShouldNotThrow("#evelp 姐妹会 val:5 val:3000 count:999 buy:")

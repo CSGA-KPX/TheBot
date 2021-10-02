@@ -1,0 +1,38 @@
+TableCell -> Line
+TableCell [] 或者 seq<TableCell []> -> Row, Row []
+Table -> Table
+
+buildTable {
+    yield ""
+    buildCell {
+        literal obj // 直接调用ToString 左对齐
+        // 以下全部隐含右对齐
+        integer number // 任意数字。无小数点，加千分位
+        float number // 任意数字，二位小数，加千分位
+        percent number // 任意数字，百分比，0.00% .. 10.0% .. 99.9% ..  100%
+        datetime // 输入DTO或者DT
+        timeSpan // 输入DTO/DT/TimeSpan，转化为XX分前
+
+        leftPad // 左对齐的 --
+        rightPad // 右对齐的 --
+
+        rightAlign or leftAlign // 人工调整对齐方式
+
+        setBold
+        unsetBold
+
+        setColor 0x00000000
+    }
+    seq {
+        for each item in dataSource
+            // 需要支持Yield TableCell
+            if someCond then
+                buildCell {
+                }
+            else
+                buildCell {
+                }
+            buildCell {
+            }
+    }
+}

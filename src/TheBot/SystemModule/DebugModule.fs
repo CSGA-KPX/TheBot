@@ -1,12 +1,11 @@
 ﻿namespace KPX.TheBot.Module.DebugModule
 
 open System
+
 open KPX.FsCqHttp
 open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Api.Context
-
 open KPX.FsCqHttp.Utils.TextResponse
-open KPX.FsCqHttp.Utils.TextTable
 open KPX.FsCqHttp.Utils.UserOption
 
 open KPX.TheBot.Utils.HandlerUtils
@@ -23,19 +22,19 @@ type DebugModule() =
     member x.HandleShowConfig(cmdArg : CommandEventArgs) =
         cmdArg.EnsureSenderOwner()
 
-        let tt = TextTable("名称", "值")
+        TextTable(ForceText) {
+            [ CellBuilder() { literal "名称" }
+              CellBuilder() { literal "指" } ]
 
-        let cfg = Config
+            [ for p in Config.GetType().GetProperties() do
+                  [ CellBuilder() { literal p.Name }
+                    let v = p.GetValue(Config)
 
-        for p in cfg.GetType().GetProperties() do
-            let v = p.GetValue(cfg)
-
-            if v.GetType().IsPrimitive || (v :? String) then
-                tt.AddRow(p.Name, $"%A{v}")
-            else
-                tt.AddRow(p.Name, "{复杂类型}")
-
-        using (cmdArg.OpenResponse(PreferImage)) (fun ret -> ret.Write(tt))
+                    if v.GetType().IsPrimitive || (v :? String) then
+                        CellBuilder() { literal $"%A{v}" }
+                    else
+                        CellBuilder() { literal "复杂类型" } ] ]
+        }
 
     [<CommandHandlerMethod("##setlog", "(超管) 设置日志设置", "event, api, command", IsHidden = true)>]
     member x.HandleSetLogging(cmdArg : CommandEventArgs) =
@@ -63,9 +62,7 @@ type DebugModule() =
         Config.LogCommandCall <- command.Value
 
         let ret =
-            $"日志选项已设定为：##setlog event:%b{Config.LogEventPost} api:%b{Config.LogApiCall} apijson:%b{
-                                                                                                       Config.LogApiJson
-            } command:%b{Config.LogCommandCall}"
+            $"日志选项已设定为：##setlog event:%b{Config.LogEventPost} api:%b{Config.LogApiCall} apijson:%b{Config.LogApiJson} command:%b{Config.LogCommandCall}"
 
         cmdArg.Reply(ret)
 
@@ -102,7 +99,8 @@ type DebugModule() =
             |> Seq.iter (fun (_, test) -> test.Invoke())
 
             cmdArg.Reply("成功完成")
-        with e -> using (cmdArg.OpenResponse(PreferImage)) (fun ret -> ret.Write $"{e}")
+        with
+        | e -> using (cmdArg.OpenResponse(PreferImage)) (fun ret -> ret.Write $"{e}")
 
         nlogMemoryTarget.Logs.Clear()
 

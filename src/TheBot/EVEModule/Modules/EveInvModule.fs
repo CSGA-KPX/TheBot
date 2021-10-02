@@ -1,15 +1,11 @@
-﻿namespace TheBot.EVEModule.Modules.EveInvModule
+﻿namespace KPX.TheBot.Module.EveModule.EveInvModule
 
 open System
 
 open KPX.FsCqHttp.Handler
-//open KPX.FsCqHttp.Testing
-
 open KPX.FsCqHttp.Utils.UserOption
 open KPX.FsCqHttp.Utils.TextResponse
-open KPX.FsCqHttp.Utils.TextTable
 
-//open KPX.TheBot.Data.EveData
 open KPX.TheBot.Data.CommonModule.Recipe
 open KPX.TheBot.Data.EveData.EveType
 
@@ -24,10 +20,7 @@ type InvKeyOpt(cb) =
 
 type EveInvModule() =
     inherit CommandHandlerBase()
-    
-    let PositiveOrPad (f : float) =
-        if f > 0.0 then HumanReadableInteger f else PaddingRight
-        
+
     /// 返回库存信息 id*库存
     member private x.GetInv(keyOpt : InvKeyOpt) =
         let i = InventoryCollection.Instance
@@ -76,19 +69,26 @@ type EveInvModule() =
 
         acc.Clear()
 
-        let tt = TextTable("材料", RightAlignCell "数量")
-
         let materials =
             x.ReadCommandBody(cmdArg, acc).AsMaterials()
             |> Array.sortBy (fun i -> i.Item.MarketGroupId)
 
-        for m in materials do
-            tt.AddRow(m.Item.Name, HumanReadableInteger m.Quantity)
-
-        tt.AddPreTable("此前数据已经清除")
-        tt.AddPreTable("会保留到下次机器人重启前")
         cmdArg.Reply $"录入到： id:%s{guid}"
-        using (cmdArg.OpenResponse(opt.ResponseType)) (fun ret -> ret.Write(tt))
+
+        TextTable(ForceImage) {
+            "数据会保留到机器人重启前"
+
+            [ CellBuilder() { literal "材料" }
+              CellBuilder() {
+                  literal "数量"
+                  rightAlign
+              } ]
+
+            [ for m in materials do
+                  [ CellBuilder() { literal m.Item.Name }
+                    CellBuilder() { integer m.Quantity } ] ]
+
+        }
 
     [<CommandHandlerMethod("#eveinvcal", "输入材料信息相加，然后与目标库存相减", "", IsHidden = true)>]
     member x.HandleInvCal(cmdArg : CommandEventArgs) =
@@ -99,20 +99,35 @@ type EveInvModule() =
         let _, inv = x.GetInv(keyOpt)
         let list = x.ReadCommandBody(cmdArg)
 
-        let tt =
-            TextTable("物品", RightAlignCell "数量", RightAlignCell "已有", RightAlignCell "缺少")
-
-        for m in list do
-            let had =
-                if inv.Contains(m.Item) then
-                    inv.Get(m.Item)
+        TextTable() {
+            let positiveOrPad (f : float) =
+                if f > 0.0 then
+                    CellBuilder() { integer f }
                 else
-                    0.0
+                    CellBuilder() { rightPad }
 
-            let lack = m.Quantity - had
-            let hadStr = PositiveOrPad had
-            let lackStr = PositiveOrPad lack
-            
-            tt.AddRow(m.Item.Name, HumanReadableInteger m.Quantity, hadStr, lackStr)
+            [ CellBuilder() { literal "物品" }
+              CellBuilder() {
+                  literal "数量"
+                  rightAlign
+              }
+              CellBuilder() {
+                  literal "已有"
+                  rightAlign
+              }
+              CellBuilder() {
+                  literal "缺少"
+                  rightAlign
+              } ]
 
-        using (cmdArg.OpenResponse(opt.ResponseType)) (fun ret -> ret.Write(tt))
+            [ for m in list do
+                  let had =
+                      if inv.Contains(m.Item) then inv.Get(m.Item) else 0.0
+
+                  let lack = m.Quantity - had
+
+                  [ CellBuilder() { literal m.Item.Name }
+                    CellBuilder() { integer m.Quantity }
+                    CellBuilder() { literal (positiveOrPad had) }
+                    CellBuilder() { literal (positiveOrPad lack) } ] ]
+        }

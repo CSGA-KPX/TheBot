@@ -9,7 +9,6 @@ open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Testing
 
 open KPX.FsCqHttp.Utils.TextResponse
-open KPX.FsCqHttp.Utils.TextTable
 open KPX.FsCqHttp.Utils.UserOption
 
 open KPX.TheBot.Data.XivData
@@ -35,8 +34,6 @@ type SeaFishingOption() as x =
 
 type MiscModule() =
     inherit CommandHandlerBase()
-
-    let itemCol = ItemCollection.Instance
 
     let isNumber (str : string) =
         if str.Length <> 0 then
@@ -78,31 +75,34 @@ type MiscModule() =
 
                 dfcRoulettes.[index].Name
 
-            let tt =
-                TextTable(RightAlignCell "日期（中国标准时间）", "副本")
-
             let startDate =
                 let jst = DateTimeOffset.Now.ToOffset(JSTOffset)
 
                 (jst - jst.TimeOfDay)
                     .ToOffset(TimeSpan.FromHours(8.0))
 
-            tt.AddPreTable $"当前为：%s{getString startDate}"
-
             let list = opt.ListCount.Value
-
             if list > 31 then cmdArg.Abort(InputError, "一个月还不够嘛？")
+            use resp = cmdArg.OpenResponse(ForceImage)
 
-            for i = 0 to list do
-                let date = startDate.AddDays(float i)
+            resp.Table {
+                $"当前为：%s{getString startDate}"
 
-                let dateStr =
-                    startDate.AddDays(float i).ToString(dateFmt)
+                [ CellBuilder() { literal "中国时间" }
+                  CellBuilder() { literal "副本" } ]
 
-                let contentStr = getString date
-                tt.AddRow(dateStr, contentStr)
+                [ for i = 0 to list do
+                      let date = startDate.AddDays(float i)
 
-            using (cmdArg.OpenResponse(ForceImage)) (fun ret -> ret.Write(tt))
+                      let dateStr =
+                          startDate
+                              .AddDays(Operators.float i)
+                              .ToString(dateFmt)
+
+                      [ CellBuilder() { literal dateStr }
+                        CellBuilder() { literal (getString date) } ] ]
+            }
+            |> ignore
 
     [<TestFixture>]
     member x.TestXivDFC() =
@@ -138,14 +138,18 @@ type MiscModule() =
         let dicer =
             Dicer(SeedOption.SeedByUserDay(cmdArg.MessageEvent))
 
-        let tt = TextTable(RightAlignCell "D100", "选项")
+        TextTable(ForceText) {
+            [ CellBuilder() { literal "D100" }
+              CellBuilder() { literal "选项" } ]
 
-        choices
-        |> Array.map (fun str -> str, dicer.GetPositive(100u, str))
-        |> Array.sortBy snd
-        |> Array.iter (fun (str, d) -> tt.AddRow(d, str))
-
-        cmdArg.Reply(tt.ToString())
+            choices
+            |> Array.map (fun str -> str, dicer.GetPositive(100u, str))
+            |> Array.sortBy snd
+            |> Array.map
+                (fun (str, d) ->
+                    [ CellBuilder() { integer d }
+                      CellBuilder() { literal str } ])
+        }
 
     [<TestFixture>]
     member x.TestXivFantasia() =
@@ -202,45 +206,30 @@ type MiscModule() =
         let tc = TestContext(x)
         tc.ShouldNotThrow("#cgss 占星 510")
 
-    [<CommandHandlerMethod("#is", "（FF14）查找名字包含字符的物品", "关键词（大小写敏感）")>]
+    (*    [<CommandHandlerMethod("#is", "（FF14）查找名字包含字符的物品", "关键词（大小写敏感）")>]
     member x.HandleItemSearch(cmdArg : CommandEventArgs) =
-        let tt = TextTable(RightAlignCell "Id", "物品名")
-        let i = String.Join(" ", cmdArg.HeaderArgs)
-
-        if isNumber i then
-            let ret = itemCol.TryGetByItemId(i |> int32)
-            if ret.IsSome then tt.AddRow(ret.Value.Id, ret.Value.Name)
-        else
-            let ret =
-                itemCol.SearchByName(i)
-                |> Array.sortBy (fun x -> x.Id)
-
-            if ret.Length >= 50 then
-                cmdArg.Abort(InputError, "结果太多，请优化关键词")
-
-            if ret.Length = 0 then cmdArg.Abort(InputError, "无结果")
-
-            for item in ret do
-                tt.AddRow(item.Id, item.Name)
-
-        using (cmdArg.OpenResponse()) (fun r -> r.Write(tt))
+        cmdArg.Reply("砍掉重练中")
 
     [<TestFixture>]
     member x.TestItemSearch() =
         let tc = TestContext(x)
         tc.ShouldNotThrow("#is 风之水晶")
-        tc.ShouldThrow("#is 第三期")
+        tc.ShouldThrow("#is 第三期")*)
 
     [<CommandHandlerMethod("#gate", "挖宝选门", "")>]
-    member x.HandleGate(cmdArg : CommandEventArgs) =
-        let tt = TextTable("1D100", "门")
+    member x.HandleGate(_ : CommandEventArgs) =
+        TextTable(ForceText) {
+            [ CellBuilder() { literal "D100" }
+              CellBuilder() { literal "门" } ]
 
-        [| "左"; "中"; "右" |]
-        |> Array.map (fun door -> door, Dicer.RandomDicer.GetPositive(100u, door))
-        |> Array.sortBy snd
-        |> Array.iter (fun (door, score) -> tt.AddRow($"%03i{score}", door))
-
-        cmdArg.Reply(tt.ToString())
+            [| "左"; "中"; "右" |]
+            |> Array.map (fun door -> door, Dicer.RandomDicer.GetPositive(100u, door))
+            |> Array.sortBy snd
+            |> Array.map
+                (fun (door, score) ->
+                    [ CellBuilder() { literal $"%03i{score}" }
+                      CellBuilder() { literal door } ])
+        }
 
     [<TestFixture>]
     member x.TestGate() =
@@ -278,7 +267,9 @@ type MiscModule() =
 
         let json =
             hc
-                .GetStreamAsync("https://api.bilibili.com/x/space/arc/search?mid=15503317&ps=30&tid=0&pn=1&keyword=&order=pubdate&jsonp=jsonp")
+                .GetStreamAsync(
+                    "https://api.bilibili.com/x/space/arc/search?mid=15503317&ps=30&tid=0&pn=1&keyword=&order=pubdate&jsonp=jsonp"
+                )
                 .ConfigureAwait(false)
                 .GetAwaiter()
                 .GetResult()
@@ -318,13 +309,14 @@ type MiscModule() =
 
         let cfg = Utils.CommandUtils.XivOption()
         cfg.Parse(cmdArg.HeaderArgs)
-
-        using
-            (cmdArg.OpenResponse(cfg.ResponseType))
-            (fun ret ->
-                ret.Write(title)
-                ret.Write("\r\n")
-                ret.Write(n.InnerText))
+        
+        TextTable(cfg.ResponseType) {
+            CellBuilder() {
+                literal title
+                newLine
+                splitString n.InnerText
+            }
+        }
 
     [<TestFixture>]
     member x.TestNrnr() =
@@ -350,23 +342,25 @@ type MiscModule() =
 
         try
             if opt.ListCount.IsDefined then
-                let tt = TextTable("CD时间", "概述", "tid", "rid")
                 let count = opt.ListCount.Value
-
                 if count > 12 * 31 then cmdArg.Abort(InputError, "那时间可太长了。")
 
-                for i = 0 to count - 1 do
-                    let cd = now.AddHours((float i) * 2.0)
-                    let info = OceanFishing.CalculateCooldown(cd)
+                ret.Table {
+                    [ CellBuilder() { literal "CD时间" }
+                      CellBuilder() { literal "概述" }
+                      CellBuilder() { literal "tid" }
+                      CellBuilder() { literal "rid" } ]
 
-                    tt.AddRow(
-                        info.CooldownDate.ToString(dateFmt),
-                        info.Message.[0],
-                        info.RouTableId,
-                        info.RouteId
-                    )
+                    [ for i = 0 to count - 1 do
+                          let cd = now.AddHours((float i) * 2.0)
+                          let info = OceanFishing.CalculateCooldown(cd)
 
-                ret.Write(tt)
+                          [ CellBuilder() { dateTime info.CooldownDate }
+                            CellBuilder() { literal info.Message.[0] }
+                            CellBuilder() { literal info.RouTableId }
+                            CellBuilder() { literal info.RouteId } ] ]
+                }
+                |> ignore
             else
                 let next = opt.NextCoolDown.Value
                 if next <> 0 then now <- now.AddHours(2.0 * (float next))
@@ -374,16 +368,16 @@ type MiscModule() =
 
                 let date = info.CooldownDate.ToString(dateFmt)
                 ret.WriteLine("预计CD时间为：{0}", date)
-                ret.WriteEmptyLine()
+                ret.WriteLine()
                 ret.WriteLine("攻略文本：")
 
                 for line in info.Message do
                     if String.IsNullOrWhiteSpace(line) then
-                        ret.WriteEmptyLine()
+                        ret.WriteLine()
                     else
                         ret.WriteLine(line)
 
-                ret.WriteEmptyLine()
+                ret.WriteLine()
                 ret.WriteLine("数据源：https://bbs.nga.cn/read.php?tid=20553241")
                 ret.WriteLine("        https://bbs.nga.cn/read.php?tid=26210039")
                 ret.WriteLine("        https://bbs.nga.cn/read.php?tid=26218473")
@@ -395,7 +389,8 @@ type MiscModule() =
                     info.RouteId,
                     info.IsNextCooldown
                 )
-        with e -> ret.Abort(ModuleError, "CD计算错误，请通告管理员：\r\n{0}", e)
+        with
+        | e -> ret.Abort(ModuleError, "CD计算错误，请通告管理员：\r\n{0}", e)
 
     [<TestFixture>]
     member x.TestIKD() =

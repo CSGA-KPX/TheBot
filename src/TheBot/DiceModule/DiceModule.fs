@@ -3,19 +3,13 @@ namespace KPX.TheBot.Module.DiceModule.DiceModule
 open System
 
 open KPX.FsCqHttp.Message
-
 open KPX.FsCqHttp.Event
-
 open KPX.FsCqHttp.Api.System
 open KPX.FsCqHttp.Api.Group
-
 open KPX.FsCqHttp.Handler
-
 open KPX.FsCqHttp.Utils.TextResponse
-open KPX.FsCqHttp.Utils.TextTable
 
 open KPX.TheBot.Utils.Dicer
-
 open KPX.TheBot.Module.DiceModule.Utils
 
 
@@ -30,67 +24,61 @@ type DiceModule() =
 可以@一个群友帮他选")>]
     member x.HandleChoices(cmdArg : CommandEventArgs) =
         let atUser = cmdArg.MessageEvent.Message.TryGetAt()
-        use sw = cmdArg.OpenResponse(ForceText)
+        use ret = cmdArg.OpenResponse(ForceText)
 
         if atUser.IsSome then
             let loginInfo = cmdArg.ApiCaller.CallApi<GetLoginInfo>()
 
             match atUser.Value with
-            | AtUserType.All -> sw.Abort(InputError, "公共事件请at bot账号")
+            | AtUserType.All -> ret.Abort(InputError, "公共事件请at bot账号")
             | AtUserType.User x when
                 // TODO: 应该使用AllLines轮询
                 x = cmdArg.BotUserId
                 && not
-                   <| cmdArg.HeaderLine.Contains(loginInfo.Nickname) -> sw.WriteLine("公投：")
+                   <| cmdArg.HeaderLine.Contains(loginInfo.Nickname)
+                ->
+                ret.WriteLine("公投：")
             | AtUserType.User x ->
                 let atUserInfo =
                     let gEvent = cmdArg.MessageEvent.AsGroup()
+
                     GetGroupMemberInfo(gEvent.GroupId, x)
                     |> cmdArg.ApiCaller.CallApi
 
-                sw.WriteLine(
+                ret.WriteLine(
                     "{0} 为 {1} 投掷：",
                     cmdArg.MessageEvent.DisplayName,
                     atUserInfo.DisplayName
                 )
 
-        let tt = TextTable("1D100", "选项")
+        if cmdArg.HeaderArgs.Length = 0 then
+            cmdArg.Abort(InputError, "没有选项")
 
-        [| for arg in cmdArg.HeaderArgs do
-               let m = ChoiceHelper.YesOrNoRegex.Match(arg)
+        ret.Table {
+            let seed =
+                if cmdArg.CommandAttrib.Command = ".c" then
+                    Array.singleton SeedOption.SeedRandom
+                else if atUser.IsSome then
+                    SeedOption.SeedByAtUserDay(cmdArg.MessageEvent)
+                else
+                    SeedOption.SeedByUserDay(cmdArg.MessageEvent)
 
-               if m.Success then
-                   yield
-                       m.Groups.[1].Value
-                       + m.Groups.[2].Value
-                       + m.Groups.[4].Value
+            let dicer = Dicer(seed)
+            do dicer.Freeze()
 
-                   yield
-                       m.Groups.[1].Value
-                       + m.Groups.[3].Value
-                       + m.Groups.[4].Value
-               else
-                   yield arg |]
-        |> (fun args ->
-            if args.Length = 0 then cmdArg.Abort(InputError, "没有选项")
-            args)
-        |> Array.map
-            (fun c ->
-                let seed =
-                    if cmdArg.CommandAttrib.Command = ".c" then
-                        Array.singleton SeedOption.SeedRandom
-                    else if atUser.IsSome then
-                        SeedOption.SeedByAtUserDay(cmdArg.MessageEvent)
-                    else
-                        SeedOption.SeedByUserDay(cmdArg.MessageEvent)
+            [ CellBuilder() { literal "D100" }
+              CellBuilder() { literal "选项" } ]
 
-                let dicer = Dicer(seed)
-                dicer.Freeze()
-                (c, dicer.GetPositive(100u, c)))
-        |> Array.sortBy snd
-        |> Array.iter (fun (c, n) -> tt.AddRow($"%03i{n}", c))
-
-        sw.Write(tt)
+            cmdArg.HeaderArgs
+            |> Array.collect ChoiceHelper.expandYesOrNo
+            |> Array.map (fun c -> (c, dicer.GetPositive(100u, c)))
+            |> Array.sortBy snd
+            |> Array.map
+                (fun (c, n) ->
+                    [ CellBuilder() { literal $"%03i{n}" }
+                      CellBuilder() { literal c } ])
+        }
+        |> ignore
 
     [<CommandHandlerMethod(".jrrp", "（兼容）今日人品值", "")>]
     [<CommandHandlerMethod("#jrrp", "今日人品值", "")>]

@@ -5,17 +5,12 @@ open System
 open KPX.FsCqHttp.Event.Message
 open KPX.FsCqHttp.Message
 open KPX.FsCqHttp.Handler
-
 open KPX.FsCqHttp.Api.Private
 open KPX.FsCqHttp.Testing
-
 open KPX.FsCqHttp.Utils.TextResponse
-open KPX.FsCqHttp.Utils.TextTable
 
 open KPX.TheBot.Utils.Dicer
-
 open KPX.TheBot.Module.DiceModule.Utils.DiceExpression
-
 open KPX.TheBot.Module.TRpgModule
 open KPX.TheBot.Module.TRpgModule.Strings
 open KPX.TheBot.Module.TRpgModule.Coc7
@@ -29,8 +24,6 @@ type TRpgModule() =
     member x.HandleCoc7(cmdArg : CommandEventArgs) =
         let isDotCommand = cmdArg.CommandAttrib.Command = ".coc7"
 
-        let tt = TextTable("属性", "值")
-
         let seed =
             if isDotCommand then
                 Array.singleton SeedOption.SeedRandom
@@ -39,26 +32,32 @@ type TRpgModule() =
 
         let de = DiceExpression(Dicer(seed))
 
-        let mutable sum = 0
+        TextTable(ForceText) {
+            $"%s{cmdArg.MessageEvent.DisplayName}的人物作成:"
 
-        for name, expr in Coc7AttrExpr do
-            let d = de.Eval(expr).Sum |> int
-            sum <- sum + d
-            tt.AddRow(name, d)
+            [ CellBuilder() { literal "属性" }
+              CellBuilder() { literal "值" } ]
 
-        tt.AddRow("总计", sum)
+            [ let mutable sum = 0
 
-        tt.AddPreTable $"%s{cmdArg.MessageEvent.DisplayName}的人物作成:"
+              for name, expr in Coc7AttrExpr do
+                  let d = de.Eval(expr).Sum |> int
+                  sum <- sum + d
 
-        let job =
-            de.Dicer.GetArrayItem(StringData.ChrJobs)
+                  [ CellBuilder() { literal name }
+                    CellBuilder() { integer d } ]
 
-        if isDotCommand then
-            tt.AddPostTable $"推荐职业：%s{job}"
-        else
-            tt.AddPostTable $"今日推荐职业：%s{job}"
+              [ CellBuilder() { literal "总计" }
+                CellBuilder() { integer sum } ] ]
 
-        using (cmdArg.OpenResponse()) (fun ret -> ret.Write(tt))
+            let job =
+                de.Dicer.GetArrayItem(StringData.ChrJobs)
+
+            let jobStr =
+                if isDotCommand then $"推荐职业：%s{job}" else $"今日推荐职业：%s{job}"
+
+            jobStr
+        }
 
     [<TestFixture>]
     member x.TestCoc7() =
@@ -83,6 +82,7 @@ type TRpgModule() =
             | 1 ->
                 // 读角色
                 if card.IsNone then cmdArg.Abort(InputError, "当前没有绑定角色")
+
                 if card.Value.PropExists("理智") then
                     card.Value.["理智"]
                 else
@@ -150,7 +150,7 @@ type TRpgModule() =
         | [| prop; value |] when Int32.TryParse(value, current) -> propName <- prop
         | _ -> cmdArg.Abort(InputError, "参数错误")
 
-        use ret = cmdArg.OpenResponse()
+        use ret = cmdArg.OpenResponse(ForceText)
 
         let dice = DiceExpression()
         let roll0 = dice.Eval("1D100").Sum |> int

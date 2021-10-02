@@ -6,6 +6,7 @@
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <IsPackable>false</IsPackable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <RootNamespace>KPX.TheBot</RootNamespace>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -42,7 +43,11 @@
     <Compile Include="XivModule\MarketUtils.fs" />
     <Compile Include="XivModule\CommandUtils.fs" />
     <Compile Include="XivModule\XivExpression.fs" />
-    <Compile Include="XivModule\XivMarketModule.fs" />
+    <Compile Include="XivModule\XivServerListModule.fs" />
+    <Compile Include="XivModule\XivMarketPriceModule.fs" />
+    <Compile Include="XivModule\XivRecipeModule.fs" />
+    <Compile Include="XivModule\ScriptExchangeModule.fs" />
+    <Compile Include="XivModule\CraftLeveModule.fs" />
     <Compile Include="XivModule\XivModule.fs" />
     <Compile Include="EVEModule\Helpers.fs" />
     <Compile Include="EVEModule\Data.fs" />

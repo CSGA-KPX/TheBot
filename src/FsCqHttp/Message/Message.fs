@@ -148,8 +148,7 @@ type Message private (sections : List<_>) =
     member x.Add(msg : string) = x.Add(TextSection.Create(msg))
 
     /// 快速添加图片消息段到末尾
-    member x.Add(img : Drawing.Bitmap) = x.Add(ImageSection.Create(img))
-
+    member x.Add(img : SkiaSharp.SKImage) = x.Add(ImageSection.Create(img))
     /// 清空所有消息段
     member x.Clear() = sections.Clear()
 

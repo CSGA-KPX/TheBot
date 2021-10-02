@@ -1,4 +1,7 @@
-﻿## [2.0.1.2] 2021-09-12
+﻿## [2.1.0] 2021-10-02
+- 使用SkiaSharp替代System.Drawing.Common（之后.NET版本随时抛弃Linux平台）。
+
+## [2.0.1.2] 2021-09-12
 
 ### TheBot
 - 修正TableUpdateTime反序列化异常。

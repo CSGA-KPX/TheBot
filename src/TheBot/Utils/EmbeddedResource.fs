@@ -6,10 +6,10 @@ open System.Reflection
 
 
 let GetResourceManager str =
-    Resources.ResourceManager("TheBot.Resources." + str, Assembly.GetExecutingAssembly())
+    Resources.ResourceManager("KPX.TheBot.Resources." + str, Assembly.GetExecutingAssembly())
 
 let GetResFileStream filename =
-    let resName = "TheBot.Resources." + filename
+    let resName = "KPX.TheBot.Resources." + filename
     let assembly = Assembly.GetExecutingAssembly()
     assembly.GetManifestResourceStream(resName)
 

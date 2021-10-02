@@ -1,16 +1,17 @@
 ﻿namespace rec KPX.FsCqHttp
 
 open System
-open System.Drawing
+
+open SkiaSharp
 
 open KPX.FsCqHttp.Utils.UserOption
 open KPX.FsCqHttp.Instance
 
 
 type private ColorCell(cb, name, def) =
-    inherit OptionCell<Color>(cb, name, def)
-
-    override x.ConvertValue(str) = Color.FromName(str)
+    inherit OptionCell<SKColor>(cb, name, def)
+    
+    override x.ConvertValue(str) = SKColor.Parse(str)
 
 type FsCqHttpConfigParser() as x =
     inherit OptionBase()
@@ -45,13 +46,13 @@ type FsCqHttpConfigParser() as x =
         OptionCellSimple<float32>(x, "ImageOutputSize", 12.0f)
 
     let imgTextColor =
-        ColorCell(x, "ImageTextColor", Color.Black)
+        ColorCell(x, "ImageTextColor", SKColors.Black)
 
     let imgRowBgColorA =
-        ColorCell(x, "ImageRowColorA", Color.White)
+        ColorCell(x, "ImageRowColorA", SKColors.White)
 
     let imgRowBgColorB =
-        ColorCell(x, "ImageRowColorB", Color.LightGray)
+        ColorCell(x, "ImageRowColorB", SKColors.LightGray)
 
     let tblCellPadding =
         OptionCellSimple<string>(x, "TableCellPadding", "--")

@@ -7,7 +7,6 @@ open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Api.Context
 
 open KPX.FsCqHttp.Utils.TextResponse
-open KPX.FsCqHttp.Utils.TextTable
 open KPX.FsCqHttp.Utils.UserOption
 
 
@@ -25,9 +24,7 @@ type HelpModuleBase() =
     inherit CommandHandlerBase()
 
     member _.ShowCommandList(cfg : HelpOption, cmdArg : CommandEventArgs) =
-        let tt = TextTable("命令", "说明")
-
-        let nonCommandModules = ResizeArray<string>()
+        use resp = cmdArg.OpenResponse(PreferImage)
 
         let modules =
             cmdArg
@@ -36,26 +33,33 @@ type HelpModuleBase() =
                 .ModuleInfo
                 .AllModules
 
-        for item in modules do
-            match item with
-            | :? CommandHandlerBase as cmdModule ->
-                for cmd in cmdModule.Commands do
-                    if
-                        not cmd.CommandAttribute.IsHidden
-                        || cfg.IsDefined("hidden")
-                    then
-                        tt.AddRow(cmd.CommandAttribute.Command, cmd.CommandAttribute.HelpDesc)
-            | _ ->
-                // TODO: 为非命令模块增加描述性词汇
-                nonCommandModules.Add(item.GetType().Name)
+        resp.Table {
+            [ CellBuilder() { literal "命令" }
+              CellBuilder() { literal "说明" } ]
 
-        if nonCommandModules.Count <> 0 then
-            tt.AddPostTable("已启用非指令模块：")
+            let nonCommandModules = ResizeArray<string>()
 
-            for m in nonCommandModules do
-                tt.AddPostTable(m)
+            [ for item in modules do
+                  match item with
+                  | :? CommandHandlerBase as cmdModule ->
+                      for cmd in cmdModule.Commands do
+                          if
+                              not cmd.CommandAttribute.IsHidden
+                              || cfg.IsDefined("hidden")
+                          then
+                              [ CellBuilder() { literal cmd.CommandAttribute.Command }
+                                CellBuilder() { literal cmd.CommandAttribute.HelpDesc } ]
+                  | _ -> nonCommandModules.Add(item.GetType().Name) ]
 
-        using (cmdArg.OpenResponse(PreferImage)) (fun ret -> ret.Write(tt))
+            yield!
+                [ if nonCommandModules.Count <> 0 then
+                      CellBuilder() { literal "已启用非指令模块：" }
+
+                      for item in nonCommandModules do
+                          CellBuilder() { literal item } ]
+
+        }
+        |> ignore
 
     member _.ShowCommandInfo(cfg : HelpOption, cmdArg : CommandEventArgs) =
         let cmd = cfg.NonOptionStrings.[0]
@@ -68,7 +72,11 @@ type HelpModuleBase() =
         | Some ci ->
             use ret = cmdArg.OpenResponse(ForceText)
             ret.WriteLine("{0} ： {1}", ci.CommandAttribute.Command, ci.CommandAttribute.HelpDesc)
-            if not <| String.IsNullOrEmpty(ci.CommandAttribute.LongHelp) then
+
+            if
+                not
+                <| String.IsNullOrEmpty(ci.CommandAttribute.LongHelp)
+            then
                 ret.Write(ci.CommandAttribute.LongHelp)
 
     member x.HelpCommandImpl(cmdArg : CommandEventArgs) =

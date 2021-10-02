@@ -7,7 +7,6 @@ open KPX.FsCqHttp.Handler
 
 open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.Subcommands
-open KPX.FsCqHttp.Utils.TextTable
 
 open KPX.TheBot.Module.TRpgModule
 open KPX.TheBot.Module.TRpgModule.TRpgCharacterCard
@@ -32,12 +31,11 @@ type StModule() =
 
         CardManager.upsert card
         
-        using
-            (cmdArg.OpenResponse(ForceImage))
-            (fun ret ->
-                let tt = card.ToTextTable()
-                tt.AddPreTable("已经保存角色，请检查属性值")
-                ret.Write(tt))
+        TextTable() {
+            "已经保存角色，请检查属性值"
+            card.ToTextTable()
+        }
+
 
     [<CommandHandlerMethod(".pc", "角色操作，不带参数查看帮助", "")>]
     member x.HandlePC(cmdArg : CommandEventArgs) =
@@ -107,7 +105,7 @@ type StModule() =
 
             match opt.SkillName with
             | None ->
-                using (cmdArg.OpenResponse(ForceImage)) (fun ret -> ret.Write(card.ToTextTable()))
+                cmdArg.Reply(card.ToTextTable(), ForceImage)
             | Some propName ->
                 if card.Props.ContainsKey(propName) then
                     cmdArg.Reply($"{propName}：%i{card.[propName]}")

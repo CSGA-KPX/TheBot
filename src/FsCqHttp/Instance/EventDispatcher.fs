@@ -53,10 +53,14 @@ module internal TaskScheduler =
                             $"%A{args.Event}"
                         )
 
-                    ci.MethodAction.Invoke(cmdArgs)
+                    match ci.MethodAction with
+                    | MethodAction.ManualAction action -> action.Invoke(cmdArgs)
+                    | MethodAction.AutoAction func -> func.Invoke(cmdArgs).Response(cmdArgs)
+
             | _ -> invalidArg "args" $"未知事件类型:%s{args.GetType().FullName}"
 
-        with e ->
+        with
+        | e ->
             let rootExn = getRootExn e
 
             match rootExn with

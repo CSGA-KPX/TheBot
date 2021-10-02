@@ -1,6 +1,6 @@
 ﻿module KPX.TheBot.Module.EveModule.Utils.MarketUtils
 
-open KPX.FsCqHttp.Utils.TextTable
+open KPX.FsCqHttp.Utils.TextResponse
 
 open KPX.TheBot.Data.CommonModule.Recipe
 open KPX.TheBot.Data.EveData.Utils
@@ -11,67 +11,80 @@ open KPX.TheBot.Module.EveModule.Utils.Extensions
 
 
 type EveMarketPriceTable() =
-    inherit TextTable("名称",
-                      RightAlignCell "数量",
-                      RightAlignCell <| PriceFetchMode.Sell.ToString(),
-                      RightAlignCell "变动",
-                      RightAlignCell <| PriceFetchMode.Buy.ToString(),
-                      RightAlignCell "变动",
-                      RightAlignCell "日均交易",
-                      RightAlignCell "更新时间")
+    let tt = TextTable(ForceImage)
 
     let mutable tSell = 0.0
     let mutable tBuy = 0.0
     let mutable tAdj = 0.0
 
+    do
+        tt {
+            [ CellBuilder() { literal "名称" }
+              CellBuilder() {
+                  literal "数量"
+                  rightAlign
+              }
+              CellBuilder() {
+                  literal PriceFetchMode.Sell
+                  rightAlign
+              }
+              CellBuilder() {
+                  literal "变动"
+                  rightAlign
+              }
+              CellBuilder() {
+                  literal PriceFetchMode.Buy
+                  rightAlign
+              }
+              CellBuilder() {
+                  literal "变动"
+                  rightAlign
+              }
+              CellBuilder() {
+                  literal "日均交易"
+                  rightAlign
+              }
+              CellBuilder() {
+                  literal "更新时间"
+                  rightAlign
+              } ]
+        }
+        |> ignore
+    
+    member x.Table = tt
+    
     member x.TotalAdjustPrice = tAdj
 
     member x.TotalSellPrice = tSell
 
     member x.TotalBuyPrice = tBuy
 
-    member x.TotalSellPriceWithTax = tSell * (float (100 - EveSellTax)) / 100.0
+    member x.TotalSellPriceWithTax =
+        tSell * (float (100 - EveSellTax)) / 100.0
 
     member x.TotalBuyPriceWithTax = tBuy * (float (100 + EveBuyTax)) / 100.0
 
-
     member x.AddObject(t : EveType, q : float) =
-        x.RowBuilder {
-            yield t.Name
-            yield q
+        tt {
+            [ CellBuilder() { literal t.Name }
+              CellBuilder() { float q }
+              let adjPrice =
+                  t.GetPrice(PriceFetchMode.AveragePrice) * q
 
-            let adjPrice =
-                t.GetPrice(PriceFetchMode.AveragePrice) * q
-            tAdj <- tAdj + adjPrice
-            
-            let sell = t.GetPrice(PriceFetchMode.Sell) * q
-            tSell <- tSell + sell
-            yield HumanReadableSig4Float sell
-
-            let ntPct =
-                (sell - adjPrice)
-                / adjPrice
-                * 100.0
-                |> HumanReadableSig4Float
-
-            yield sprintf "%s%%" ntPct.Text |> RightAlignCell
-
-            let buy = t.GetPrice(PriceFetchMode.Buy) * q
-            tBuy <- tBuy + buy
-            yield HumanReadableSig4Float buy
-
-            let ntPct =
-                (buy - adjPrice)
-                / adjPrice
-                * 100.0
-                |> HumanReadableSig4Float
-
-            yield sprintf "%s%%" ntPct.Text |> RightAlignCell
-
-            yield HumanReadableSig4Float(t.GetTradeVolume())
-
-            yield HumanTimeSpan(t.GetPriceInfo().Updated)
+              tAdj <- tAdj + adjPrice
+              let sell = t.GetPrice(PriceFetchMode.Sell) * q
+              tSell <- tSell + sell
+              let ntPct = (sell - adjPrice) / adjPrice
+              CellBuilder() { number sell }
+              CellBuilder() { percent ntPct }
+              let buy = t.GetPrice(PriceFetchMode.Buy) * q
+              tBuy <- tBuy + buy
+              let ntPct = (buy - adjPrice) / adjPrice
+              CellBuilder() { number buy }
+              CellBuilder() { percent ntPct }
+              CellBuilder() { number (t.GetTradeVolume()) }
+              CellBuilder() { toTimeSpan (t.GetPriceInfo().Updated) } ]
         }
-        |> x.AddRow
+        |> ignore
 
     member x.AddObject(m : RecipeMaterial<EveType>) = x.AddObject(m.Item, m.Quantity)

@@ -147,7 +147,8 @@ type CqWsContext(ws : WebSocket) =
                     (x :> IApiCallProvider).CallApi<GetLoginInfo>()
 
                 not <| isNull ret.Nickname
-            with _ -> false
+            with
+            | _ -> false
 
     override x.CallApi(req) =
         started.WaitOne() |> ignore
@@ -216,15 +217,23 @@ type CqWsContext(ws : WebSocket) =
                 | :? CqRequestEventArgs when x.Modules.RequestCallbacks.Count = 0 -> ()
                 | :? CqMessageEventArgs as args when
                     (x.Modules.TryCommand(args).IsNone)
-                    && x.Modules.MessageCallbacks.Count = 0 -> ()
+                    && x.Modules.MessageCallbacks.Count = 0
+                    ->
+                    ()
                 | :? CqMessageEventArgs as args ->
                     let isCmd = x.Modules.TryCommand(args)
 
                     if isCmd.IsSome then
                         if isCmd.Value.CommandAttribute.ExecuteImmediately then
                             // 需要立刻执行的指令，不通过调度器
-                            CommandEventArgs(args, isCmd.Value.CommandAttribute)
-                            |> isCmd.Value.MethodAction.Invoke
+                            let ci = isCmd.Value
+
+                            let cmdArgs =
+                                CommandEventArgs(args, ci.CommandAttribute)
+
+                            match ci.MethodAction with
+                            | MethodAction.ManualAction action -> action.Invoke(cmdArgs)
+                            | MethodAction.AutoAction func -> func.Invoke(cmdArgs).Response(cmdArgs)
                         else
                             // 正常指令走调度器
                             TaskScheduler.enqueue (x.Modules, args)
@@ -238,7 +247,8 @@ type CqWsContext(ws : WebSocket) =
                     logger.Trace $"%s{x.BotIdString}收到API调用结果： {ctx}"
 
                 x.HandleApiResponse(ctx.RawEventPost.ToObject<ApiResponse>())
-        with e -> logger.Warn $"%s{x.BotIdString}WS处理消息异常：\r\n%A{e}"
+        with
+        | e -> logger.Warn $"%s{x.BotIdString}WS处理消息异常：\r\n%A{e}"
 
     member private x.StartMessageLoop() =
         let rec readMessage
@@ -274,7 +284,8 @@ type CqWsContext(ws : WebSocket) =
                     ms.SetLength(0L)
                     let json = readMessage ms seg cts
                     x.HandleMessage(json)
-            with e ->
+            with
+            | e ->
                 logger.Fatal $"%s{x.BotIdString}WS读取捕获异常：\r\n%A{e}"
                 CqWsContextPool.Instance.RemoveContext(x)
                 x.Stop()

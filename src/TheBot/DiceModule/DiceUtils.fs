@@ -11,8 +11,28 @@ open KPX.TheBot.Utils.Dicer
 module ChoiceHelper =
     open System.Text.RegularExpressions
 
-    let YesOrNoRegex =
+    let private yesOrNoRegex =
         Regex("(.*)(.+)([没不]\2)(.*)", RegexOptions.Compiled)
+        
+    let expandYesOrNo str =
+       [|
+           let m = yesOrNoRegex.Match(str)
+
+           if m.Success then
+               yield
+                   m.Groups.[1].Value
+                   + m.Groups.[2].Value
+                   + m.Groups.[4].Value
+
+               yield
+                   m.Groups.[1].Value
+                   + m.Groups.[3].Value
+                   + m.Groups.[4].Value
+            else
+                yield str
+       |]
+
+        
 
 module DiceExpression =
     type DicerOperand(i : float []) =

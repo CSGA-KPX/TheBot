@@ -3,12 +3,13 @@
 open System
 open System.Collections.Generic
 
-open KPX.FsCqHttp.Utils.TextTable
+open KPX.FsCqHttp.Utils.TextResponse
 
 
 /// 用于处理别名的集合
 type AliasMapper() =
-    let dict = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    let dict =
+        Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
 
     /// 都会小写转化。返回转化后的key
     member x.Add(key : string, [<ParamArray>] aliases : string []) =
@@ -21,8 +22,7 @@ type AliasMapper() =
         if dict.ContainsKey(value) then
             dict.[value]
         else
-            raise
-            <| KeyNotFoundException $"找不到名称%s{value}"
+            raise <| KeyNotFoundException $"找不到名称%s{value}"
 
     member x.TryMap(value : string) =
         let succ, key = dict.TryGetValue(value)
@@ -33,17 +33,25 @@ type AliasMapper() =
     member x.Keys = dict.Keys |> Seq.cast<string>
 
     member x.GetValueTable() =
-        let tt = TextTable("名称", "别名")
+        TextTable() {
+            [ CellBuilder() {
+                literal "名称"
+                setBold
+              }
+              CellBuilder() {
+                  literal "别名"
+                  setBold
+              } ]
 
-        dict
-        |> Seq.groupBy (fun kv -> kv.Value)
-        |> Seq.iter
-            (fun (key, aliases) ->
-                let aliases =
-                    aliases
-                    |> Seq.filter (fun kv -> kv.Value <> kv.Key)
-                    |> Seq.map (fun kv -> kv.Key)
+            dict
+            |> Seq.groupBy (fun kv -> kv.Value)
+            |> Seq.map
+                (fun (key, aliases) ->
+                    let aliases =
+                        aliases
+                        |> Seq.filter (fun kv -> kv.Value <> kv.Key)
+                        |> Seq.map (fun kv -> kv.Key)
 
-                tt.AddRow(key, String.Join(", ", aliases)))
-
-        tt
+                    [ CellBuilder() { literal key }
+                      CellBuilder() { literal (String.Join(", ", aliases)) } ])
+        }

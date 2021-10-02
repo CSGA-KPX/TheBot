@@ -7,10 +7,9 @@ open System.Security.Cryptography
 open KPX.FsCqHttp
 open KPX.FsCqHttp.Api.Group
 open KPX.FsCqHttp.Api.Context
-
 open KPX.FsCqHttp.Event
 open KPX.FsCqHttp.Handler
-open KPX.FsCqHttp.Utils.TextTable
+open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.UserOption
 
 open KPX.TheBot.Utils.HandlerUtils
@@ -43,9 +42,10 @@ type SudoModule() =
             cmdArg.Reply("本次认证已被使用")
         else
             let file = GetStaticFile("su.txt")
-            
+
             if File.Exists(file) then
                 let data = File.ReadAllBytes(file)
+
                 let hex =
                     BitConverter
                         .ToString(SHA256.Create().ComputeHash(data))
@@ -60,7 +60,7 @@ type SudoModule() =
                     cmdArg.SetInstanceOwner(uid)
                     cmdArg.GrantBotAdmin(uid)
                     cmdArg.Reply("完毕")
-                
+
                 File.Delete(file)
                 isSuUsed <- true
             else
@@ -98,12 +98,14 @@ type SudoModule() =
         cmdArg.EnsureSenderOwner()
         let api = cmdArg.ApiCaller.CallApi<GetGroupList>()
 
-        let tt = TextTable("群号", "名称")
+        TextTable(ForceImage) {
+            [ CellBuilder() { literal "群号" }
+              CellBuilder() { literal "名称" } ]
 
-        for g in api.Groups do
-            tt.AddRow(g.GroupId.Value, g.GroupName)
-
-        cmdArg.Reply(tt.ToString())
+            [ for g in api.Groups do
+                  [ CellBuilder() { literal g.GroupId.Value }
+                    CellBuilder() { literal g.GroupName } ] ]
+        }
 
     [<CommandHandlerMethod("##abortall", "（超管）断开所有WS连接", "", IsHidden = true)>]
     member x.HandleShowAbortAll(cmdArg : CommandEventArgs) =
@@ -131,7 +133,8 @@ type SudoModule() =
         elif qq.IsDefined then
             cmdArg.EnsureSenderAdmin()
 
-            let key = allowQqFmt cmdArg.BotUserId (UserId qq.Value)
+            let key =
+                allowQqFmt cmdArg.BotUserId (UserId qq.Value)
 
             allowList.Add(key) |> ignore
             cmdArg.Reply $"接受来自[%s{key}]的邀请"
@@ -161,7 +164,9 @@ type SudoModule() =
             Action<CommandEventArgs>(fun cmdArg -> cmdArg.Reply("Bot故障：信息处理已禁用"))
 
         for kv in m.Commands do
-            m.Commands.[kv.Key] <- { kv.Value with MethodAction = act }
+            m.Commands.[kv.Key] <-
+                { kv.Value with
+                      MethodAction = MethodAction.ManualAction act }
 
         x.Logger.Fatal("已完成紧急停止操作")
         cmdArg.Reply("已完成紧急停止操作")
@@ -169,11 +174,11 @@ type SudoModule() =
     [<CommandHandlerMethod("##combo", "一次执行多个命令", "", IsHidden = true)>]
     member x.HandleCombo(cmdArg : CommandEventArgs) =
         cmdArg.EnsureSenderAdmin()
-        
+
         let api = RewriteCommand(cmdArg, cmdArg.AllLines)
-        
+
         cmdArg.ApiCaller.CallApi(api) |> ignore
-    
+
     override x.OnRequest = Some x.HandleRequest
 
     member x.HandleRequest(args) =
@@ -182,7 +187,9 @@ type SudoModule() =
             let inList =
                 allowList.Contains(allowQqFmt args.BotUserId req.UserId)
 
-            let isAdmin = args.GetBotAdmins().Contains(req.UserId.Value)
+            let isAdmin =
+                args.GetBotAdmins().Contains(req.UserId.Value)
+
             args.Reply(FriendAddResponse(inList || isAdmin, ""))
         | GroupRequest req ->
             let inList =

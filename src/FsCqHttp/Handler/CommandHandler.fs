@@ -2,8 +2,8 @@ namespace KPX.FsCqHttp.Handler
 
 open System
 
+open System.Reflection
 open KPX.FsCqHttp
-open KPX.FsCqHttp.Event
 open KPX.FsCqHttp.Handler
 
 
@@ -26,21 +26,17 @@ type CommandHandlerMethodAttribute(command : string, desc, lh) =
 
     /// 指示改指令是否在help等指令中隐藏
     member val IsHidden = false with get, set
-    
+
     /// 只是该指令是否无视调度器，尽快执行
     /// 适用于极端条件下的指令
     member val ExecuteImmediately = false with get, set
-    
+
 [<Sealed>]
 type CommandEventArgs(args : CqMessageEventArgs, attr : CommandHandlerMethodAttribute) =
     inherit CqMessageEventArgs(args.ApiCaller, args.RawEvent, args.Event)
 
     let splitString (str : string) =
-        str.Split(
-            [| ' '
-               Config.FullWidthSpace |],
-            StringSplitOptions.RemoveEmptyEntries
-        )
+        str.Split([| ' '; Config.FullWidthSpace |], StringSplitOptions.RemoveEmptyEntries)
 
     let lines =
         [| let rawMsg = args.Event.Message.ToString()
@@ -90,10 +86,30 @@ type CommandEventArgs(args : CqMessageEventArgs, attr : CommandHandlerMethodAttr
         let idx = str.IndexOfAny([| ' '; '\r'; '\n' |])
         if idx = -1 then str else str.[0..idx - 1]
 
+type ICommandResponse =
+    abstract Response : CqMessageEventArgs -> unit
+
+type MethodAction =
+    | ManualAction of Action<CommandEventArgs>
+    | AutoAction of Func<CommandEventArgs, ICommandResponse>
+
+    static member CreateFrom(method : MethodInfo, instance : obj) =
+        let isAuto =
+            typeof<ICommandResponse>.IsAssignableFrom(method.ReturnType)
+
+        if isAuto then
+            method.CreateDelegate(typeof<Func<CommandEventArgs, ICommandResponse>>, instance)
+            :?> Func<CommandEventArgs, ICommandResponse>
+            |> AutoAction
+        else
+            method.CreateDelegate(typeof<Action<CommandEventArgs>>, instance)
+            :?> Action<CommandEventArgs>
+            |> ManualAction
+
 type CommandInfo =
     { CommandAttribute : CommandHandlerMethodAttribute
       MethodName : string
-      MethodAction : Action<CommandEventArgs> }
+      MethodAction : MethodAction }
 
 [<AbstractClass>]
 type CommandHandlerBase() =
@@ -113,14 +129,10 @@ type CommandHandlerBase() =
                 for attrib in ret do
                     let attr = attrib :?> CommandHandlerMethodAttribute
 
-                    let d =
-                        method.CreateDelegate(typeof<Action<CommandEventArgs>>, x)
-                        :?> Action<CommandEventArgs>
-
                     let cmd =
                         { CommandAttribute = attr
                           MethodName = method.Name
-                          MethodAction = d }
+                          MethodAction = MethodAction.CreateFrom(method, x) }
 
                     if not attr.Disabled then commands.Add(cmd)
                     commandGenerated <- true

@@ -1,6 +1,5 @@
 ﻿namespace KPX.TheBot.Module.LifestyleModule
 
-open System
 open KPX.FsCqHttp.Api.Group
 open KPX.FsCqHttp.Event
 open KPX.FsCqHttp.Message
@@ -47,7 +46,7 @@ type EatModule() =
 预设名单：早 中 晚 加 火锅 萨莉亚
 可以@一个群友帮他选。")>]
     member x.HandleEat(cmdArg : CommandEventArgs) =
-        use ret = cmdArg.OpenResponse()
+        use ret = cmdArg.OpenResponse(ForceText)
 
         if cmdArg.HeaderArgs.Length = 0 then
             let help =
@@ -71,9 +70,10 @@ type EatModule() =
                 use s =
                     KPX.TheBot.Utils.EmbeddedResource.GetResFileStream("Funny.jpg")
 
+                
                 use img =
-                    Drawing.Bitmap.FromStream(s) :?> Drawing.Bitmap
-
+                    SkiaSharp.SKImage.FromEncodedData(s)
+                    
                 let msg = Message()
                 msg.Add(img)
                 cmdArg.Reply(msg)

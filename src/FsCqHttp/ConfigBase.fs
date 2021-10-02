@@ -1,6 +1,6 @@
 ﻿namespace KPX.FsCqHttp
 
-open System.Drawing
+open SkiaSharp
 
 
 /// 用于传递配置信息
@@ -17,9 +17,9 @@ type IFsCqHttpConfig =
     abstract ImageIgnoreSendCheck : bool
     abstract ImageOutputFont : string
     abstract ImageOutputSize : float32
-    abstract ImageTextColor : Color
-    abstract ImageRowColorA : Color
-    abstract ImageRowColorB : Color
+    abstract ImageTextColor : SKColor
+    abstract ImageRowColorA : SKColor
+    abstract ImageRowColorB : SKColor
 
     abstract TableCellPadding : string
     abstract TableGraphicMeasure : bool
@@ -84,9 +84,9 @@ module ConfigInstance =
             member x.ImageIgnoreSendCheck = true
             member x.ImageOutputFont = "Sarasa Fixed CL"
             member x.ImageOutputSize = 12.0f
-            member x.ImageTextColor = Color.Black
-            member x.ImageRowColorA = Color.White
-            member x.ImageRowColorB = Color.LightGray
+            member x.ImageTextColor = SKColors.Black
+            member x.ImageRowColorA = SKColors.White
+            member x.ImageRowColorB = SKColors.LightGray
 
             member x.TableCellPadding = "--"
             member x.TableGraphicMeasure = true }

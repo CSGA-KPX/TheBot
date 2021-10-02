@@ -81,11 +81,12 @@ type TestContext(m : HandlerModuleBase, ?parent : CqWsContextBase) as x =
         let cmd = x.Modules.TryCommand(msgEvent)
         if cmd.IsNone then invalidArg "cmdLine/msg" "指定模块不含指定指令"
 
-        let method = cmd.Value.MethodAction
         let attr = cmd.Value.CommandAttribute
-        let cmdEvent = CommandEventArgs(msgEvent, attr)
+        let cmdArgs = CommandEventArgs(msgEvent, attr)
 
-        method.Invoke(cmdEvent)
+        match cmd.Value.MethodAction with
+        | MethodAction.ManualAction action -> action.Invoke(cmdArgs)
+        | MethodAction.AutoAction func -> func.Invoke(cmdArgs).Response(cmdArgs)
 
         response
 

@@ -2,11 +2,10 @@
 
 open System
 open System.Collections.Generic
+
 open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Testing
-
 open KPX.FsCqHttp.Utils.TextResponse
-open KPX.FsCqHttp.Utils.TextTable
 
 open KPX.TheBot.Data.EveData
 open KPX.TheBot.Utils.EmbeddedResource
@@ -24,21 +23,49 @@ type EveMiscModule() =
     inherit CommandHandlerBase()
 
     [<CommandHandlerMethod("#evehelp", "EVE星系成本指数查询", "")>]
-    member x.HandleEvehelp(cmdArg : CommandEventArgs) =
+    member x.HandleEvehelp(_ : CommandEventArgs) =
         let cfg = EveConfigParser()
         cfg.Parse(Array.empty)
 
-        let tt = TextTable("名称", "意义", "默认")
-        tt.AddRow("ime", "输入蓝图材料效率", cfg.InputMe)
-        tt.AddRow("dme", "衍生蓝图材料效率", cfg.DerivationMe)
-        tt.AddRow("sci", "星系成本指数", cfg.SystemCostIndex)
-        tt.AddRow("tax", "设施税率", cfg.StructureTax)
-        tt.AddRow("p", "设置后展开行星材料", cfg.ExpandPlanet)
-        tt.AddRow("r", "设置后展开反应材料", cfg.ExpandReaction)
-        tt.AddRow("buy", "设置后使用求购价格", cfg.MaterialPriceMode)
-        tt.AddRow("text", "设置后使用文本输出（部分指令不支持）", cfg.IsDefined("text"))
+        TextTable() {
+            [ CellBuilder() { literal "名称" }
+              CellBuilder() { literal "意义" }
+              CellBuilder() { literal "默认" } ]
 
-        using (cmdArg.OpenResponse(ForceImage)) (fun ret -> ret.Write(tt))
+            [ CellBuilder() { literal "ime" }
+              CellBuilder() { literal "输入蓝图材料效率" }
+              CellBuilder() { literal cfg.InputMe } ]
+
+            [ CellBuilder() { literal "dme" }
+              CellBuilder() { literal "衍生蓝图材料效率" }
+              CellBuilder() { literal cfg.DerivationMe } ]
+
+            [ CellBuilder() { literal "sci" }
+              CellBuilder() { literal "星系成本指数" }
+              CellBuilder() { literal cfg.SystemCostIndex } ]
+
+            [ CellBuilder() { literal "tax" }
+              CellBuilder() { literal "设施税率" }
+              CellBuilder() { literal cfg.StructureTax } ]
+
+            [ CellBuilder() { literal "p" }
+              CellBuilder() { literal "设置后展开行星材料" }
+              CellBuilder() { literal cfg.ExpandPlanet } ]
+
+            [ CellBuilder() { literal "r" }
+              CellBuilder() { literal "设置后展开反应材料" }
+              CellBuilder() { literal cfg.ExpandReaction } ]
+
+            [ CellBuilder() { literal "buy" }
+              CellBuilder() { literal "设置后使用求购价格" }
+              CellBuilder() { literal cfg.MaterialPriceMode } ]
+
+            [ CellBuilder() { literal "text" }
+              CellBuilder() { literal "设置后使用文本输出（部分指令不支持）" }
+              CellBuilder() { literal (cfg.IsDefined("text")) } ]
+
+
+        }
 
     [<TestFixture>]
     member x.TestEveHelp() =
@@ -56,33 +83,32 @@ type EveMiscModule() =
         let cfg = EveConfigParser()
         cfg.Parse(cmdArg.HeaderArgs)
 
-        let tt =
-            TextTable("星系", "制造%", "材料%", "时间%", "拷贝%", "发明%", "反应%")
 
-        for arg in cfg.NonOptionStrings do
-            let sys = sc.TryGetBySolarSystem(arg)
+        TextTable() {
+            [ CellBuilder() { literal "星系" }
+              CellBuilder() { literal "制造" }
+              CellBuilder() { literal "材料" }
+              CellBuilder() { literal "事件" }
+              CellBuilder() { literal "拷贝" }
+              CellBuilder() { literal "发明" }
+              CellBuilder() { literal "反应" } ]
 
-            if sys.IsNone then
-                tt.AddPreTable $"%s{arg}不是有效星系名称"
-            else
-                let sci = scc.TryGetBySystem(sys.Value)
+            [ for arg in cfg.NonOptionStrings do
+                  let sys = sc.TryGetBySolarSystem(arg)
 
-                if sci.IsNone then
-                    tt.AddPreTable $"没有%s{arg}的指数信息"
-                else
-                    let sci = sci.Value
+                  if sys.IsNone then
+                      cmdArg.Abort(InputError, $"%s{arg}不是有效星系名称")
 
-                    tt.AddRow(
-                        arg,
-                        HumanReadableSig4Float(100.0 * sci.Manufacturing),
-                        HumanReadableSig4Float(100.0 * sci.ResearchMaterial),
-                        HumanReadableSig4Float(100.0 * sci.ResearchTime),
-                        HumanReadableSig4Float(100.0 * sci.Copying),
-                        HumanReadableSig4Float(100.0 * sci.Invention),
-                        HumanReadableSig4Float(100.0 * sci.Reaction)
-                    )
+                  let sci = scc.GetBySystem(sys.Value)
 
-        using (cmdArg.OpenResponse(cfg.ResponseType)) (fun ret -> ret.Write(tt))
+                  [ CellBuilder() { literal arg }
+                    CellBuilder() { percent sci.Manufacturing }
+                    CellBuilder() { percent sci.ResearchMaterial }
+                    CellBuilder() { percent sci.ResearchTime }
+                    CellBuilder() { percent sci.Copying }
+                    CellBuilder() { percent sci.Invention }
+                    CellBuilder() { percent sci.Reaction } ] ]
+        }
 
     [<TestFixture>]
     member x.TestSystemCostIndex() =
@@ -115,14 +141,15 @@ type EveMiscModule() =
         if cmdArg.HeaderArgs.Length = 0 then
             let mgr =
                 StringResource("EVE").GetLines("战斗空间信号")
-                |> Array.map (fun line -> line.Split('\t') |> Array.map box)
-
-            let tt = TextTable(mgr.[0])
-
-            for i = 1 to mgr.Length - 1 do
-                tt.AddRow(mgr.[i])
-
-            using (cmdArg.OpenResponse(ForceImage)) (fun ret -> ret.Write(tt))
+                |> Array.map (fun line -> line.Split('\t'))
+            use ret = cmdArg.OpenResponse(ForceImage
+                                          )
+            ret.Table {
+                [ for line in mgr do
+                      line
+                      |> Array.map (fun str -> CellBuilder() { literal str }) ]
+            }
+            |> ignore
         else
             use ret = cmdArg.OpenResponse(ForceText)
 

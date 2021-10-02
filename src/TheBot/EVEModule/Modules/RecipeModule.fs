@@ -4,7 +4,6 @@ open System
 open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Testing
 open KPX.FsCqHttp.Utils.TextResponse
-open KPX.FsCqHttp.Utils.TextTable
 open KPX.FsCqHttp.Utils.UserOption
 
 open KPX.TheBot.Data.CommonModule.Recipe
@@ -36,7 +35,6 @@ type EveRecipeModule() =
         let cfg = EveConfigParser()
         cfg.Parse(cmdArg.HeaderArgs)
 
-
         let item =
             data.TryGetItem(cfg.GetNonOptionString())
 
@@ -52,21 +50,25 @@ type EveRecipeModule() =
         let me0Price =
             recipe.Value.GetTotalMaterialPrice(PriceFetchMode.Sell, MeApplied)
 
-        let tt =
-            TextTable(RightAlignCell "材料等级", RightAlignCell "节省")
+        TextTable(cfg.ResponseType) {
+            CellBuilder() {
+                literal "直接材料总价："
+                integer me0Price
+            }
 
-        tt.AddPreTable("直接材料总价：" + String.Format("{0:N0}", ceil me0Price))
+            [ CellBuilder() { rightLiteral "材料等级" }
+              CellBuilder() { rightLiteral "节省" } ]
 
-        for me = 0 to 10 do
-            let cost =
-                pm
-                    .TryGetRecipe(item.Value, ByRun 1.0, me)
-                    .Value.GetTotalMaterialPrice(PriceFetchMode.Sell, MeApplied)
+            [ for me = 0 to 10 do
+                  let cost =
+                      pm
+                          .TryGetRecipe(item.Value, ByRun 1.0, me)
+                          .Value.GetTotalMaterialPrice(PriceFetchMode.Sell, MeApplied)
 
-            let save = me0Price - cost |> ceil
-            tt.AddRow(me, HumanReadableInteger save)
+                  [ CellBuilder() { integer me }
+                    CellBuilder() { integer (me0Price - cost) } ] ]
+        }
 
-        using (cmdArg.OpenResponse(cfg.ResponseType)) (fun x -> x.Write(tt))
 
     [<TestFixture>]
     member x.TestME() =
@@ -91,39 +93,31 @@ type EveRecipeModule() =
         let idOpt = cfg.RegisterOption<string>("id", "\r\n")
         cfg.Parse(cmdArg.HeaderArgs)
 
-        let tt =
-            if idOpt.IsDefined then
-                TextTable("名称", RightAlignCell "数量", RightAlignCell "缺少", RightAlignCell "总体积")
-            else
-                TextTable("名称", RightAlignCell "数量", RightAlignCell "体积")
-
         let inv =
             match idOpt.IsDefined with
             | false -> ItemAccumulator<EveType>()
-            | true when ic.Contains(idOpt.Value) ->
-                tt.AddPreTable($"已经扣除指定材料表中已有材料")
-                snd (ic.TryGet(idOpt.Value).Value)
+            | true when ic.Contains(idOpt.Value) -> snd (ic.TryGet(idOpt.Value).Value)
             | true -> cmdArg.Abort(InputError, "没有和id关联的材料表")
 
-        let respType = cfg.ResponseType
         let isR = cmdArg.CommandAttrib.Command = "#er"
         let useInv = idOpt.IsDefined
+        let respType = cfg.ResponseType // 后面会被重写
 
         let inputAcc = ItemAccumulator<EveType>()
         let outputAcc = ItemAccumulator<EveType>()
         let mutable totalInputVolume = 0.0
         let mutable totalOutputVolume = 0.0
 
-        let outputTable =
-            TextTable(
-                "产出",
-                RightAlignCell "数量",
-                RightAlignCell "体积",
-                RightAlignCell "ime",
-                RightAlignCell "dme",
-                RightAlignCell "r",
-                RightAlignCell "p"
-            )
+        let productTable =
+            TextTable() {
+                [ CellBuilder() { literal "产出" }
+                  CellBuilder() { rightLiteral "数量" }
+                  CellBuilder() { rightLiteral "体积" }
+                  CellBuilder() { rightLiteral "ime" }
+                  CellBuilder() { rightLiteral "dme" }
+                  CellBuilder() { rightLiteral "r" }
+                  CellBuilder() { rightLiteral "p" } ]
+            }
 
         for args in cmdArg.AllArgs do
             cfg.Parse(args)
@@ -153,37 +147,46 @@ type EveRecipeModule() =
                         let outputVolume = product.Item.Volume * product.Quantity
                         totalOutputVolume <- totalOutputVolume + outputVolume
 
-                        outputTable.RowBuilder {
-                            yield product.Item.Name
-                            yield HumanReadableInteger product.Quantity
-                            yield HumanReadableInteger outputVolume
-                            yield cfg.InputMe
-                            yield cfg.DerivationMe
-                            if cfg.ExpandReaction then yield 1 else yield 0
-                            if cfg.ExpandPlanet then yield 1 else yield 0
+                        productTable {
+                            [ CellBuilder() { literal product.Item.Name }
+                              CellBuilder() { integer product.Quantity }
+                              CellBuilder() { integer outputVolume }
+                              CellBuilder() { integer cfg.InputMe }
+                              CellBuilder() { integer cfg.DerivationMe }
+                              CellBuilder() { literal cfg.ExpandReaction }
+                              CellBuilder() { literal cfg.ExpandPlanet } ]
                         }
-                        |> outputTable.AddRow
+                        |> ignore
 
                         for m in proc.Value.Input do
                             inputAcc.Update(m)
 
         // 生成产物信息
-        outputTable.AddRow(
-            "总计",
-            PaddingRight,
-            HumanReadableInteger totalOutputVolume,
-            PaddingRight,
-            PaddingRight,
-            PaddingRight,
-            PaddingRight
-        )
-        // 产物和材料的分隔行
-        outputTable.AddPostTable(" ")
-        tt.AddPreTable(outputTable)
+        productTable {
+            [ CellBuilder() { literal "总计" }
+              CellBuilder() { rightPad }
+              CellBuilder() { number totalOutputVolume }
+              CellBuilder() { rightPad }
+              CellBuilder() { rightPad }
+              CellBuilder() { rightPad }
+              CellBuilder() { rightPad } ]
+        }
+        |> ignore
+
+        let mainTable =
+            TextTable(respType) {
+                productTable
+
+                [ CellBuilder() { literal "名称" }
+                  CellBuilder() { rightLiteral "数量" }
+                  CellBuilder() { rightLiteral "缺少" }
+                  CellBuilder() { rightLiteral "体积" } ]
+            }
 
         // 生成材料信息
-        for mr in inputAcc
-                  |> Seq.sortBy (fun x -> x.Item.MarketGroupId) do
+        for mr in
+            inputAcc
+            |> Seq.sortBy (fun x -> x.Item.MarketGroupId) do
             let sumVolume = mr.Item.Volume * mr.Quantity
 
             let need =
@@ -194,33 +197,33 @@ type EveRecipeModule() =
 
             let needStr =
                 if need <= 0.0 then
-                    PaddingRight
+                    CellBuilder() { rightPad }
                 else
-                    HumanReadableInteger need
+                    CellBuilder() { integer need }
 
-            tt.RowBuilder {
-                yield mr.Item.Name
-                yield HumanReadableInteger mr.Quantity
-                if useInv then yield needStr
-                yield HumanReadableInteger sumVolume
+            mainTable {
+                [ CellBuilder() { literal mr.Item.Name }
+                  CellBuilder() { integer mr.Quantity }
+                  if useInv then needStr
+                  CellBuilder() { number sumVolume } ]
             }
-            |> tt.AddRow
+            |> ignore
 
             totalInputVolume <- totalInputVolume + sumVolume
 
         // 总材料信息
-        tt.RowBuilder {
-            yield "材料体积"
-            yield PaddingRight
-            if useInv then yield PaddingRight
-            yield HumanReadableInteger totalInputVolume
+        mainTable {
+            [ CellBuilder() { literal "材料体积" }
+              CellBuilder() { rightPad }
+              if useInv then CellBuilder() { rightPad }
+              CellBuilder() { number totalInputVolume } ]
         }
-        |> tt.AddRow
+        |> ignore
 
         if inputAcc.Count = 0 then
             cmdArg.Abort(InputError, "计算结果为空")
 
-        using (cmdArg.OpenResponse(respType)) (fun x -> x.Write(tt))
+        mainTable
 
     [<TestFixture>]
     member x.TestRRR() =
@@ -280,45 +283,56 @@ type EveRecipeModule() =
                 for mr in proc.Output do
                     accOut.Update(mr)
 
+        let priceTable =
+            let table = Utils.MarketUtils.EveMarketPriceTable()
+
+            for mr in accOut do
+                table.AddObject(mr)
+
+            table
+
         let tt =
-            TextTable(
-                LeftAlignCell "材料",
-                RightAlignCell "数量",
-                RightAlignCell(cfg.MaterialPriceMode.ToString()),
-                RightAlignCell "生产"
-            )
+            TextTable(cfg.ResponseType) {
+                ToolWarning
 
-        tt.AddPreTable(ToolWarning)
+                sprintf
+                    "输入效率：%i%% 默认效率：%i%% 成本指数：%i%% 设施税率%i%%"
+                    cfg.InputMe
+                    cfg.DerivationMe
+                    cfg.SystemCostIndex
+                    cfg.StructureTax
 
-        tt.AddPreTable(
-            sprintf
-                "输入效率：%i%% 默认效率：%i%% 成本指数：%i%% 设施税率%i%%"
-                cfg.InputMe
-                cfg.DerivationMe
-                cfg.SystemCostIndex
-                cfg.StructureTax
-        )
+                $"展开行星材料：%b{cfg.ExpandPlanet} 展开反应公式：%b{cfg.ExpandReaction}"
 
-        tt.AddPreTable $"展开行星材料：%b{cfg.ExpandPlanet} 展开反应公式：%b{cfg.ExpandReaction}"
+                CellBuilder() {
+                    literal "产品："
+                    setBold
+                }
 
-        tt.AddPreTable("产品：")
+                priceTable.Table
 
-        let priceTable = Utils.MarketUtils.EveMarketPriceTable()
+                CellBuilder() {
+                    literal "材料："
+                    setBold
+                }
 
-        for mr in accOut do
-            priceTable.AddObject(mr)
+                [ CellBuilder() { literal "材料" }
+                  CellBuilder() { rightLiteral "数量" }
+                  CellBuilder() { rightLiteral cfg.MaterialPriceMode }
+                  CellBuilder() { rightLiteral "生产" } ]
 
-        tt.AddPreTable(priceTable)
-
-        tt.AddPreTable("材料：")
-
-        tt.AddRow("制造费用", PaddingRight, HumanReadableSig4Float accInstallCost, PaddingRight)
+                [ CellBuilder() { literal "制造费用" }
+                  CellBuilder() { rightPad }
+                  CellBuilder() { number accInstallCost }
+                  CellBuilder() { rightPad } ]
+            }
 
         let mutable optCost = accInstallCost
         let mutable allCost = accInstallCost
 
-        for mr in accIn
-                  |> Seq.sortBy (fun x -> x.Item.MarketGroupId) do
+        for mr in
+            accIn
+            |> Seq.sortBy (fun x -> x.Item.MarketGroupId) do
             let price = // 市场价格
                 mr.Item.GetPrice(cfg.MaterialPriceMode)
                 * mr.Quantity
@@ -345,54 +359,56 @@ type EveRecipeModule() =
                 let mrAll = mrInstall + mrCost
                 allCost <- allCost + mrAll
 
-                optCost <-
-                    optCost
-                    + (if (mrAll >= price) && (price <> 0.0) then price else mrAll)
+                let add =
+                    match Double.IsNormal(price), price, Double.IsNormal(mrAll), mrAll with
+                    | false, _, false, _ -> 0.0
+                    | true, add, false, _ -> add
+                    | false, _, true, add -> add
+                    | true, a, true, b -> min a b
 
-                tt.AddRow(
-                    mr.Item.Name,
-                    HumanReadableInteger mr.Quantity,
-                    HumanReadableSig4Float price,
-                    HumanReadableSig4Float mrAll
-                )
+                optCost <- optCost + add
+
+                tt {
+                    [ CellBuilder() { literal mr.Item.Name }
+                      CellBuilder() { integer mr.Quantity }
+                      CellBuilder() { number price }
+                      CellBuilder() { number mrAll } ]
+                }
+                |> ignore
             else
                 optCost <- optCost + price
                 allCost <- allCost + price
 
-                tt.AddRow(
-                    mr.Item.Name,
-                    HumanReadableInteger mr.Quantity,
-                    HumanReadableSig4Float price,
-                    PaddingRight
-                )
-
+                tt {
+                    [ CellBuilder() { literal mr.Item.Name }
+                      CellBuilder() { integer mr.Quantity }
+                      CellBuilder() { number price }
+                      CellBuilder() { rightPad } ]
+                }
+                |> ignore
 
         let sell = priceTable.TotalSellPrice
-
         let sellWithTax = priceTable.TotalSellPriceWithTax
 
-        tt.AddRow(
-            "卖出/税后",
-            PaddingRight,
-            HumanReadableSig4Float sell,
-            HumanReadableSig4Float sellWithTax
-        )
+        tt {
+            [ CellBuilder() { literal "卖出/税后" }
+              CellBuilder() { rightPad }
+              CellBuilder() { number sell }
+              CellBuilder() { number sellWithTax } ]
 
-        tt.AddRow(
-            "材料/最佳",
-            PaddingRight,
-            HumanReadableSig4Float allCost,
-            HumanReadableSig4Float optCost
-        )
+            [ CellBuilder() { literal "材料/最佳" }
+              CellBuilder() { rightPad }
+              CellBuilder() { number allCost }
+              CellBuilder() { number optCost } ]
 
-        tt.AddRow(
-            "税后 利润",
-            PaddingRight,
-            HumanReadableSig4Float(sellWithTax - allCost),
-            HumanReadableSig4Float(sellWithTax - optCost)
-        )
+            [ CellBuilder() { literal "税后 利润" }
+              CellBuilder() { rightPad }
+              CellBuilder() { number (sellWithTax - allCost) }
+              CellBuilder() { number (sellWithTax - optCost) } ]
+        }
+        |> ignore
 
-        using (cmdArg.OpenResponse(cfg.ResponseType)) (fun ret -> ret.Write(tt))
+        tt
 
     [<TestFixture>]
     member x.TestERRC() =
@@ -422,7 +438,7 @@ type EveRecipeModule() =
 
         cfg.Parse(cmdArg.HeaderArgs)
 
-        use ret = cmdArg.OpenResponse(cfg.ResponseType)
+        use ret = cmdArg.OpenResponse(ForceImage)
         ret.WriteLine(ToolWarning)
 
         ret.WriteLine(
@@ -465,8 +481,15 @@ type EveRecipeModule() =
 
         let pm = EveProcessManager(cfg)
 
-        // 正式开始以前写一个空行
-        ret.WriteEmptyLine()
+        ret.Table {
+            [ CellBuilder() { literal "方案" }
+              CellBuilder() { rightLiteral "出售价格/税前卖出" }
+              CellBuilder() { rightLiteral ("生产成本/" + pmStr) }
+              CellBuilder() { rightLiteral "含税利润" }
+              CellBuilder() { rightLiteral "交易量" }
+              CellBuilder() { rightLiteral "日均利润" } ]
+        }
+        |> ignore
 
         match EveProcessSearch.Instance.Search(searchCond) with
         | NoResult -> ret.Abort(InputError, "无符合要求的蓝图信息")
@@ -527,30 +550,23 @@ type EveRecipeModule() =
             |> Seq.groupBy (fun x -> x.TypeGroup)
             |> Seq.iter
                 (fun (group, data) ->
-                    ret.WriteLine(">>{0}<<", group.Name)
+                    ret.Table {
+                        "" // 表格开始之前空行
 
-                    let tt =
-                        TextTable(
-                            "方案",
-                            RightAlignCell "出售价格/税前卖出",
-                            RightAlignCell("生产成本/" + pmStr),
-                            RightAlignCell "含税利润",
-                            RightAlignCell "交易量",
-                            RightAlignCell "日均利润"
-                        )
+                        CellBuilder() {
+                            literal $">>{group.Name}<<"
+                            setBold
+                        }
 
-                    for x in data do
-                        tt.AddRow(
-                            x.Name,
-                            HumanReadableSig4Float x.Sell,
-                            HumanReadableSig4Float x.Cost,
-                            HumanReadableSig4Float x.Profit,
-                            HumanReadableInteger x.Volume,
-                            HumanReadableSig4Float x.SortIndex
-                        )
-
-                    ret.Write(tt)
-                    ret.WriteEmptyLine())
+                        [ for x in data do
+                              [ CellBuilder() { literal x.Name }
+                                CellBuilder() { number x.Sell }
+                                CellBuilder() { number x.Cost }
+                                CellBuilder() { number x.Profit }
+                                CellBuilder() { integer x.Volume }
+                                CellBuilder() { number x.SortIndex } ] ]
+                    }
+                    |> ignore)
 
     [<TestFixture>]
     member x.TestManufacturingOverview() =
