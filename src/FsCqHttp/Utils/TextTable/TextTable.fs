@@ -462,7 +462,12 @@ type TextTable(?retType : ResponseType) =
                         sb.AppendLine(line) |> ignore
 
                         if sb.Length > sizeLimit then
+                            // 删除结尾换行符
+                            sb.Length <- sb.Length - Environment.NewLine.Length
                             args.Reply(sb.ToString())
                             sb.Clear() |> ignore
 
-                    if sb.Length <> 0 then args.Reply(sb.ToString())
+                    if sb.Length <> 0 then
+                        // 删除结尾换行符
+                        sb.Length <- sb.Length - Environment.NewLine.Length
+                        args.Reply(sb.ToString())
