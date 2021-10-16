@@ -26,6 +26,10 @@ type TextResponse(args : CqMessageEventArgs, respType : ResponseType) =
     /// 添加空行
     override x.WriteLine() = tt.Yield(String.Empty) |> ignore
 
+    override x.Write(str : string) =
+        for line in str.Split([| "\r\n"; "\r"; "\n" |], StringSplitOptions.None) do
+            tt.Yield(line) |> ignore
+
     // .NET自带的是另一套算法，这里强制走Write(string)
     override x.WriteLine(str : string) =
         x.Write(str)
@@ -62,9 +66,8 @@ type TextResponse(args : CqMessageEventArgs, respType : ResponseType) =
 
     interface ICommandResponse with
         member x.Response(args) = (tt :> ICommandResponse).Response(args)
-        
+
     interface IDisposable with
-        member x.Dispose() = 
+        member x.Dispose() =
             base.Dispose()
             x.Response()
-            
