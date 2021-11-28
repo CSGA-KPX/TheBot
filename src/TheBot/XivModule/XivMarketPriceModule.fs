@@ -16,8 +16,8 @@ open KPX.TheBot.Module.XivModule.Utils.MarketUtils
 
 
 type MarketSubcommands =
-    | Crystals
-    | Materia
+    | [<AltCommandName("水晶", "碎晶", "晶簇")>] Crystals
+    | [<AltCommandName("魔晶石")>] Materia
 
     interface ISubcommandTemplate with
         member x.Usage =
