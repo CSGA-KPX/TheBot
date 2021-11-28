@@ -31,7 +31,7 @@ let main argv =
     if runTest.IsDefined then
         try
             let cmi = ContextModuleInfo()
-            DefaultContextModuleLoader().GetModules()
+            LoadedAssemblyDiscover().AllDefinedModules
             |> Seq.iter cmi.RegisterModule
             
             for name, action in cmi.TestCallbacks do

@@ -89,9 +89,19 @@ type FsCqHttpConfigParser() as x =
         else
             failwithf "需要定义endpoint&token或者reverse&token"
 
-    member x.Start() =
+    /// <summary>
+    /// 使用自定义的ContextModuleLoader启动
+    /// </summary>
+    member x.Start(loader : ContextModuleLoader) =
+        CqWsContextPool.ContextModuleLoader <- loader
         x.UpdateConfig()
         x.GetStartupFunction() ()
+
+    /// <summary>
+    /// 使用LoadedAssemblyDiscover启动
+    /// </summary>
+    member x.Start() = 
+        x.Start(ContextModuleLoader(LoadedAssemblyDiscover().AllDefinedModules))
 
     /// 从环境变量读取配置
     member x.ParseEnvironment() =

@@ -74,10 +74,7 @@ type CqWsContextPool private () =
         pool.TryAdd(context.BotUserId, context) |> ignore
         logger.Info $"已接受连接:%s{context.BotIdString}"
 
-        ContextModuleLoader.CacheBuiltEvent.WaitOne()
-        |> ignore
-
-        ContextModuleLoader.Instance.RegisterModuleFor(context.BotUserId, context.Modules)
+        CqWsContextPool.ContextModuleLoader.RegisterModuleFor(context.BotUserId, context.Modules)
 
     member x.RemoveContext(context : CqWsContextBase) =
         pool.TryRemove(context.BotUserId) |> ignore
@@ -91,6 +88,10 @@ type CqWsContextPool private () =
         member x.GetEnumerator() = pool.Values.GetEnumerator()
 
     static member val Instance = CqWsContextPool()
+
+    static member val internal ContextModuleLoader : ContextModuleLoader =
+        ContextModuleLoader(Array.empty) with get, set
+
 
 type CqWsContext(ws : WebSocket) =
     inherit CqWsContextBase()
