@@ -12,11 +12,11 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <OtherFlags>--warnon:1182</OtherFlags>
     <Tailcalls>true</Tailcalls>
-    <OutputPath>..\..\build\Debug\</OutputPath>
+    <OutputPath>..\..\build\bin_old\</OutputPath>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <OutputPath>..\..\build\Release\</OutputPath>
+    <OutputPath>..\..\build\bin_old\</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>

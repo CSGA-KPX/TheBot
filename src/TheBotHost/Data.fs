@@ -76,6 +76,11 @@ type DataAgent private() =
         let path = DataAgent.GetPersistFile(fileName)
         getDb(path)
 
+module EmbeddedResource = 
+    let GetResFileStream resName =
+        let assembly = Assembly.GetCallingAssembly()
+        assembly.GetManifestResourceStream(resName)
+
 type ResxManager(name, asm) = 
     inherit ResourceManager(name, asm)
 

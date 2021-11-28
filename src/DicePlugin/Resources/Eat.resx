@@ -1,0 +1,210 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="中晚餐" xml:space="preserve">
+    <value>麦当劳贫民餐 蒸功夫 萨莉亚 猪排饭 寿司 砂锅粥 咖喱饭 卤肉饭 冒菜 麻辣拌 鸡架 寿喜锅 肥羊
+食堂快餐 食堂铁板 食堂面 食堂鲜捞 食堂关东煮 素椒面 豌杂面 燃面 羊马渣渣面
+老麻抄手 毛血旺 肥肠 血旺 豆花牛肉 水煮牛肉 牛肉咔饼 烧鸡公 芋儿鸡 柴火鸡 青花椒鸡 胡椒猪肚鸡
+花胶鸡 椒麻鸡 海南鸡饭 白切鸡 火锅鱼 烤鱼 纸上烤鱼 石锅三角峰 黄辣丁 甜皮鸭 金陵烤鸭 北京烤鸭
+樟茶鸭 泰式火锅 肝腰合炒 乐山豆腐脑 西坝豆腐 简阳羊肉汤 白切羊肉 爆炒羊肚 驴肉火烧 朝天锅
+鸡鸭和乐 川北凉粉 拌拉皮 蒜泥护心肉 麦当劳 华莱士 豚骨拉面 辣白菜炒五花肉 烤青花鱼
+海鲜波奇饭 肥牛饭 咖喱 冬阴功汤 小鸡炖蘑菇 苹果 香蕉 梨 橙子 橘子 西瓜 黄瓜 胡萝卜
+面条 中式快餐 烧烤蛋包饭 刺身 盖浇饭 盖浇面 锅贴 牛肉汤 牛肉粉丝 便利店 香锅
+水饺 凉面 凉皮 河粉 肠粉 汉堡 炸鸡 下馆子点菜 炒饭 炒面 水果 健身餐
+关东煮 肯德基 馒头 排骨汤 羊蝎子 不吃 圣安娜  食堂 食其家 汉堡王
+麻辣烫 便当 全家 烤鸭 小杨生煎 三黄鸡 臭豆腐 烤冷面 热干面 螺蛳粉 速食汤 速食包
+火鸡面 烫饭 卤鸭爪 炸鸡爪 牛肉汤 麻辣香锅 浓香芝士年糕 韩式炸鸡 鱼蛋车仔面 奶油猪仔包 肥宅快乐鸡
+家常小炒 串串 火锅 烤肉 披萨 方便面 黄焖鸡 兰州拉面</value>
+  </data>
+  <data name="别吃" xml:space="preserve">
+    <value>随便 都行 看你 不知道 不行就别吃了 建议玩手机 还是打游戏吧</value>
+  </data>
+  <data name="早加餐" xml:space="preserve">
+    <value>西北风 豆腐脑 小米粥 煎饼果子 黑米糕 水果沙拉 鸡蛋羹 南瓜馅饼 三明治 驴肉火烧
+麦当劳贫民早餐 饺子 馅饼 茶叶蛋 昨晚剩饭 鸡蛋灌饼 奶香小馒头 汉堡包 粢饭糕
+素椒面 豌杂面 燃面 绿豆稀饭 泡菜 麦当当薯饼 锅贴 老麻抄手 羊马渣渣面 蒸饺
+油条 麻团 萝卜丝油端子 韭菜盒子 面包 列巴 蛋糕 黑芝麻糊 土家酱香饼
+掉渣大饼 鸡蛋火烧 包子 馄钝 小笼汤包 生煎包 饭团 面条 粉丝汤 糖三角 糯米糕
+红薯 玉米 黄瓜 麦谷乐 炒饭 八宝饭 八宝粥 元宵 蒸饭 杂粮煎饼 水饺 荷包蛋
+烧饼 饽饽 肉夹馍 馄饨 火腿 蛋挞 南瓜粥 玉米糊 燕麦片
+辣糊汤 糁汤 牛奶麦片 梅干菜包 香菇青菜包 煎蛋 生煎 皮蛋瘦肉粥 煎饼 水煮蛋
+鸡蛋饼 手抓饼 烧麦 热干面 酸奶 玉米粥 肉包 素包 苹果 梨 香蕉 馒头 豆浆 牛奶 花卷
+流心奶黄包 小笼包 上汤猫耳朵 葱油拌面 豆浆烧饼油条 臭豆腐</value>
+  </data>
+  <data name="火锅底料" xml:space="preserve">
+    <value>红汤 鸳鸯 清汤 菌汤 番茄 九宫格 四宫格</value>
+  </data>
+  <data name="火锅蘸料" xml:space="preserve">
+    <value>干碟 原汤 麻油 麻酱 酱油 耗油 牛肉酱</value>
+  </data>
+  <data name="火锅配菜" xml:space="preserve">
+    <value>牛杂 牛肚 牛肠 千层肚 牛百叶 牛黄喉 牛蹄筋 牛舌 毛肚 牛鞭 牛心 牛肉卷 羊肉卷
+鸭肠 掌中宝 五花肉 猪脑花 猪腰片 猪黄喉 猪血 鸭血 脆皮肠 双汇 午餐肉 鱿鱼 鸭胗 牛肉丸
+猪肉丸 虾 鸭掌 耗儿鱼 黄辣丁 酥肉 虾滑 骨肉相连 鹌鹑蛋 虾饺 乌鱼
+菌类拼盘 金针菇 淮山药 莴笋 青瓜 竹笋 海带 玉米 冬瓜 藕片 土豆片 白萝卜 豆芽 木耳 海白菜
+香菇 平菇 香芋 海鲜菇 杏鲍菇 茶树菇
+蔬菜拼盘 娃娃菜 生菜 油麦菜 大白菜 香菜 菠菜 茼蒿 蒿子秆 油麦菜
+炸腐竹 泡腐竹 千张 豆腐 油豆腐 红苕粉 土豆粉 红薯皮 魔芋 面条  方便面 冻豆腐 鸡胗 
+肥羊 羊尾 羊架 羊蝎子</value>
+  </data>
+  <data name="萨莉亚" xml:space="preserve">
+    <value>色拉：金枪鱼色拉 水果色拉 鸡肉色拉 芝麻菜色拉 裙带丝色拉 甜玉米色拉
+汤品：米兰风味田园蔬菜汤 奶油玉米浓汤 原味花蛤汤 奶油海鲜浓汤 
+配菜：卡布里风味马苏里拉芝士球 意式拼盘 意式风干火腿 特制蒜香面包
+前菜：佩斯卡拉风味蒜香蜗牛 香脆颗粒薯饼 烤甜玉米 特制裙带丝 原味烤花蛤 芝士培根焗薯角 香草鸡腿排 盐酥鸡米花 炙烤菠菜 意大利风味茄红烤翅 特色烤肠拼盘 特制香草五目肠 特制香辣烤肠
+意面：米兰风味肉酱面 传统意式香辣面 麻辣意面 黑胡椒培根面 罗马风味奶酪培根面 热那亚风味罗勒松子酱面 奶酪培根通心面 罗勒鸡肉通心面 威尼斯风味墨鱼汁意面 金枪鱼茄汁面 卡普里风味番茄海鲜面 番茄花蛤汤面 金枪鱼番茄汤面 米兰风味肉酱奶汁通心面 意式海鲜通心面
+匹萨：熏香培根匹萨 肌肉匹萨配蛋黄酱 榴莲匹萨 海陆双鲜匹萨 拉萨米匹萨 金枪鱼蛋黄酱匹萨 玛格丽特双重芝士匹萨 玉米匹萨配蛋黄酱 水果匹萨 珍味菌菇匹萨
+米饭：米兰风味肉酱多利亚饭 黑胡椒浓香炒饭 洋风海鲜炒饭 鸡肉奶汁多利亚饭 米兰风味肉酱利索多饭 番茄海鲜利索多饭
+主菜：眼肉牛排 意式风味烤虹鳟鱼 奶汁烤虹鳟鱼 西冷牛排 烘烤羊排 黑胡椒风味烤鸡排 黑胡椒酱浇烧鸡排 莫丽塞风味蒜香鸡排 意大利风味芝士鸡排 米兰风味猪排
+甜点：焦糖布丁蛋糕 抹茶蛋糕 蓝莓慕斯 巧克力蛋糕 榴莲千层蛋糕 巧克力夹层提拉米苏 爽口果粒 蓝莓香草冰淇淋 巧克力熔岩蛋糕配香草冰淇淋
+饮料：畅饮吧 三得利纯生啤酒 蓝布鲁斯科低泡葡萄酒 泽利亚干白 我的爱红葡萄酒 托斯卡纳城堡干红 德塞特干红</value>
+  </data>
+  <data name="零食" xml:space="preserve">
+    <value>// 薯片
+
+// 坚果
+
+// 肉
+
+// 豆类</value>
+  </data>
+  <data name="饮料" xml:space="preserve">
+    <value>// 其他
+白开水 纯净水 农夫山泉 依云 矿泉水
+
+// 汽水
+百事可乐 可口可乐 芬达 醒目 苏打水 雪碧 北冰洋 元气森林 冰峰 美年达 力保健
+
+// 茶
+三得利乌龙茶 东方树叶 维他柠檬茶 茉莉清 茉莉蜜 康师傅冷泡 伊藤园 冰红茶 王老吉 加多宝
+绿茶 红茶 花茶 白茶 黑茶 砖茶
+
+// 果汁
+农夫果园 汇源 盼盼
+
+// 奶
+AD钙奶 椰汁 豆奶 
+
+// 咖啡
+雀巢咖啡 三得利咖啡 星巴克咖啡 G7咖啡
+
+// 运动和功能
+脉动 力保健 健力宝 红牛</value>
+  </data>
+</root>
