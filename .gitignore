@@ -359,3 +359,4 @@ coverage.xml
 /build/static/TRpgModule-log.db
 /build/static/TRpgModule.db
 /src/FsCqHttp/temp.fsi
+/src/TheBotHost/Properties/launchSettings.json

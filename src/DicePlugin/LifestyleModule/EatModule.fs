@@ -69,7 +69,7 @@ type EatModule() =
                 || uid = cmdArg.MessageEvent.UserId ->
                 // @自己 @Bot 迷惑行为
                 use s =
-                    EmbeddedResource.GetResFileStream("DicePlugin.Funny.jpg")
+                    EmbeddedResource.GetResFileStream("DicePlugin.Resources.Funny.jpg")
                 
                 use img =
                     SkiaSharp.SKImage.FromEncodedData(s)

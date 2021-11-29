@@ -1,4 +1,4 @@
-﻿namespace KPX.TheBot.Host.Data
+namespace KPX.TheBot.Host.Data
 
 open System
 open System.Collections.Generic
@@ -8,6 +8,7 @@ open System.Text.RegularExpressions
 open System.Resources
 
 open LiteDB
+open System.Runtime.CompilerServices
 
 
 (*
@@ -18,7 +19,7 @@ open LiteDB
 [<AutoOpen>]
 module LiteDBExtensions =
     type ILiteCollection<'T> with
-        member x.SafeFindById(id : obj) =
+        member x.SafeFindById(id: obj) =
             let ret = x.FindById(BsonValue(id))
 
             if isNull (box ret) then
@@ -27,19 +28,31 @@ module LiteDBExtensions =
 
             ret
 
-        member x.TryFindById(id : obj) =
+        member x.TryFindById(id: obj) =
             let ret = x.FindById(BsonValue(id))
-            if isNull (box ret) then None else Some ret
 
-        member x.TryFindOne(query : Query) =
+            if isNull (box ret) then
+                None
+            else
+                Some ret
+
+        member x.TryFindOne(query: Query) =
             let ret = x.FindOne(query)
-            if isNull (box ret) then None else Some ret
 
-        member x.TryFindOne(expr : BsonExpression) =
+            if isNull (box ret) then
+                None
+            else
+                Some ret
+
+        member x.TryFindOne(expr: BsonExpression) =
             let ret = x.FindOne(expr)
-            if isNull (box ret) then None else Some ret
 
-type DataAgent private() = 
+            if isNull (box ret) then
+                None
+            else
+                Some ret
+
+type DataAgent private () =
     static let hostPath =
         let location = Assembly.GetExecutingAssembly().Location
         Path.GetDirectoryName(location)
@@ -50,7 +63,7 @@ type DataAgent private() =
 
     static let dbCache = Dictionary<string, LiteDatabase>()
 
-    static let getDb(path) = 
+    static let getDb (path) =
         if not <| dbCache.ContainsKey(path) then
             let dbFile = $"Filename=%s{path};"
             let db = new LiteDatabase(dbFile)
@@ -63,51 +76,52 @@ type DataAgent private() =
         Directory.CreateDirectory(persistDir) |> ignore
         BsonMapper.Global.EmptyStringToNull <- false
         BsonMapper.Global.EnumAsInteger <- true
-    
-    static member GetCacheFile(fileName : string) = Path.Combine(cacheDir, fileName)
 
-    static member GetPersistFile(fileName : string) = Path.Combine(persistDir, fileName)
+    static member GetCacheFile(fileName: string) = Path.Combine(cacheDir, fileName)
 
-    static member GetCacheDatabase(fileName : string) =
-        let path = DataAgent.GetCacheFile(fileName)
-        getDb(path)
+    static member GetPersistFile(fileName: string) = Path.Combine(persistDir, fileName)
 
-    static member GetPersistDatabase(fileName : string) =
+    static member GetCacheDatabase() =
+        let path = DataAgent.GetCacheFile("theBotCache")
+        getDb (path)
+
+    static member GetPersistDatabase(fileName: string) =
         let path = DataAgent.GetPersistFile(fileName)
-        getDb(path)
+        getDb (path)
 
-module EmbeddedResource = 
+module EmbeddedResource =
+    [<MethodImpl(MethodImplOptions.NoInlining)>]
     let GetResFileStream resName =
         let assembly = Assembly.GetCallingAssembly()
         assembly.GetManifestResourceStream(resName)
 
-type ResxManager(name, asm) = 
+type ResxManager(name, asm) =
     inherit ResourceManager(name, asm)
 
     let newLines = [| '\r'; '\n' |]
 
-    new (name) = ResxManager(name, Assembly.GetCallingAssembly())
+    [<MethodImpl(MethodImplOptions.NoInlining)>]
+    new(name) = ResxManager(name, Assembly.GetCallingAssembly())
 
     /// 返回空白字符分隔后的词
-    member x.GetWords(key : string) =
+    member x.GetWords(key: string) =
         x
             .GetString(key)
             .Split(Array.empty<char>, StringSplitOptions.RemoveEmptyEntries)
 
     /// 返回所有行
-    member x.GetLines(key : string) =
+    member x.GetLines(key: string) =
         x
             .GetString(key)
             .Split(newLines, StringSplitOptions.RemoveEmptyEntries)
 
     /// 返回所有不以cmtStart开始的行
-    member x.GetLinesWithoutComment(key : string, ?cmtStart : string) =
+    member x.GetLinesWithoutComment(key: string, ?cmtStart: string) =
         let cmtStart = defaultArg cmtStart "//"
 
-        x.GetLines(key)
-        |> Array.filter (fun line -> not <| line.StartsWith(cmtStart))
+        x.GetLines(key) |> Array.filter (fun line -> not <| line.StartsWith(cmtStart))
 
-    member x.GetWordsWithoutComment(key : string, ?cmdStart : string) =
+    member x.GetWordsWithoutComment(key: string, ?cmdStart: string) =
         [| let cmtStart = defaultArg cmdStart "//"
 
            for line in x.GetLinesWithoutComment(key, cmtStart) do
@@ -121,14 +135,12 @@ type StringTemplate() =
     static let regex =
         Regex(
             @"(?<newline>\\n|\\r|\\r\\n)|\\\{(?<expr>[^\}]*)\}",
-            RegexOptions.Compiled
-            ||| RegexOptions.Multiline
-            ||| RegexOptions.IgnoreCase
+            RegexOptions.Compiled ||| RegexOptions.Multiline ||| RegexOptions.IgnoreCase
         )
 
-    abstract ProcessFunctions : name:string * args:string [] -> string
+    abstract ProcessFunctions: name: string * args: string [] -> string
 
-    member private x.EvalFunctionCore(m : Match) =
+    member private x.EvalFunctionCore(m: Match) =
         if m.Groups.["newline"].Success then
             Environment.NewLine
         else
@@ -137,5 +149,5 @@ type StringTemplate() =
             let args = expr.[1..]
             x.ProcessFunctions(name, args)
 
-    member x.ParseTemplate(template : string) =
+    member x.ParseTemplate(template: string) =
         regex.Replace(template, MatchEvaluator x.EvalFunctionCore)

@@ -10,7 +10,7 @@ open KPX.TheBot.Host.Data
 module Data =
     let diceSides = 100u
 
-    let private mgr = ResxManager("DicePlugin.Eat")
+    let private mgr = ResxManager("DicePlugin.Resources.Eat")
     let breakfast = mgr.GetWords("早加餐") |> Array.distinct
     let dinner = mgr.GetWords("中晚餐") |> Array.distinct
     let hotpot_soup = mgr.GetWords("火锅底料") |> Array.distinct

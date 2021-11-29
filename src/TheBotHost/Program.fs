@@ -1,48 +1,25 @@
-﻿open System
-open System.IO
+module KPX.TheBot.Host.Program
 
+open System
+
+open KPX.FsCqHttp
 open KPX.FsCqHttp.Instance
 
-open McMaster.NETCore.Plugins
-open KPX.FsCqHttp
 
-
-let loaders = ResizeArray<PluginLoader>()
-
-let scanPlugins() =
-    let pluginsDir = Path.Combine(AppContext.BaseDirectory, "plugins")
-    for dir in Directory.GetDirectories(pluginsDir) do
-        let dirName = Path.GetFileName(dir)
-        let dll = Path.Combine(dir, dirName + ".dll")
-        printfn $"发现{dll}"
-        if File.Exists(dll) then
-            let loader = PluginLoader.CreateFromAssemblyFile(dll, fun cfg -> cfg.PreferSharedTypes <- true)
-            loaders.Add(loader)
-
-let scanTypes() = 
-    let d = ModuleDiscover()
-    for loader in loaders do 
-        d.ScanAssembly(loader.LoadDefaultAssembly())
-    d.AllDefinedModules
-
-let logger =
-    NLog.LogManager.GetLogger("KPX.TheBot.Program")
-
+let logger = NLog.LogManager.GetLogger("KPX.TheBot.Program")
 
 [<EntryPoint>]
-let main argv = 
-    scanPlugins()
-    let types = scanTypes()
-    for t in types do 
-        printfn $"{t.GetType().FullName}"
+let main argv =
+    let discover = HostedModuleDiscover()
+    discover.ScanPlugins()
 
     let cfg = FsCqHttpConfigParser()
     cfg.Parse(argv)
 
     for arg in cfg.DumpDefinedOptions() do
         logger.Info("启动参数：{0}", arg)
-    
-    cfg.Start(ContextModuleLoader(types))
+
+    cfg.Start(ContextModuleLoader(discover.AllDefinedModules))
 
     use mtx = new Threading.ManualResetEvent(false)
     AppDomain.CurrentDomain.ProcessExit.Add(fun _ -> mtx.Set() |> ignore)

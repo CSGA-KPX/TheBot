@@ -20,10 +20,12 @@
   <ItemGroup>
     <Compile Include="Data.fs" />
     <Compile Include="Network.fs" />
-    <Compile Include="DataCache\DataTesting.fs" />
+    <Compile Include="DataCache\DataCacheTesting.fs" />
     <Compile Include="DataCache\BotDataCollection.fs" />
     <Compile Include="DataCache\CachedItemCollection.fs" />
     <Compile Include="DataCache\CachedTableCollection.fs" />
+    <Compile Include="DataCache\CacheBuilder.fs" />
+    <Compile Include="DataCache\HostedModuleDiscover.fs" />
     <Compile Include="DataModule\RecipeProvider.fs" />
     <Compile Include="DataModule\RecipeManager.fs" />
     <Compile Include="Utils\Dicer.fs" />

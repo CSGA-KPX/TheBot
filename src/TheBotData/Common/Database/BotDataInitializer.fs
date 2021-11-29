@@ -1,4 +1,4 @@
-﻿namespace rec KPX.TheBot.Data.Common.Database
+namespace rec KPX.TheBot.Data.Common.Database
 
 open System
 open System.Collections.Generic
@@ -77,8 +77,8 @@ type BotDataInitializer private () =
                 p.GetValue(null) :?> IInitializationInfo)
         |> BotDataInitializer.SolveDependency
         |> Array.iter
-            (fun o ->
-                let t = o.GetType()
+            (fun cols ->
+                let t = cols.GetType()
                 let gt = typeof<CachedTableCollection<_, _>>
 
                 let isCollection =
@@ -89,7 +89,7 @@ type BotDataInitializer private () =
                 if isCollection then
                     t
                         .GetMethod("InitializeCollection")
-                        .Invoke(o, null)
+                        .Invoke(cols, null)
                     |> ignore
 
                     GC.Collect())

@@ -12,7 +12,7 @@ open KPX.DicePlugin.DiceModule.Utils.DiceExpression
 module StringData =
     let private data = Dictionary<string, string []>()
 
-    let mgr = ResxManager("DicePlugin.TRpg")
+    let mgr = ResxManager("DicePlugin.Resources.TRpg")
 
     let GetString (name : string) = mgr.GetString(name)
 

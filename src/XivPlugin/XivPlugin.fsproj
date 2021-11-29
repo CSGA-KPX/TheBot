@@ -1,0 +1,34 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <OtherFlags>--warnon:1182</OtherFlags>
+    <Tailcalls>true</Tailcalls>
+    <OutputPath>..\..\build\bin\plugins\XivPlugin\</OutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <OutputPath>..\..\build\bin\plugins\XivPlugin\</OutputPath>
+  </PropertyGroup>
+
+
+  <ItemGroup>
+    <Compile Include="Library.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TheBotHost\TheBotHost.fsproj">
+        <Private>False</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\FsCqHttp\FsCqHttp.fsproj">
+        <Private>False</Private>
+    </ProjectReference>
+  </ItemGroup>
+  
+</Project>
