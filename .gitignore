@@ -360,3 +360,5 @@ coverage.xml
 /build/static/TRpgModule.db
 /src/FsCqHttp/temp.fsi
 /src/TheBotHost/Properties/launchSettings.json
+/datafiles/EVEData.zip
+/datafiles/ffxiv-datamining-cn-master.zip

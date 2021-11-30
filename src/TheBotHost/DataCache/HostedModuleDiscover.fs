@@ -7,7 +7,6 @@ open System.IO
 open KPX.FsCqHttp.Instance
 
 open KPX.TheBot.Host.DataCache
-open KPX.TheBot.Host.DataCache.Testing
 
 open McMaster.NETCore.Plugins
 

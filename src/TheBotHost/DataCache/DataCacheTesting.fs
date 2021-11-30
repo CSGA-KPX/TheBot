@@ -1,4 +1,4 @@
-﻿namespace KPX.TheBot.Host.DataCache.Testing
+namespace KPX.TheBot.Host.DataCache
 
 /// 指示数据生成后测试
 type IDataTest =

@@ -29,9 +29,15 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Plugins", "Plugins", "{219C
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "DicePlugin", "src\DicePlugin\DicePlugin.fsproj", "{4B3E7C78-6C4F-4E15-93D6-F3E65025A0CE}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "XivPlugin", "src\XivPlugin\XivPlugin.fsproj", "{2618D82A-FFC2-4F18-BAF2-57CC38A14E45}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "XivPlugin", "src\XivPlugin\XivPlugin.fsproj", "{2618D82A-FFC2-4F18-BAF2-57CC38A14E45}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "EvePlugin", "src\EvePlugin\EvePlugin.fsproj", "{28AA3209-3711-4916-926E-BD8C9C230D70}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "EvePlugin", "src\EvePlugin\EvePlugin.fsproj", "{28AA3209-3711-4916-926E-BD8C9C230D70}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Data Files", "Data Files", "{E9F25DD5-7A88-4E79-99B6-98557FCF47C6}"
+	ProjectSection(SolutionItems) = preProject
+		datafiles\EVEData.zip = datafiles\EVEData.zip
+		datafiles\ffxiv-datamining-cn-master.zip = datafiles\ffxiv-datamining-cn-master.zip
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

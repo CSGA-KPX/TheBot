@@ -1,4 +1,4 @@
-﻿namespace rec KPX.TheBot.Host.DataCache
+namespace rec KPX.TheBot.Host.DataCache
 
 open System
 
@@ -16,7 +16,7 @@ type TableUpdateTime =
 type internal TableUpdateInfo private () =
     
     static let updateCol =
-        DataAgent.GetCacheDatabase("tableUpdateInfo.db").GetCollection<TableUpdateTime>()
+        DataAgent.GetCacheDatabase().GetCollection<TableUpdateTime>()
 
     /// 记录CachedTableCollection<>的更新时间
     static member RegisterCollectionUpdate(col : CachedTableCollection<_, _>) =
@@ -35,8 +35,8 @@ type internal TableUpdateInfo private () =
             ret.Updated
             
 [<AbstractClass>]
-type CachedTableCollection<'Key, 'Item>(dbName) =
-    inherit BotDataCollection<'Key, 'Item>(dbName)
+type CachedTableCollection<'Key, 'Item>() =
+    inherit BotDataCollection<'Key, 'Item>()
 
     let updateLock = obj ()
 

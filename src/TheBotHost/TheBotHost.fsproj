@@ -24,10 +24,10 @@
     <Compile Include="DataCache\BotDataCollection.fs" />
     <Compile Include="DataCache\CachedItemCollection.fs" />
     <Compile Include="DataCache\CachedTableCollection.fs" />
-    <Compile Include="DataCache\CacheBuilder.fs" />
     <Compile Include="DataCache\HostedModuleDiscover.fs" />
-    <Compile Include="DataModule\RecipeProvider.fs" />
-    <Compile Include="DataModule\RecipeManager.fs" />
+    <Compile Include="DataCache\CacheBuilder.fs" />
+    <Compile Include="DataModel\RecipeProvider.fs" />
+    <Compile Include="DataModel\RecipeManager.fs" />
     <Compile Include="Utils\Dicer.fs" />
     <Compile Include="Utils\Config.fs" />
     <Compile Include="Utils\GenericRPN.fs" />

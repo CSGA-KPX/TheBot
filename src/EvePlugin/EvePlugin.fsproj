@@ -19,9 +19,50 @@
 
 
   <ItemGroup>
-    <Compile Include="Library.fs" />
+    <Compile Include="Data\Utils.fs" />
+    <Compile Include="Data\EveGroup.fs" />
+    <Compile Include="Data\EveMarketGroup.fs" />
+    <Compile Include="Data\EveType.fs" />
+    <Compile Include="Data\EveProcess\Base.fs" />
+    <Compile Include="Data\EveProcess\BlueprintProcess.fs" />
+    <Compile Include="Data\EveProcess\PlanetProcess.fs" />
+    <Compile Include="Data\EveProcess\RefineProcess.fs" />
+    <Compile Include="Data\EveProcess\ProcessManager.fs" />
+    <Compile Include="Data\EveProcess\ProcessSearchCache.fs" />
+    <Compile Include="Data\EveProcess\ProcessTest.fs" />
+    <Compile Include="Data\NpcCorporation.fs" />
+    <Compile Include="Data\LoyaltyStoreOffer.fs" />
+    <Compile Include="Data\MarketPriceCache.fs" />
+    <Compile Include="Data\MarketHistoryCache.fs" />
+    <Compile Include="Data\GameInternalPriceCache.fs" />
+    <Compile Include="Data\SolarSystems.fs" />
+    <Compile Include="Data\SystemCostIndexCache.fs" />
+    
+    <Compile Include="Utils\Helpers.fs" />
+    <Compile Include="Utils\Data.fs" />
+    <Compile Include="Utils\Config.fs" />
+    <Compile Include="Utils\Extensions.fs" />
+    <Compile Include="Utils\EveExpression.fs" />
+    <Compile Include="Utils\MarketUtils.fs" />
+    <Compile Include="Utils\UserInventory.fs" />
+    
+    <Compile Include="Modules\MarketModule.fs" />
+    <Compile Include="Modules\LpStoreModule.fs" />
+    <Compile Include="Modules\RecipeModule.fs" />
+    <Compile Include="Modules\EveInvModule.fs" />
+    <Compile Include="Modules\EveMiscModule.fs" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="../../datafiles/EVEData.zip" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <EmbeddedResource Update="EVE.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+  </ItemGroup>
+  
   <ItemGroup>
     <ProjectReference Include="..\TheBotHost\TheBotHost.fsproj">
         <Private>False</Private>
@@ -29,6 +70,12 @@
     <ProjectReference Include="..\FsCqHttp\FsCqHttp.fsproj">
         <Private>False</Private>
     </ProjectReference>
+  </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Update="FSharp.Core">
+      <ExcludeAssets>contentFiles</ExcludeAssets>
+    </PackageReference>
   </ItemGroup>
   
 </Project>

@@ -1,4 +1,4 @@
-﻿namespace KPX.TheBot.Host.DataModule.Recipe
+namespace KPX.TheBot.Host.DataModel.Recipe
 
 open System.Collections.Generic
 
@@ -30,7 +30,7 @@ type RecipeManager<'Item, 'Recipe when 'Item : equality>() =
     member x.AddProvider(p) = providers.Add(p)
 
     /// 从Provider查找所有配方
-    member internal x.SearchRecipes(item : 'Item) =
+    member x.SearchRecipes(item : 'Item) =
         providers
         |> Seq.choose (fun p -> p.TryGetRecipe(item))
 

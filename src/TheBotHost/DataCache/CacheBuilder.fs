@@ -5,7 +5,7 @@ open System.Reflection
 open System.Collections.Generic
 
 open KPX.TheBot.Host
-open KPX.TheBot.Host.DataCache.Testing
+open KPX.TheBot.Host.DataCache
 
 
 module private Utils =

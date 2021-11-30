@@ -5,6 +5,7 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+	<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -17,18 +18,69 @@
     <OutputPath>..\..\build\bin\plugins\XivPlugin\</OutputPath>
   </PropertyGroup>
 
-
   <ItemGroup>
-    <Compile Include="Library.fs" />
+    <Compile Include="Data\XivProvider.fs" />
+    <Compile Include="Data\Item.fs" />
+    <Compile Include="Data\Recipe\XivRecipe.fs" />
+    <Compile Include="Data\Recipe\CraftRecipeProvider.fs" />
+    <Compile Include="Data\Recipe\CompanyCraftRecipeProvider.fs" />
+    <Compile Include="Data\Recipe\XivRecipeProvider.fs" />
+    <Compile Include="Data\Shops\ShopLocation.fs" />
+    <Compile Include="Data\Shops\GCScriptShop.fs" />
+    <Compile Include="Data\Shops\GilShop.fs" />
+    <Compile Include="Data\Shops\SpecialShop.fs" />
+    <Compile Include="Data\World.fs" />
+    <Compile Include="Data\ClassJobMapping.fs" />
+    <Compile Include="Data\CraftGearSet.fs" />
+    <Compile Include="Data\OceanFishing.fs" />
+    <Compile Include="Data\UniversalisMarketCache.fs" />
+    <Compile Include="Data\ContentFinderCondition.fs" />
+    <Compile Include="Data\CraftLeve.fs" />
+  
+    <Compile Include="Modules\MarketUtils.fs" />
+    <Compile Include="Modules\CommandUtils.fs" />
+    <Compile Include="Modules\XivExpression.fs" />
+    <Compile Include="Modules\XivServerListModule.fs" />
+    <Compile Include="Modules\XivMarketPriceModule.fs" />
+    <Compile Include="Modules\XivRecipeModule.fs" />
+    <Compile Include="Modules\ScriptExchangeModule.fs" />
+    <Compile Include="Modules\CraftLeveModule.fs" />
+    <Compile Include="Modules\XivModule.fs" />
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="../../datafiles/ffxiv-datamining-cn-master.zip" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="XivOceanFishing.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+	  <PackageReference Include="HtmlAgilityPack" Version="1.11.38" />
+  </ItemGroup>
+
+  <ItemGroup>
+	<ProjectReference Include="..\..\..\LibFFXIV\LibFFXIV.GameData\LibFFXIV.GameData.fsproj" />
     <ProjectReference Include="..\TheBotHost\TheBotHost.fsproj">
         <Private>False</Private>
+		<IncludeAssets>compile</IncludeAssets>
     </ProjectReference>
     <ProjectReference Include="..\FsCqHttp\FsCqHttp.fsproj">
         <Private>False</Private>
+		<IncludeAssets>compile</IncludeAssets>
     </ProjectReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="FSharp.Core">
+      <IncludeAssets>compile</IncludeAssets>
+    </PackageReference>
+	  <PackageReference Update="FastCsvParser">
+		  <IncludeAssets>all</IncludeAssets>
+	  </PackageReference>
   </ItemGroup>
   
 </Project>

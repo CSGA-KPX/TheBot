@@ -1,4 +1,4 @@
-﻿namespace KPX.TheBot.Host.DataCache
+namespace KPX.TheBot.Host.DataCache
 
 open System
 open System.Collections.Generic
@@ -12,7 +12,7 @@ type IInitializationInfo =
     abstract Depends : Type []
 
 [<AbstractClass>]
-type BotDataCollection<'Key, 'Item>(dbName) as x =
+type BotDataCollection<'Key, 'Item>() as x =
 
     let colName = x.GetType().Name
 
@@ -20,11 +20,11 @@ type BotDataCollection<'Key, 'Item>(dbName) as x =
     /// 对在TheBotData外定义的项目无效
     abstract Depends : Type []
     
-    member val Logger = NLog.LogManager.GetLogger $"%s{dbName}:%s{colName}"
+    member val Logger = NLog.LogManager.GetLogger $"DataCache:%s{colName}"
 
     /// 获取数据库集合供复杂操作
     member val DbCollection =
-        DataAgent.GetCacheDatabase(dbName).GetCollection<'Item>(colName)
+        DataAgent.GetCacheDatabase().GetCollection<'Item>(colName)
 
     /// 清空当前集合，不释放空间
     member x.Clear() = x.DbCollection.DeleteAll() |> ignore
@@ -32,7 +32,7 @@ type BotDataCollection<'Key, 'Item>(dbName) as x =
     member x.Count() = x.DbCollection.Count()
 
     /// 辅助方法：如果input为Some，返回值。如果为None，根据fmt和args生成KeyNotFoundException
-    member internal x.PassOrRaise(input : option<'T>, fmt : string, [<ParamArray>] args : obj []) =
+    member x.PassOrRaise(input : option<'T>, fmt : string, [<ParamArray>] args : obj []) =
         if input.IsNone then
             raise
             <| KeyNotFoundException(String.Format(fmt, args))
