@@ -11,19 +11,19 @@ open KPX.EvePlugin.Data.EveType
 
 [<CLIMutable>]
 type MarketHistoryRecord =
-    { Average : float
-      Date : DateTimeOffset
-      Highest : float
-      Lowest : float
-      OrderCount : int
-      Volume : int64 }
+    { Average: float
+      Date: DateTimeOffset
+      Highest: float
+      Lowest: float
+      OrderCount: int
+      Volume: int64 }
 
 [<CLIMutable>]
 type MarketTradeHistory =
     { [<LiteDB.BsonId(false)>]
-      Id : int
-      History : MarketHistoryRecord []
-      Updated : DateTimeOffset }
+      Id: int
+      History: MarketHistoryRecord []
+      Updated: DateTimeOffset }
 
 type MarketTradeHistoryCollection private () =
     inherit CachedItemCollection<int, MarketTradeHistory>()
@@ -40,13 +40,13 @@ type MarketTradeHistoryCollection private () =
     override x.Depends = [| typeof<EveTypeCollection> |]
 
     override x.DoFetchItem(itemId) =
-        let url =
-            $"https://esi.evepc.163.com/latest/markets/10000002/history/?datasource=serenity&type_id=%i{itemId}"
+        let url = $"https://esi.evepc.163.com/latest/markets/10000002/history/?datasource=serenity&type_id=%i{itemId}"
 
         x.Logger.Info $"Fetching %s{url}"
 
         let json =
-            Network.HttpClient
+            Network
+                .HttpClient
                 .GetStringAsync(url)
                 .ConfigureAwait(false)
                 .GetAwaiter()

@@ -39,8 +39,7 @@ let Coc7AttrDisplayOrder =
 
 /// Coc7中技能别名
 let SkillNameAlias =
-    let dict =
-        Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    let dict = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
 
     for line in StringData.GetLines(StringData.Key_SkillAlias) do
         let t = line.Split("|")
@@ -50,8 +49,7 @@ let SkillNameAlias =
 
 /// Coc7中技能及默认值
 let DefaultSkillValues =
-    let dict =
-        Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
+    let dict = Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
 
     for line in StringData.GetLines(StringData.Key_DefaultSkillValues) do
         let t = line.Split("|")
@@ -60,7 +58,7 @@ let DefaultSkillValues =
     dict :> IReadOnlyDictionary<_, _>
 
 /// 将输入转换为Coc7技能名，处理别名等
-let MapCoc7SkillName (name : string) =
+let MapCoc7SkillName (name: string) =
     if SkillNameAlias.ContainsKey(name) then
         SkillNameAlias.[name]
     else
@@ -95,7 +93,7 @@ type RollResult =
         | Fumble -> "大失败"
 
     /// 大成功：0+offset 大失败：101-offset
-    static member Describe(i : int, threshold : int, ?offset : int) =
+    static member Describe(i: int, threshold: int, ?offset: int) =
         let offset = defaultArg offset 1
 
         match i with
@@ -111,9 +109,9 @@ type RollResult =
 /// 创建指定房规的规则
 ///
 /// 大成功：0+offset 大失败：101-offset
-type RollResultRule(offset : int) =
+type RollResultRule(offset: int) =
 
-    member x.Describe(i : int, threshold : int) =
+    member x.Describe(i: int, threshold: int) =
         match i with
         | _ when i <= 0 + offset -> Critical
         | _ when i <= threshold / 5 -> Extreme
@@ -124,4 +122,4 @@ type RollResultRule(offset : int) =
         | _ -> invalidArg "dice" $"骰值%i{i}不再允许范围内"
 
     /// 规则书评价
-    member x.Describe(i : int) = x.Describe(i, 1)
+    member x.Describe(i: int) = x.Describe(i, 1)

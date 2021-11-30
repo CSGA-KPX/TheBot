@@ -6,11 +6,11 @@ open Newtonsoft.Json
 /// 群文件信息
 type GroupFile =
     { [<JsonProperty("id")>]
-      Id : string
+      Id: string
       [<JsonProperty("name")>]
-      Name : string
+      Name: string
       [<JsonProperty("size")>]
-      Size : int64
+      Size: int64
       ///用途不明
       [<JsonProperty("busid")>]
-      BusId : int64 }
+      BusId: int64 }

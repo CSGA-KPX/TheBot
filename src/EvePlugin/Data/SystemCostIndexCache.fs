@@ -11,15 +11,15 @@ open KPX.TheBot.Host.DataCache
 
 [<CLIMutable>]
 type SystemCostIndex =
-    { Id : int
-      Manufacturing : float
-      ResearchTime : float
-      ResearchMaterial : float
-      Copying : float
-      Invention : float
-      Reaction : float }
+    { Id: int
+      Manufacturing: float
+      ResearchTime: float
+      ResearchMaterial: float
+      Copying: float
+      Invention: float
+      Reaction: float }
 
-    static member DefaultOf(systemId : int) =
+    static member DefaultOf(systemId: int) =
         { Id = systemId
           Manufacturing = 0.0
           ResearchTime = 0.0
@@ -35,21 +35,18 @@ type SystemCostIndexCollection private () =
 
     static member Instance = instance
 
-    override x.IsExpired =
-        (DateTimeOffset.Now - x.GetLastUpdateTime())
-        >= TimeSpan.FromDays(1.0)
+    override x.IsExpired = (DateTimeOffset.Now - x.GetLastUpdateTime()) >= TimeSpan.FromDays(1.0)
 
-    override x.Depends =
-        [| typeof<KPX.EvePlugin.Data.SolarSystems.SolarSystemCollection> |]
+    override x.Depends = [| typeof<KPX.EvePlugin.Data.SolarSystems.SolarSystemCollection> |]
 
     override x.InitializeCollection() =
-        let url =
-            "https://esi.evepc.163.com/latest/industry/systems/?datasource=serenity"
+        let url = "https://esi.evepc.163.com/latest/industry/systems/?datasource=serenity"
 
         x.Logger.Info $"Fetching %s{url}"
 
         let json =
-            Network.HttpClient
+            Network
+                .HttpClient
                 .GetStringAsync(url)
                 .ConfigureAwait(false)
                 .GetAwaiter()
@@ -59,8 +56,7 @@ type SystemCostIndexCollection private () =
             for item in JArray.Parse(json) do
                 let item = item :?> JObject
 
-                let sid =
-                    item.GetValue("solar_system_id").ToObject<int>()
+                let sid = item.GetValue("solar_system_id").ToObject<int>()
 
                 let mutable ret = SystemCostIndex.DefaultOf(sid)
                 let indices = item.GetValue("cost_indices") :?> JArray
@@ -68,8 +64,7 @@ type SystemCostIndexCollection private () =
                 for idx in indices do
                     let idx = idx :?> JObject
 
-                    let index =
-                        idx.GetValue("cost_index").ToObject<float>()
+                    let index = idx.GetValue("cost_index").ToObject<float>()
 
                     match idx.GetValue("activity").ToObject<string>() with
                     | "manufacturing" -> ret <- { ret with Manufacturing = index }
@@ -85,9 +80,9 @@ type SystemCostIndexCollection private () =
         |> x.DbCollection.InsertBulk
         |> ignore
 
-    member x.TryGetBySystem(system : KPX.EvePlugin.Data.SolarSystems.SolarSystem) =
+    member x.TryGetBySystem(system: KPX.EvePlugin.Data.SolarSystems.SolarSystem) =
         x.CheckUpdate()
         x.DbCollection.TryFindById(system.Id)
 
-    member x.GetBySystem(system : KPX.EvePlugin.Data.SolarSystems.SolarSystem) =
+    member x.GetBySystem(system: KPX.EvePlugin.Data.SolarSystems.SolarSystem) =
         x.PassOrRaise(x.DbCollection.TryFindById(system.Id), "没有{0}的工业指数资料", system.Name)

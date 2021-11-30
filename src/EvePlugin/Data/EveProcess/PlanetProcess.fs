@@ -20,17 +20,13 @@ type PlanetProcessCollection private () =
     static member Instance = instance
 
     override x.InitializeCollection() =
-        let expr =
-            LiteDB.BsonExpression.Create("Process.Output[0].Item")
+        let expr = LiteDB.BsonExpression.Create("Process.Output[0].Item")
 
-        x.DbCollection.EnsureIndex("ProductId", expr)
-        |> ignore
+        x.DbCollection.EnsureIndex("ProductId", expr) |> ignore
 
-        use archive =
-            KPX.EvePlugin.Data.Utils.GetEveDataArchive()
+        use archive = KPX.EvePlugin.Data.Utils.GetEveDataArchive()
 
-        use f =
-            archive.GetEntry("schematics.json").Open()
+        use f = archive.GetEntry("schematics.json").Open()
 
         use r = new JsonTextReader(new StreamReader(f))
 
@@ -55,7 +51,11 @@ type PlanetProcessCollection private () =
                         let quantity = p.Value.Value<float>("quantity")
                         let m = { Item = id; Quantity = quantity }
                         let isInput = p.Value.Value<bool>("isInput")
-                        if isInput then input.Add(m) else output.Add(m)
+
+                        if isInput then
+                            input.Add(m)
+                        else
+                            output.Add(m)
 
                     let pid = output.[0].Item
                     let gid = ec.GetById(pid).GroupId
@@ -76,7 +76,9 @@ type PlanetProcessCollection private () =
         override x.TryGetRecipe(item) =
             let id = LiteDB.BsonValue(item.Id)
 
-            let ret =
-                x.DbCollection.FindOne(LiteDB.Query.EQ("Process.Output[0].Item", id))
+            let ret = x.DbCollection.FindOne(LiteDB.Query.EQ("Process.Output[0].Item", id))
 
-            if isNull (box ret) then None else Some(ret.AsEveProcess())
+            if isNull (box ret) then
+                None
+            else
+                Some(ret.AsEveProcess())

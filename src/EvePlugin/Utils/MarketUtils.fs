@@ -51,26 +51,24 @@ type EveMarketPriceTable() =
               } ]
         }
         |> ignore
-    
+
     member x.Table = tt
-    
+
     member x.TotalAdjustPrice = tAdj
 
     member x.TotalSellPrice = tSell
 
     member x.TotalBuyPrice = tBuy
 
-    member x.TotalSellPriceWithTax =
-        tSell * (float (100 - EveSellTax)) / 100.0
+    member x.TotalSellPriceWithTax = tSell * (float (100 - EveSellTax)) / 100.0
 
     member x.TotalBuyPriceWithTax = tBuy * (float (100 + EveBuyTax)) / 100.0
 
-    member x.AddObject(t : EveType, q : float) =
+    member x.AddObject(t: EveType, q: float) =
         tt {
             [ CellBuilder() { literal t.Name }
               CellBuilder() { float q }
-              let adjPrice =
-                  t.GetPrice(PriceFetchMode.AveragePrice) * q
+              let adjPrice = t.GetPrice(PriceFetchMode.AveragePrice) * q
 
               tAdj <- tAdj + adjPrice
               let sell = t.GetPrice(PriceFetchMode.Sell) * q
@@ -88,4 +86,4 @@ type EveMarketPriceTable() =
         }
         |> ignore
 
-    member x.AddObject(m : RecipeMaterial<EveType>) = x.AddObject(m.Item, m.Quantity)
+    member x.AddObject(m: RecipeMaterial<EveType>) = x.AddObject(m.Item, m.Quantity)

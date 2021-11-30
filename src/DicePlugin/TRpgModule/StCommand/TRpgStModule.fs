@@ -16,10 +16,9 @@ type StModule() =
     inherit CommandHandlerBase()
 
     [<CommandHandlerMethod(".st", "设置角色（不兼容子命令！）", "")>]
-    member x.HandleST(cmdArg : CommandEventArgs) =
+    member x.HandleST(cmdArg: CommandEventArgs) =
         // 处理卡信息
-        let regex =
-            Text.RegularExpressions.Regex(@"([^\s\|0-9:：]+)[:：]?([0-9]+)")
+        let regex = Text.RegularExpressions.Regex(@"([^\s\|0-9:：]+)[:：]?([0-9]+)")
 
         let card = CardManager.getCurrentCard cmdArg.MessageEvent.UserId
 
@@ -30,7 +29,7 @@ type StModule() =
             card.[prop] <- m.Groups.[2].Value |> int
 
         CardManager.upsert card
-        
+
         TextTable() {
             "已经保存角色，请检查属性值"
             card.ToTextTable()
@@ -38,31 +37,29 @@ type StModule() =
 
 
     [<CommandHandlerMethod(".pc", "角色操作，不带参数查看帮助", "")>]
-    member x.HandlePC(cmdArg : CommandEventArgs) =
+    member x.HandlePC(cmdArg: CommandEventArgs) =
         match SubcommandParser.Parse<PcSubcommands>(cmdArg.HeaderArgs) with
         | None ->
             using
                 (cmdArg.OpenResponse(ForceText))
                 (fun ret ->
-                    let help =
-                        SubcommandParser.GenerateHelp<PcSubcommands>()
+                    let help = SubcommandParser.GenerateHelp<PcSubcommands>()
 
                     for line in help do
                         ret.WriteLine(line))
 
         | Some (New chrName) ->
             // 检查当前角色数量
-            let cc =
-                CardManager.count cmdArg.MessageEvent.UserId
+            let cc = CardManager.count cmdArg.MessageEvent.UserId
 
             if cc >= CardManager.MAX_USER_CARDS then
                 cmdArg.Abort(InputError, "角色数量上限，你已经有{0}张，上限为{1}张。", cc, CardManager.MAX_USER_CARDS)
-                
-            // 检查名字是否被占用
-            let c =
-                CardManager.getByName cmdArg.MessageEvent.UserId chrName
 
-            if c.IsSome then cmdArg.Abort(InputError, "该角色名已被占用")
+            // 检查名字是否被占用
+            let c = CardManager.getByName cmdArg.MessageEvent.UserId chrName
+
+            if c.IsSome then
+                cmdArg.Abort(InputError, "该角色名已被占用")
 
             let card =
                 { CharacterCard.DefaultOf(cmdArg.MessageEvent.UserId) with
@@ -75,16 +72,14 @@ type StModule() =
         | Some List ->
             use ret = cmdArg.OpenResponse(ForceText)
 
-            let cards =
-                CardManager.getCards cmdArg.MessageEvent.UserId
+            let cards = CardManager.getCards cmdArg.MessageEvent.UserId
 
             ret.WriteLine($"当前有角色%i{cards.Length}张：")
 
             for c in cards do
                 ret.WriteLine(c.ChrName)
         | Some (Remove name) ->
-            let card =
-                CardManager.getByName cmdArg.MessageEvent.UserId name
+            let card = CardManager.getByName cmdArg.MessageEvent.UserId name
 
             if card.IsNone then
                 cmdArg.Abort(InputError, $"并不存在指定角色%s{name}")
@@ -94,18 +89,16 @@ type StModule() =
         | Some Clear ->
             let card = CardManager.getCurrentCard cmdArg.MessageEvent.UserId
             card.Props.Clear()
-            
-            CardManager.upsert(card)
+
+            CardManager.upsert (card)
             cmdArg.Reply("已清空所有数据")
-            
+
         | Some Get -> raise <| NotImplementedException("该指令尚未实现")
         | Some (Show opt) ->
-            let card =
-                CardManager.getCurrentCard cmdArg.MessageEvent.UserId
+            let card = CardManager.getCurrentCard cmdArg.MessageEvent.UserId
 
             match opt.SkillName with
-            | None ->
-                cmdArg.Reply(card.ToTextTable(), ForceImage)
+            | None -> cmdArg.Reply(card.ToTextTable(), ForceImage)
             | Some propName ->
                 if card.Props.ContainsKey(propName) then
                     cmdArg.Reply($"{propName}：%i{card.[propName]}")
@@ -114,14 +107,12 @@ type StModule() =
         | Some Lock -> raise <| NotImplementedException("该指令尚未实现")
         | Some Unlock -> raise <| NotImplementedException("该指令尚未实现")
         | Some (Rename name) ->
-            let card =
-                CardManager.getCurrentCard cmdArg.MessageEvent.UserId
+            let card = CardManager.getCurrentCard cmdArg.MessageEvent.UserId
 
             CardManager.upsert { card with ChrName = name }
             cmdArg.Reply($"已改名为：%s{name}")
         | Some (Copy name) ->
-            let card =
-                CardManager.getByName cmdArg.MessageEvent.UserId name
+            let card = CardManager.getByName cmdArg.MessageEvent.UserId name
 
             if card.IsNone then
                 cmdArg.Abort(InputError, $"并不存在指定角色%s{name}")
@@ -131,10 +122,10 @@ type StModule() =
             | Some AtUserType.All -> cmdArg.Abort(InputError, "DD不可取")
             | Some (AtUserType.User uid) ->
                 // 检查接收方是否有同名卡
-                let tCard =
-                    CardManager.getByName uid card.Value.ChrName
+                let tCard = CardManager.getByName uid card.Value.ChrName
 
-                if tCard.IsSome then cmdArg.Abort(InputError, "接收方已有同名卡")
+                if tCard.IsSome then
+                    cmdArg.Abort(InputError, "接收方已有同名卡")
 
                 let copy =
                     { card.Value with
@@ -145,8 +136,7 @@ type StModule() =
 
                 cmdArg.Reply($"已复制到%i{uid.Value}，名称：%s{copy.ChrName}")
         | Some (Set name) ->
-            let card =
-                CardManager.getByName cmdArg.MessageEvent.UserId name
+            let card = CardManager.getByName cmdArg.MessageEvent.UserId name
 
             if card.IsNone then
                 cmdArg.Abort(InputError, $"并不存在指定角色%s{name}")

@@ -8,8 +8,7 @@ open KPX.DicePlugin.TRpgModule.Coc7
 type StShowCommandOpts() as x =
     inherit OptionBase()
 
-    let skillName =
-        OptionCellSimple(x, "skill", "", ArgIndex = Some 0)
+    let skillName = OptionCellSimple(x, "skill", "", ArgIndex = Some 0)
 
     member x.SkillName =
         if skillName.IsDefined then
@@ -20,19 +19,19 @@ type StShowCommandOpts() as x =
             None
 
 type PcSubcommands =
-    | New of chrName : string
+    | New of chrName: string
     | List
-    | [<AltCommandName("rm")>] Remove of name : string
+    | [<AltCommandName("rm")>] Remove of name: string
     | [<AltCommandName("clr")>] Clear
     /// 只返回属性值和非默认值的技能（啥意思？）
     | Get
     | Show of StShowCommandOpts
     | Lock
     | Unlock
-    | Rename of newName : string
-    | Set of name : string
+    | Rename of newName: string
+    | Set of name: string
     /// at单独获取
-    | [<AltCommandName("cp")>] Copy of fromName : string
+    | [<AltCommandName("cp")>] Copy of fromName: string
 
     interface ISubcommandTemplate with
         member x.Usage =

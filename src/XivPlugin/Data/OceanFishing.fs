@@ -29,14 +29,13 @@ let private RouteDefine =
 
            yield $"%s{routeName}_%s{timeStr}" |]
 
-let private RefDate =
-    DateTimeOffset.Parse("2020/2/21 20:00 +08:00")
+let private RefDate = DateTimeOffset.Parse("2020/2/21 20:00 +08:00")
 
 let private RefDateOffset = 10
 
 let rm = ResxManager("XivPlugin.XivOceanFishing")
 
-let GetWindowMessage (key : string) =
+let GetWindowMessage (key: string) =
     let msg = rm.GetString(key)
 
     if isNull msg then
@@ -44,7 +43,7 @@ let GetWindowMessage (key : string) =
     else
         msg.Split([| "\r\n"; "\r"; "\n" |], StringSplitOptions.None)
 
-let CalculateCooldown (now : DateTimeOffset) =
+let CalculateCooldown (now: DateTimeOffset) =
     // 进位到最近的CD
     let next, now =
         if (now.Hour % 2) = 0 && now.Minute <= 15 then
@@ -56,12 +55,9 @@ let CalculateCooldown (now : DateTimeOffset) =
 
     let span = now - RefDate
 
-    let offset =
-        (int span.TotalHours) % (RouteTable.Length * 2)
-        / 2
+    let offset = (int span.TotalHours) % (RouteTable.Length * 2) / 2
 
-    let idx =
-        (RefDateOffset + offset) % RouteTable.Length
+    let idx = (RefDateOffset + offset) % RouteTable.Length
 
     let rid = RouteTable.[idx]
 
@@ -75,8 +71,7 @@ let CalculateCooldown (now : DateTimeOffset) =
 
 type OceanFishingTest() =
     inherit DataTest()
-    
+
     override x.RunTest() =
-         for i = 0 to 72 do
-             CalculateCooldown(DateTimeOffset.Now.AddHours((float i) * 2.0))
-             |> ignore
+        for i = 0 to 72 do
+            CalculateCooldown(DateTimeOffset.Now.AddHours((float i) * 2.0)) |> ignore

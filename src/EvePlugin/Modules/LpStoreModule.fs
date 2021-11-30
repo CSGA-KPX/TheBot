@@ -38,7 +38,7 @@ type EveLpStoreModule() =
     let data = DataBundle.Instance
     let pm = EveProcessManager.Default
 
-    member x.ShowOverview(cmdArg : CommandEventArgs, cfg : LpConfigParser) =
+    member x.ShowOverview(cmdArg: CommandEventArgs, cfg: LpConfigParser) =
         let minVol = cfg.MinimalVolume
         let minVal = cfg.MinimalValue
 
@@ -84,18 +84,14 @@ type EveLpStoreModule() =
                 let oProc = lpOffer.CastProcess()
                 let itemOffer = oProc.GetFirstProduct()
 
-                let offerStr =
-                    $"%s{itemOffer.Item.Name}*%g{itemOffer.Quantity}"
+                let offerStr = $"%s{itemOffer.Item.Name}*%g{itemOffer.Quantity}"
 
                 let mutable totalCost = 0.0 // 所有ISK开销（如果是蓝图，还有材料开销）
                 let mutable dailyVolume = 0.0 // 日均交易量
                 let mutable sellPrice = 0.0 // 产物卖出价格
 
                 // LP交换
-                totalCost <-
-                    totalCost
-                    + oProc.Input.GetPrice(cfg.MaterialPriceMode)
-                    + lpOffer.IskCost
+                totalCost <- totalCost + oProc.Input.GetPrice(cfg.MaterialPriceMode) + lpOffer.IskCost
 
                 if itemOffer.Item.IsBlueprint then
                     let recipe = pm.GetRecipe(itemOffer)
@@ -122,10 +118,7 @@ type EveLpStoreModule() =
                    Volume = dailyVolume
                    DailyOfferVolume = dailyVolume / itemOffer.Quantity
                    LpCost = lpOffer.LpCost |})
-        |> Seq.filter
-            (fun r ->
-                (r.ProfitPerLp >= minVal)
-                && (r.DailyOfferVolume >= minVol))
+        |> Seq.filter (fun r -> (r.ProfitPerLp >= minVal) && (r.DailyOfferVolume >= minVol))
         |> Seq.sortByDescending (fun r -> r.ProfitPerLp)
         |> Seq.truncate cfg.RecordCount
         |> Seq.iter
@@ -140,7 +133,7 @@ type EveLpStoreModule() =
                 |> ignore)
 
 
-    member x.ShowSingleItem(cmdArg : CommandEventArgs, cfg : LpConfigParser) =
+    member x.ShowSingleItem(cmdArg: CommandEventArgs, cfg: LpConfigParser) =
         let corp =
             let cmd = cfg.NonOptionStrings.[0]
 
@@ -150,8 +143,7 @@ type EveLpStoreModule() =
             data.GetNpcCorporation(cmd)
 
         let item =
-            let name =
-                String.Join(' ', cfg.NonOptionStrings |> Seq.tail)
+            let name = String.Join(' ', cfg.NonOptionStrings |> Seq.tail)
 
             let ret = data.TryGetItem(name)
 
@@ -257,8 +249,7 @@ type EveLpStoreModule() =
 
             materialPriceSum <- materialPriceSum + proc.GetInstallationCost(cfg)
 
-            let sellPrice =
-                recipe.Output.GetPrice(PriceFetchMode.SellWithTax)
+            let sellPrice = recipe.Output.GetPrice(PriceFetchMode.SellWithTax)
 
             let profit = sellPrice - materialPriceSum
             let bpProduct = recipe.GetFirstProduct()
@@ -273,8 +264,7 @@ type EveLpStoreModule() =
             }
             |> ignore
         else
-            let sellPrice =
-                mProc.Output.GetPrice(PriceFetchMode.SellWithTax)
+            let sellPrice = mProc.Output.GetPrice(PriceFetchMode.SellWithTax)
 
             let profit = sellPrice - materialPriceSum
 
@@ -300,7 +290,7 @@ type EveLpStoreModule() =
                            "#evelp 军团名 [道具名] [vol:2] [val:2000] [count:50] [buy:]
 []内为可选参数。如果指定道具名则查询目标军团指定兑换的详细信息。
 参数说明：vol 最低交易量比，val 最低LP价值，count 结果数量上限，buy 更改为买单价格")>]
-    member x.HandleEveLp(cmdArg : CommandEventArgs) =
+    member x.HandleEveLp(cmdArg: CommandEventArgs) =
         let cfg = LpConfigParser()
         cfg.Parse(cmdArg.HeaderArgs)
 

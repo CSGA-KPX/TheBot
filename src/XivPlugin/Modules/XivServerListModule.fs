@@ -11,7 +11,7 @@ type ServerListModule() =
     inherit CommandHandlerBase()
 
     [<CommandHandlerMethod("#ffsrv", "检查Bot可用的FF14服务器/大区名称", "")>]
-    member x.HandleFFCmdHelp(_ : CommandEventArgs) =
+    member x.HandleFFCmdHelp(_: CommandEventArgs) =
         TextTable(ForceImage) {
             let colsNum = 5 // 每行5个名字
 
@@ -21,8 +21,7 @@ type ServerListModule() =
             }
 
             [ for chunk in World.DataCenterNames |> Seq.chunkBySize colsNum do
-                  chunk
-                  |> Array.map (fun name -> CellBuilder() { literal name }) ]
+                  chunk |> Array.map (fun name -> CellBuilder() { literal name }) ]
 
             CellBuilder() {
                 literal "可用服务器及缩写有："
@@ -30,8 +29,7 @@ type ServerListModule() =
             }
 
             [ for chunk in World.WorldNames |> Seq.chunkBySize colsNum do
-                  chunk
-                  |> Array.map (fun name -> CellBuilder() { literal name }) ]
+                  chunk |> Array.map (fun name -> CellBuilder() { literal name }) ]
 
         }
 

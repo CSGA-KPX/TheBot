@@ -5,7 +5,7 @@ open KPX.FsCqHttp.Message
 open KPX.FsCqHttp.Api
 
 
-type SendGroupMsg(groupId : GroupId, message : ReadOnlyMessage) =
+type SendGroupMsg(groupId: GroupId, message: ReadOnlyMessage) =
     inherit CqHttpApiBase("send_group_msg")
 
     override x.WriteParams(w, js) =

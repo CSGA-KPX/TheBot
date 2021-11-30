@@ -11,8 +11,8 @@ open KPX.TheBot.Host.DataCache
 [<CLIMutable>]
 type NpcCorporation =
     { [<LiteDB.BsonId(false)>]
-      Id : int
-      CorporationName : string }
+      Id: int
+      CorporationName: string }
 
 type NpcCorporationCollection private () =
     inherit CachedTableCollection<int, NpcCorporation>()
@@ -30,11 +30,9 @@ type NpcCorporationCollection private () =
         |> ignore
 
         seq {
-            use archive =
-                KPX.EvePlugin.Data.Utils.GetEveDataArchive()
+            use archive = KPX.EvePlugin.Data.Utils.GetEveDataArchive()
 
-            use f =
-                archive.GetEntry("npccorporations.json").Open()
+            use f = archive.GetEntry("npccorporations.json").Open()
 
             use r = new JsonTextReader(new StreamReader(f))
 
@@ -49,13 +47,15 @@ type NpcCorporationCollection private () =
         |> x.DbCollection.InsertBulk
         |> ignore
 
-    member x.GetByName(name : string) =
+    member x.GetByName(name: string) =
         x.PassOrRaise(x.TryGetByName(name), "找不到军团:{0}", name)
 
-    member x.TryGetByName(name : string) =
+    member x.TryGetByName(name: string) =
         let bson = LiteDB.BsonValue(name)
 
-        let ret =
-            x.DbCollection.FindOne(LiteDB.Query.EQ("CorporationName", bson))
+        let ret = x.DbCollection.FindOne(LiteDB.Query.EQ("CorporationName", bson))
 
-        if isNull (box ret) then None else Some ret
+        if isNull (box ret) then
+            None
+        else
+            Some ret

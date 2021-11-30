@@ -19,11 +19,9 @@ type CraftRecipeProvider private () =
     override x.InitializeCollection() =
         let db = x.DbCollection
 
-        db.EnsureIndex(LiteDB.BsonExpression.Create("_id"), true)
-        |> ignore
+        db.EnsureIndex(LiteDB.BsonExpression.Create("_id"), true) |> ignore
 
-        db.EnsureIndex(LiteDB.BsonExpression.Create("Process.Output[0].Item"))
-        |> ignore
+        db.EnsureIndex(LiteDB.BsonExpression.Create("Process.Output[0].Item")) |> ignore
 
         let col = XivProvider.XivCollectionChs
 
@@ -53,7 +51,9 @@ type CraftRecipeProvider private () =
         override x.TryGetRecipe(item) =
             let id = LiteDB.BsonValue(item.Id)
 
-            let ret =
-                x.DbCollection.FindOne(LiteDB.Query.EQ("Process.Output[0].Item", id))
+            let ret = x.DbCollection.FindOne(LiteDB.Query.EQ("Process.Output[0].Item", id))
 
-            if isNull (box ret) then None else Some(ret.CastProcess())
+            if isNull (box ret) then
+                None
+            else
+                Some(ret.CastProcess())

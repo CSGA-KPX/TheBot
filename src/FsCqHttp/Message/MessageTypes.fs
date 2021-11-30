@@ -14,5 +14,8 @@ type AtUserType =
         | User x -> x |> string
 
     /// 将CQ码中字符串转换为AtUserType
-    static member internal FromString(str : string) =
-        if str = "all" then All else User(str |> uint64 |> UserId)
+    static member internal FromString(str: string) =
+        if str = "all" then
+            All
+        else
+            User(str |> uint64 |> UserId)

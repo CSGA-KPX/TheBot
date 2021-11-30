@@ -17,8 +17,8 @@ open Newtonsoft.Json.Linq
 /// 对消息事件的简单包装
 /// 提供群事件和私聊事件的共同属性
 type MessageEvent =
-    | Private of privateMsg : PrivateMessageEvent
-    | Group of groupMsg : GroupMessageEvent
+    | Private of privateMsg: PrivateMessageEvent
+    | Group of groupMsg: GroupMessageEvent
     /// 字体
     [<JsonIgnore>]
     member x.Font =
@@ -33,31 +33,31 @@ type MessageEvent =
         | MessageEvent.Private p -> p.Message
     /// 消息Id
     [<JsonIgnore>]
-    member x.MessageId = 
+    member x.MessageId =
         match x with
         | MessageEvent.Group g -> g.MessageId
         | MessageEvent.Private p -> p.MessageId
     /// 上报类型
     [<JsonIgnore>]
-    member x.MessageType = 
+    member x.MessageType =
         match x with
         | MessageEvent.Group g -> g.MessageType
         | MessageEvent.Private p -> p.MessageType
     /// 收到事件的机器人 QQ 号
     [<JsonIgnore>]
-    member x.SelfId = 
+    member x.SelfId =
         match x with
         | MessageEvent.Group g -> g.SelfId
         | MessageEvent.Private p -> p.SelfId
     /// 事件发生的时间戳
     [<JsonIgnore>]
-    member x.Time = 
+    member x.Time =
         match x with
         | MessageEvent.Group g -> g.Time
         | MessageEvent.Private p -> p.Time
     /// 发送者 QQ 号
     [<JsonIgnore>]
-    member x.UserId = 
+    member x.UserId =
         match x with
         | MessageEvent.Group g -> g.UserId
         | MessageEvent.Private p -> p.UserId
@@ -71,13 +71,12 @@ type MessageEvent =
             if g.Anonymous.IsSome then
                 // 如果有匿名字段，取匿名名称
                 g.Anonymous.Value.Name
+            else if String.IsNullOrEmpty(g.Sender.Card) then
+                // 如果群名片为空，则取昵称
+                g.Sender.Nickname
             else
-                if String.IsNullOrEmpty(g.Sender.Card) then
-                    // 如果群名片为空，则取昵称
-                    g.Sender.Nickname
-                else
-                    // 否则取群名片
-                    g.Sender.Card
+                // 否则取群名片
+                g.Sender.Card
 
     /// 强制转换为群事件
     /// 非群事件抛出ArgumentException
@@ -85,22 +84,22 @@ type MessageEvent =
         match x with
         | MessageEvent.Group g -> g
         | _ -> invalidArg "MessageEvent" "此消息不是群消息"
-        
+
     /// 强制转换为私聊事件
     /// 非群事件抛出ArgumentException
     member x.AsPrivate() =
         match x with
         | MessageEvent.Private p -> p
         | _ -> invalidArg "MessageEvent" "此消息不是私聊消息"
-    
+
     /// 使用QuickOperation API应答事件
-    member x.Response(msg : ReadOnlyMessage) =
+    member x.Response(msg: ReadOnlyMessage) =
         match x with
         | MessageEvent.Private _ -> PrivateMessageResponse(msg)
         | MessageEvent.Group _ -> GroupMessageResponse(msg, false, false, false, false, 0)
 
     /// 使用QuickOperation API应答事件
-    member x.Response(str : string) =
+    member x.Response(str: string) =
         let msg = Message()
         msg.Add(str)
         x.Response(msg)
@@ -109,12 +108,7 @@ type MessageEvent =
 type MessageEventConverter() =
     inherit JsonConverter<MessageEvent>()
 
-    override this.WriteJson
-        (
-            writer : JsonWriter,
-            value : MessageEvent,
-            serializer : JsonSerializer
-        ) : unit =
+    override this.WriteJson(writer: JsonWriter, value: MessageEvent, serializer: JsonSerializer) : unit =
         match value with
         | MessageEvent.Private p -> serializer.Serialize(writer, p)
         | MessageEvent.Group g -> serializer.Serialize(writer, g)
@@ -123,70 +117,66 @@ type MessageEventConverter() =
         let obj = JObject.Load(reader)
 
         match obj.["message_type"].ToObject<MessageType>() with
-        | MessageType.Group ->
-            obj.ToObject<GroupMessageEvent>()
-            |> MessageEvent.Group
-        | MessageType.Private ->
-            obj.ToObject<PrivateMessageEvent>()
-            |> MessageEvent.Private
+        | MessageType.Group -> obj.ToObject<GroupMessageEvent>() |> MessageEvent.Group
+        | MessageType.Private -> obj.ToObject<PrivateMessageEvent>() |> MessageEvent.Private
 
 [<CLIMutable>]
 /// 私聊消息事件
 type PrivateMessageEvent =
     { [<JsonProperty("time")>]
-      Time : int64
+      Time: int64
       [<JsonProperty("self_id")>]
-      SelfId : UserId
+      SelfId: UserId
       [<JsonProperty("message_type")>]
-      MessageType : MessageType
+      MessageType: MessageType
       [<JsonProperty("sub_type")>]
-      SubType : PrivateMessageSubtype
+      SubType: PrivateMessageSubtype
       [<JsonProperty("message_id")>]
-      MessageId : MessageId
+      MessageId: MessageId
       [<JsonProperty("user_id")>]
-      UserId : UserId
+      UserId: UserId
       [<JsonProperty("message")>]
-      Message : ReadOnlyMessage
+      Message: ReadOnlyMessage
       [<JsonProperty("font")>]
-      Font : int32
+      Font: int32
       [<JsonProperty("sender")>]
-      Sender : PrivateSender }
+      Sender: PrivateSender }
 
 [<CLIMutable>]
 /// 群消息事件
 type GroupMessageEvent =
     { [<JsonProperty("time")>]
-      Time : int64
+      Time: int64
       [<JsonProperty("self_id")>]
-      SelfId : UserId
+      SelfId: UserId
       [<JsonProperty("message_type")>]
-      MessageType : MessageType
+      MessageType: MessageType
       [<JsonProperty("sub_type")>]
-      SubType : GroupMessageSubtype
+      SubType: GroupMessageSubtype
       [<JsonProperty("message_id")>]
-      MessageId : MessageId
+      MessageId: MessageId
       [<JsonProperty("group_id")>]
-      GroupId : GroupId
+      GroupId: GroupId
       [<JsonProperty("user_id")>]
-      UserId : UserId
+      UserId: UserId
       [<JsonProperty("anonymous")>]
       [<JsonConverter(typeof<AnonymousUserOptionConverter>)>]
-      Anonymous : AnonymousUser option
+      Anonymous: AnonymousUser option
       [<JsonProperty("message")>]
-      Message : ReadOnlyMessage
+      Message: ReadOnlyMessage
       [<JsonProperty("font")>]
-      Font : int32
+      Font: int32
       [<JsonProperty("sender")>]
-      Sender : GroupSender }
-    
+      Sender: GroupSender }
+
     member x.Response
         (
-            msg : ReadOnlyMessage,
-            ?atSender : bool,
-            ?delete : bool,
-            ?kick : bool,
-            ?ban : bool,
-            ?banDuration : int
+            msg: ReadOnlyMessage,
+            ?atSender: bool,
+            ?delete: bool,
+            ?kick: bool,
+            ?ban: bool,
+            ?banDuration: int
         ) =
         let atSender = defaultArg atSender false
         let delete = defaultArg delete false
@@ -195,15 +185,7 @@ type GroupMessageEvent =
         let banDuration = defaultArg banDuration 0
         GroupMessageResponse(msg, atSender, delete, kick, ban, banDuration)
 
-    member x.Response
-        (
-            str : string,
-            ?atSender : bool,
-            ?delete : bool,
-            ?kick : bool,
-            ?ban : bool,
-            ?banDuration : int
-        ) =
+    member x.Response(str: string, ?atSender: bool, ?delete: bool, ?kick: bool, ?ban: bool, ?banDuration: int) =
         let atSender = defaultArg atSender false
         let delete = defaultArg delete false
         let kick = defaultArg kick false

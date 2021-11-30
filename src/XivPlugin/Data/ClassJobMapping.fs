@@ -9,8 +9,8 @@ open KPX.TheBot.Host.DataCache
 [<CLIMutable>]
 type ClassJobMapping =
     { [<LiteDB.BsonId(false)>]
-      Id : string
-      Value : string }
+      Id: string
+      Value: string }
 
 type ClassJobMappingCollection private () =
     inherit CachedTableCollection<string, ClassJobMapping>()
@@ -40,5 +40,5 @@ type ClassJobMappingCollection private () =
         |> db.InsertBulk
         |> ignore
 
-    member x.SearchByName(name : string) = x.DbCollection.SafeFindById(name)
-    member x.TrySearchByName(name : string) = x.DbCollection.TryFindById(name)
+    member x.SearchByName(name: string) = x.DbCollection.SafeFindById(name)
+    member x.TrySearchByName(name: string) = x.DbCollection.TryFindById(name)

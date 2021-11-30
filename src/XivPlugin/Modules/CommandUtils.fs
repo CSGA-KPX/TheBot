@@ -9,7 +9,7 @@ let XivSpecialChars =
     [| '\ue03c' // HQ
        '\ue03d' |] //收藏品
 
-type XivWorldOpt(cb : CommandOption, key, defVal) =
+type XivWorldOpt(cb: CommandOption, key, defVal) =
     inherit OptionCell<World>(cb, key, defVal)
 
     override x.ConvertValue(name) = World.GetWorldByName(name)
@@ -31,9 +31,7 @@ type XivOption() as x =
                 elif World.DefinedDC(arg) then
                     let dc = World.GetDCByName(arg)
 
-                    let ss =
-                        World.GetWorldsByDC(dc)
-                        |> Seq.map (fun x -> $"world:%s{x.WorldName}")
+                    let ss = World.GetWorldsByDC(dc) |> Seq.map (fun x -> $"world:%s{x.WorldName}")
 
                     yield! ss
                 else

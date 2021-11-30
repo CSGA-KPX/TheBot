@@ -20,13 +20,13 @@ type SudoModule() =
     inherit CommandHandlerBase()
 
     let allowList = Collections.Generic.HashSet<string>()
-    let allowQqFmt (self : UserId) (uid : UserId) = $"%i{self.Value}:qq:%i{uid.Value}"
-    let allowGroupFmt (self : UserId) (gid : GroupId) = $"%i{self.Value}:group:%i{gid.Value}"
+    let allowQqFmt (self: UserId) (uid: UserId) = $"%i{self.Value}:qq:%i{uid.Value}"
+    let allowGroupFmt (self: UserId) (gid: GroupId) = $"%i{self.Value}:group:%i{gid.Value}"
 
     let mutable isSuUsed = false
 
     [<CommandHandlerMethod("##su", "提交凭据，添加当前用户为超管", "", IsHidden = true)>]
-    member x.HandleSu(cmdArg : CommandEventArgs) =
+    member x.HandleSu(cmdArg: CommandEventArgs) =
         if isSuUsed then
             cmdArg.Reply("本次认证已被使用")
         else
@@ -40,8 +40,7 @@ type SudoModule() =
                         .ToString(SHA256.Create().ComputeHash(data))
                         .Replace("-", "")
 
-                let isMatch =
-                    cmdArg.HeaderLine.ToUpperInvariant().Contains(hex)
+                let isMatch = cmdArg.HeaderLine.ToUpperInvariant().Contains(hex)
 
                 if isMatch then
                     let uid = cmdArg.MessageEvent.UserId
@@ -58,7 +57,7 @@ type SudoModule() =
                 cmdArg.Reply($"请提供SHA256(%s{file})")
 
     [<CommandHandlerMethod("##grant", "（超管）添加用户为管理员", "", IsHidden = true)>]
-    member x.HandleGrant(cmdArg : CommandEventArgs) =
+    member x.HandleGrant(cmdArg: CommandEventArgs) =
         cmdArg.EnsureSenderOwner()
 
         let uo = CommandOption()
@@ -76,35 +75,33 @@ type SudoModule() =
         cmdArg.Reply(sb.ToString())
 
     [<CommandHandlerMethod("##admins", "（超管）显示当前机器人管理账号", "", IsHidden = true)>]
-    member x.HandleShowBotAdmins(cmdArg : CommandEventArgs) =
+    member x.HandleShowBotAdmins(cmdArg: CommandEventArgs) =
         cmdArg.EnsureSenderOwner()
         let admins = cmdArg.GetBotAdmins()
         let ret = String.Join("\r\n", admins)
         cmdArg.Reply(ret)
 
     [<CommandHandlerMethod("##showgroups", "（超管）检查加群信息", "", IsHidden = true)>]
-    member x.HandleShowGroups(cmdArg : CommandEventArgs) =
+    member x.HandleShowGroups(cmdArg: CommandEventArgs) =
         cmdArg.EnsureSenderOwner()
         let api = cmdArg.ApiCaller.CallApi<GetGroupList>()
 
         TextTable(ForceImage) {
-            [ CellBuilder() { literal "群号" }
-              CellBuilder() { literal "名称" } ]
+            [ CellBuilder() { literal "群号" }; CellBuilder() { literal "名称" } ]
 
             [ for g in api.Groups do
-                  [ CellBuilder() { literal g.GroupId.Value }
-                    CellBuilder() { literal g.GroupName } ] ]
+                  [ CellBuilder() { literal g.GroupId.Value }; CellBuilder() { literal g.GroupName } ] ]
         }
 
     [<CommandHandlerMethod("##abortall", "（超管）断开所有WS连接", "", IsHidden = true)>]
-    member x.HandleShowAbortAll(cmdArg : CommandEventArgs) =
+    member x.HandleShowAbortAll(cmdArg: CommandEventArgs) =
         cmdArg.EnsureSenderOwner()
 
         for ctx in KPX.FsCqHttp.Instance.CqWsContextPool.Instance do
             ctx.Stop()
 
     [<CommandHandlerMethod("##allow", "(管理) 允许好友、加群请求", "", IsHidden = true)>]
-    member x.HandleAllow(cmdArg : CommandEventArgs) =
+    member x.HandleAllow(cmdArg: CommandEventArgs) =
 
         let uo = CommandOption()
         let qq = uo.RegisterOption("qq", 0UL)
@@ -114,16 +111,14 @@ type SudoModule() =
         if group.IsDefined then
             cmdArg.EnsureSenderAdmin()
 
-            let key =
-                allowGroupFmt cmdArg.BotUserId (GroupId group.Value)
+            let key = allowGroupFmt cmdArg.BotUserId (GroupId group.Value)
 
             allowList.Add(key) |> ignore
             cmdArg.Reply $"接受来自[%s{key}]的邀请"
         elif qq.IsDefined then
             cmdArg.EnsureSenderAdmin()
 
-            let key =
-                allowQqFmt cmdArg.BotUserId (UserId qq.Value)
+            let key = allowQqFmt cmdArg.BotUserId (UserId qq.Value)
 
             allowList.Add(key) |> ignore
             cmdArg.Reply $"接受来自[%s{key}]的邀请"
@@ -134,7 +129,7 @@ type SudoModule() =
             cmdArg.Reply(sb.ToString())
 
     [<CommandHandlerMethod("##紧急停止", "停止所有指令和事件处理", "", IsHidden = true)>]
-    member x.HandleShutdown(cmdArg : CommandEventArgs) =
+    member x.HandleShutdown(cmdArg: CommandEventArgs) =
         cmdArg.EnsureSenderOwner()
 
         let m =
@@ -149,8 +144,7 @@ type SudoModule() =
         m.TestCallbacks.Clear()
         m.MessageCallbacks.Clear()
 
-        let act =
-            Action<CommandEventArgs>(fun cmdArg -> cmdArg.Reply("Bot故障：信息处理已禁用"))
+        let act = Action<CommandEventArgs>(fun cmdArg -> cmdArg.Reply("Bot故障：信息处理已禁用"))
 
         for kv in m.Commands do
             m.Commands.[kv.Key] <-
@@ -161,7 +155,7 @@ type SudoModule() =
         cmdArg.Reply("已完成紧急停止操作")
 
     [<CommandHandlerMethod("##combo", "一次执行多个命令", "", IsHidden = true)>]
-    member x.HandleCombo(cmdArg : CommandEventArgs) =
+    member x.HandleCombo(cmdArg: CommandEventArgs) =
         cmdArg.EnsureSenderAdmin()
 
         let api = RewriteCommand(cmdArg, cmdArg.AllLines)
@@ -173,15 +167,12 @@ type SudoModule() =
     member x.HandleRequest(args) =
         match args.Event with
         | FriendRequest req ->
-            let inList =
-                allowList.Contains(allowQqFmt args.BotUserId req.UserId)
+            let inList = allowList.Contains(allowQqFmt args.BotUserId req.UserId)
 
-            let isAdmin =
-                args.GetBotAdmins().Contains(req.UserId.Value)
+            let isAdmin = args.GetBotAdmins().Contains(req.UserId.Value)
 
             args.Reply(FriendAddResponse(inList || isAdmin, ""))
         | GroupRequest req ->
-            let inList =
-                allowList.Contains(allowGroupFmt args.BotUserId req.GroupId)
+            let inList = allowList.Contains(allowGroupFmt args.BotUserId req.GroupId)
 
             args.Reply(GroupAddResponse(inList, ""))

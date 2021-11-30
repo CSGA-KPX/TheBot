@@ -21,7 +21,7 @@ type ProcessTest() =
                 member x.ExpandReaction = false }
         )
 
-    let process2Dict (proc : RecipeProcess<EveType>) =
+    let process2Dict (proc: RecipeProcess<EveType>) =
         seq {
             for i in proc.Input do
                 yield i.Item.Name, i.Quantity |> int
@@ -32,13 +32,11 @@ type ProcessTest() =
         |> readOnlyDict
 
     member private x.TestInputBlueprint() =
-        let ret =
-            rm.TryGetRecipe(ec.TryGetByName("麦基诺级蓝图").Value, ByItem 1.0)
+        let ret = rm.TryGetRecipe(ec.TryGetByName("麦基诺级蓝图").Value, ByItem 1.0)
 
         Expect.isSome ret
 
-        let d =
-            process2Dict (ret.Value.ApplyFlags(ProcessFlag.MeApplied))
+        let d = process2Dict (ret.Value.ApplyFlags(ProcessFlag.MeApplied))
 
         Expect.equal d.["建筑模块"] 146
         Expect.equal d.["莫尔石"] 107
@@ -53,13 +51,11 @@ type ProcessTest() =
         Expect.equal d.["回旋者级"] 1
 
     member private x.TestInputItem() =
-        let ret =
-            rm.TryGetRecipe(ec.TryGetByName("麦基诺级").Value, ByItem 1.0)
+        let ret = rm.TryGetRecipe(ec.TryGetByName("麦基诺级").Value, ByItem 1.0)
 
         Expect.isSome ret
 
-        let d =
-            process2Dict (ret.Value.ApplyFlags(ProcessFlag.MeApplied))
+        let d = process2Dict (ret.Value.ApplyFlags(ProcessFlag.MeApplied))
 
         Expect.equal d.["建筑模块"] 146
         Expect.equal d.["莫尔石"] 107
@@ -74,8 +70,7 @@ type ProcessTest() =
         Expect.equal d.["回旋者级"] 1
 
     member private x.TestInputItemRec() =
-        let ret =
-            rm.TryGetRecipeRecMe(ec.TryGetByName("麦基诺级").Value, ByItem 1.0)
+        let ret = rm.TryGetRecipeRecMe(ec.TryGetByName("麦基诺级").Value, ByItem 1.0)
 
         Expect.isSome ret
 
@@ -106,11 +101,9 @@ type ProcessTest() =
     member private x.RefineOre() =
         let ore = ec.TryGetByName("凡晶石").Value
 
-        let refine =
-            RefineProcessCollection.Instance.GetProcessFor(ore)
+        let refine = RefineProcessCollection.Instance.GetProcessFor(ore)
 
-        let d =
-            process2Dict (refine.ApplyFlags(ProcessFlag.MeApplied))
+        let d = process2Dict (refine.ApplyFlags(ProcessFlag.MeApplied))
 
         System.Console.Write $"%A{refine}"
         Expect.equal d.["三钛合金"] 400
@@ -118,13 +111,11 @@ type ProcessTest() =
     member private x.RefineIce() =
         let ore = ec.TryGetByName("冰晶矿").Value
 
-        let refine =
-            RefineProcessCollection.Instance.GetProcessFor(ore)
+        let refine = RefineProcessCollection.Instance.GetProcessFor(ore)
 
         System.Console.Write $"%A{refine}"
 
-        let d =
-            process2Dict (refine.ApplyFlags(ProcessFlag.MeApplied))
+        let d = process2Dict (refine.ApplyFlags(ProcessFlag.MeApplied))
 
         Expect.equal d.["重水"] 173
         Expect.equal d.["液化臭氧"] 691

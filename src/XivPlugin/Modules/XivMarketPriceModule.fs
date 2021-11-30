@@ -31,8 +31,7 @@ type XivMarketPriceModule() =
     let itemCol = ItemCollection.Instance
     let xivExpr = XivExpression.XivExpression()
 
-    let universalis =
-        UniversalisMarketCache.MarketInfoCollection.Instance
+    let universalis = UniversalisMarketCache.MarketInfoCollection.Instance
 
     [<TestFixture>]
     member x.TestXivMarket() =
@@ -48,7 +47,7 @@ text 以文本格式输出结果
 分区/服务器名 调整查询分区下的所有服务器。见#ff14help
 #fm 一区 风之水晶 text:
 #fm 拉诺 紫水 风之水晶")>]
-    member x.HandleXivMarket(cmdArg : CommandEventArgs) =
+    member x.HandleXivMarket(cmdArg: CommandEventArgs) =
         let opt = CommandUtils.XivOption()
         opt.Parse(cmdArg.HeaderArgs)
 
@@ -132,16 +131,13 @@ text 以文本格式输出结果
 
               for mr in acc do
                   for world in worlds do
-                      let uni =
-                          universalis.GetMarketInfo(world, mr.Item)
+                      let uni = universalis.GetMarketInfo(world, mr.Item)
 
                       let tradelog = uni.GetTradeLogAnalyzer()
                       let listing = uni.GetListingAnalyzer()
                       let mutable updated = TimeSpan.MaxValue
 
-                      let lstAll =
-                          listing.TakeVolume(25).StdEvPrice().Average
-                          * mr.Quantity
+                      let lstAll = listing.TakeVolume(25).StdEvPrice().Average * mr.Quantity
 
                       let lstHq =
                           listing.TakeHQ().TakeVolume(25).StdEvPrice()
@@ -152,12 +148,9 @@ text 以文本格式输出结果
                       sumListingAll <- sumListingAll + lstAll
                       sumListingHq <- sumListingHq + lstHq
 
-                      let logAll =
-                          tradelog.StdEvPrice().Average * mr.Quantity
+                      let logAll = tradelog.StdEvPrice().Average * mr.Quantity
 
-                      let logHq =
-                          tradelog.TakeHQ().StdEvPrice().Average
-                          * mr.Quantity
+                      let logHq = tradelog.TakeHQ().StdEvPrice().Average * mr.Quantity
 
                       updated <- min updated (tradelog.LastUpdateTime())
                       sumTradeAll <- sumTradeAll + logAll

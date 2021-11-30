@@ -14,28 +14,26 @@ open LiteDB
 [<CLIMutable>]
 type CraftLeveInfo =
     { [<BsonId(false)>]
-      Id : int
-      Level : int
-      Repeats : int
-      Items : RecipeMaterial<int> []
-      ClassJob : string
-      GilReward : int }
+      Id: int
+      Level: int
+      Repeats: int
+      Items: RecipeMaterial<int> []
+      ClassJob: string
+      GilReward: int }
 
 type CraftLeveInfoCollection private () =
     inherit CachedTableCollection<string, CraftLeveInfo>()
     static let instance = CraftLeveInfoCollection()
     static member Instance = instance
 
-    override x.Depends =
-        Array.singleton typeof<ClassJobMappingCollection>
+    override x.Depends = Array.singleton typeof<ClassJobMappingCollection>
 
     override x.IsExpired = false
 
     override x.InitializeCollection() =
         let db = x.DbCollection
 
-        db.EnsureIndex(BsonExpression.Create("ClassJob"))
-        |> ignore
+        db.EnsureIndex(BsonExpression.Create("ClassJob")) |> ignore
 
         let col = KPX.XivPlugin.Data.XivProvider.XivCollectionChs
 
@@ -46,7 +44,9 @@ type CraftLeveInfoCollection private () =
                 acc.Clear()
 
                 Array.iter2
-                    (fun item count -> if item <> 0 then acc.Update(item, count))
+                    (fun item count ->
+                        if item <> 0 then
+                            acc.Update(item, count))
                     (row.Item.AsInts())
                     (row.ItemCount.AsDoubles())
 
@@ -77,10 +77,9 @@ type CraftLeveInfoCollection private () =
         |> db.InsertBulk
         |> ignore
 
-    member x.GetById(id : int) = x.DbCollection.SafeFindById(id)
+    member x.GetById(id: int) = x.DbCollection.SafeFindById(id)
 
-    member x.GetByClassJob(job : ClassJobMapping) =
-        let query =
-            Query.EQ("ClassJob", BsonValue(job.Value))
+    member x.GetByClassJob(job: ClassJobMapping) =
+        let query = Query.EQ("ClassJob", BsonValue(job.Value))
 
         x.DbCollection.Find(query) |> Seq.toArray

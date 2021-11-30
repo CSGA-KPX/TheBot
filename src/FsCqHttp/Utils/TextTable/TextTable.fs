@@ -9,12 +9,10 @@ open SkiaSharp
 open KPX.FsCqHttp
 
 
-type TableDrawContext(srcWidth : float32, srcHeight : float32, drawScale : float32) =
-    static let rowA =
-        new SKPaint(Style = SKPaintStyle.Fill, Color = SKColors.White)
+type TableDrawContext(srcWidth: float32, srcHeight: float32, drawScale: float32) =
+    static let rowA = new SKPaint(Style = SKPaintStyle.Fill, Color = SKColors.White)
 
-    static let rowB =
-        new SKPaint(Style = SKPaintStyle.Fill, Color = SKColors.LightGray)
+    static let rowB = new SKPaint(Style = SKPaintStyle.Fill, Color = SKColors.LightGray)
 
     let mutable bandStatus = false
 
@@ -23,8 +21,7 @@ type TableDrawContext(srcWidth : float32, srcHeight : float32, drawScale : float
     let height = srcHeight * drawScale
 
     let surface =
-        let ski =
-            SKImageInfo(int width, int height, SKColorType.Rgba8888, SKAlphaType.Premul)
+        let ski = SKImageInfo(int width, int height, SKColorType.Rgba8888, SKAlphaType.Premul)
 
         SKSurface.Create(ski)
 
@@ -56,11 +53,11 @@ type TableDrawContext(srcWidth : float32, srcHeight : float32, drawScale : float
 
     member x.GetImage() = surface.Snapshot()
 
-    member x.UpdateLine(size : SKSize) = pos.Y <- pos.Y + size.Height
+    member x.UpdateLine(size: SKSize) = pos.Y <- pos.Y + size.Height
 
     member x.UpdateLine() = pos.X <- 0f
 
-    member x.UpdateCol(size : SKSize) =
+    member x.UpdateCol(size: SKSize) =
         pos.X <- pos.X + size.Width
         pos.Y <- pos.Y + size.Height
 
@@ -72,11 +69,11 @@ type TableDrawContext(srcWidth : float32, srcHeight : float32, drawScale : float
 [<RequireQualifiedAccess>]
 [<Struct>]
 type TableItem =
-    | Row of cols : TableCell []
-    | Line of value : TableCell
-    | Table of table : TextTable
+    | Row of cols: TableCell []
+    | Line of value: TableCell
+    | Table of table: TextTable
 
-type TextTable(?retType : ResponseType) =
+type TextTable(?retType: ResponseType) =
     static let ColumnPadding = " \u3000 "
     static let FullWidthSpace = '\u3000'
 
@@ -91,15 +88,14 @@ type TextTable(?retType : ResponseType) =
     member x.Count = items.Count
 
     member x.GetImage() =
-        let size : SKSize = x.CalculateImageSize()
+        let size: SKSize = x.CalculateImageSize()
 
-        use ctx =
-            new TableDrawContext(size.Width, size.Height, SkiaHelper.drawScale)
+        use ctx = new TableDrawContext(size.Width, size.Height, SkiaHelper.drawScale)
 
         x.DrawImage(ctx)
         ctx.GetImage()
 
-    member internal x.DrawImage(ctx : TableDrawContext) =
+    member internal x.DrawImage(ctx: TableDrawContext) =
         for item in items do
             match item with
             | TableItem.Table t -> t.DrawImage(ctx)
@@ -113,16 +109,14 @@ type TextTable(?retType : ResponseType) =
 
                 cell.ApplyPaint(skp)
 
-                let rowSize =
-                    SKSize(ctx.SrcWidth, cell.RectHeight + SkiaHelper.rowSpacing)
+                let rowSize = SKSize(ctx.SrcWidth, cell.RectHeight + SkiaHelper.rowSpacing)
 
                 ctx.Canvas.DrawRect(SKRect.Create(ctx.Position, rowSize), ctx.GetBandColor())
 
                 let textPos =
                     SKPoint(
                         ctx.Position.X - cell.RectLeft,
-                        ctx.Position.Y - cell.RectTop
-                        + SkiaHelper.rowSpacing / 2.0f
+                        ctx.Position.Y - cell.RectTop + SkiaHelper.rowSpacing / 2.0f
                     )
 
                 if cell.Align = TextAlignment.Right then
@@ -152,8 +146,7 @@ type TextTable(?retType : ResponseType) =
                 let rowSize = SKSize(ctx.SrcWidth, rowHeight)
                 ctx.Canvas.DrawRect(SKRect.Create(ctx.Position, rowSize), ctx.GetBandColor())
 
-                let padOffset =
-                    4.0f * SkiaHelper.chrSizeInfo.SingleWidth
+                let padOffset = 4.0f * SkiaHelper.chrSizeInfo.SingleWidth
 
                 let rowPos =
                     let mutable sum = 0f
@@ -171,14 +164,11 @@ type TextTable(?retType : ResponseType) =
 
                         let x =
                             if col.Align = TextAlignment.Left then
-                                (if i = 0 then 0f else rowPos.[i - 1])
-                                - col.RectLeft
+                                (if i = 0 then 0f else rowPos.[i - 1]) - col.RectLeft
                             else
                                 rowPos.[i] - padOffset
 
-                        let y =
-                            ctx.Position.Y - col.RectTop
-                            + SkiaHelper.rowSpacing / 2.0f
+                        let y = ctx.Position.Y - col.RectTop + SkiaHelper.rowSpacing / 2.0f
 
                         ctx.Canvas.DrawText(col.Text, SKPoint(x, y), skp))
 
@@ -208,9 +198,7 @@ type TextTable(?retType : ResponseType) =
 
                 size.Width <- max size.Width cell.RectWidth
 
-                size.Height <-
-                    size.Height
-                    + (max cell.RectHeight SkiaHelper.chrSizeInfo.Height)
+                size.Height <- size.Height + (max cell.RectHeight SkiaHelper.chrSizeInfo.Height)
             | TableItem.Table t ->
                 let box = t.CalculateImageSize()
                 size.Width <- max size.Width box.Width
@@ -220,19 +208,14 @@ type TextTable(?retType : ResponseType) =
             let sizeInfo = x.GetMaxColumnWidth()
             let rowSize = sizeInfo |> Array.sum
 
-            let padSize =
-                (sizeInfo.Length - 1 |> float32)
-                * 4.0f
-                * SkiaHelper.chrSizeInfo.SingleWidth
+            let padSize = (sizeInfo.Length - 1 |> float32) * 4.0f * SkiaHelper.chrSizeInfo.SingleWidth
 
             rowSize + padSize
 
         size.Width <- max size.Width maxRowSize
 
 
-        size.Height <-
-            size.Height
-            + SkiaHelper.rowSpacing * (float32 !lines)
+        size.Height <- size.Height + SkiaHelper.rowSpacing * (float32 !lines)
 
         size
 
@@ -249,7 +232,7 @@ type TextTable(?retType : ResponseType) =
     member x.GetLines() : IReadOnlyList<string> =
         let ret = ResizeArray<string>()
         let sb = StringBuilder()
-        let maxCols : float32 [] = x.GetMaxColumnWidth()
+        let maxCols: float32 [] = x.GetMaxColumnWidth()
 
         for item in items do
             match item with
@@ -257,14 +240,13 @@ type TextTable(?retType : ResponseType) =
                 sb.Clear() |> ignore
 
                 for i = 0 to cols.Length - 1 do
-                    if i <> 0 then sb.Append(ColumnPadding) |> ignore
+                    if i <> 0 then
+                        sb.Append(ColumnPadding) |> ignore
+
                     let col = cols.[i]
 
                     let paddingFull, paddingHalf =
-                        let paddingCols =
-                            (maxCols.[i] - col.RectWidth)
-                            / SkiaHelper.chrSizeInfo.SingleWidth
-                            |> int
+                        let paddingCols = (maxCols.[i] - col.RectWidth) / SkiaHelper.chrSizeInfo.SingleWidth |> int
 
                         Math.DivRem(paddingCols, 2)
 
@@ -341,7 +323,7 @@ type TextTable(?retType : ResponseType) =
 
 
 
-    member x.Yield(line : string) =
+    member x.Yield(line: string) =
         // Line
         if line.Contains('\n') then
             invalidOp "TableCell不允许包含多行文本，请使用相关指令拆分"
@@ -349,23 +331,19 @@ type TextTable(?retType : ResponseType) =
         items.Add(TableItem.Line <| TableCell(line, skp))
         x
 
-    member x.Yield(cell : CellBuilder) =
+    member x.Yield(cell: CellBuilder) =
         // Line
-        cell.ToTableCells(skp)
-        |> Seq.map TableItem.Line
-        |> items.AddRange
+        cell.ToTableCells(skp) |> Seq.map TableItem.Line |> items.AddRange
 
         x
 
-    member x.YieldFrom(rows : seq<CellBuilder>) =
+    member x.YieldFrom(rows: seq<CellBuilder>) =
         for row in rows do
-            row.ToTableCells(skp)
-            |> Array.map TableItem.Line
-            |> items.AddRange
+            row.ToTableCells(skp) |> Array.map TableItem.Line |> items.AddRange
 
         x
 
-    member x.Yield(row : seq<CellBuilder>) =
+    member x.Yield(row: seq<CellBuilder>) =
         row
         |> Seq.map
             (fun c ->
@@ -381,29 +359,29 @@ type TextTable(?retType : ResponseType) =
 
         x
 
-    member x.Yield(rows : seq<seq<CellBuilder>>) =
+    member x.Yield(rows: seq<seq<CellBuilder>>) =
         for row in rows do
             x.Yield(row) |> ignore
 
         x
 
-    member x.Yield(rows : seq<CellBuilder list>) =
+    member x.Yield(rows: seq<CellBuilder list>) =
         for row in rows do
             x.Yield(row) |> ignore
 
         x
 
-    member x.Yield(rows : seq<CellBuilder []>) =
+    member x.Yield(rows: seq<CellBuilder []>) =
         for row in rows do
             x.Yield(row) |> ignore
 
         x
 
-    member x.Yield(table : TextTable) =
+    member x.Yield(table: TextTable) =
         items.Add(TableItem.Table table)
         x
 
-    member x.Yield(_ : unit) = x
+    member x.Yield(_: unit) = x
 
     member x.Zero() = x
 

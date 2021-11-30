@@ -16,10 +16,10 @@ type RequestEvent =
 and RequestEventConverter() =
     inherit JsonConverter<RequestEvent>()
 
-    override x.WriteJson(_ : JsonWriter, _ : RequestEvent, _ : JsonSerializer) =
+    override x.WriteJson(_: JsonWriter, _: RequestEvent, _: JsonSerializer) =
         raise<unit> <| NotImplementedException()
 
-    override x.ReadJson(r : JsonReader, _ : Type, _ : RequestEvent, _ : bool, _ : JsonSerializer) =
+    override x.ReadJson(r: JsonReader, _: Type, _: RequestEvent, _: bool, _: JsonSerializer) =
         let obj = JObject.Load(r)
 
         match obj.["request_type"].Value<string>() with
@@ -31,5 +31,4 @@ and RequestEventConverter() =
                 .GetCurrentClassLogger()
                 .Fatal("未知请求类型：{0}", other)
 
-            raise<RequestEvent>
-            <| ArgumentOutOfRangeException()
+            raise<RequestEvent> <| ArgumentOutOfRangeException()

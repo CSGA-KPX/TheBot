@@ -22,23 +22,21 @@ type BlueprintCollection private () =
 
     static member Instance = instance
 
-    member private x.TryReadProc(o : JObject) =
-        let bpid =
-            o.GetValue("blueprintTypeID").ToObject<int>()
+    member private x.TryReadProc(o: JObject) =
+        let bpid = o.GetValue("blueprintTypeID").ToObject<int>()
 
         let a = o.GetValue("activities") :?> JObject
 
-        if a.ContainsKey("manufacturing")
-           || a.ContainsKey("reaction") then
+        if a.ContainsKey("manufacturing") || a.ContainsKey("reaction") then
             let m, procType =
-                if a.ContainsKey("manufacturing")
-                then a.GetValue("manufacturing") :?> JObject, ProcessType.Manufacturing
-                elif a.ContainsKey("reaction")
-                then a.GetValue("reaction") :?> JObject, ProcessType.Reaction
-                else failwithf ""
+                if a.ContainsKey("manufacturing") then
+                    a.GetValue("manufacturing") :?> JObject, ProcessType.Manufacturing
+                elif a.ContainsKey("reaction") then
+                    a.GetValue("reaction") :?> JObject, ProcessType.Reaction
+                else
+                    failwithf ""
 
-            let input, output =
-                List<EveDbMaterial>(), List<EveDbMaterial>()
+            let input, output = List<EveDbMaterial>(), List<EveDbMaterial>()
             // quantity * typeID
             if m.ContainsKey("materials") then
                 for item in m.GetValue("materials") :?> JArray do
@@ -76,18 +74,14 @@ type BlueprintCollection private () =
 
 
     override x.InitializeCollection() =
-        let expr =
-            LiteDB.BsonExpression.Create("Process.Output[0].Item")
+        let expr = LiteDB.BsonExpression.Create("Process.Output[0].Item")
 
-        x.DbCollection.EnsureIndex("ProductId", expr)
-        |> ignore
+        x.DbCollection.EnsureIndex("ProductId", expr) |> ignore
 
         seq {
-            use archive =
-                KPX.EvePlugin.Data.Utils.GetEveDataArchive()
+            use archive = KPX.EvePlugin.Data.Utils.GetEveDataArchive()
 
-            use f =
-                archive.GetEntry("blueprints.json").Open()
+            use f = archive.GetEntry("blueprints.json").Open()
 
             use r = new JsonTextReader(new StreamReader(f))
 
@@ -101,8 +95,7 @@ type BlueprintCollection private () =
         |> ignore
 
     member x.GetAllProcesses() =
-        x.DbCollection.FindAll()
-        |> Seq.map (fun proc -> proc.AsEveProcess())
+        x.DbCollection.FindAll() |> Seq.map (fun proc -> proc.AsEveProcess())
 
     interface IRecipeProvider<EveType, EveProcess> with
 
@@ -117,10 +110,11 @@ type BlueprintCollection private () =
                 else
                     let id = LiteDB.BsonValue(item.Id)
 
-                    let ret =
-                        x.DbCollection.FindOne(LiteDB.Query.EQ("Process.Output[0].Item", id))
+                    let ret = x.DbCollection.FindOne(LiteDB.Query.EQ("Process.Output[0].Item", id))
 
-                    if isNull (box ret) then None else Some ret
+                    if isNull (box ret) then
+                        None
+                    else
+                        Some ret
 
-            internalProc
-            |> Option.map (fun proc -> proc.AsEveProcess())
+            internalProc |> Option.map (fun proc -> proc.AsEveProcess())

@@ -10,10 +10,10 @@ open KPX.XivPlugin.Data
 [<CLIMutable>]
 type GCScriptExchange =
     { [<BsonId(false)>]
-      Id : int
-      CostSeals : int
-      ReceiveItem : int
-      ReceiveQuantity : int }
+      Id: int
+      CostSeals: int
+      ReceiveItem: int
+      ReceiveQuantity: int }
 
 type GCScriptShop private () =
     inherit CachedTableCollection<int, GCScriptExchange>()
@@ -27,8 +27,7 @@ type GCScriptShop private () =
     override x.Depends = Array.empty
 
     override x.InitializeCollection() =
-        x.DbCollection.EnsureIndex(BsonExpression.Create("ReceiveItem"))
-        |> ignore
+        x.DbCollection.EnsureIndex(BsonExpression.Create("ReceiveItem")) |> ignore
 
         let col = XivProvider.XivCollectionChs
 
@@ -50,5 +49,5 @@ type GCScriptShop private () =
         |> x.DbCollection.InsertBulk
         |> ignore
 
-    member x.GetByItem(item : XivItem) =
+    member x.GetByItem(item: XivItem) =
         x.DbCollection.Find(Query.EQ("ReceiveItem", BsonValue(item.Id)))

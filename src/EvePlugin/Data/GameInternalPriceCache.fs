@@ -16,11 +16,11 @@ open KPX.EvePlugin.Data.EveType
 type GameInternalPrice =
     { [<LiteDB.BsonId(false)>]
       [<JsonProperty("type_id")>]
-      Id : int
+      Id: int
       [<JsonProperty("adjusted_price")>]
-      AdjustedPrice : float
+      AdjustedPrice: float
       [<JsonProperty("average_price")>]
-      AveragePrice : float }
+      AveragePrice: float }
 
 type GameInternalPriceCollection private () =
     inherit CachedTableCollection<int, GameInternalPrice>()
@@ -29,20 +29,18 @@ type GameInternalPriceCollection private () =
 
     static member Instance = instance
 
-    override x.IsExpired =
-        (DateTimeOffset.Now - x.GetLastUpdateTime())
-        >= TimeSpan.FromDays(1.0)
+    override x.IsExpired = (DateTimeOffset.Now - x.GetLastUpdateTime()) >= TimeSpan.FromDays(1.0)
 
     override x.Depends = [| typeof<EveTypeCollection> |]
 
     override x.InitializeCollection() =
-        let url =
-            "https://esi.evepc.163.com/latest/markets/prices/?datasource=serenity"
+        let url = "https://esi.evepc.163.com/latest/markets/prices/?datasource=serenity"
 
         x.Logger.Info $"Fetching %s{url}"
 
         let json =
-            Network.HttpClient
+            Network
+                .HttpClient
                 .GetStringAsync(url)
                 .ConfigureAwait(false)
                 .GetAwaiter()
@@ -55,7 +53,7 @@ type GameInternalPriceCollection private () =
         |> ignore
 
     /// 返回物品内部价格，如果不存在，返回0.0
-    member x.GetByItem(id : int) =
+    member x.GetByItem(id: int) =
         x.CheckUpdate()
         let ret = x.DbCollection.TryFindById(id)
 
@@ -66,4 +64,4 @@ type GameInternalPriceCollection private () =
         else
             ret.Value
 
-    member x.GetByItem(t : EveType) = x.GetByItem(t.Id)
+    member x.GetByItem(t: EveType) = x.GetByItem(t.Id)

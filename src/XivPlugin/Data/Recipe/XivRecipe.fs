@@ -7,17 +7,17 @@ open KPX.XivPlugin.Data
 
 [<AutoOpen>]
 module internal Utils =
-    let inline convertInternalMaterial (i : RecipeMaterial<int32>) =
+    let inline convertInternalMaterial (i: RecipeMaterial<int32>) =
         { Item = ItemCollection.Instance.GetByItemId(i.Item)
           Quantity = i.Quantity }
 
-    let convertInternalProcess (i : RecipeProcess<int>) =
+    let convertInternalProcess (i: RecipeProcess<int>) =
         { Input = i.Input |> Array.map convertInternalMaterial
           Output = i.Output |> Array.map convertInternalMaterial }
 
 [<CLIMutable>]
 type XivDbRecipe =
-    { Id : int
-      Process : RecipeProcess<int> }
+    { Id: int
+      Process: RecipeProcess<int> }
 
     member x.CastProcess() = convertInternalProcess x.Process

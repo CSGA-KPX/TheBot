@@ -7,20 +7,18 @@ open KPX.TheBot.Host.DataCache
 
 
 type World =
-    { WorldId : uint16
-      mutable WorldName : string
-      mutable DataCenter : string
-      mutable IsPublic : bool }
+    { WorldId: uint16
+      mutable WorldName: string
+      mutable DataCenter: string
+      mutable IsPublic: bool }
 
 module World =
     // 记录所有服务器
     let private idMapping = Dictionary<uint16, World>()
 
-    let private nameMapping =
-        Dictionary<string, World>(StringComparer.OrdinalIgnoreCase)
+    let private nameMapping = Dictionary<string, World>(StringComparer.OrdinalIgnoreCase)
 
-    let private dcNameMapping =
-        Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    let private dcNameMapping = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
 
     let Worlds = idMapping.Values |> Seq.readonly
 
@@ -34,19 +32,18 @@ module World =
     let DataCenterNames = dcNameMapping.Keys |> Seq.readonly
 
 
-    let DefinedWorld (name : string) = nameMapping.ContainsKey(name)
-    let DefinedDC (name : string) = dcNameMapping.ContainsKey(name)
+    let DefinedWorld (name: string) = nameMapping.ContainsKey(name)
+    let DefinedDC (name: string) = dcNameMapping.ContainsKey(name)
 
-    let GetDCByName (name : string) = dcNameMapping.[name]
+    let GetDCByName (name: string) = dcNameMapping.[name]
 
-    let GetWorldById (id : uint16) = idMapping.[id]
-    let GetWorldByName (name : string) = nameMapping.[name]
+    let GetWorldById (id: uint16) = idMapping.[id]
+    let GetWorldByName (name: string) = nameMapping.[name]
 
-    let GetWorldsByDC (dcName : string) =
+    let GetWorldsByDC (dcName: string) =
         let mapped = dcNameMapping.[dcName]
 
-        Worlds
-        |> Seq.filter (fun w -> w.DataCenter = mapped && w.IsPublic)
+        Worlds |> Seq.filter (fun w -> w.DataCenter = mapped && w.IsPublic)
 
     let private ChsWorldName =
         [| "拉诺西亚", "LaNuoXiYa"
@@ -186,8 +183,7 @@ module World =
             let name = row.As<string>("Name")
             let isPublic = row.As<bool>("IsPublic")
 
-            let dc =
-                row.AsRow("DataCenter").As<string>("Name")
+            let dc = row.AsRow("DataCenter").As<string>("Name")
 
             let world =
                 { WorldId = id
@@ -219,8 +215,7 @@ module World =
                 let isEmpty = String.IsNullOrWhiteSpace(alias)
 
                 if not isEmpty then
-                    nameMapping.TryAdd(alias, GetWorldByName(world))
-                    |> ignore
+                    nameMapping.TryAdd(alias, GetWorldByName(world)) |> ignore
 
         // 国际服的大区
         for row in col.GetSheet("WorldDCGroupType") do
@@ -239,6 +234,5 @@ module World =
 
 type WorldTest() =
     inherit DataTest()
-    
-    override x.RunTest() =
-        World.GetWorldByName("拉诺西亚") |> ignore
+
+    override x.RunTest() = World.GetWorldByName("拉诺西亚") |> ignore

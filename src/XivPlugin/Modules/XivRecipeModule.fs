@@ -20,11 +20,10 @@ type XivRecipeModule() =
     let gilShop = GilShopCollection.Instance
     let xivExpr = XivExpression.XivExpression()
 
-    let universalis =
-        UniversalisMarketCache.MarketInfoCollection.Instance
+    let universalis = UniversalisMarketCache.MarketInfoCollection.Instance
 
     /// 给物品名备注上NPC价格
-    let tryLookupNpcPrice (item : XivItem) =
+    let tryLookupNpcPrice (item: XivItem) =
         let ret = gilShop.TryLookupByItem(item)
 
         if ret.IsSome then
@@ -42,17 +41,14 @@ type XivRecipeModule() =
                            "计算物品基础材料成本",
                            "可以使用text:选项返回文本。
 可以设置查询服务器，已有服务器见#ff14help")>]
-    member _.GeneralRecipeCalculator(cmdArg : CommandEventArgs) =
-        let doCalculateCost =
-            cmdArg.CommandName = "#rrc"
-            || cmdArg.CommandName = "#rc"
+    member _.GeneralRecipeCalculator(cmdArg: CommandEventArgs) =
+        let doCalculateCost = cmdArg.CommandName = "#rrc" || cmdArg.CommandName = "#rc"
 
         let materialFunc =
-            if cmdArg.CommandName = "#rr"
-               || cmdArg.CommandName = "#rrc" then
-                fun (item : XivItem) -> rm.TryGetRecipeRec(item, ByItem 1.0)
+            if cmdArg.CommandName = "#rr" || cmdArg.CommandName = "#rrc" then
+                fun (item: XivItem) -> rm.TryGetRecipeRec(item, ByItem 1.0)
             else
-                fun (item : XivItem) -> rm.TryGetRecipe(item)
+                fun (item: XivItem) -> rm.TryGetRecipe(item)
 
         let opt = CommandUtils.XivOption()
         opt.Parse(cmdArg.HeaderArgs)
@@ -77,10 +73,12 @@ type XivRecipeModule() =
                         for m in recipe.Value.Input do
                             acc.Update(m.Item, m.Quantity * mr.Quantity)
 
-        if acc.Count = 0 then cmdArg.Abort(InputError, "缺少表达式")
+        if acc.Count = 0 then
+            cmdArg.Abort(InputError, "缺少表达式")
 
         TextTable(opt.ResponseType) {
-            if doCalculateCost then $"土豆：%s{world.WorldName}"
+            if doCalculateCost then
+                $"土豆：%s{world.WorldName}"
 
             // 表头
             [ CellBuilder() { literal "物品" }

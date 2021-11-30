@@ -15,8 +15,8 @@ type GroupAdminEventSubtype =
 
 type GroupAdminEvent =
     { [<JsonProperty("sub_type")>]
-      SubType : GroupAdminEventSubtype
+      SubType: GroupAdminEventSubtype
       [<JsonProperty("group_id")>]
-      GroupId : GroupId
+      GroupId: GroupId
       [<JsonProperty("user_id")>]
-      UserId : UserId }
+      UserId: UserId }

@@ -16,15 +16,15 @@ type GroupRequestEventSubtype =
 
 type GroupRequestEvent =
     { [<JsonProperty("sub_type")>]
-      SubType : GroupRequestEventSubtype
+      SubType: GroupRequestEventSubtype
       [<JsonProperty("group_id")>]
-      GroupId : GroupId
+      GroupId: GroupId
       [<JsonProperty("user_id")>]
-      UserId : UserId
+      UserId: UserId
       [<JsonProperty("comment")>]
-      Comment : string
+      Comment: string
       [<JsonProperty("flag")>]
-      Flag : string }
-    
-    member x.Response(approve : bool, ?reason : string) =
+      Flag: string }
+
+    member x.Response(approve: bool, ?reason: string) =
         GroupAddResponse(approve, (defaultArg reason ""))

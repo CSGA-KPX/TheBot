@@ -12,7 +12,8 @@ open KPX.FsCqHttp.Api
 [<AutoOpen>]
 module private Constants =
     [<Literal>]
-    let MessageEventJson = """
+    let MessageEventJson =
+        """
 {
     "font":0,
     "message":[
@@ -46,14 +47,12 @@ type DummyReverseClient(server, token) as x =
     let cts = new CancellationTokenSource()
     let utf8 = Text.Encoding.UTF8
 
-    let logger =
-        NLog.LogManager.GetLogger("DummyReverseClient")
+    let logger = NLog.LogManager.GetLogger("DummyReverseClient")
 
     let defMsgEvent = JObject.Parse(MessageEventJson)
     let wsClient = new WebSockets.ClientWebSocket()
 
-    let apiResponse =
-        Collections.Generic.Dictionary<string, obj>()
+    let apiResponse = Collections.Generic.Dictionary<string, obj>()
 
     do
         x.AddApiResponse(".handle_quick_operation", obj ())
@@ -66,9 +65,8 @@ type DummyReverseClient(server, token) as x =
 
         x.AddApiResponse("can_send_image", {| yes = true |})
 
-    member x.AddApiResponse<'T when 'T :> CqHttpApiBase>(obj : obj) =
-        let api =
-            Activator.CreateInstance(typeof<'T>) :?> CqHttpApiBase
+    member x.AddApiResponse<'T when 'T :> CqHttpApiBase>(obj: obj) =
+        let api = Activator.CreateInstance(typeof<'T>) :?> CqHttpApiBase
 
         x.AddApiResponse(api.ActionName, obj)
 
@@ -78,14 +76,13 @@ type DummyReverseClient(server, token) as x =
         logger.Info("正在启动")
         x.ServerMessageLoop()
 
-    member x.SendMessage(msg : ReadOnlyMessage) =
+    member x.SendMessage(msg: ReadOnlyMessage) =
         let rawMsg = msg.ToCqString()
         let me = defMsgEvent.DeepClone() :?> JObject
         me.["message"] <- JArray.FromObject(msg)
         me.["raw_message"] <- JValue(rawMsg)
 
-        let send =
-            me.ToString(Newtonsoft.Json.Formatting.None)
+        let send = me.ToString(Newtonsoft.Json.Formatting.None)
 
         let mem = ArraySegment<byte>(utf8.GetBytes(send))
 
@@ -95,12 +92,12 @@ type DummyReverseClient(server, token) as x =
         |> Async.AwaitTask
         |> Async.RunSynchronously
 
-    member x.SendMessage(text : string) =
+    member x.SendMessage(text: string) =
         let msg = Message()
         msg.Add(text)
         x.SendMessage(msg)
 
-    member private x.HandleMessage(json : string) =
+    member private x.HandleMessage(json: string) =
         try
             logger.Info $"事件: 接收到消息 %s{json}"
             let obj = JObject.Parse(json)
@@ -112,16 +109,16 @@ type DummyReverseClient(server, token) as x =
 
             let response = JObject()
 
-            if apiResponse.ContainsKey(action)
-            then response.["data"] <- JObject.FromObject(apiResponse.[action])
-            else response.["data"] <- JValue(box null)
+            if apiResponse.ContainsKey(action) then
+                response.["data"] <- JObject.FromObject(apiResponse.[action])
+            else
+                response.["data"] <- JValue(box null)
 
             response.["echo"] <- JValue(echo)
             response.["retcode"] <- JValue(0)
             response.["status"] <- JValue("ok")
 
-            let ret =
-                response.ToString(Newtonsoft.Json.Formatting.None)
+            let ret = response.ToString(Newtonsoft.Json.Formatting.None)
 
             let mem = ArraySegment<byte>(utf8.GetBytes(ret))
 
@@ -130,7 +127,8 @@ type DummyReverseClient(server, token) as x =
             |> Async.RunSynchronously
 
             logger.Info $"事件: 回复消息 %s{ret}"
-        with e -> logger.Fatal $"发生错误：{e}"
+        with
+        | e -> logger.Fatal $"发生错误：{e}"
 
     member private x.ServerMessageLoop() =
         async {
@@ -148,23 +146,27 @@ type DummyReverseClient(server, token) as x =
             let seg = ArraySegment<byte>(buffer)
             use ms = new IO.MemoryStream()
 
-            let rec readMessage (ms : IO.MemoryStream) =
+            let rec readMessage (ms: IO.MemoryStream) =
                 let s =
                     wsClient.ReceiveAsync(seg, cts.Token)
                     |> Async.AwaitTask
                     |> Async.RunSynchronously
 
                 ms.Write(seg.Array, seg.Offset, s.Count)
-                if s.EndOfMessage then utf8.GetString(ms.ToArray()) else readMessage ms
+
+                if s.EndOfMessage then
+                    utf8.GetString(ms.ToArray())
+                else
+                    readMessage ms
 
             try
                 while (not cts.IsCancellationRequested) do
                     ms.SetLength(0L)
                     let json = readMessage ms
 
-                    Tasks.Task.Run(fun () -> x.HandleMessage(json))
-                    |> ignore
-            with e ->
+                    Tasks.Task.Run(fun () -> x.HandleMessage(json)) |> ignore
+            with
+            | e ->
                 logger.Fatal(e.ToString())
                 cts.Cancel()
         }

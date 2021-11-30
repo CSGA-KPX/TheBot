@@ -6,7 +6,7 @@ open KPX.EvePlugin.Data.EveType
 open KPX.EvePlugin.Data.Utils
 
 
-type EveConfigParser() as x = 
+type EveConfigParser() as x =
     inherit CommandOption()
 
     let ime = OptionCellSimple(x, "ime", 2)
@@ -18,7 +18,7 @@ type EveConfigParser() as x =
     let r = OptionCell(x, "r")
     let buy = OptionCell(x, "buy")
 
-    member x.SetDefaultInputMe(value)= ime.Default <- value
+    member x.SetDefaultInputMe(value) = ime.Default <- value
 
     member x.InputMe = ime.Value
 
@@ -33,12 +33,15 @@ type EveConfigParser() as x =
     member x.ExpandPlanet = p.IsDefined
 
     member x.MaterialPriceMode =
-        if buy.IsDefined then PriceFetchMode.BuyWithTax else PriceFetchMode.Sell
-    
+        if buy.IsDefined then
+            PriceFetchMode.BuyWithTax
+        else
+            PriceFetchMode.Sell
+
     /// 自动获取输入材料效率
     /// 如果ime被设置，返回ime
     /// 如果为设置，根据蓝图metaGroupId返回默认效率
-    member x.GetImeAuto(item : EveType) =
+    member x.GetImeAuto(item: EveType) =
         if ime.IsDefined then
             x.InputMe
         else
@@ -49,7 +52,7 @@ type EveConfigParser() as x =
             | 14
             | 53 -> 2 // T2/T3装备 建筑默认2
             | _ -> 0 // 其他默认0
-    
+
     interface KPX.EvePlugin.Data.Process.IEveCalculatorConfig with
         member x.InputMe = x.InputMe
         member x.DerivationMe = x.DerivationMe

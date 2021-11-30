@@ -13,28 +13,28 @@ open KPX.EvePlugin.Data.EveType
 [<CLIMutable>]
 type internal PriceInfo =
     { [<JsonProperty>]
-      Max : float
+      Max: float
       [<JsonProperty>]
-      Min : float
+      Min: float
       [<JsonProperty>]
-      Volume : uint64 }
+      Volume: uint64 }
 
 [<CLIMutable>]
 type internal MarketInfo =
     { [<JsonProperty>]
-      All : PriceInfo
+      All: PriceInfo
       [<JsonProperty>]
-      Buy : PriceInfo
+      Buy: PriceInfo
       [<JsonProperty>]
-      Sell : PriceInfo }
+      Sell: PriceInfo }
 
 [<CLIMutable>]
 type PriceCache =
     { [<LiteDB.BsonId(false)>]
-      Id : int
-      Sell : float
-      Buy : float
-      Updated : DateTimeOffset }
+      Id: int
+      Sell: float
+      Buy: float
+      Updated: DateTimeOffset }
 
 type PriceCacheCollection private () =
     inherit CachedItemCollection<int, PriceCache>()
@@ -51,13 +51,13 @@ type PriceCacheCollection private () =
     override x.Depends = [| typeof<EveTypeCollection> |]
 
     override x.DoFetchItem(itemId) =
-        let url =
-            $@"https://www.ceve-market.org/api/market/region/10000002/system/30000142/type/%i{itemId}.json"
+        let url = $@"https://www.ceve-market.org/api/market/region/10000002/system/30000142/type/%i{itemId}.json"
 
         x.Logger.Info $"Fetching %s{url}"
 
         let json =
-            Network.HttpClient
+            Network
+                .HttpClient
                 .GetStringAsync(url)
                 .ConfigureAwait(false)
                 .GetAwaiter()
@@ -65,13 +65,13 @@ type PriceCacheCollection private () =
 
         let info = JsonConvert.DeserializeObject<MarketInfo>(json)
 
-        let sellMin = 
+        let sellMin =
             if info.Sell.Volume = 0UL then
                 nan
             else
                 info.Sell.Min
 
-        let buyMax = 
+        let buyMax =
             if info.Buy.Volume = 0UL then
                 nan
             else

@@ -7,20 +7,19 @@ open System.Collections.Generic
 [<CLIMutable>]
 [<Struct>]
 type RecipeMaterial<'Item> =
-    { Item : 'Item
-      Quantity : float }
+    { Item: 'Item
+      Quantity: float }
 
-    static member (*)(that : RecipeMaterial<'Item>, c : int) =
+    static member (*)(that: RecipeMaterial<'Item>, c: int) =
         { that with
               Quantity = that.Quantity * (float c) }
 
-    static member (*)(that : RecipeMaterial<'Item>, c : float) =
+    static member (*)(that: RecipeMaterial<'Item>, c: float) =
         { that with
               Quantity = that.Quantity * c }
 
-type ItemAccumulator<'Item when 'Item : equality>() =
-    let data =
-        Dictionary<'Item, RecipeMaterial<'Item>>()
+type ItemAccumulator<'Item when 'Item: equality>() =
+    let data = Dictionary<'Item, RecipeMaterial<'Item>>()
 
     member x.Count = data.Count
 
@@ -28,12 +27,12 @@ type ItemAccumulator<'Item when 'Item : equality>() =
 
     member x.Clear() = data.Clear()
 
-    member x.Update(material : RecipeMaterial<'Item>) =
+    member x.Update(material: RecipeMaterial<'Item>) =
         x.Update(material.Item, material.Quantity)
 
-    member x.Update(item : 'Item) = x.Update(item, 1.0)
+    member x.Update(item: 'Item) = x.Update(item, 1.0)
 
-    member x.Update(item : 'Item, quantity : float) =
+    member x.Update(item: 'Item, quantity: float) =
         let succ, ret = data.TryGetValue(item)
 
         if succ then
@@ -56,15 +55,15 @@ type ItemAccumulator<'Item when 'Item : equality>() =
 
     member x.AsMaterials() = data.Values |> Seq.toArray
 
-    member x.MergeFrom(y : ItemAccumulator<'Item>) =
+    member x.MergeFrom(y: ItemAccumulator<'Item>) =
         for v in y do
             x.Update(v)
 
-    member x.SubtractFrom(y : ItemAccumulator<'Item>) =
+    member x.SubtractFrom(y: ItemAccumulator<'Item>) =
         for v in y do
             x.Update(v.Item, -v.Quantity)
 
-    static member SingleItemOf(i : 'Item) =
+    static member SingleItemOf(i: 'Item) =
         let ret = ItemAccumulator<'Item>()
         ret.Update(i)
         ret
@@ -78,7 +77,7 @@ type ItemAccumulator<'Item when 'Item : equality>() =
             data.Values.GetEnumerator() :> Collections.IEnumerator
 
 
-type RecipeProcessAccumulator<'Item when 'Item : equality>() =
+type RecipeProcessAccumulator<'Item when 'Item: equality>() =
     let input = ItemAccumulator<'Item>()
     let output = ItemAccumulator<'Item>()
 
@@ -89,9 +88,9 @@ type RecipeProcessAccumulator<'Item when 'Item : equality>() =
         { Input = x.Input.AsMaterials()
           Output = x.Output.AsMaterials() }
 
-and [<CLIMutable>] RecipeProcess<'Item when 'Item : equality> =
-    { Input : RecipeMaterial<'Item> []
-      Output : RecipeMaterial<'Item> [] }
+and [<CLIMutable>] RecipeProcess<'Item when 'Item: equality> =
+    { Input: RecipeMaterial<'Item> []
+      Output: RecipeMaterial<'Item> [] }
 
     /// 获得第一个Output(一般游戏只有一个输出)
     /// 如果有多个则抛出异常
@@ -101,14 +100,14 @@ and [<CLIMutable>] RecipeProcess<'Item when 'Item : equality> =
 
         x.Output |> Array.head
 
-    static member (*)(that : RecipeProcess<'Item>, runs : int) =
+    static member (*)(that: RecipeProcess<'Item>, runs: int) =
         { Input = that.Input |> Array.map (fun mr -> mr * runs)
           Output = that.Output |> Array.map (fun mr -> mr * runs) }
 
-    static member (*)(that : RecipeProcess<'Item>, runs : float) =
+    static member (*)(that: RecipeProcess<'Item>, runs: float) =
         { Input = that.Input |> Array.map (fun mr -> mr * runs)
           Output = that.Output |> Array.map (fun mr -> mr * runs) }
 
 
-type IRecipeProvider<'Item, 'Recipe when 'Item : equality> =
-    abstract TryGetRecipe : 'Item -> 'Recipe option
+type IRecipeProvider<'Item, 'Recipe when 'Item: equality> =
+    abstract TryGetRecipe: 'Item -> 'Recipe option

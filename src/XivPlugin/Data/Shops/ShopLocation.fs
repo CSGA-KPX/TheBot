@@ -10,8 +10,8 @@ open KPX.TheBot.Host.DataCache
 
 type ShopLocation =
     { [<BsonId(false)>]
-      ShopPropId : int
-      Locations : string [] }
+      ShopPropId: int
+      Locations: string [] }
 
 
 /// 提供ShopPropId（即部分ENpcData）到商店位置的缓存
@@ -20,12 +20,11 @@ type ShopLocationCollection private () =
 
     static let instance = ShopLocationCollection()
 
-    let toMapCoordinate3d (sizeFactor : int, value : float, offset : int) =
+    let toMapCoordinate3d (sizeFactor: int, value: float, offset: int) =
         let c = (float sizeFactor) / 100.0
         let offsetValue = (value + (float offset)) * c
 
-        (41.0 / c) * ((offsetValue + 1024.0) / 2048.0)
-        + 1.0
+        (41.0 / c) * ((offsetValue + 1024.0) / 2048.0) + 1.0
 
     static member Instance = instance
 
@@ -75,8 +74,7 @@ type ShopLocationCollection private () =
             if level.ContainsKey(npcId) then
                 let npcPos = level.[npcId]
 
-                let npcName =
-                    eNpcRes.GetItemTyped(npcId).Singular.AsString()
+                let npcName = eNpcRes.GetItemTyped(npcId).Singular.AsString()
 
                 npcInfo <- $"%s{npcName}: %s{npcPos.Territory}(%.1f{npcPos.X}, %.1f{npcPos.Y})"
 
@@ -85,7 +83,8 @@ type ShopLocationCollection private () =
                     if not <| data.ContainsKey(propId) then
                         data.Add(propId, ResizeArray<string>())
 
-                    if npcInfo <> "" then data.[propId].Add(npcInfo)
+                    if npcInfo <> "" then
+                        data.[propId].Add(npcInfo)
 
         data
         |> Seq.map
@@ -95,7 +94,7 @@ type ShopLocationCollection private () =
         |> x.DbCollection.InsertBulk
         |> ignore
 
-    member x.ShopPropIdExists(id : int) =
+    member x.ShopPropIdExists(id: int) =
         x.DbCollection.Exists(Query.EQ("_id", BsonValue(id)))
 
-    member x.GetByShopPropId(id : int) = x.DbCollection.SafeFindById(id)
+    member x.GetByShopPropId(id: int) = x.DbCollection.SafeFindById(id)

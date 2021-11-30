@@ -21,10 +21,9 @@ type ContextModuleInfo() =
 
     member val TestCallbacks = ResizeArray<string * Action>() :> IList<_>
 
-    member val Commands =
-        Dictionary<string, CommandInfo>(StringComparer.OrdinalIgnoreCase) :> IDictionary<_, _>
+    member val Commands = Dictionary<string, CommandInfo>(StringComparer.OrdinalIgnoreCase) :> IDictionary<_, _>
 
-    member x.TryCommand(e : CqMessageEventArgs) =
+    member x.TryCommand(e: CqMessageEventArgs) =
         e.Event.Message.TryGetSection<TextSection>()
         |> Option.bind
             (fun ts ->
@@ -35,10 +34,11 @@ type ContextModuleInfo() =
                 else
                     None)
 
-    member x.RegisterModule(m : HandlerModuleBase) =
+    member x.RegisterModule(m: HandlerModuleBase) =
         x.AllModules.Add(m)
 
-        if m.OnMeta.IsSome then x.MetaCallbacks.Add(m.OnMeta.Value)
+        if m.OnMeta.IsSome then
+            x.MetaCallbacks.Add(m.OnMeta.Value)
 
         if m.OnNotice.IsSome then
             x.NoticeCallbacks.Add(m.OnNotice.Value)
@@ -67,11 +67,9 @@ type ContextModuleInfo() =
 
             // 添加所有带有TestFixtureAttribute的方法
             for method in methods do
-                let attr =
-                    method.GetCustomAttributes(typeof<TestFixtureAttribute>, true)
+                let attr = method.GetCustomAttributes(typeof<TestFixtureAttribute>, true)
 
                 if attr.Length <> 0 then
                     let methodName = method.Name
                     let action = method.CreateDelegate(typeof<Action>, m) :?> Action
                     x.TestCallbacks.Add(methodName, action)
-                    

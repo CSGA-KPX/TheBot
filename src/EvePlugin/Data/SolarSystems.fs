@@ -8,7 +8,7 @@ open KPX.TheBot.Host.DataCache
 
 
 [<CLIMutable>]
-type SolarSystem = { Id : int; Name : string }
+type SolarSystem = { Id: int; Name: string }
 
 type SolarSystemCollection private () =
     inherit CachedTableCollection<int, SolarSystem>()
@@ -22,15 +22,12 @@ type SolarSystemCollection private () =
     override x.Depends = Array.empty
 
     override x.InitializeCollection() =
-        x.DbCollection.EnsureIndex(LiteDB.BsonExpression.Create("Name"))
-        |> ignore
+        x.DbCollection.EnsureIndex(LiteDB.BsonExpression.Create("Name")) |> ignore
 
         seq {
-            use archive =
-                KPX.EvePlugin.Data.Utils.GetEveDataArchive()
+            use archive = KPX.EvePlugin.Data.Utils.GetEveDataArchive()
 
-            use f =
-                archive.GetEntry("SolarSystem.tsv").Open()
+            use f = archive.GetEntry("SolarSystem.tsv").Open()
 
             use r = new StreamReader(f)
 
@@ -45,18 +42,20 @@ type SolarSystemCollection private () =
         |> x.DbCollection.InsertBulk
         |> ignore
 
-    member x.TryGetBySolarSystem(id : int) = x.DbCollection.TryFindById(id)
+    member x.TryGetBySolarSystem(id: int) = x.DbCollection.TryFindById(id)
 
-    member x.GetBySolarSystem(id : int) =
+    member x.GetBySolarSystem(id: int) =
         x.PassOrRaise(x.DbCollection.TryFindById(id), "找不到星系id:{0}", id)
 
-    member x.TryGetBySolarSystem(name : string) =
+    member x.TryGetBySolarSystem(name: string) =
         let bson = LiteDB.BsonValue(name)
 
-        let ret =
-            x.DbCollection.FindOne(LiteDB.Query.EQ("Name", bson))
+        let ret = x.DbCollection.FindOne(LiteDB.Query.EQ("Name", bson))
 
-        if isNull (box ret) then None else Some(ret)
+        if isNull (box ret) then
+            None
+        else
+            Some(ret)
 
-    member x.GetBySolarSystem(name : string) =
+    member x.GetBySolarSystem(name: string) =
         x.PassOrRaise(x.TryGetBySolarSystem(name), "找不到星系:{0}", id)

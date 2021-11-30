@@ -32,24 +32,21 @@ type EveRecipeModule() =
     let ic = InventoryCollection.Instance
 
     [<CommandHandlerMethod("#eme", "EVE蓝图材料效率计算", "")>]
-    member x.HandleME(cmdArg : CommandEventArgs) =
+    member x.HandleME(cmdArg: CommandEventArgs) =
         let cfg = EveConfigParser()
         cfg.Parse(cmdArg.HeaderArgs)
 
-        let item =
-            data.TryGetItem(cfg.GetNonOptionString())
+        let item = data.TryGetItem(cfg.GetNonOptionString())
 
         if item.IsNone then
             cmdArg.Abort(InputError, "找不到物品：{0}", cfg.GetNonOptionString())
 
-        let recipe =
-            pm.TryGetRecipe(item.Value, ByRun 1.0, 0)
+        let recipe = pm.TryGetRecipe(item.Value, ByRun 1.0, 0)
 
         if recipe.IsNone then
             cmdArg.Abort(InputError, "找不到蓝图：{0}", cfg.GetNonOptionString())
 
-        let me0Price =
-            recipe.Value.GetTotalMaterialPrice(PriceFetchMode.Sell, MeApplied)
+        let me0Price = recipe.Value.GetTotalMaterialPrice(PriceFetchMode.Sell, MeApplied)
 
         TextTable(cfg.ResponseType) {
             CellBuilder() {
@@ -57,8 +54,7 @@ type EveRecipeModule() =
                 integer me0Price
             }
 
-            [ CellBuilder() { rightLiteral "材料等级" }
-              CellBuilder() { rightLiteral "节省" } ]
+            [ CellBuilder() { rightLiteral "材料等级" }; CellBuilder() { rightLiteral "节省" } ]
 
             [ for me = 0 to 10 do
                   let cost =
@@ -66,8 +62,7 @@ type EveRecipeModule() =
                           .TryGetRecipe(item.Value, ByRun 1.0, me)
                           .Value.GetTotalMaterialPrice(PriceFetchMode.Sell, MeApplied)
 
-                  [ CellBuilder() { integer me }
-                    CellBuilder() { integer (me0Price - cost) } ] ]
+                  [ CellBuilder() { integer me }; CellBuilder() { integer (me0Price - cost) } ] ]
         }
 
 
@@ -88,7 +83,7 @@ type EveRecipeModule() =
                            "EVE蓝图基础材料计算",
                            "可以使用表达式，多个物品需用+连接。可选参数见#evehelp。如：
 #rr 帝国海军散热槽*10+机器人技术*9999")>]
-    member x.HandleRRR(cmdArg : CommandEventArgs) =
+    member x.HandleRRR(cmdArg: CommandEventArgs) =
         let cfg = EveConfigParser()
         // 默认值必须是不可能存在的值，比如空格
         let idOpt = cfg.RegisterOption<string>("id", "\r\n")
@@ -185,9 +180,7 @@ type EveRecipeModule() =
             }
 
         // 生成材料信息
-        for mr in
-            inputAcc
-            |> Seq.sortBy (fun x -> x.Item.MarketGroupId) do
+        for mr in inputAcc |> Seq.sortBy (fun x -> x.Item.MarketGroupId) do
             let sumVolume = mr.Item.Volume * mr.Quantity
 
             let need =
@@ -216,7 +209,8 @@ type EveRecipeModule() =
         mainTable {
             [ CellBuilder() { literal "材料体积" }
               CellBuilder() { rightPad }
-              if useInv then CellBuilder() { rightPad }
+              if useInv then
+                  CellBuilder() { rightPad }
               CellBuilder() { number totalInputVolume } ]
         }
         |> ignore
@@ -249,7 +243,7 @@ type EveRecipeModule() =
                            "EVE蓝图成本计算",
                            "不支持表达式，但仅限一个物品。可选参数见#evehelp。如：
 #errc 帝国海军散热槽*10")>]
-    member x.HandleERRCV3(cmdArg : CommandEventArgs) =
+    member x.HandleERRCV3(cmdArg: CommandEventArgs) =
         let cfg = EveConfigParser()
         cfg.Parse(cmdArg.HeaderArgs)
 
@@ -266,17 +260,14 @@ type EveRecipeModule() =
             for mr in a do
                 let ime = cfg.GetImeAuto(mr.Item)
 
-                let recipe =
-                    pm.TryGetRecipe(mr.Item, ByRun mr.Quantity, ime)
+                let recipe = pm.TryGetRecipe(mr.Item, ByRun mr.Quantity, ime)
 
                 if recipe.IsNone then
                     cmdArg.Abort(InputError, "找不到配方:{0}", mr.Item.Name)
 
                 let proc = recipe.Value.ApplyFlags(MeApplied)
 
-                accInstallCost <-
-                    accInstallCost
-                    + recipe.Value.GetInstallationCost(cfg)
+                accInstallCost <- accInstallCost + recipe.Value.GetInstallationCost(cfg)
 
                 for mr in proc.Input do
                     accIn.Update(mr)
@@ -331,31 +322,18 @@ type EveRecipeModule() =
         let mutable optCost = accInstallCost
         let mutable allCost = accInstallCost
 
-        for mr in
-            accIn
-            |> Seq.sortBy (fun x -> x.Item.MarketGroupId) do
+        for mr in accIn |> Seq.sortBy (fun x -> x.Item.MarketGroupId) do
             let price = // 市场价格
-                mr.Item.GetPrice(cfg.MaterialPriceMode)
-                * mr.Quantity
+                mr.Item.GetPrice(cfg.MaterialPriceMode) * mr.Quantity
 
-            let mrProc =
-                pm.TryGetRecipeRecMe(
-                    mr.Item,
-                    ByItem mr.Quantity,
-                    cfg.DerivationMe,
-                    cfg.DerivationMe
-                )
+            let mrProc = pm.TryGetRecipeRecMe(mr.Item, ByItem mr.Quantity, cfg.DerivationMe, cfg.DerivationMe)
 
-            if
-                mrProc.IsSome
-                && pm.CanExpand(mrProc.Value.InputProcess)
-            then
+            if mrProc.IsSome && pm.CanExpand(mrProc.Value.InputProcess) then
                 let mrInstall =
                     mrProc.Value.IntermediateProcess
                     |> Array.fold (fun acc proc -> acc + proc.GetInstallationCost(cfg)) 0.0
 
-                let mrCost =
-                    mrProc.Value.FinalProcess.Input.GetPrice(cfg.MaterialPriceMode)
+                let mrCost = mrProc.Value.FinalProcess.Input.GetPrice(cfg.MaterialPriceMode)
 
                 let mrAll = mrInstall + mrCost
                 allCost <- allCost + mrAll
@@ -428,7 +406,7 @@ type EveRecipeModule() =
     [<CommandHandlerMethod("#EVE种菜", "EVE种菜利润", "可选参数见#evehelp。")>]
     [<CommandHandlerMethod("#EVE装备II", "EVET2装备利润", "可以使用by:搜索物品组名称。其他可选参数见#evehelp。")>]
     [<CommandHandlerMethod("#EVE燃料块", "EVE燃料块", "可选参数见#evehelp。")>]
-    member x.HandleManufacturingOverview(cmdArg : CommandEventArgs) =
+    member x.HandleManufacturingOverview(cmdArg: CommandEventArgs) =
         let cfg = EveConfigParser()
 
         let searchByGroupName =
@@ -512,8 +490,7 @@ type EveRecipeModule() =
                             .Value
 
                     // 所有基础材料的报价
-                    let materialCost =
-                        proc.FinalProcess.Input.GetPrice(cfg.MaterialPriceMode)
+                    let materialCost = proc.FinalProcess.Input.GetPrice(cfg.MaterialPriceMode)
 
                     let installCost =
                         if ps.Type = ProcessType.Planet then
@@ -529,15 +506,13 @@ type EveRecipeModule() =
 
                     let cost = materialCost + installCost
 
-                    let sellWithTax =
-                        proc.FinalProcess.Output.GetPrice(PriceFetchMode.SellWithTax)
+                    let sellWithTax = proc.FinalProcess.Output.GetPrice(PriceFetchMode.SellWithTax)
 
                     let volume = data.GetItemTradeVolume(product.Item)
 
                     let sortIdx =
                         //(sellWithTax - cost) / cost * 100.0 |> int
-                        (sellWithTax - cost) * volume
-                        / proc.FinalProcess.Output.[0].Quantity
+                        (sellWithTax - cost) * volume / proc.FinalProcess.Output.[0].Quantity
 
                     {| Name = product.Item.Name
                        TypeGroup = product.Item.TypeGroup

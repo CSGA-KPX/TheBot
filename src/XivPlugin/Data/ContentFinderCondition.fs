@@ -8,9 +8,9 @@ open LiteDB
 [<CLIMutable>]
 type XivContent =
     { [<BsonId(false)>]
-      Id : int
-      Name : string
-      IsDailyFrontlineChallengeRoulette : bool}
+      Id: int
+      Name: string
+      IsDailyFrontlineChallengeRoulette: bool }
 
 type XivContentCollection private () =
     inherit CachedTableCollection<int, XivContent>()
@@ -24,6 +24,7 @@ type XivContentCollection private () =
 
     override x.InitializeCollection() =
         let col = XivProvider.XivCollectionChs
+
         seq {
             for row in col.ContentFinderCondition.TypedRows do
                 yield

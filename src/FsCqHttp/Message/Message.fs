@@ -11,13 +11,9 @@ open KPX.FsCqHttp.Message.Sections
 
 /// 只读OneBot消息，由一个或多个MessageSection组成
 [<JsonConverter(typeof<ReadOnlyMessageConverter>)>]
-type ReadOnlyMessage internal (sections : IReadOnlyList<MessageSection>) =
+type ReadOnlyMessage internal (sections: IReadOnlyList<MessageSection>) =
 
-    static let cqStringReplace =
-        [| "&", "&amp;"
-           "[", "&#91;"
-           "]", "&#93;"
-           ",", "&#44;" |]
+    static let cqStringReplace = [| "&", "&amp;"; "[", "&#91;"; "]", "&#93;"; ",", "&#44;" |]
 
     [<JsonIgnore>]
     /// 消息段数量
@@ -29,9 +25,7 @@ type ReadOnlyMessage internal (sections : IReadOnlyList<MessageSection>) =
 
     /// 获取所有指定类型的消息段
     member x.GetSections<'T when 'T :> MessageSection>() =
-        sections
-        |> Seq.filter (fun sec -> sec :? 'T)
-        |> Seq.map (fun sec -> sec :?> 'T)
+        sections |> Seq.filter (fun sec -> sec :? 'T) |> Seq.map (fun sec -> sec :?> 'T)
 
     /// 获取指定类型的消息段
     /// 如果没有，返回None
@@ -39,7 +33,7 @@ type ReadOnlyMessage internal (sections : IReadOnlyList<MessageSection>) =
 
     /// 返回所有At消息段
     /// 默认不含at全体成员
-    member x.TryGetAt(?allowAll : bool) =
+    member x.TryGetAt(?allowAll: bool) =
         let allowAll = defaultArg allowAll false
 
         x.GetSections<AtSection>()
@@ -52,7 +46,7 @@ type ReadOnlyMessage internal (sections : IReadOnlyList<MessageSection>) =
 
     /// 获取At
     /// 默认忽略at全体成员
-    member x.GetAts(?allowAll : bool) =
+    member x.GetAts(?allowAll: bool) =
         let allowAll = defaultArg allowAll false
 
         x.GetSections<AtSection>()
@@ -65,8 +59,7 @@ type ReadOnlyMessage internal (sections : IReadOnlyList<MessageSection>) =
 
     /// 提取所有文本段为字符串
     override x.ToString() =
-        let sec =
-            x.GetSections<TextSection>() |> Seq.toArray
+        let sec = x.GetSections<TextSection>() |> Seq.toArray
 
         match sec.Length with
         | 0 -> String.Empty
@@ -82,7 +75,7 @@ type ReadOnlyMessage internal (sections : IReadOnlyList<MessageSection>) =
     /// 转换为cq码表示
     /// <remarks>OneBot v12移除</remarks>
     member x.ToCqString() =
-        let escape (str : string) =
+        let escape (str: string) =
             let text = Text.StringBuilder(str)
 
             for c, esc in cqStringReplace do
@@ -96,9 +89,7 @@ type ReadOnlyMessage internal (sections : IReadOnlyList<MessageSection>) =
             match sec with
             | :? TextSection -> sb.Append(escape sec.Values.["text"]) |> ignore
             | _ ->
-                let args =
-                    sec.Values
-                    |> Seq.map (fun kv -> $"%s{kv.Key}=%s{escape kv.Value}")
+                let args = sec.Values |> Seq.map (fun kv -> $"%s{kv.Key}=%s{escape kv.Value}")
 
                 sb
                     .AppendFormat("[CQ:{0},", sec.TypeName)
@@ -123,32 +114,32 @@ type ReadOnlyMessage internal (sections : IReadOnlyList<MessageSection>) =
                 .GetEnumerator()
 
 /// OneBot消息，由一个或多个MessageSection组成
-type Message private (sections : List<_>) =
+type Message private (sections: List<_>) =
     inherit ReadOnlyMessage(sections)
 
     new() = Message(List<_>())
 
-    new(sec : MessageSection) =
+    new(sec: MessageSection) =
         let items = List<_>()
         items.Add(sec)
         Message(items)
 
-    new(sections : seq<MessageSection>) =
+    new(sections: seq<MessageSection>) =
         let items = List<_>()
         items.AddRange(sections)
         Message(items)
 
     /// 添加消息段到末尾
-    member x.Add(sec : MessageSection) = sections.Add(sec)
+    member x.Add(sec: MessageSection) = sections.Add(sec)
 
     /// 快速添加At消息段到末尾
-    member x.Add(at : AtUserType) = x.Add(AtSection.Create(at))
+    member x.Add(at: AtUserType) = x.Add(AtSection.Create(at))
 
     /// 快速添加文本消息段到末尾
-    member x.Add(msg : string) = x.Add(TextSection.Create(msg))
+    member x.Add(msg: string) = x.Add(TextSection.Create(msg))
 
     /// 快速添加图片消息段到末尾
-    member x.Add(img : SkiaSharp.SKImage) = x.Add(ImageSection.Create(img))
+    member x.Add(img: SkiaSharp.SKImage) = x.Add(ImageSection.Create(img))
     /// 清空所有消息段
     member x.Clear() = sections.Clear()
 
@@ -157,7 +148,7 @@ type Message private (sections : List<_>) =
 
     /// 解析cq码
     /// <remarks>OneBot v12移除</remarks>
-    static member FromCqString(str : string) =
+    static member FromCqString(str: string) =
         let decode = System.Net.WebUtility.HtmlDecode
 
         let segs =
@@ -204,7 +195,7 @@ type Message private (sections : List<_>) =
 type ReadOnlyMessageConverter() =
     inherit JsonConverter<ReadOnlyMessage>()
 
-    override x.WriteJson(w : JsonWriter, r : ReadOnlyMessage, _ : JsonSerializer) =
+    override x.WriteJson(w: JsonWriter, r: ReadOnlyMessage, _: JsonSerializer) =
         w.WriteStartArray()
 
         for sec in r do
@@ -223,14 +214,7 @@ type ReadOnlyMessageConverter() =
 
         w.WriteEndArray()
 
-    override x.ReadJson
-        (
-            r : JsonReader,
-            _ : Type,
-            _ : ReadOnlyMessage,
-            _ : bool,
-            _ : JsonSerializer
-        ) =
+    override x.ReadJson(r: JsonReader, _: Type, _: ReadOnlyMessage, _: bool, _: JsonSerializer) =
 
         match r.TokenType with
         | JsonToken.StartArray ->

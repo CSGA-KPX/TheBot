@@ -18,31 +18,30 @@ type CqWsContextBase() =
     /// 发生链接错误时重启服务器的函数
     ///
     /// 值为None时，不再尝试重连
-    abstract RestartContext : (unit -> CqWsContext) option with get, set
+    abstract RestartContext: (unit -> CqWsContext) option with get, set
 
     /// 使用API检查是否在线
-    abstract IsOnline : bool
+    abstract IsOnline: bool
 
     /// 获取Context内已经定义的模块信息
     member val Modules = ContextModuleInfo()
 
     /// 返回已经定义的指令，结果无序
-    member x.Commands =
-        x.Modules.Commands.Values |> Seq.cast<CommandInfo>
+    member x.Commands = x.Modules.Commands.Values |> Seq.cast<CommandInfo>
 
     /// 获取登录号昵称
-    abstract BotNickname : string
+    abstract BotNickname: string
 
     /// 获取登录号信息
-    abstract BotUserId : UserId
+    abstract BotUserId: UserId
 
     /// 获取登录号标识符
-    abstract BotIdString : string
+    abstract BotIdString: string
 
     /// 启用消息循环
-    abstract Start : unit -> unit
+    abstract Start: unit -> unit
 
-    abstract Stop : unit -> unit
+    abstract Stop: unit -> unit
 
     abstract CallApi<'T when 'T :> ApiBase> : 'T -> 'T
 
@@ -51,10 +50,10 @@ type CqWsContextBase() =
         member x.ProviderId = x.BotIdString
         member x.ProviderName = x.BotNickname
 
-        member x.CallApi<'T when 'T :> ApiBase>(req : 'T) = x.CallApi(req)
+        member x.CallApi<'T when 'T :> ApiBase>(req: 'T) = x.CallApi(req)
 
         /// 调用一个不需要额外设定的api
-        member x.CallApi<'T when 'T :> ApiBase and 'T : (new : unit -> 'T)>() =
+        member x.CallApi<'T when 'T :> ApiBase and 'T: (new: unit -> 'T)>() =
             let req = Activator.CreateInstance<'T>()
             (x :> IApiCallProvider).CallApi(req)
 
@@ -62,21 +61,20 @@ type CqWsContextBase() =
 type WsContextApiBase() =
     inherit ApiBase()
 
-    abstract Invoke : CqWsContextBase -> unit
+    abstract Invoke: CqWsContextBase -> unit
 
 type CqWsContextPool private () =
     let logger = NLog.LogManager.GetCurrentClassLogger()
 
-    let pool =
-        ConcurrentDictionary<UserId, CqWsContextBase>()
+    let pool = ConcurrentDictionary<UserId, CqWsContextBase>()
 
-    member x.AddContext(context : CqWsContextBase) =
+    member x.AddContext(context: CqWsContextBase) =
         pool.TryAdd(context.BotUserId, context) |> ignore
         logger.Info $"已接受连接:%s{context.BotIdString}"
 
         CqWsContextPool.ContextModuleLoader.RegisterModuleFor(context.BotUserId, context.Modules)
 
-    member x.RemoveContext(context : CqWsContextBase) =
+    member x.RemoveContext(context: CqWsContextBase) =
         pool.TryRemove(context.BotUserId) |> ignore
         logger.Info $"已移除连接:%s{context.BotIdString}"
 
@@ -89,25 +87,23 @@ type CqWsContextPool private () =
 
     static member val Instance = CqWsContextPool()
 
-    static member val internal ContextModuleLoader : ContextModuleLoader =
-        ContextModuleLoader(Array.empty) with get, set
+    static member val internal ContextModuleLoader: ContextModuleLoader = ContextModuleLoader(Array.empty) with get, set
 
 
-type CqWsContext(ws : WebSocket) =
+type CqWsContext(ws: WebSocket) =
     inherit CqWsContextBase()
 
     let cts = new CancellationTokenSource()
     let utf8 = Text.Encoding.UTF8
     let logger = NLog.LogManager.GetCurrentClassLogger()
 
-    let apiPending =
-        ConcurrentDictionary<string, ManualResetEvent * CqHttpApiBase>()
+    let apiPending = ConcurrentDictionary<string, ManualResetEvent * CqHttpApiBase>()
 
     let started = new ManualResetEvent(false)
 
     let self = GetLoginInfo()
 
-    override val RestartContext : (unit -> CqWsContext) option = None with get, set
+    override val RestartContext: (unit -> CqWsContext) option = None with get, set
 
     override x.BotNickname = self.Nickname
 
@@ -144,8 +140,7 @@ type CqWsContext(ws : WebSocket) =
             false
         else
             try
-                let ret =
-                    (x :> IApiCallProvider).CallApi<GetLoginInfo>()
+                let ret = (x :> IApiCallProvider).CallApi<GetLoginInfo>()
 
                 not <| isNull ret.Nickname
             with
@@ -175,12 +170,7 @@ type CqWsContext(ws : WebSocket) =
                 let data = json |> utf8.GetBytes
 
                 do!
-                    ws.SendAsync(
-                        ArraySegment<byte>(data),
-                        WebSocketMessageType.Text,
-                        true,
-                        cts.Token
-                    )
+                    ws.SendAsync(ArraySegment<byte>(data), WebSocketMessageType.Text, true, cts.Token)
                     |> Async.AwaitTask
 
                 let! _ = Async.AwaitWaitHandle(mre :> WaitHandle)
@@ -194,7 +184,7 @@ type CqWsContext(ws : WebSocket) =
 
         req
 
-    member private x.HandleApiResponse(ret : ApiResponse) =
+    member private x.HandleApiResponse(ret: ApiResponse) =
         let hasPending, item = apiPending.TryGetValue(ret.Echo)
 
         if hasPending then
@@ -204,7 +194,7 @@ type CqWsContext(ws : WebSocket) =
         else
             logger.Warn $"未注册echo:%s{ret.Echo}"
 
-    member private x.HandleMessage(json : string) =
+    member private x.HandleMessage(json: string) =
         try
             let ctx = PostContent(JObject.Parse(json))
 
@@ -217,8 +207,7 @@ type CqWsContext(ws : WebSocket) =
                 | :? CqNoticeEventArgs when x.Modules.NoticeCallbacks.Count = 0 -> ()
                 | :? CqRequestEventArgs when x.Modules.RequestCallbacks.Count = 0 -> ()
                 | :? CqMessageEventArgs as args when
-                    (x.Modules.TryCommand(args).IsNone)
-                    && x.Modules.MessageCallbacks.Count = 0
+                    (x.Modules.TryCommand(args).IsNone) && x.Modules.MessageCallbacks.Count = 0
                     ->
                     ()
                 | :? CqMessageEventArgs as args ->
@@ -229,8 +218,7 @@ type CqWsContext(ws : WebSocket) =
                             // 需要立刻执行的指令，不通过调度器
                             let ci = isCmd.Value
 
-                            let cmdArgs =
-                                CommandEventArgs(args, ci.CommandAttribute)
+                            let cmdArgs = CommandEventArgs(args, ci.CommandAttribute)
 
                             match ci.MethodAction with
                             | MethodAction.ManualAction action -> action.Invoke(cmdArgs)
@@ -252,15 +240,8 @@ type CqWsContext(ws : WebSocket) =
         | e -> logger.Warn $"%s{x.BotIdString}WS处理消息异常：\r\n%A{e}"
 
     member private x.StartMessageLoop() =
-        let rec readMessage
-            (ms : MemoryStream)
-            (seg : ArraySegment<_>)
-            (cts : CancellationTokenSource)
-            =
-            let s =
-                ws.ReceiveAsync(seg, cts.Token)
-                |> Async.AwaitTask
-                |> Async.RunSynchronously
+        let rec readMessage (ms: MemoryStream) (seg: ArraySegment<_>) (cts: CancellationTokenSource) =
+            let s = ws.ReceiveAsync(seg, cts.Token) |> Async.AwaitTask |> Async.RunSynchronously
 
             ms.Write(seg.Array, seg.Offset, s.Count)
 
@@ -273,8 +254,7 @@ type CqWsContext(ws : WebSocket) =
             // 长时间执行，所以使用新线程
             do! Async.SwitchToNewThread()
 
-            let seg =
-                ArraySegment<byte>(Array.zeroCreate 4096)
+            let seg = ArraySegment<byte>(Array.zeroCreate 4096)
 
             use ms = new MemoryStream()
 

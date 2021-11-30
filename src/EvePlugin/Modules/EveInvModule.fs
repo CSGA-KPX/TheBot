@@ -22,26 +22,27 @@ type EveInvModule() =
     inherit CommandHandlerBase()
 
     /// 返回库存信息 id*库存
-    member private x.GetInv(keyOpt : InvKeyOpt) =
+    member private x.GetInv(keyOpt: InvKeyOpt) =
         let i = InventoryCollection.Instance
 
         if keyOpt.IsDefined then
             let key = keyOpt.Value
             let ret = i.TryGet(key)
-            if ret.IsSome then ret.Value else i.Create(key)
+
+            if ret.IsSome then
+                ret.Value
+            else
+                i.Create(key)
         else
             i.Create()
 
     /// 解析消息正文，生产材料信息
-    member private x.ReadCommandBody(cmdArg : CommandEventArgs, ?acc : _) =
-        let ns =
-            Globalization.NumberStyles.AllowThousands
+    member private x.ReadCommandBody(cmdArg: CommandEventArgs, ?acc: _) =
+        let ns = Globalization.NumberStyles.AllowThousands
 
-        let ic =
-            Globalization.CultureInfo.InvariantCulture
+        let ic = Globalization.CultureInfo.InvariantCulture
 
-        let acc =
-            defaultArg acc (ItemAccumulator<EveType>())
+        let acc = defaultArg acc (ItemAccumulator<EveType>())
 
         for line in cmdArg.BodyLines do
             match line.Split("	", 2, StringSplitOptions.RemoveEmptyEntries) with
@@ -49,10 +50,11 @@ type EveInvModule() =
             | [| name |] -> acc.Update(EveTypeCollection.Instance.GetByName(name))
             | [| name; q |] ->
                 let succ, quantity = Int32.TryParse(q, ns, ic)
-                if not succ then cmdArg.Abort(InputError, "格式非法，{0}不是数字", q)
 
-                let item =
-                    EveTypeCollection.Instance.GetByName(name)
+                if not succ then
+                    cmdArg.Abort(InputError, "格式非法，{0}不是数字", q)
+
+                let item = EveTypeCollection.Instance.GetByName(name)
 
                 acc.Update(item, quantity |> float)
             | _ -> cmdArg.Abort(InputError, "格式非法，应为'道具名	数量'")
@@ -60,7 +62,7 @@ type EveInvModule() =
         acc
 
     [<CommandHandlerMethod("#eveinv", "记录材料数据供#er和#err使用", "", IsHidden = true)>]
-    member x.HandleEveInv(cmdArg : CommandEventArgs) =
+    member x.HandleEveInv(cmdArg: CommandEventArgs) =
         let opt = EveConfigParser()
         let keyOpt = opt.RegisterOption(InvKeyOpt(opt))
         opt.Parse(cmdArg.HeaderArgs)
@@ -85,13 +87,12 @@ type EveInvModule() =
               } ]
 
             [ for m in materials do
-                  [ CellBuilder() { literal m.Item.Name }
-                    CellBuilder() { integer m.Quantity } ] ]
+                  [ CellBuilder() { literal m.Item.Name }; CellBuilder() { integer m.Quantity } ] ]
 
         }
 
     [<CommandHandlerMethod("#eveinvcal", "输入材料信息相加，然后与目标库存相减", "", IsHidden = true)>]
-    member x.HandleInvCal(cmdArg : CommandEventArgs) =
+    member x.HandleInvCal(cmdArg: CommandEventArgs) =
         let opt = EveConfigParser()
         let keyOpt = opt.RegisterOption(InvKeyOpt(opt))
         opt.Parse(cmdArg.HeaderArgs)
@@ -100,7 +101,7 @@ type EveInvModule() =
         let list = x.ReadCommandBody(cmdArg)
 
         TextTable() {
-            let positiveOrPad (f : float) =
+            let positiveOrPad (f: float) =
                 if f > 0.0 then
                     CellBuilder() { integer f }
                 else
@@ -122,7 +123,10 @@ type EveInvModule() =
 
             [ for m in list do
                   let had =
-                      if inv.Contains(m.Item) then inv.Get(m.Item) else 0.0
+                      if inv.Contains(m.Item) then
+                          inv.Get(m.Item)
+                      else
+                          0.0
 
                   let lack = m.Quantity - had
 

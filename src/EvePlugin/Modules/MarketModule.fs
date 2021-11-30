@@ -32,7 +32,7 @@ type EveMarketModule() =
                            "查询物品价格",
                            "可以使用表达式，多个物品需要用+连接。
 #em 帝国海军散热槽*5+帝国海军多频晶体 L*1000")>]
-    member x.HandleEveMarket(cmdArg : CommandEventArgs) =
+    member x.HandleEveMarket(cmdArg: CommandEventArgs) =
         let mutable argOverride = None
 
         if cmdArg.CommandName = "#eve矿物" then
@@ -57,7 +57,7 @@ type EveMarketModule() =
 
         let cfg = EveConfigParser()
         cfg.Parse(cmdArg.HeaderArgs)
-        
+
         att.Table
 
     [<TestFixture>]
@@ -71,11 +71,11 @@ type EveMarketModule() =
 
     [<CommandHandlerMethod("#EVE采矿", "EVE挖矿利润，仅供参考", "")>]
     [<CommandHandlerMethod("#EVE挖矿", "EVE挖矿利润，仅供参考", "")>]
-    member x.HandleOreMining(_ : CommandEventArgs) =
+    member x.HandleOreMining(_: CommandEventArgs) =
         let mineSpeed = 10.0 // m^3/s
         let refineYield = 0.70
 
-        let getSubTypes (names : string) =
+        let getSubTypes (names: string) =
             names.Split(',')
             |> Array.map
                 (fun name ->
@@ -91,17 +91,11 @@ type EveMarketModule() =
 
                     let input = proc.Input.[0]
 
-                    let refinePerSec =
-                        mineSpeed / input.Item.Volume / input.Quantity
+                    let refinePerSec = mineSpeed / input.Item.Volume / input.Quantity
 
                     let price =
                         proc.Output
-                        |> Array.sumBy
-                            (fun m ->
-                                m.Quantity
-                                * refinePerSec
-                                * refineYield
-                                * m.Item.GetPriceInfo().Sell)
+                        |> Array.sumBy (fun m -> m.Quantity * refinePerSec * refineYield * m.Item.GetPriceInfo().Sell)
 
                     name, price |> ceil)
             |> Array.sortByDescending snd
@@ -111,8 +105,7 @@ type EveMarketModule() =
         let ore = getSubTypes OreNames
         let tore = getSubTypes TriglavianOreNames
 
-        let rowMax =
-            (max (max ice.Length moon.Length) ore.Length) - 1
+        let rowMax = (max (max ice.Length moon.Length) ore.Length) - 1
 
         TextTable(ForceImage) {
             ToolWarning

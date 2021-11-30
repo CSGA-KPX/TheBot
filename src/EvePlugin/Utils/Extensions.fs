@@ -16,7 +16,7 @@ open KPX.EvePlugin.Utils.Config
 
 
 type EveType with
-    member x.GetPrice(pm : PriceFetchMode) =
+    member x.GetPrice(pm: PriceFetchMode) =
         let pi = x.GetPriceInfo()
 
         match pm with
@@ -28,12 +28,16 @@ type EveType with
         | PriceFetchMode.AdjustedPrice ->
             GameInternalPriceCollection
                 .Instance
-                .GetByItem(x)
+                .GetByItem(
+                    x
+                )
                 .AdjustedPrice
         | PriceFetchMode.AveragePrice ->
             GameInternalPriceCollection
                 .Instance
-                .GetByItem(x)
+                .GetByItem(
+                    x
+                )
                 .AveragePrice
 
     member x.GetPriceInfo() =
@@ -45,39 +49,37 @@ type EveType with
     member x.TypeGroup = DataBundle.Instance.GetGroup(x.GroupId)
 
     /// 不是所有物品都有市场分类
-    member x.MarketGroup =
-        KPX.EvePlugin.Data.EveMarketGroup.MarketGroupCollection.Instance.TryGetById(x.MarketGroupId)
+    member x.MarketGroup = KPX.EvePlugin.Data.EveMarketGroup.MarketGroupCollection.Instance.TryGetById(x.MarketGroupId)
 
     member x.IsBlueprint = x.CategoryId = 9
 
 [<Extension>]
 type RecipeMaterialExtensions =
     [<Extension>]
-    static member inline GetPrice(this : RecipeMaterial<EveType> [], pm : PriceFetchMode) =
-        this
-        |> Array.sumBy (fun mr -> mr.Item.GetPrice(pm) * mr.Quantity)
+    static member inline GetPrice(this: RecipeMaterial<EveType> [], pm: PriceFetchMode) =
+        this |> Array.sumBy (fun mr -> mr.Item.GetPrice(pm) * mr.Quantity)
 
 type EveProcess with
 
     /// 获取最终制造价格，配方包含数量和材料效率
-    member x.GetPriceInfo(pm : PriceFetchMode) =
+    member x.GetPriceInfo(pm: PriceFetchMode) =
         let proc = x.ApplyFlags(MeApplied)
 
         {| TotalProductPrice = proc.Output.GetPrice(pm)
            TotalMaterialPrice = proc.Input.GetPrice(pm) |}
 
-    member x.GetTotalProductPrice(pm : PriceFetchMode, flag : ProcessFlag) = x.ApplyFlags(flag).Output.GetPrice(pm)
+    member x.GetTotalProductPrice(pm: PriceFetchMode, flag: ProcessFlag) = x.ApplyFlags(flag).Output.GetPrice(pm)
 
     /// 获取输入材料价格，可能为0
-    member x.GetTotalMaterialPrice(pm : PriceFetchMode, flag : ProcessFlag) = x.ApplyFlags(flag).Input.GetPrice(pm)
+    member x.GetTotalMaterialPrice(pm: PriceFetchMode, flag: ProcessFlag) = x.ApplyFlags(flag).Input.GetPrice(pm)
 
     /// 获取生产费用
     ///
     /// 行星开发计算材料的进口税和产物的出口税
-    member x.GetInstallationCost(cfg : EveConfigParser) =
+    member x.GetInstallationCost(cfg: EveConfigParser) =
         match x.Type with
         | ProcessType.Planet ->
-            let getBaseCost (t : EveType) =
+            let getBaseCost (t: EveType) =
                 match t.GroupId with
                 | 1035 -> 5.0 // 行星有机物 - 原始资源
                 | 1042 -> 400.0 // 基础资源物品 - 第一等级
@@ -99,9 +101,7 @@ type EveProcess with
 
             (importFee + exportFee) * 0.1 // NPC税率10%
         | ProcessType.Invalid -> raise <| System.NotImplementedException("非法过程")
-        | ProcessType.Refine ->
-            raise
-            <| System.NotImplementedException("不支持计算精炼费用")
+        | ProcessType.Refine -> raise <| System.NotImplementedException("不支持计算精炼费用")
         | _ ->
             x
                 .ApplyFlags(QuantityApplied)

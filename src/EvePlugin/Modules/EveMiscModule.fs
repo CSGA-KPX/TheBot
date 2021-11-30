@@ -14,23 +14,21 @@ open KPX.EvePlugin.Utils.Config
 
 
 type CombatSiteInfo =
-    { Type : string
-      FoundIn : string
-      Difficulty : string
-      Name : string }
+    { Type: string
+      FoundIn: string
+      Difficulty: string
+      Name: string }
 
 type EveMiscModule() =
     inherit CommandHandlerBase()
 
     [<CommandHandlerMethod("#evehelp", "EVE星系成本指数查询", "")>]
-    member x.HandleEvehelp(_ : CommandEventArgs) =
+    member x.HandleEvehelp(_: CommandEventArgs) =
         let cfg = EveConfigParser()
         cfg.Parse(Array.empty)
 
         TextTable() {
-            [ CellBuilder() { literal "名称" }
-              CellBuilder() { literal "意义" }
-              CellBuilder() { literal "默认" } ]
+            [ CellBuilder() { literal "名称" }; CellBuilder() { literal "意义" }; CellBuilder() { literal "默认" } ]
 
             [ CellBuilder() { literal "ime" }
               CellBuilder() { literal "输入蓝图材料效率" }
@@ -73,12 +71,10 @@ type EveMiscModule() =
         tc.ShouldNotThrow("#evehelp")
 
     [<CommandHandlerMethod("#evesci", "EVE星系成本指数查询", "")>]
-    member x.HandleSci(cmdArg : CommandEventArgs) =
-        let sc =
-            SolarSystems.SolarSystemCollection.Instance
+    member x.HandleSci(cmdArg: CommandEventArgs) =
+        let sc = SolarSystems.SolarSystemCollection.Instance
 
-        let scc =
-            SystemCostIndexCache.SystemCostIndexCollection.Instance
+        let scc = SystemCostIndexCache.SystemCostIndexCollection.Instance
 
         let cfg = EveConfigParser()
         cfg.Parse(cmdArg.HeaderArgs)
@@ -137,17 +133,17 @@ type EveMiscModule() =
 
     [<CommandHandlerMethod("#eve异常", "EVE异常/死亡表 可接信号名称", "")>]
     [<CommandHandlerMethod("#eve死亡", "EVE异常/死亡表 可接信号名称", "")>]
-    member x.HandleUnrated(cmdArg : CommandEventArgs) =
+    member x.HandleUnrated(cmdArg: CommandEventArgs) =
         if cmdArg.HeaderArgs.Length = 0 then
             let mgr =
                 ResxManager("EvePlugin.EVE").GetLines("战斗空间信号")
                 |> Array.map (fun line -> line.Split('\t'))
-            use ret = cmdArg.OpenResponse(ForceImage
-                                          )
+
+            use ret = cmdArg.OpenResponse(ForceImage)
+
             ret.Table {
                 [ for line in mgr do
-                      line
-                      |> Array.map (fun str -> CellBuilder() { literal str }) ]
+                      line |> Array.map (fun str -> CellBuilder() { literal str }) ]
             }
             |> ignore
         else
@@ -156,8 +152,7 @@ type EveMiscModule() =
             let names = HashSet<string>()
 
             for line in cmdArg.AllLines do
-                let split =
-                    line.Split('\t', StringSplitOptions.None)
+                let split = line.Split('\t', StringSplitOptions.None)
 
                 if split.Length = 1 then
                     names.Add(split.[0]) |> ignore
@@ -181,4 +176,5 @@ type EveMiscModule() =
                         ret.WriteLine("	难度：{0}", site.Difficulty)
                         ret.WriteLine("	安等：{0}", site.FoundIn)
 
-                if not found then ret.WriteLine("{0}：未找到相关信息", arg)
+                if not found then
+                    ret.WriteLine("{0}：未找到相关信息", arg)

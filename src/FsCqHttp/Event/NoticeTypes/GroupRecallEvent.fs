@@ -8,10 +8,10 @@ open KPX.FsCqHttp
 /// 群消息撤回事件
 type GroupRecallEvent =
     { [<JsonProperty("group_id")>]
-      GroupId : GroupId
+      GroupId: GroupId
       [<JsonProperty("user_id")>]
-      UserId : UserId
+      UserId: UserId
       [<JsonProperty("operator_id")>]
-      OperatorId : UserId
+      OperatorId: UserId
       [<JsonProperty("message_id")>]
-      MessageId : MessageId }
+      MessageId: MessageId }

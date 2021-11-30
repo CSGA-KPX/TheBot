@@ -4,7 +4,7 @@ open KPX.FsCqHttp
 open KPX.FsCqHttp.Api
 
 
-type GetGroupMemberInfo(groupId : GroupId, userId : UserId, ?noCache : bool) =
+type GetGroupMemberInfo(groupId: GroupId, userId: UserId, ?noCache: bool) =
     inherit CqHttpApiBase("get_group_member_info")
     let noCache = defaultArg noCache false
 
@@ -25,12 +25,15 @@ type GetGroupMemberInfo(groupId : GroupId, userId : UserId, ?noCache : bool) =
     member val CardChangeable = false with get, set
 
     member x.DisplayName =
-        if System.String.IsNullOrEmpty(x.Card) then x.NickName else x.Card
+        if System.String.IsNullOrEmpty(x.Card) then
+            x.NickName
+        else
+            x.Card
 
     override x.WriteParams(w, js) =
         w.WritePropertyName("group_id")
         js.Serialize(w, groupId)
-        
+
         w.WritePropertyName("user_id")
         js.Serialize(w, userId)
 

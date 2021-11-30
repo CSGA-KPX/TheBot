@@ -13,15 +13,15 @@ type GenericOperator<'Operand>(c, p) =
     member x.IsRightParen = x.Char = ')'
     member x.IsParen = x.IsLeftParen || x.IsRightParen
 
-    member val BinaryFunc : ('Operand -> 'Operand -> 'Operand) option = None with get, set
+    member val BinaryFunc: ('Operand -> 'Operand -> 'Operand) option = None with get, set
 
-    member val UnaryFunc : ('Operand -> 'Operand) option = None with get, set
+    member val UnaryFunc: ('Operand -> 'Operand) option = None with get, set
 
     override x.ToString() = x.Char |> string
 
 type RPNToken<'T> =
     | Operand of 'T
-    | Operator of GenericOperator<'T> * isUnary : bool
+    | Operator of GenericOperator<'T> * isUnary: bool
 
     override x.ToString() =
         match x with
@@ -29,7 +29,7 @@ type RPNToken<'T> =
         | Operator (o, b) -> $"(Operator %A{o} : isUnary : %b{b})"
 
 [<AbstractClass>]
-type GenericRPNParser<'Operand>(ops : seq<_>) =
+type GenericRPNParser<'Operand>(ops: seq<_>) =
     let opsDict =
         let col =
             { new Collections.ObjectModel.KeyedCollection<char, GenericOperator<'Operand>>() with
@@ -46,7 +46,7 @@ type GenericRPNParser<'Operand>(ops : seq<_>) =
     new() = GenericRPNParser<'Operand>(Seq.empty)
 
     /// 把字符串转换为操作数
-    abstract Tokenize : string -> RPNToken<'Operand>
+    abstract Tokenize: string -> RPNToken<'Operand>
 
     /// 操作符转义字符
     member val OperatorEscape = '\\' with get, set
@@ -56,7 +56,7 @@ type GenericRPNParser<'Operand>(ops : seq<_>) =
     /// 写入会破坏线程安全
     member x.Operators = opsDict
 
-    member private x.SplitString(str : string) =
+    member private x.SplitString(str: string) =
         let ret = List<_>()
         let sb = Text.StringBuilder()
 
@@ -80,14 +80,14 @@ type GenericRPNParser<'Operand>(ops : seq<_>) =
 
                     if not <| String.IsNullOrWhiteSpace(token) then
                         ret.Add(x.Tokenize(token))
-                    
+
                     let isUnary =
                         ret.Count = 0
                         || match ret.[ret.Count - 1] with
                            | Operand _ -> false
                            | Operator (o, _) -> o.IsLeftParen
-                    
-                    ret.Add(Operator (x.Operators.[c], isUnary))
+
+                    ret.Add(Operator(x.Operators.[c], isUnary))
             else
                 sb.Append(c) |> ignore
 
@@ -98,7 +98,7 @@ type GenericRPNParser<'Operand>(ops : seq<_>) =
 
         ret.ToArray()
 
-    member private x.InfixToPostfix(tokens : RPNToken<'Operand> []) =
+    member private x.InfixToPostfix(tokens: RPNToken<'Operand> []) =
         let stack = Stack<GenericOperator<'Operand> * bool>()
         let output = Queue<RPNToken<'Operand>>()
 
@@ -110,7 +110,8 @@ type GenericRPNParser<'Operand>(ops : seq<_>) =
                 while not (fst <| stack.Peek()).IsLeftParen do
                     output.Enqueue(Operator(stack.Pop()))
 
-                if (fst <| stack.Peek()).IsLeftParen then stack.Pop() |> ignore
+                if (fst <| stack.Peek()).IsLeftParen then
+                    stack.Pop() |> ignore
             | Operator (o, iU) ->
                 while (stack.Count <> 0)
                       && ((fst <| stack.Peek()).Precedence >= o.Precedence)
@@ -126,7 +127,7 @@ type GenericRPNParser<'Operand>(ops : seq<_>) =
 
     member x.Eval(str) =
         let rpn = str |> x.SplitString |> x.InfixToPostfix
-        
+
         if rpn.Length = 0 then
             raise <| ModuleException(InputError, "输入错误：表达式为空")
 
@@ -145,9 +146,9 @@ type GenericRPNParser<'Operand>(ops : seq<_>) =
                         stack.Push(o.BinaryFunc.Value l r)
 
             stack.Pop()
-        with :? InvalidOperationException ->
-            let operators =
-                x.Operators |> Seq.map (fun op -> op.Char)
+        with
+        | :? InvalidOperationException ->
+            let operators = x.Operators |> Seq.map (fun op -> op.Char)
 
             raise
             <| ModuleException(
@@ -157,8 +158,9 @@ type GenericRPNParser<'Operand>(ops : seq<_>) =
                 x.OperatorEscape
             )
 
-    member x.TryEval(str : string) =
+    member x.TryEval(str: string) =
         try
             let ret = x.Eval(str)
             Ok(ret)
-        with e -> Error e
+        with
+        | e -> Error e

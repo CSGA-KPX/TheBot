@@ -15,8 +15,7 @@ open KPX.EvePlugin.Data.EveType
 // 暂不保存到数据库，并且暂时只有管理员能用，所以暂不引入System.Runtime.Caching缓存
 
 type InventoryCollection private () =
-    let col =
-        ConcurrentDictionary<string, ItemAccumulator<EveType>>(StringComparer.OrdinalIgnoreCase)
+    let col = ConcurrentDictionary<string, ItemAccumulator<EveType>>(StringComparer.OrdinalIgnoreCase)
 
     static member val Instance = InventoryCollection()
 

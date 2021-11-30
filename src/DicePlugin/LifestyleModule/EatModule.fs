@@ -46,34 +46,28 @@ type EatModule() =
                            "#eat 食物名称或预设名单
 预设名单：早 中 晚 加 火锅 萨莉亚
 可以@一个群友帮他选。")>]
-    member x.HandleEat(cmdArg : CommandEventArgs) =
+    member x.HandleEat(cmdArg: CommandEventArgs) =
         use ret = cmdArg.OpenResponse(ForceText)
 
         if cmdArg.HeaderArgs.Length = 0 then
-            let help =
-                SubcommandParser.GenerateHelp<EatSubCommand>()
+            let help = SubcommandParser.GenerateHelp<EatSubCommand>()
 
             for line in help do
                 ret.WriteLine(line)
         else
-            let mutable seed =
-                SeedOption.SeedByUserDay(cmdArg.MessageEvent)
+            let mutable seed = SeedOption.SeedByUserDay(cmdArg.MessageEvent)
 
             let at = cmdArg.MessageEvent.Message.TryGetAt()
 
             match at with
             | Some AtUserType.All //TryGetAt不接受@all，不会匹配
             | None -> ()
-            | Some (AtUserType.User uid) when
-                uid = cmdArg.BotUserId
-                || uid = cmdArg.MessageEvent.UserId ->
+            | Some (AtUserType.User uid) when uid = cmdArg.BotUserId || uid = cmdArg.MessageEvent.UserId ->
                 // @自己 @Bot 迷惑行为
-                use s =
-                    EmbeddedResource.GetResFileStream("DicePlugin.Resources.Funny.jpg")
-                
-                use img =
-                    SkiaSharp.SKImage.FromEncodedData(s)
-                    
+                use s = EmbeddedResource.GetResFileStream("DicePlugin.Resources.Funny.jpg")
+
+                use img = SkiaSharp.SKImage.FromEncodedData(s)
+
                 let msg = Message()
                 msg.Add(img)
                 cmdArg.Reply(msg)
@@ -84,15 +78,9 @@ type EatModule() =
                 // 私聊不会有at，所以肯定是群聊消息
                 let gEvent = cmdArg.MessageEvent.AsGroup()
 
-                let atUserInfo =
-                    GetGroupMemberInfo(gEvent.GroupId, uid)
-                    |> cmdArg.ApiCaller.CallApi
+                let atUserInfo = GetGroupMemberInfo(gEvent.GroupId, uid) |> cmdArg.ApiCaller.CallApi
 
-                ret.WriteLine(
-                    "{0} 为 {1} 投掷：",
-                    cmdArg.MessageEvent.DisplayName,
-                    atUserInfo.DisplayName
-                )
+                ret.WriteLine("{0} 为 {1} 投掷：", cmdArg.MessageEvent.DisplayName, atUserInfo.DisplayName)
 
             let dicer = Dicer(seed)
             dicer.Freeze()
@@ -109,7 +97,7 @@ type EatModule() =
             | Some Snacks -> mealsFunc "零食" breakfast dicer ret
 
     [<CommandHandlerMethod("#饮料", "投掷喝什么饮料，可以@一个群友帮他选", "")>]
-    member x.HandleDrink(cmdArg : CommandEventArgs) =
+    member x.HandleDrink(cmdArg: CommandEventArgs) =
         let msg = cmdArg.MessageEvent.Message
         let tmp = Message()
         tmp.Add("#eat 饮料")
@@ -117,8 +105,7 @@ type EatModule() =
         for at in msg.GetAts() do
             tmp.Add(at)
 
-        let api =
-            KPX.FsCqHttp.Api.Context.RewriteCommand(cmdArg, Seq.singleton<ReadOnlyMessage> tmp)
+        let api = KPX.FsCqHttp.Api.Context.RewriteCommand(cmdArg, Seq.singleton<ReadOnlyMessage> tmp)
 
         cmdArg.ApiCaller.CallApi(api) |> ignore
 

@@ -9,8 +9,8 @@ open KPX.XivPlugin.Data.UniversalisMarketCache
 
 
 type StdEv =
-    { Average : float
-      Deviation : float }
+    { Average: float
+      Deviation: float }
 
     member x.Ceil() =
         { Average = x.Average |> ceil
@@ -27,40 +27,39 @@ type StdEv =
     override x.ToString() =
         String.Format("{0:n0}±{1:n0}", x.Average, x.Deviation)
 
-    static member (*)(x : StdEv, y : float) =
+    static member (*)(x: StdEv, y: float) =
         { Average = x.Average * y
           Deviation = x.Deviation * y }
 
-    static member (/)(x : StdEv, y : float) =
+    static member (/)(x: StdEv, y: float) =
         { Average = x.Average / y
           Deviation = x.Deviation / y }
 
-    static member (+)(x : StdEv, y : StdEv) =
+    static member (+)(x: StdEv, y: StdEv) =
         { Average = x.Average + y.Average
           Deviation = x.Deviation + y.Deviation }
 
-    static member (-)(x : StdEv, y : StdEv) =
+    static member (-)(x: StdEv, y: StdEv) =
         { Average = x.Average - y.Average
           Deviation = x.Deviation - y.Deviation }
 
     static member Zero = { Average = 0.0; Deviation = 0.0 }
 
-    static member FromData(data : float []) =
+    static member FromData(data: float []) =
         if data.Length = 0 then
             { Average = nan; Deviation = nan }
         else
             let avg = Array.average data
 
-            let sum =
-                data |> Array.sumBy (fun x -> (x - avg) ** 2.0)
+            let sum = data |> Array.sumBy (fun x -> (x - avg) ** 2.0)
 
             let ev = sum / (float data.Length)
             { Average = avg; Deviation = sqrt ev }
 
 [<Struct>]
 type MarketData =
-    | Order of odrItem : MarketOrder
-    | Trade of logItem : TradeLog
+    | Order of odrItem: MarketOrder
+    | Trade of logItem: TradeLog
 
     member x.IsHq =
         match x with
@@ -83,7 +82,7 @@ type MarketData =
         | Order x -> x.LastReviewTime
         | Trade x -> x.TimeStamp
 
-type MarketAnalyzer(item : XivItem, world : World, data : MarketData []) =
+type MarketAnalyzer(item: XivItem, world: World, data: MarketData []) =
 
     member x.World = world
     member x.ItemRecord = item
@@ -94,8 +93,7 @@ type MarketAnalyzer(item : XivItem, world : World, data : MarketData []) =
         if data.Length = 0 then
             TimeSpan.MaxValue
         else
-            let data =
-                (data |> Array.maxBy (fun x -> x.UpdateTime))
+            let data = (data |> Array.maxBy (fun x -> x.UpdateTime))
 
             let dt = DateTimeOffset.FromUnixTimeSeconds(data.UpdateTime)
 
@@ -105,20 +103,16 @@ type MarketAnalyzer(item : XivItem, world : World, data : MarketData []) =
         if data.Length = 0 then
             nan
         else
-            (data |> Array.minBy (fun x -> x.Price)).Price
-            |> float
+            (data |> Array.minBy (fun x -> x.Price)).Price |> float
 
     member x.MaxPrice() =
         if data.Length = 0 then
             nan
         else
-            (data |> Array.maxBy (fun x -> x.Price)).Price
-            |> float
+            (data |> Array.maxBy (fun x -> x.Price)).Price |> float
 
     member x.StdEvPrice() =
-        data
-        |> Array.map (fun x -> x.Price |> float)
-        |> StdEv.FromData
+        data |> Array.map (fun x -> x.Price |> float) |> StdEv.FromData
 
     member x.MinCount() =
         if data.Length = 0 then
@@ -135,9 +129,7 @@ type MarketAnalyzer(item : XivItem, world : World, data : MarketData []) =
                 .Quantity
 
     member x.StdEvCount() =
-        data
-        |> Array.map (fun x -> x.Quantity |> float)
-        |> StdEv.FromData
+        data |> Array.map (fun x -> x.Quantity |> float) |> StdEv.FromData
 
     member x.TakeNQ() =
         MarketAnalyzer(item, world, data |> Array.filter (fun x -> not x.IsHq))
@@ -148,14 +140,13 @@ type MarketAnalyzer(item : XivItem, world : World, data : MarketData []) =
     /// 默认25%市场容量
     member x.TakeVolume() = x.TakeVolume(25)
 
-    member x.TakeVolume(cutPct : int) =
+    member x.TakeVolume(cutPct: int) =
         MarketAnalyzer(
             item,
             world,
             [| let samples = data |> Array.sortBy (fun x -> x.Price)
 
-               let itemCount =
-                   data |> Array.sumBy (fun x -> x.Quantity)
+               let itemCount = data |> Array.sumBy (fun x -> x.Quantity)
 
                let cutLen = itemCount * cutPct / 100
                let mutable rest = cutLen
@@ -176,28 +167,18 @@ type MarketAnalyzer(item : XivItem, world : World, data : MarketData []) =
 
 type UniversalisRecord with
     member x.GetListingAnalyzer() =
-        let data =
-            x.Listings |> Array.map MarketData.Order
+        let data = x.Listings |> Array.map MarketData.Order
 
         let info = x.GetInfo()
         MarketAnalyzer(info.Item, info.World, data)
 
     member x.GetTradeLogAnalyzer() =
-        let data =
-            x.TradeLogs |> Array.map MarketData.Trade
+        let data = x.TradeLogs |> Array.map MarketData.Trade
 
         let info = x.GetInfo()
         MarketAnalyzer(info.Item, info.World, data)
 
-let MateriaGrades =
-    [| "壹型"
-       "贰型"
-       "叁型"
-       "肆型"
-       "伍型"
-       "陆型"
-       "柒型"
-       "捌型" |]
+let MateriaGrades = [| "壹型"; "贰型"; "叁型"; "肆型"; "伍型"; "陆型"; "柒型"; "捌型" |]
 
 let MateriaAliasMapper =
     let mapper = AliasMapper()

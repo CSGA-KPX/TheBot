@@ -25,17 +25,18 @@ type ProcessFlag =
 
 [<CLIMutable>]
 type EveProcess =
-    { Original : RecipeProcess<EveType>
-      TargetQuantity : ProcessQuantity
-      TargetMe : int
-      Type : ProcessType }
+    { Original: RecipeProcess<EveType>
+      TargetQuantity: ProcessQuantity
+      TargetMe: int
+      Type: ProcessType }
 
-    member x.ApplyFlags(flag : ProcessFlag) =
+    member x.ApplyFlags(flag: ProcessFlag) =
         match flag with
         | Original -> x.Original
         | MeApplied when x.Type = ProcessType.Manufacturing ->
             let meFactor = (float (100 - x.TargetMe)) / 100.0
             let runs = x.TargetQuantity.ToRuns(x.Original)
+
             let meApplied =
                 { x.Original with
                       Input =
@@ -44,6 +45,7 @@ type EveProcess =
                               (fun rm ->
                                   { rm with
                                         Quantity = rm.Quantity * meFactor |> ceil }) }
+
             meApplied * runs
         // 除了制造以外的项目不需要计算材料效率
         | QuantityApplied
@@ -54,12 +56,12 @@ type EveProcess =
 [<CLIMutable>]
 type EveDbProcess =
     { [<BsonId(false)>]
-      Id : int
-      Process : RecipeProcess<int>
-      Type : ProcessType }
+      Id: int
+      Process: RecipeProcess<int>
+      Type: ProcessType }
 
     member x.AsEveProcess() =
-        let convertMaterial (m : RecipeMaterial<int>) =
+        let convertMaterial (m: RecipeMaterial<int>) =
             { Item = EveTypeCollection.Instance.GetById(m.Item)
               Quantity = m.Quantity }
 

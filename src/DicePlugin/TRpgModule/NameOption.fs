@@ -8,7 +8,7 @@ open KPX.FsCqHttp.Utils.UserOption
 open KPX.DicePlugin.TRpgModule.Strings
 
 
-type private NameTypeCell(cb : OptionBase, name, def) =
+type private NameTypeCell(cb: OptionBase, name, def) =
     inherit OptionCell<string>(cb, name, def)
 
     override x.ConvertValue(lang) =
@@ -22,8 +22,7 @@ type private NameTypeCell(cb : OptionBase, name, def) =
 type NameOption() as x =
     inherit OptionBase()
 
-    let nameTypeCell =
-        NameTypeCell(x, "lang", StringData.Key_EngChsName)
+    let nameTypeCell = NameTypeCell(x, "lang", StringData.Key_EngChsName)
 
     let countCell = OptionCellSimple<uint32>(x, "c", 5u)
 
@@ -48,5 +47,9 @@ type NameOption() as x =
                     yield $"lang:%s{m.Value}"
                 else
                     let succ, i = Int32.TryParse(arg)
-                    if succ then yield $"c:%i{i}" else yield arg
+
+                    if succ then
+                        yield $"c:%i{i}"
+                    else
+                        yield arg
         }

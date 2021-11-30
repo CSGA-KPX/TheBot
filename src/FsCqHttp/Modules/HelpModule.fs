@@ -23,7 +23,7 @@ type HelpOption() as x =
 type HelpModuleBase() =
     inherit CommandHandlerBase()
 
-    member _.ShowCommandList(cfg : HelpOption, cmdArg : CommandEventArgs) =
+    member _.ShowCommandList(cfg: HelpOption, cmdArg: CommandEventArgs) =
         use resp = cmdArg.OpenResponse(PreferImage)
 
         let modules =
@@ -34,8 +34,7 @@ type HelpModuleBase() =
                 .AllModules
 
         resp.Table {
-            [ CellBuilder() { literal "命令" }
-              CellBuilder() { literal "说明" } ]
+            [ CellBuilder() { literal "命令" }; CellBuilder() { literal "说明" } ]
 
             let nonCommandModules = ResizeArray<string>()
 
@@ -43,10 +42,7 @@ type HelpModuleBase() =
                   match item with
                   | :? CommandHandlerBase as cmdModule ->
                       for cmd in cmdModule.Commands do
-                          if
-                              not cmd.CommandAttribute.IsHidden
-                              || cfg.IsDefined("hidden")
-                          then
+                          if not cmd.CommandAttribute.IsHidden || cfg.IsDefined("hidden") then
                               [ CellBuilder() { literal cmd.CommandAttribute.Command }
                                 CellBuilder() { literal cmd.CommandAttribute.HelpDesc } ]
                   | _ -> nonCommandModules.Add(item.GetType().Name) ]
@@ -61,11 +57,10 @@ type HelpModuleBase() =
         }
         |> ignore
 
-    member _.ShowCommandInfo(cfg : HelpOption, cmdArg : CommandEventArgs) =
+    member _.ShowCommandInfo(cfg: HelpOption, cmdArg: CommandEventArgs) =
         let cmd = cfg.NonOptionStrings.[0]
 
-        let api =
-            cmdArg.ApiCaller.CallApi(TryGetCommand(cmd))
+        let api = cmdArg.ApiCaller.CallApi(TryGetCommand(cmd))
 
         match api.CommandInfo with
         | None -> cmdArg.Reply $"该模块没有定义或不存在指令%s{cmd}"
@@ -73,13 +68,10 @@ type HelpModuleBase() =
             use ret = cmdArg.OpenResponse(ForceText)
             ret.WriteLine("{0} ： {1}", ci.CommandAttribute.Command, ci.CommandAttribute.HelpDesc)
 
-            if
-                not
-                <| String.IsNullOrEmpty(ci.CommandAttribute.LongHelp)
-            then
+            if not <| String.IsNullOrEmpty(ci.CommandAttribute.LongHelp) then
                 ret.Write(ci.CommandAttribute.LongHelp)
 
-    member x.HelpCommandImpl(cmdArg : CommandEventArgs) =
+    member x.HelpCommandImpl(cmdArg: CommandEventArgs) =
         let cfg = HelpOption()
         cfg.Parse(cmdArg.HeaderArgs)
 

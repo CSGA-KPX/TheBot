@@ -14,10 +14,10 @@ open KPX.XivPlugin.Data
 type CraftableGear =
     { [<BsonId(false)>]
       /// ItemId
-      Id : int
-      ItemLv : int
-      EquipSlotCategory : int
-      ClassJobCategory : string }
+      Id: int
+      ItemLv: int
+      EquipSlotCategory: int
+      ClassJobCategory: string }
 
 type CraftableGearCollection private () =
     inherit CachedTableCollection<int, CraftableGear>()
@@ -32,11 +32,9 @@ type CraftableGearCollection private () =
     override x.InitializeCollection() =
         let db = x.DbCollection
 
-        db.EnsureIndex(BsonExpression.Create("_id"), true)
-        |> ignore
+        db.EnsureIndex(BsonExpression.Create("_id"), true) |> ignore
 
-        db.EnsureIndex(BsonExpression.Create("ItemLv"), false)
-        |> ignore
+        db.EnsureIndex(BsonExpression.Create("ItemLv"), false) |> ignore
 
         let col = XivProvider.XivCollectionChs
 
@@ -55,15 +53,10 @@ type CraftableGearCollection private () =
             seq {
                 let sheet = col.GetSheet("ClassJobCategory")
 
-                let jobs =
-                    sheet.Header.Headers
-                    |> Seq.skip 2
-                    |> Seq.map (fun x -> x.ColumnName)
+                let jobs = sheet.Header.Headers |> Seq.skip 2 |> Seq.map (fun x -> x.ColumnName)
 
                 for row in sheet do
-                    let j =
-                        jobs
-                        |> Seq.filter (fun job -> (job <> String.Empty) && row.As<bool>(job))
+                    let j = jobs |> Seq.filter (fun job -> (job <> String.Empty) && row.As<bool>(job))
 
                     yield row.Key.Main, String.Join(" ", j)
             }
@@ -88,14 +81,10 @@ type CraftableGearCollection private () =
         |> db.InsertBulk
         |> ignore
 
-    member x.TryLookupByItem(item : XivItem) = x.DbCollection.TryFindById(item.Id)
+    member x.TryLookupByItem(item: XivItem) = x.DbCollection.TryFindById(item.Id)
 
-    member x.Search(iLv : int, jobCode : string) =
-        let query =
-            Query.And(
-                Query.EQ("ItemLv", BsonValue(iLv)),
-                Query.Contains("ClassJobCategory", jobCode)
-            )
+    member x.Search(iLv: int, jobCode: string) =
+        let query = Query.And(Query.EQ("ItemLv", BsonValue(iLv)), Query.Contains("ClassJobCategory", jobCode))
 
         [| for g in x.DbCollection.Find(query) do
                if g.EquipSlotCategory = 12 then

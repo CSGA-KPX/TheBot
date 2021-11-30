@@ -11,9 +11,9 @@ open KPX.XivPlugin.Data
 [<CLIMutable>]
 type GilShopInfo =
     { [<BsonId(true)>]
-      Id : int
-      Ask : int32
-      Bid : int32 }
+      Id: int
+      Ask: int32
+      Bid: int32 }
 
 type GilShopCollection private () =
     inherit CachedTableCollection<int, GilShopInfo>()
@@ -42,4 +42,4 @@ type GilShopCollection private () =
         |> x.DbCollection.InsertBulk
         |> ignore
 
-    member x.TryLookupByItem(item : XivItem) = x.DbCollection.TryFindById(item.Id)
+    member x.TryLookupByItem(item: XivItem) = x.DbCollection.TryFindById(item.Id)

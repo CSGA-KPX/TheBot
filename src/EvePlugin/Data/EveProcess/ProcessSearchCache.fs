@@ -28,10 +28,13 @@ type NameSearchCond =
 
     override x.ToString() = $"%A{x}"
 
-    member x.Contains(t : EveType) =
-        let checkName (name : string) =
-            if name.Length < 2 then failwith "关键词太短，至少2个字"
-            if name.Contains("I", StringComparison.OrdinalIgnoreCase) then failwith "关键词不得含有'I'"
+    member x.Contains(t: EveType) =
+        let checkName (name: string) =
+            if name.Length < 2 then
+                failwith "关键词太短，至少2个字"
+
+            if name.Contains("I", StringComparison.OrdinalIgnoreCase) then
+                failwith "关键词不得含有'I'"
 
         match x with
         | ByItemName name ->
@@ -40,8 +43,7 @@ type NameSearchCond =
         | ByGroupName name ->
             checkName name
 
-            let group =
-                EveGroupCollection.Instance.GetByGroupId(t.GroupId)
+            let group = EveGroupCollection.Instance.GetByGroupId(t.GroupId)
 
             group.Name.Contains(name)
         | ByMarketGroupName name ->
@@ -53,24 +55,23 @@ type NameSearchCond =
 
 /// EVE蓝图搜索条件
 /// 如果指定了cacheResult则会将结果缓存
-type ProcessSearchCond(pType : ProcessType, ?cacheName : string) =
+type ProcessSearchCond(pType: ProcessType, ?cacheName: string) =
 
     member val CacheName = defaultArg cacheName "" with get, set
 
-    member x.CacheResult =
-        not <| String.IsNullOrWhiteSpace(x.CacheName)
+    member x.CacheResult = not <| String.IsNullOrWhiteSpace(x.CacheName)
 
     member x.ProcessType = pType
 
-    member val NameSearch : NameSearchCond [] = Array.empty with get, set
+    member val NameSearch: NameSearchCond [] = Array.empty with get, set
 
-    member val NameExclude : NameSearchCond [] = Array.empty with get, set
+    member val NameExclude: NameSearchCond [] = Array.empty with get, set
 
-    member val GroupIds : int [] = Array.empty with get, set
+    member val GroupIds: int [] = Array.empty with get, set
 
-    member val CategoryIds : int [] = Array.empty with get, set
+    member val CategoryIds: int [] = Array.empty with get, set
 
-    member val MetaGroupIds : int [] = Array.empty with get, set
+    member val MetaGroupIds: int [] = Array.empty with get, set
 
     member val ResultCountLimit = 100 with get, set
 
@@ -82,9 +83,9 @@ type ProcessSearchResult =
 [<CLIMutable>]
 type ProcessSearchCache =
     { [<BsonId(false)>]
-      CacheName : string
-      ProcessType : ProcessType
-      Processes : EveProcess [] }
+      CacheName: string
+      ProcessType: ProcessType
+      Processes: EveProcess [] }
 
 type EveProcessSearch private () =
     inherit CachedTableCollection<string, ProcessSearchCache>()
@@ -97,12 +98,9 @@ type EveProcessSearch private () =
 
     override x.InitializeCollection() = ()
 
-    override x.Depends =
-        [| typeof<EveTypeCollection>
-           typeof<EveGroupCollection>
-           typeof<MarketGroupCollection> |]
+    override x.Depends = [| typeof<EveTypeCollection>; typeof<EveGroupCollection>; typeof<MarketGroupCollection> |]
 
-    member private x.GetCollectionByType(t : ProcessType) =
+    member private x.GetCollectionByType(t: ProcessType) =
         match t with
         | ProcessType.Reaction
         | ProcessType.Manufacturing -> BlueprintCollection.Instance :> EveProcessCollection
@@ -110,27 +108,35 @@ type EveProcessSearch private () =
         | ProcessType.Refine -> RefineProcessCollection.Instance :> EveProcessCollection
         | _ -> invalidArg "ProcessType" $"无法为%A{t}获取合适的数据表"
 
-    member x.Search(cond : ProcessSearchCond) =
+    member x.Search(cond: ProcessSearchCond) =
         let results =
             if cond.CacheResult then
                 let ret = x.DbCollection.TryFindById(cond.CacheName)
 
-                if ret.IsSome then ret.Value.Processes else x.SearchCore(cond)
+                if ret.IsSome then
+                    ret.Value.Processes
+                else
+                    x.SearchCore(cond)
             else
                 x.SearchCore(cond)
 
-        if results.Length = 0 then NoResult
-        elif results.Length > cond.ResultCountLimit then TooManyResults
-        else Result results
+        if results.Length = 0 then
+            NoResult
+        elif results.Length > cond.ResultCountLimit then
+            TooManyResults
+        else
+            Result results
 
-    member private x.SearchCore(cond : ProcessSearchCond) =
+    member private x.SearchCore(cond: ProcessSearchCond) =
         let gids = cond.GroupIds |> set
         let cids = cond.CategoryIds |> set
         let mids = cond.MetaGroupIds |> set
 
         let db =
             x
-                .GetCollectionByType(cond.ProcessType)
+                .GetCollectionByType(
+                    cond.ProcessType
+                )
                 .DbCollection
 
         let result =
@@ -142,9 +148,14 @@ type EveProcessSearch private () =
 
                     let product = proc.Original.GetFirstProduct()
 
-                    if not gids.IsEmpty then ret <- ret && gids.Contains(product.Item.GroupId)
-                    if not cids.IsEmpty then ret <- ret && cids.Contains(product.Item.CategoryId)
-                    if not mids.IsEmpty then ret <- ret && mids.Contains(product.Item.MetaGroupId)
+                    if not gids.IsEmpty then
+                        ret <- ret && gids.Contains(product.Item.GroupId)
+
+                    if not cids.IsEmpty then
+                        ret <- ret && cids.Contains(product.Item.CategoryId)
+
+                    if not mids.IsEmpty then
+                        ret <- ret && mids.Contains(product.Item.MetaGroupId)
 
                     for criteria in cond.NameSearch do
                         ret <- ret && (criteria.Contains(product.Item))
@@ -171,8 +182,7 @@ type EveProcessSearch private () =
 [<RequireQualifiedAccess>]
 module PredefinedSearchCond =
     /// 所有行星开发
-    let Planet =
-        ProcessSearchCond(ProcessType.Planet, "planet")
+    let Planet = ProcessSearchCond(ProcessType.Planet, "planet")
 
     let FuelBlocks =
         let FuelBlock = 1136
@@ -190,9 +200,7 @@ module PredefinedSearchCond =
             ProcessType.Manufacturing,
             "T1Ships",
             CategoryIds = [| ships |],
-            MetaGroupIds =
-                [| MetaGroup.Tech1 |> int
-                   MetaGroup.Faction |> int |],
+            MetaGroupIds = [| MetaGroup.Tech1 |> int; MetaGroup.Faction |> int |],
             NameExclude = [| ByMarketGroupName "特别" |],
             ResultCountLimit = Int32.MaxValue
         )
@@ -210,7 +218,7 @@ module PredefinedSearchCond =
         )
 
 
-    let T2ModulesOf (search : NameSearchCond) =
+    let T2ModulesOf (search: NameSearchCond) =
         let ammo = 8
         let drone = 18
         let modules = 7

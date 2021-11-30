@@ -21,7 +21,7 @@ type TRpgModule() =
 
     [<CommandHandlerMethod(".coc7", "coc第七版属性值，随机", "")>]
     [<CommandHandlerMethod("#coc7", "coc第七版属性值，每日更新", "")>]
-    member x.HandleCoc7(cmdArg : CommandEventArgs) =
+    member x.HandleCoc7(cmdArg: CommandEventArgs) =
         let isDotCommand = cmdArg.CommandAttrib.Command = ".coc7"
 
         let seed =
@@ -35,8 +35,7 @@ type TRpgModule() =
         TextTable(ForceText) {
             $"%s{cmdArg.MessageEvent.DisplayName}的人物作成:"
 
-            [ CellBuilder() { literal "属性" }
-              CellBuilder() { literal "值" } ]
+            [ CellBuilder() { literal "属性" }; CellBuilder() { literal "值" } ]
 
             [ let mutable sum = 0
 
@@ -44,17 +43,17 @@ type TRpgModule() =
                   let d = de.Eval(expr).Sum |> int
                   sum <- sum + d
 
-                  [ CellBuilder() { literal name }
-                    CellBuilder() { integer d } ]
+                  [ CellBuilder() { literal name }; CellBuilder() { integer d } ]
 
-              [ CellBuilder() { literal "总计" }
-                CellBuilder() { integer sum } ] ]
+              [ CellBuilder() { literal "总计" }; CellBuilder() { integer sum } ] ]
 
-            let job =
-                de.Dicer.GetArrayItem(StringData.ChrJobs)
+            let job = de.Dicer.GetArrayItem(StringData.ChrJobs)
 
             let jobStr =
-                if isDotCommand then $"推荐职业：%s{job}" else $"今日推荐职业：%s{job}"
+                if isDotCommand then
+                    $"推荐职业：%s{job}"
+                else
+                    $"今日推荐职业：%s{job}"
 
             jobStr
         }
@@ -66,22 +65,20 @@ type TRpgModule() =
         tc.ShouldNotThrow("#coc7")
 
     [<CommandHandlerMethod(".sc", "跑团用理智检定 .sc 成功/失败 [当前san]", "如当前san未定义，则取当前角色")>]
-    member x.HandleSanCheck(cmdArg : CommandEventArgs) =
-        let card =
-            CardManager.tryGetCurrentCard cmdArg.MessageEvent.UserId
+    member x.HandleSanCheck(cmdArg: CommandEventArgs) =
+        let card = CardManager.tryGetCurrentCard cmdArg.MessageEvent.UserId
 
         let args = cmdArg.HeaderArgs // 参数检查
 
-        if args.Length = 0
-           || args.Length > 2
-           || (not <| args.[0].Contains("/")) then
+        if args.Length = 0 || args.Length > 2 || (not <| args.[0].Contains("/")) then
             cmdArg.Abort(InputError, $"参数错误，请参考指令帮助 #help %s{cmdArg.CommandAttrib.Command}")
 
         let san =
             match args.Length with
             | 1 ->
                 // 读角色
-                if card.IsNone then cmdArg.Abort(InputError, "当前没有绑定角色")
+                if card.IsNone then
+                    cmdArg.Abort(InputError, "当前没有绑定角色")
 
                 if card.Value.PropExists("理智") then
                     card.Value.["理智"]
@@ -133,9 +130,8 @@ type TRpgModule() =
         tc.ShouldNotThrow(".sc 1D10/1D100 50")
 
     [<CommandHandlerMethod(".en", "技能/属性成长检定 .en 属性/技能名 属性/技能值", "")>]
-    member x.HandleEn(cmdArg : CommandEventArgs) =
-        let card =
-            CardManager.tryGetCurrentCard cmdArg.MessageEvent.UserId
+    member x.HandleEn(cmdArg: CommandEventArgs) =
+        let card = CardManager.tryGetCurrentCard cmdArg.MessageEvent.UserId
 
         let mutable propName = ""
         let current = ref 0
@@ -165,15 +161,10 @@ type TRpgModule() =
             ret.WriteLine("{0} 对 {1} 的增强或成长鉴定： {{1D100 = {2}}} -> 成功", usrName, propName, roll0)
             let add = dice.Eval("1D10").Sum |> int
 
-            ret.WriteLine(
-                "其 {1} 增加了 {{1D10 = {2}}} 点，当前为{3} 点",
-                usrName,
-                propName,
-                add,
-                !current + add
-            )
+            ret.WriteLine("其 {1} 增加了 {{1D10 = {2}}} 点，当前为{3} 点", usrName, propName, add, !current + add)
 
-            if card.IsSome then card.Value.[propName] <- !current + add
+            if card.IsSome then
+                card.Value.[propName] <- !current + add
 
             if !current < 90 && !current + add >= 90 then
                 let sanAdd = dice.Eval("2D6").Sum |> int
@@ -182,7 +173,8 @@ type TRpgModule() =
                 if card.IsSome then
                     card.Value.["理智"] <- card.Value.["理智"] + sanAdd
 
-            if card.IsSome then CardManager.upsert card.Value
+            if card.IsSome then
+                CardManager.upsert card.Value
         else
             ret.WriteLine("{0} 对 {1} 的增强或成长鉴定： {{1D100 = {2}}} -> 失败", usrName, propName, roll0)
 
@@ -197,7 +189,7 @@ type TRpgModule() =
     [<CommandHandlerMethod(".rd", ".r 1D100缩写", "")>]
     [<CommandHandlerMethod(".rh", "常规暗骰", "")>]
     [<CommandHandlerMethod(".r", "常规骰点", "")>]
-    member x.HandleRoll(cmdArg : CommandEventArgs) =
+    member x.HandleRoll(cmdArg: CommandEventArgs) =
         let parser = DiceExpression()
 
         let operators =
@@ -207,8 +199,7 @@ type TRpgModule() =
             }
             |> set
 
-        let card =
-            CardManager.tryGetCurrentCard cmdArg.MessageEvent.UserId
+        let card = CardManager.tryGetCurrentCard cmdArg.MessageEvent.UserId
 
         let mutable useCardName = false
         let mutable expr = "1D100"
@@ -221,12 +212,15 @@ type TRpgModule() =
         // rd [原因]
         | ".rd" ->
             let args = cmdArg.HeaderArgs
-            if args.Length <> 0 then reason <- String.Join(" ", args)
+
+            if args.Length <> 0 then
+                reason <- String.Join(" ", args)
 
         // rh/r [表达式] [原因]
         | ".rh"
         | ".r" ->
-            if cmdArg.CommandName = ".rh" then isPrivate <- true
+            if cmdArg.CommandName = ".rh" then
+                isPrivate <- true
 
             match cmdArg.HeaderArgs with
             | [||] -> ()
@@ -240,7 +234,9 @@ type TRpgModule() =
         | ".ra"
         | ".rc" ->
             let t = ref 0
-            if cmdArg.CommandName = ".ra" then offset <- 5
+
+            if cmdArg.CommandName = ".ra" then
+                offset <- 5
 
             match cmdArg.HeaderArgs with
             | [| attName |] when card.IsSome ->
@@ -304,7 +300,7 @@ type TRpgModule() =
         tc.ShouldNotThrow(".r 50*50 测试")
 
     [<CommandHandlerMethod(".crule", "查询/设置当前房规区间（不稳定）", "", Disabled = true)>]
-    member x.HandleRollRule(cmdArg : CommandEventArgs) =
+    member x.HandleRollRule(cmdArg: CommandEventArgs) =
 
         if cmdArg.MessageEvent.MessageType = MessageType.Private then
             cmdArg.Abort(InputError, "此指令仅私聊无效")
@@ -324,7 +320,7 @@ type TRpgModule() =
 
     [<CommandHandlerMethod(".li", "总结疯狂症状", "")>]
     [<CommandHandlerMethod(".ti", "临时疯狂症状", "")>]
-    member x.HandleInsanity(cmdArg : CommandEventArgs) =
+    member x.HandleInsanity(cmdArg: CommandEventArgs) =
         let key =
             match cmdArg.CommandName with
             | ".li" -> StringData.Key_LI
@@ -333,16 +329,14 @@ type TRpgModule() =
 
         let de = DiceExpression(Dicer.RandomDicer)
 
-        let tmpl =
-            de.Dicer.GetArrayItem(StringData.GetLines(key))
+        let tmpl = de.Dicer.GetArrayItem(StringData.GetLines(key))
 
-        let ret =
-            TrpgStringTemplate(de).ParseTemplate(tmpl)
+        let ret = TrpgStringTemplate(de).ParseTemplate(tmpl)
 
         cmdArg.Reply(ret)
 
     [<CommandHandlerMethod(".bg", "生成人物背景", "")>]
-    member x.HandleChrBackground(cmdArg : CommandEventArgs) =
+    member x.HandleChrBackground(cmdArg: CommandEventArgs) =
 
         let de = DiceExpression(Dicer.RandomDicer)
 
@@ -353,16 +347,16 @@ type TRpgModule() =
         cmdArg.Reply(ret)
 
     [<CommandHandlerMethod(".name", "生成人物背景", "")>]
-    member x.HandleChrName(cmdArg : CommandEventArgs) =
+    member x.HandleChrName(cmdArg: CommandEventArgs) =
         let opt = NameOption()
         opt.Parse(cmdArg.HeaderArgs)
 
-        if opt.NameCount > 20 then cmdArg.Abort(InputError, "数量太多")
+        if opt.NameCount > 20 then
+            cmdArg.Abort(InputError, "数量太多")
 
         let de = DiceExpression(Dicer.RandomDicer)
 
-        let tmpl =
-            StringData.GetString(opt.NameLanguageKey)
+        let tmpl = StringData.GetString(opt.NameLanguageKey)
 
         if opt.NonOptionStrings.Count <> 0 then
             let str = opt.GetNonOptionString()

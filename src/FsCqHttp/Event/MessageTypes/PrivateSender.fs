@@ -7,8 +7,8 @@ open Newtonsoft.Json
 /// 私聊消息发送者信息
 type PrivateSender =
     { [<JsonProperty("nickname")>]
-      Nickname : string
+      Nickname: string
       [<JsonProperty("sex")>]
-      Sex : string
+      Sex: string
       [<JsonProperty("age")>]
-      Age : int }
+      Age: int }

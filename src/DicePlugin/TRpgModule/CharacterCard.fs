@@ -10,12 +10,12 @@ open KPX.DicePlugin.TRpgModule.Coc7
 
 [<CLIMutable>]
 type CharacterCard =
-    { Id : int64
-      UserId : uint64
-      ChrName : string
-      Props : Dictionary<string, int> }
+    { Id: int64
+      UserId: uint64
+      ChrName: string
+      Props: Dictionary<string, int> }
 
-    static member DefaultOf(uid : UserId) =
+    static member DefaultOf(uid: UserId) =
         { Id = 0L
           UserId = uid.Value
           // 保证默认名称不会重复
@@ -64,7 +64,8 @@ type CharacterCard =
                         let value = kv.Value
 
                         if DefaultSkillValues.ContainsKey(key) then
-                            if DefaultSkillValues.[key] <> value then yield key, value
+                            if DefaultSkillValues.[key] <> value then
+                                yield key, value
                         else
                             // 比如自定义技能
                             yield key, value

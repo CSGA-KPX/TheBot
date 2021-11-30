@@ -16,10 +16,10 @@ type GroupIncreaseEventSubtype =
 
 type GroupIncreaseEvent =
     { [<JsonProperty("sub_type")>]
-      SubType : GroupIncreaseEventSubtype
+      SubType: GroupIncreaseEventSubtype
       [<JsonProperty("group_id")>]
-      GroupId : GroupId
+      GroupId: GroupId
       [<JsonProperty("operator_id")>]
-      OperatorId : UserId
+      OperatorId: UserId
       [<JsonProperty("user_id")>]
-      UserId : UserId }
+      UserId: UserId }

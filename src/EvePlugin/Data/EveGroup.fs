@@ -13,10 +13,10 @@ open KPX.TheBot.Host.DataCache
 [<CLIMutable>]
 type EveGroup =
     { [<LiteDB.BsonId(false)>]
-      Id : int
-      Name : string
-      CategoryId : int
-      IsPublished : bool }
+      Id: int
+      Name: string
+      CategoryId: int
+      IsPublished: bool }
 
 type EveGroupCollection private () =
     inherit CachedTableCollection<int, EveGroup>()
@@ -29,11 +29,9 @@ type EveGroupCollection private () =
     override x.Depends = Array.empty
 
     override x.InitializeCollection() =
-        use archive =
-            KPX.EvePlugin.Data.Utils.GetEveDataArchive()
+        use archive = KPX.EvePlugin.Data.Utils.GetEveDataArchive()
 
-        use f =
-            archive.GetEntry("evegroups.json").Open()
+        use f = archive.GetEntry("evegroups.json").Open()
 
         use r = new JsonTextReader(new StreamReader(f))
 

@@ -16,13 +16,12 @@ open KPX.XivPlugin.Data
 exception UniversalisAccessException of Net.Http.HttpResponseMessage
 
 type MarketInfo =
-    { World : World
-      Item : XivItem }
+    { World: World
+      Item: XivItem }
 
-    override x.ToString() =
-        $"%i{x.World.WorldId}/%i{x.Item.Id}"
+    override x.ToString() = $"%i{x.World.WorldId}/%i{x.Item.Id}"
 
-    static member FromString(str : string) =
+    static member FromString(str: string) =
         let ret = str.Split('/')
         let wid = ret.[0] |> uint16
         let iid = ret.[1] |> int
@@ -40,38 +39,38 @@ type XivCity =
 
 [<CLIMutable>]
 type MarketOrder =
-    { LastReviewTime : int64
-      PricePerUnit : int
-      Quantity : int
-      CreatorName : string
+    { LastReviewTime: int64
+      PricePerUnit: int
+      Quantity: int
+      CreatorName: string
       [<JsonProperty("hq")>]
-      IsHQ : bool
-      IsCrafted : bool
-      RetainerCity : XivCity
-      RetainerName : string
-      Total : int64 }
+      IsHQ: bool
+      IsCrafted: bool
+      RetainerCity: XivCity
+      RetainerName: string
+      Total: int64 }
 
 [<CLIMutable>]
 type TradeLog =
     { [<JsonProperty("hq")>]
-      IsHQ : bool
-      PricePerUnit : int
-      Quantity : int
-      TimeStamp : int64
-      BuyerName : string
-      Total : int64 }
+      IsHQ: bool
+      PricePerUnit: int
+      Quantity: int
+      TimeStamp: int64
+      BuyerName: string
+      Total: int64 }
 
 [<CLIMutable>]
 type UniversalisRecord =
     { [<BsonId(false)>]
       /// Id为字符串化的MarketInfo
-      Id : string
+      Id: string
       /// 本地最后获取时间
-      LastFetchTime : DateTimeOffset
+      LastFetchTime: DateTimeOffset
       /// Universalis上的最后更新时间
-      LastUploadTime : DateTimeOffset
-      Listings : MarketOrder []
-      TradeLogs : TradeLog [] }
+      LastUploadTime: DateTimeOffset
+      Listings: MarketOrder []
+      TradeLogs: TradeLog [] }
 
     member x.GetInfo() = MarketInfo.FromString(x.Id)
 
@@ -85,21 +84,20 @@ type MarketInfoCollection private () =
     static member Instance = instance
 
     override x.IsExpired(item) =
-        (DateTimeOffset.Now - item.LastFetchTime)
-        >= threshold
+        (DateTimeOffset.Now - item.LastFetchTime) >= threshold
 
     override x.Depends = Array.empty
 
     override x.DoFetchItem(info) =
         let info = MarketInfo.FromString(info)
 
-        let url =
-            $"https://universalis.app/api/%i{info.World.WorldId}/%i{info.Item.Id}"
+        let url = $"https://universalis.app/api/%i{info.World.WorldId}/%i{info.Item.Id}"
 
         x.Logger.Info $"正在访问 %s{url}"
 
         let resp =
-            Network.HttpClient
+            Network
+                .HttpClient
                 .GetAsync(url)
                 .ConfigureAwait(false)
                 .GetAwaiter()
@@ -117,16 +115,11 @@ type MarketInfoCollection private () =
                   TradeLogs = Array.empty }
             | _ -> raise <| UniversalisAccessException resp
         else
-            let json =
-                resp.Content.ReadAsStringAsync()
-                |> Async.AwaitTask
-                |> Async.RunSynchronously
+            let json = resp.Content.ReadAsStringAsync() |> Async.AwaitTask |> Async.RunSynchronously
 
             let o = JObject.Parse(json)
 
-            let updated =
-                o.["lastUploadTime"].Value<int64>()
-                |> DateTimeOffset.FromUnixTimeMilliseconds
+            let updated = o.["lastUploadTime"].Value<int64>() |> DateTimeOffset.FromUnixTimeMilliseconds
 
             let listings =
                 (o.["listings"] :?> JArray)
@@ -142,6 +135,6 @@ type MarketInfoCollection private () =
               Listings = listings
               TradeLogs = tradelogs }
 
-    member x.GetMarketInfo(world : World, item : XivItem) =
+    member x.GetMarketInfo(world: World, item: XivItem) =
         let info = { World = world; Item = item }
         x.GetItem(info.ToString())

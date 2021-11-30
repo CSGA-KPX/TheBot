@@ -12,9 +12,9 @@ open KPX.TheBot.Host.Data
 type Int64JsonConverter() =
     inherit JsonConverter<uint64>()
 
-    override x.WriteJson(writer : JsonWriter, value : uint64, _ : JsonSerializer) = writer.WriteValue(value |> string)
+    override x.WriteJson(writer: JsonWriter, value: uint64, _: JsonSerializer) = writer.WriteValue(value |> string)
 
-    override x.ReadJson(reader : JsonReader, _ : Type, _ : uint64, _ : bool, _ : JsonSerializer) =
+    override x.ReadJson(reader: JsonReader, _: Type, _: uint64, _: bool, _: JsonSerializer) =
         reader.Value |> string |> uint64
 
 let private Db = DataAgent.GetPersistDatabase("thebot_config.db")
@@ -29,20 +29,23 @@ type ConfigOwner =
 [<CLIMutable>]
 type ConfigItem =
     { [<BsonId(AutoId = false)>]
-      Id : string
-      Value : string }
+      Id: string
+      Value: string }
 
-type ConfigManager(owner : ConfigOwner) =
+type ConfigManager(owner: ConfigOwner) =
     static let col = Db.GetCollection<ConfigItem>()
     static let sysCfg = ConfigManager(ConfigOwner.System)
 
-    member x.Get<'T>(name : string, defVal : 'T) =
+    member x.Get<'T>(name: string, defVal: 'T) =
         let id = $"%s{name}:{owner}"
         let ret = col.FindById(BsonValue(id))
 
-        if isNull (box ret) then defVal else JsonConvert.DeserializeObject<'T>(ret.Value)
+        if isNull (box ret) then
+            defVal
+        else
+            JsonConvert.DeserializeObject<'T>(ret.Value)
 
-    member x.Put(name : string, value : 'T) =
+    member x.Put(name: string, value: 'T) =
         let id = $"%s{name}:{owner}"
 
         let obj =

@@ -35,7 +35,7 @@ type SeaFishingOption() as x =
 type MiscModule() =
     inherit CommandHandlerBase()
 
-    let isNumber (str : string) =
+    let isNumber (str: string) =
         if str.Length <> 0 then
             String.forall Char.IsDigit str
         else
@@ -50,7 +50,7 @@ type MiscModule() =
     let mutable dfcRoulettes = buildDfc ()
 
     [<CommandHandlerMethod("#纷争前线", "今日轮转查询", "")>]
-    member x.HandleDailyFrontlineChallenge(cmdArg : CommandEventArgs) =
+    member x.HandleDailyFrontlineChallenge(cmdArg: CommandEventArgs) =
         let opt = DfcOption()
         opt.Parse(cmdArg.HeaderArgs)
 
@@ -64,14 +64,12 @@ type MiscModule() =
             let dateFmt = "yyyy/MM/dd HH:00"
             let JSTOffset = TimeSpan.FromHours(9.0)
 
-            let getString (dt : DateTimeOffset) =
+            let getString (dt: DateTimeOffset) =
                 let dt = dt.ToOffset(JSTOffset)
 
-                let utc =
-                    DateTimeOffset.UnixEpoch.ToOffset(JSTOffset)
+                let utc = DateTimeOffset.UnixEpoch.ToOffset(JSTOffset)
 
-                let index =
-                    ((dt - utc).Days + 2) % dfcRoulettes.Length
+                let index = ((dt - utc).Days + 2) % dfcRoulettes.Length
 
                 dfcRoulettes.[index].Name
 
@@ -82,14 +80,16 @@ type MiscModule() =
                     .ToOffset(TimeSpan.FromHours(8.0))
 
             let list = opt.ListCount.Value
-            if list > 31 then cmdArg.Abort(InputError, "一个月还不够嘛？")
+
+            if list > 31 then
+                cmdArg.Abort(InputError, "一个月还不够嘛？")
+
             use resp = cmdArg.OpenResponse(ForceImage)
 
             resp.Table {
                 $"当前为：%s{getString startDate}"
 
-                [ CellBuilder() { literal "中国时间" }
-                  CellBuilder() { literal "副本" } ]
+                [ CellBuilder() { literal "中国时间" }; CellBuilder() { literal "副本" } ]
 
                 [ for i = 0 to list do
                       let date = startDate.AddDays(float i)
@@ -99,8 +99,7 @@ type MiscModule() =
                               .AddDays(Operators.float i)
                               .ToString(dateFmt)
 
-                      [ CellBuilder() { literal dateStr }
-                        CellBuilder() { literal (getString date) } ] ]
+                      [ CellBuilder() { literal dateStr }; CellBuilder() { literal (getString date) } ] ]
             }
             |> ignore
 
@@ -111,21 +110,8 @@ type MiscModule() =
 
     [<CommandHandlerMethod("#洗澡水", "", "", IsHidden = true)>]
     [<CommandHandlerMethod("#幻想药", "洗个啥？", "")>]
-    member x.HandleFantasia(cmdArg : CommandEventArgs) =
-        let choices =
-            [| "屯着别用"
-               "猫男"
-               "猫女"
-               "龙男"
-               "龙女"
-               "男精"
-               "女精"
-               "公肥"
-               "母肥"
-               "鲁加男"
-               "鲁加女"
-               "大猫"
-               "兔子" |]
+    member x.HandleFantasia(cmdArg: CommandEventArgs) =
+        let choices = [| "屯着别用"; "猫男"; "猫女"; "龙男"; "龙女"; "男精"; "女精"; "公肥"; "母肥"; "鲁加男"; "鲁加女"; "大猫"; "兔子" |]
 
         let atUser = cmdArg.MessageEvent.Message.TryGetAt()
 
@@ -135,20 +121,15 @@ type MiscModule() =
             | AtUserType.User i when i = cmdArg.BotUserId -> cmdArg.Abort(InputError, "请联系开发者")
             | AtUserType.User _ -> cmdArg.Abort(ModuleError, "暂不支持")
 
-        let dicer =
-            Dicer(SeedOption.SeedByUserDay(cmdArg.MessageEvent))
+        let dicer = Dicer(SeedOption.SeedByUserDay(cmdArg.MessageEvent))
 
         TextTable(ForceText) {
-            [ CellBuilder() { literal "D100" }
-              CellBuilder() { literal "选项" } ]
+            [ CellBuilder() { literal "D100" }; CellBuilder() { literal "选项" } ]
 
             choices
             |> Array.map (fun str -> str, dicer.GetPositive(100u, str))
             |> Array.sortBy snd
-            |> Array.map
-                (fun (str, d) ->
-                    [ CellBuilder() { integer d }
-                      CellBuilder() { literal str } ])
+            |> Array.map (fun (str, d) -> [ CellBuilder() { integer d }; CellBuilder() { literal str } ])
         }
 
     [<TestFixture>]
@@ -160,36 +141,34 @@ type MiscModule() =
                            "查找指定职业和品级的套装。用于#r/rr/rc/rrc计算",
                            "#cgss 职业 品级
 勉强能用。也不打算改")>]
-    member x.HandleCGSS(cmdArg : CommandEventArgs) =
+    member x.HandleCGSS(cmdArg: CommandEventArgs) =
         let mutable job = None
         let mutable iLv = None
 
-        let cjm =
-            ClassJobMapping.ClassJobMappingCollection.Instance
+        let cjm = ClassJobMapping.ClassJobMappingCollection.Instance
 
         for item in cmdArg.HeaderArgs do
             if isNumber item then
                 iLv <- Some(Int32.Parse(item))
             else
-                let ret =
-                    cjm.TrySearchByName(item.ToUpperInvariant())
+                let ret = cjm.TrySearchByName(item.ToUpperInvariant())
 
-                if ret.IsSome then job <- Some(ret.Value.Value)
+                if ret.IsSome then
+                    job <- Some(ret.Value.Value)
 
         if job.IsNone then
             cmdArg.Abort(InputError, "没有职业信息。职业可以使用：单字简称/全程/英文简称")
 
-        if iLv.IsNone then cmdArg.Abort(InputError, "没有品级信息")
+        if iLv.IsNone then
+            cmdArg.Abort(InputError, "没有品级信息")
 
-        let cgc =
-            CraftGearSet.CraftableGearCollection.Instance
+        let cgc = CraftGearSet.CraftableGearCollection.Instance
 
         let ret =
             cgc.Search(iLv.Value, job.Value)
             |> Array.map
                 (fun g ->
-                    let item =
-                        ItemCollection.Instance.GetByItemId(g.Id)
+                    let item = ItemCollection.Instance.GetByItemId(g.Id)
 
                     if item.Name.Contains(" ") then
                         $"#%i{item.Id}"
@@ -217,18 +196,15 @@ type MiscModule() =
         tc.ShouldThrow("#is 第三期")*)
 
     [<CommandHandlerMethod("#gate", "挖宝选门", "")>]
-    member x.HandleGate(_ : CommandEventArgs) =
+    member x.HandleGate(_: CommandEventArgs) =
         TextTable(ForceText) {
-            [ CellBuilder() { literal "D100" }
-              CellBuilder() { literal "门" } ]
+            [ CellBuilder() { literal "D100" }; CellBuilder() { literal "门" } ]
 
             [| "左"; "中"; "右" |]
             |> Array.map (fun door -> door, Dicer.RandomDicer.GetPositive(100u, door))
             |> Array.sortBy snd
             |> Array.map
-                (fun (door, score) ->
-                    [ CellBuilder() { literal $"%03i{score}" }
-                      CellBuilder() { literal door } ])
+                (fun (door, score) -> [ CellBuilder() { literal $"%03i{score}" }; CellBuilder() { literal door } ])
         }
 
     [<TestFixture>]
@@ -237,7 +213,7 @@ type MiscModule() =
         tc.ShouldNotThrow("#gate")
 
     [<CommandHandlerMethod("#仙人彩", "仙人彩周常", "")>]
-    member x.HandleCactpot(cmdArg : CommandEventArgs) =
+    member x.HandleCactpot(cmdArg: CommandEventArgs) =
         let nums =
             Seq.initInfinite (fun _ -> $"%04i{Dicer.RandomDicer.GetPositive(10000u) - 1u}")
             |> Seq.distinctBy (fun numStr -> numStr.[3])
@@ -252,7 +228,7 @@ type MiscModule() =
 
     [<CommandHandlerMethod("#nuannuan", "暖暖", "")>]
     [<CommandHandlerMethod("#nrnr", "暖暖", "")>]
-    member x.HandleNrnr(cmdArg : CommandEventArgs) =
+    member x.HandleNrnr(cmdArg: CommandEventArgs) =
         let handler = new Net.Http.HttpClientHandler()
         handler.AutomaticDecompression <- Net.DecompressionMethods.GZip
 
@@ -262,8 +238,7 @@ type MiscModule() =
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:78.0) Gecko/20100101 Firefox/78.0"
         )
 
-        hc.DefaultRequestHeaders.Referrer <-
-            Uri("https://space.bilibili.com/15503317/channel/detail?cid=55877")
+        hc.DefaultRequestHeaders.Referrer <- Uri("https://space.bilibili.com/15503317/channel/detail?cid=55877")
 
         let json =
             hc
@@ -274,24 +249,18 @@ type MiscModule() =
                 .GetAwaiter()
                 .GetResult()
 
-        use reader =
-            new Newtonsoft.Json.JsonTextReader(new IO.StreamReader(json))
+        use reader = new Newtonsoft.Json.JsonTextReader(new IO.StreamReader(json))
 
-        let json =
-            Newtonsoft.Json.Linq.JObject.Load(reader)
+        let json = Newtonsoft.Json.Linq.JObject.Load(reader)
 
-        let data =
-            json.SelectToken("data.list.vlist") :?> Newtonsoft.Json.Linq.JArray
+        let data = json.SelectToken("data.list.vlist") :?> Newtonsoft.Json.Linq.JArray
 
-        let item =
-            data
-            |> Seq.find (fun x -> x.Value<string>("title").Contains("满分攻略"))
+        let item = data |> Seq.find (fun x -> x.Value<string>("title").Contains("满分攻略"))
 
         let bvid = item.Value<string>("bvid")
         let title = item.Value<string>("title")
 
-        let url =
-            $"https://www.bilibili.com/video/%s{bvid}"
+        let url = $"https://www.bilibili.com/video/%s{bvid}"
 
         let html =
             hc
@@ -304,12 +273,11 @@ type MiscModule() =
 
         doc.Load(html, Encoding.GetEncoding("UTF-8"))
 
-        let n =
-            doc.DocumentNode.SelectSingleNode("//div[@id = \"v_desc\"]")
+        let n = doc.DocumentNode.SelectSingleNode("//div[@id = \"v_desc\"]")
 
         let cfg = Utils.CommandUtils.XivOption()
         cfg.Parse(cmdArg.HeaderArgs)
-        
+
         TextTable(cfg.ResponseType) {
             CellBuilder() {
                 literal title
@@ -329,7 +297,7 @@ type MiscModule() =
                            "next:查阅n个CD后的信息，list:查阅n个时间窗的信息。如：
 #海钓 next:2
 #海钓 list:50")>]
-    member x.HandleOceanFishing(cmdArg : CommandEventArgs) =
+    member x.HandleOceanFishing(cmdArg: CommandEventArgs) =
         let opt = SeaFishingOption()
         opt.Parse(cmdArg.HeaderArgs)
 
@@ -337,13 +305,14 @@ type MiscModule() =
         use ret = cmdArg.OpenResponse(ForceImage)
         ret.WriteLine("警告：国服数据，世界服不一定适用。时间为中国标准时间。")
 
-        let mutable now =
-            DateTimeOffset.Now.ToOffset(TimeSpan.FromHours(8.0))
+        let mutable now = DateTimeOffset.Now.ToOffset(TimeSpan.FromHours(8.0))
 
         try
             if opt.ListCount.IsDefined then
                 let count = opt.ListCount.Value
-                if count > 12 * 31 then cmdArg.Abort(InputError, "那时间可太长了。")
+
+                if count > 12 * 31 then
+                    cmdArg.Abort(InputError, "那时间可太长了。")
 
                 ret.Table {
                     [ CellBuilder() { literal "CD时间" }
@@ -363,7 +332,10 @@ type MiscModule() =
                 |> ignore
             else
                 let next = opt.NextCoolDown.Value
-                if next <> 0 then now <- now.AddHours(2.0 * (float next))
+
+                if next <> 0 then
+                    now <- now.AddHours(2.0 * (float next))
+
                 let info = OceanFishing.CalculateCooldown(now)
 
                 let date = info.CooldownDate.ToString(dateFmt)

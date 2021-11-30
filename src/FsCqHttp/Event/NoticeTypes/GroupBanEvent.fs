@@ -16,14 +16,14 @@ type GroupBanEventSubtype =
 /// 群禁言事件
 type GroupBanEvent =
     { [<JsonProperty("sub_type")>]
-      SubType : GroupBanEventSubtype
+      SubType: GroupBanEventSubtype
       [<JsonProperty("group_id")>]
-      GroupId : GroupId
+      GroupId: GroupId
       [<JsonProperty("operator_id")>]
-      OperatorId : UserId
+      OperatorId: UserId
       [<JsonProperty("user_id")>]
       /// 被禁言 QQ 号
-      UserId : UserId
+      UserId: UserId
       [<JsonProperty("duration")>]
       /// 禁言时长，单位秒
-      Duration : uint64 }
+      Duration: uint64 }

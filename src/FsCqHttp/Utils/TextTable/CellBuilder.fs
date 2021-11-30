@@ -15,14 +15,14 @@ type CellBuilder() =
     member val TextColor = SKColors.Black with get, set
 
     [<CustomOperation("integer")>]
-    member _.Integer(x : CellBuilder, value : obj) =
+    member _.Integer(x: CellBuilder, value: obj) =
         TableCellHelper.EnsureNumberType value
         x.Align <- TextAlignment.Right
         x.Builder.AppendFormat("{0:N0}", value) |> ignore
         x
 
     [<CustomOperation("integerSig4")>]
-    member _.IntegerSig4(x : CellBuilder, value : obj) =
+    member _.IntegerSig4(x: CellBuilder, value: obj) =
         TableCellHelper.EnsureNumberType value
         x.Align <- TextAlignment.Right
 
@@ -32,14 +32,14 @@ type CellBuilder() =
         x
 
     [<CustomOperation("float")>]
-    member _.Float(x : CellBuilder, value : obj) =
+    member _.Float(x: CellBuilder, value: obj) =
         TableCellHelper.EnsureNumberType value
         x.Align <- TextAlignment.Right
         x.Builder.AppendFormat("{0:N2}", value) |> ignore
         x
 
     [<CustomOperation("floatSig4")>]
-    member _.FloatSig4(x : CellBuilder, value : obj) =
+    member _.FloatSig4(x: CellBuilder, value: obj) =
         TableCellHelper.EnsureNumberType value
         x.Align <- TextAlignment.Right
 
@@ -49,14 +49,13 @@ type CellBuilder() =
         x
 
     [<CustomOperation("number")>]
-    member _.Number(x : CellBuilder, value : obj) =
+    member _.Number(x: CellBuilder, value: obj) =
         TableCellHelper.EnsureNumberType value
         x.Align <- TextAlignment.Right
 
         let sigDigits = 4
 
-        let mutable value =
-            TableCellHelper.RoundSigDigits(Convert.ToDouble(value), sigDigits)
+        let mutable value = TableCellHelper.RoundSigDigits(Convert.ToDouble(value), sigDigits)
 
         let cellString =
             match value with
@@ -65,16 +64,12 @@ type CellBuilder() =
             | _ when Double.IsNegativeInfinity(value) -> "+inf%"
             | _ when Double.IsPositiveInfinity(value) -> "-inf%"
             | _ ->
-                let pow10 =
-                    ((value |> abs |> log10 |> floor) + 1.0)
-                    |> floor
-                    |> int
+                let pow10 = ((value |> abs |> log10 |> floor) + 1.0) |> floor |> int
 
-                let scale, postfix =
-                    if pow10 >= 9 then 8.0, "亿" else 0.0, ""
-                    
+                let scale, postfix = if pow10 >= 9 then 8.0, "亿" else 0.0, ""
+
                 let hasEnoughDigits = (pow10 - (int scale) + 1) >= sigDigits
-                
+
                 if hasEnoughDigits then
                     String.Format("{0:N0}{1}", value / 10.0 ** scale, postfix)
                 else
@@ -84,14 +79,14 @@ type CellBuilder() =
         x
 
     [<CustomOperation("percent")>]
-    member _.Percent(x : CellBuilder, value : float) =
+    member _.Percent(x: CellBuilder, value: float) =
         TableCellHelper.EnsureNumberType value
         x.Align <- TextAlignment.Right
         x.Builder.AppendFormat("{0:P2}", value) |> ignore
         x
 
     [<CustomOperation("toTimeSpan")>]
-    member _.ToTimeSpan(x : CellBuilder, value : DateTimeOffset) =
+    member _.ToTimeSpan(x: CellBuilder, value: DateTimeOffset) =
         x.Align <- TextAlignment.Right
 
         TableCellHelper.FormatTimeSpan(DateTimeOffset.Now - value)
@@ -101,34 +96,30 @@ type CellBuilder() =
         x
 
     [<CustomOperation("timeSpan")>]
-    member _.TimeSpan(x : CellBuilder, value : TimeSpan) =
+    member _.TimeSpan(x: CellBuilder, value: TimeSpan) =
         x.Align <- TextAlignment.Right
 
-        TableCellHelper.FormatTimeSpan value
-        |> x.Builder.Append
-        |> ignore
+        TableCellHelper.FormatTimeSpan value |> x.Builder.Append |> ignore
 
         x
 
     [<CustomOperation("dateTime")>]
-    member _.DateTime(x : CellBuilder, value : DateTimeOffset) =
+    member _.DateTime(x: CellBuilder, value: DateTimeOffset) =
         x.Align <- TextAlignment.Right
 
-        value.ToLocalTime().ToString("yyyy/MM/dd HH:mm")
-        |> x.Builder.Append
-        |> ignore
+        value.ToLocalTime().ToString("yyyy/MM/dd HH:mm") |> x.Builder.Append |> ignore
 
         x
 
     [<CustomOperation("endLine")>]
-    member _.EndLine(x : CellBuilder) =
+    member _.EndLine(x: CellBuilder) =
         x.Content.Add(x.Builder.ToString())
         x.Builder.Clear() |> ignore
 
         x
 
     [<CustomOperation("newLine")>]
-    member _.NewLine(x : CellBuilder) =
+    member _.NewLine(x: CellBuilder) =
         if x.Builder.Length <> 0 then
             x.Content.Add(x.Builder.ToString())
             x.Builder.Clear() |> ignore
@@ -137,16 +128,17 @@ type CellBuilder() =
 
         x
 
-    member x.ToTableCells(skp : SKPaint) =
-        if x.Builder.Length <> 0 then x.EndLine(x) |> ignore
+    member x.ToTableCells(skp: SKPaint) =
+        if x.Builder.Length <> 0 then
+            x.EndLine(x) |> ignore
         // 保证至少有一个？
-        if x.Content.Count = 0 then x.Content.Add(String.Empty)
+        if x.Content.Count = 0 then
+            x.Content.Add(String.Empty)
 
-        let contains =
-            x.Content
-            |> Seq.exists (fun str -> str.Contains('\n'))
+        let contains = x.Content |> Seq.exists (fun str -> str.Contains('\n'))
 
-        if contains then invalidOp "TableCell不允许包含多行文本，请使用相关指令拆分"
+        if contains then
+            invalidOp "TableCell不允许包含多行文本，请使用相关指令拆分"
 
         [| for line in x.Content do
                let cell = TableCell(line, skp)
@@ -157,64 +149,68 @@ type CellBuilder() =
                cell |]
 
     [<CustomOperation("literal")>]
-    member _.Literal(x : CellBuilder, item : obj) =
+    member _.Literal(x: CellBuilder, item: obj) =
         x.Align <- TextAlignment.Left
         x.Builder.Append(item) |> ignore
         x
 
     [<CustomOperation("leftLiteral")>]
-    member _.LeftLiteral(x : CellBuilder, item : obj) =
+    member _.LeftLiteral(x: CellBuilder, item: obj) =
         x.Align <- TextAlignment.Left
         x.Builder.Append(item) |> ignore
         x
 
     [<CustomOperation("rightLiteral")>]
-    member _.RightLiteral(x : CellBuilder, item : obj) =
+    member _.RightLiteral(x: CellBuilder, item: obj) =
         x.Align <- TextAlignment.Right
         x.Builder.Append(item) |> ignore
         x
 
     [<CustomOperation("leftPad")>]
-    member _.LeftPad(x : CellBuilder) =
+    member _.LeftPad(x: CellBuilder) =
         x.Align <- TextAlignment.Left
         x.Builder.Append("") |> ignore
         x
 
     [<CustomOperation("rightPad")>]
-    member _.RightPad(x : CellBuilder) =
+    member _.RightPad(x: CellBuilder) =
         x.Align <- TextAlignment.Right
         x.Builder.Append("") |> ignore
         x
 
     [<CustomOperation("leftAlign")>]
-    member _.LeftAlign(x : CellBuilder) =
+    member _.LeftAlign(x: CellBuilder) =
         x.Align <- TextAlignment.Left
         x
 
     [<CustomOperation("rightAlign")>]
-    member _.RightAlign(x : CellBuilder) =
+    member _.RightAlign(x: CellBuilder) =
         x.Align <- TextAlignment.Right
         x
 
     [<CustomOperation("setBold")>]
-    member _.SetBold(x : CellBuilder) =
+    member _.SetBold(x: CellBuilder) =
         x.FakeBold <- true
         x
 
     [<CustomOperation("unsetBold")>]
-    member _.UnsetBold(x : CellBuilder) =
+    member _.UnsetBold(x: CellBuilder) =
         x.FakeBold <- false
         x
 
     [<CustomOperation("splitString")>]
-    member _.SplitLines(x : CellBuilder, str : String) =
-        if x.Builder.Length <> 0 then x.NewLine(x) |> ignore
+    member _.SplitLines(x: CellBuilder, str: String) =
+        if x.Builder.Length <> 0 then
+            x.NewLine(x) |> ignore
+
         x.Content.AddRange(str.Split([| "\r\n"; "\r"; "\n" |], StringSplitOptions.None))
         x
 
     [<CustomOperation("addLines")>]
-    member _.AddLines(x : CellBuilder, lines : String []) =
-        if x.Builder.Length <> 0 then x.NewLine(x) |> ignore
+    member _.AddLines(x: CellBuilder, lines: String []) =
+        if x.Builder.Length <> 0 then
+            x.NewLine(x) |> ignore
+
         x.Content.AddRange(lines)
         x
 
@@ -223,81 +219,81 @@ type CellBuilder() =
     member x.Zero() = x
 
     [<CustomOperation("setTextWhite")>]
-    member _.SetTextWhite(x : CellBuilder) =
+    member _.SetTextWhite(x: CellBuilder) =
         x.TextColor <- SKColors.White
         x
 
     [<CustomOperation("setTextSilver")>]
-    member _.SetTextSilver(x : CellBuilder) =
+    member _.SetTextSilver(x: CellBuilder) =
         x.TextColor <- SKColors.Silver
         x
 
     [<CustomOperation("setTextGray")>]
-    member _.SetTextGray(x : CellBuilder) =
+    member _.SetTextGray(x: CellBuilder) =
         x.TextColor <- SKColors.Gray
         x
 
     [<CustomOperation("setTextBlack")>]
-    member _.SetTextBlack(x : CellBuilder) =
+    member _.SetTextBlack(x: CellBuilder) =
         x.TextColor <- SKColors.Black
         x
 
     [<CustomOperation("setTextRed")>]
-    member _.SetTextRed(x : CellBuilder) =
+    member _.SetTextRed(x: CellBuilder) =
         x.TextColor <- SKColors.Red
         x
 
     [<CustomOperation("setTextMaroon")>]
-    member _.SetTextMaroon(x : CellBuilder) =
+    member _.SetTextMaroon(x: CellBuilder) =
         x.TextColor <- SKColors.Maroon
         x
 
     [<CustomOperation("setTextYellow")>]
-    member _.SetTextYellow(x : CellBuilder) =
+    member _.SetTextYellow(x: CellBuilder) =
         x.TextColor <- SKColors.Yellow
         x
 
     [<CustomOperation("setTextOlive")>]
-    member _.SetTextOlive(x : CellBuilder) =
+    member _.SetTextOlive(x: CellBuilder) =
         x.TextColor <- SKColors.Olive
         x
 
     [<CustomOperation("setTextLime")>]
-    member _.SetTextLime(x : CellBuilder) =
+    member _.SetTextLime(x: CellBuilder) =
         x.TextColor <- SKColors.Lime
         x
 
     [<CustomOperation("setTextGreen")>]
-    member _.SetTextGreen(x : CellBuilder) =
+    member _.SetTextGreen(x: CellBuilder) =
         x.TextColor <- SKColors.Green
         x
 
     [<CustomOperation("setTextAqua")>]
-    member _.SetTextAqua(x : CellBuilder) =
+    member _.SetTextAqua(x: CellBuilder) =
         x.TextColor <- SKColors.Aqua
         x
 
     [<CustomOperation("setTextTeal")>]
-    member _.SetTextTeal(x : CellBuilder) =
+    member _.SetTextTeal(x: CellBuilder) =
         x.TextColor <- SKColors.Teal
         x
 
     [<CustomOperation("setTextBlue")>]
-    member _.SetTextBlue(x : CellBuilder) =
+    member _.SetTextBlue(x: CellBuilder) =
         x.TextColor <- SKColors.Blue
         x
 
     [<CustomOperation("setTextNavy")>]
-    member _.SetTextNavy(x : CellBuilder) =
+    member _.SetTextNavy(x: CellBuilder) =
         x.TextColor <- SKColors.Navy
         x
 
     [<CustomOperation("setTextFuchsia")>]
-    member _.SetTextFuchsia(x : CellBuilder) =
+    member _.SetTextFuchsia(x: CellBuilder) =
         x.TextColor <- SKColors.Fuchsia
         x
 
     [<CustomOperation("setTextPurple")>]
-    member _.SetTextPurple(x : CellBuilder) =
+    member _.SetTextPurple(x: CellBuilder) =
         x.TextColor <- SKColors.Purple
         x

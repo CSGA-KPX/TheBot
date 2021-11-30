@@ -18,16 +18,15 @@ type ScriptExchangeModule() =
 
     let itemCol = ItemCollection.Instance
 
-    let universalis =
-        UniversalisMarketCache.MarketInfoCollection.Instance
+    let universalis = UniversalisMarketCache.MarketInfoCollection.Instance
 
-    let isNumber (str : string) =
+    let isNumber (str: string) =
         if str.Length <> 0 then
             String.forall Char.IsDigit str
         else
             false
 
-    let strToItem (str : string) =
+    let strToItem (str: string) =
         if isNumber str then
             itemCol.TryGetByItemId(Convert.ToInt32(str))
         else
@@ -52,20 +51,20 @@ type ScriptExchangeModule() =
 
                   CellBuilder() { literal "名称" } ]
 
-            [ for chunk in sc.AllCostItems()
-                           |> Array.sortBy (fun item -> item.Id)
-                           |> Array.chunkBySize cols do
+            [ for chunk in
+                  sc.AllCostItems()
+                  |> Array.sortBy (fun item -> item.Id)
+                  |> Array.chunkBySize cols do
                   [ for item in chunk do
                         CellBuilder() { literal item.Id }
                         CellBuilder() { literal item.Name } ] ]
         }
 
-    member private x.ShowExchangeableProfit(cost : XivItem, world : World) =
+    member private x.ShowExchangeableProfit(cost: XivItem, world: World) =
         let ia = sc.SearchByCostItemId(cost.Id)
 
         if ia.Length = 0 then
-            raise
-            <| ModuleException(InputError, $"%s{cost.Name}不能兑换道具")
+            raise <| ModuleException(InputError, $"%s{cost.Name}不能兑换道具")
 
         TextTable(ForceImage) {
             $"兑换道具:%s{cost.Name} 土豆：%s{world.DataCenter}/%s{world.WorldName}"
@@ -106,8 +105,7 @@ type ScriptExchangeModule() =
                        CellBuilder() { integer (market.StdEvPrice().Average) }
                        CellBuilder() { integer (market.MinPrice()) }
                        let costItemValue =
-                           (market.StdEvPrice() * (float <| info.ReceiveCount)
-                            / (float <| info.CostCount))
+                           (market.StdEvPrice() * (float <| info.ReceiveCount) / (float <| info.CostCount))
                                .Average
 
                        CellBuilder() { integer costItemValue }
@@ -125,7 +123,7 @@ type ScriptExchangeModule() =
                            "计算部分道具兑换的价格",
                            "兑换所需道具的名称或ID，只处理1个
 可以设置查询服务器，已有服务器见#ff14help")>]
-    member x.HandleSSC(cmdArg : CommandEventArgs) =
+    member x.HandleSSC(cmdArg: CommandEventArgs) =
         let opt = CommandUtils.XivOption()
         opt.Parse(cmdArg.HeaderArgs)
 

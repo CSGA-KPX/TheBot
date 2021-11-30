@@ -9,4 +9,3 @@ type AuthLevel =
     | GroupOwner
     | BotAdmin
     | InstanceAdmin
-    

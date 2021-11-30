@@ -22,7 +22,7 @@ type DiceModule() =
                            "#c 选项1 选项2 选项3
 可以使用X不X类的短语。如'#c 能不能吃肉'等同于'#c 能吃肉 不能吃肉'
 可以@一个群友帮他选")>]
-    member x.HandleChoices(cmdArg : CommandEventArgs) =
+    member x.HandleChoices(cmdArg: CommandEventArgs) =
         let atUser = cmdArg.MessageEvent.Message.TryGetAt()
         use ret = cmdArg.OpenResponse(ForceText)
 
@@ -33,23 +33,16 @@ type DiceModule() =
             | AtUserType.All -> ret.Abort(InputError, "公共事件请at bot账号")
             | AtUserType.User x when
                 // TODO: 应该使用AllLines轮询
-                x = cmdArg.BotUserId
-                && not
-                   <| cmdArg.HeaderLine.Contains(loginInfo.Nickname)
+                x = cmdArg.BotUserId && not <| cmdArg.HeaderLine.Contains(loginInfo.Nickname)
                 ->
                 ret.WriteLine("公投：")
             | AtUserType.User x ->
                 let atUserInfo =
                     let gEvent = cmdArg.MessageEvent.AsGroup()
 
-                    GetGroupMemberInfo(gEvent.GroupId, x)
-                    |> cmdArg.ApiCaller.CallApi
+                    GetGroupMemberInfo(gEvent.GroupId, x) |> cmdArg.ApiCaller.CallApi
 
-                ret.WriteLine(
-                    "{0} 为 {1} 投掷：",
-                    cmdArg.MessageEvent.DisplayName,
-                    atUserInfo.DisplayName
-                )
+                ret.WriteLine("{0} 为 {1} 投掷：", cmdArg.MessageEvent.DisplayName, atUserInfo.DisplayName)
 
         if cmdArg.HeaderArgs.Length = 0 then
             cmdArg.Abort(InputError, "没有选项")
@@ -66,25 +59,20 @@ type DiceModule() =
             let dicer = Dicer(seed)
             do dicer.Freeze()
 
-            [ CellBuilder() { literal "D100" }
-              CellBuilder() { literal "选项" } ]
+            [ CellBuilder() { literal "D100" }; CellBuilder() { literal "选项" } ]
 
             cmdArg.HeaderArgs
             |> Array.collect ChoiceHelper.expandYesOrNo
             |> Array.map (fun c -> (c, dicer.GetPositive(100u, c)))
             |> Array.sortBy snd
-            |> Array.map
-                (fun (c, n) ->
-                    [ CellBuilder() { literal $"%03i{n}" }
-                      CellBuilder() { literal c } ])
+            |> Array.map (fun (c, n) -> [ CellBuilder() { literal $"%03i{n}" }; CellBuilder() { literal c } ])
         }
         |> ignore
 
     [<CommandHandlerMethod(".jrrp", "（兼容）今日人品值", "")>]
     [<CommandHandlerMethod("#jrrp", "今日人品值", "")>]
-    member x.HandleJrrp(cmdArg : CommandEventArgs) =
-        let dicer =
-            Dicer(SeedOption.SeedByUserDay(cmdArg.MessageEvent))
+    member x.HandleJrrp(cmdArg: CommandEventArgs) =
+        let dicer = Dicer(SeedOption.SeedByUserDay(cmdArg.MessageEvent))
 
         let jrrp = dicer.GetPositive(100u)
         cmdArg.Reply $"%s{cmdArg.MessageEvent.DisplayName}今日人品值是：%i{jrrp}"
@@ -93,7 +81,7 @@ type DiceModule() =
                            "计算器",
                            "支持加减乘除操作和DK操作符，可以测试骰子表达式。
 如#c (1D2+5D5K3)/2*3D6")>]
-    member x.HandleCalculator(cmdArg : CommandEventArgs) =
+    member x.HandleCalculator(cmdArg: CommandEventArgs) =
         let sb = Text.StringBuilder()
         let parser = DiceExpression.DiceExpression()
         let arg = String.Join(" ", cmdArg.HeaderArgs)
@@ -102,15 +90,14 @@ type DiceModule() =
         match ret with
         | Error e -> sb.Append $"对%s{arg}求值失败：%s{e.Message}" |> ignore
         | Ok i ->
-            let sum =
-                String.Format("{0:N2}", i.Sum).Replace(".00", "")
+            let sum = String.Format("{0:N2}", i.Sum).Replace(".00", "")
 
             sb.AppendFormat("{0} = {1}", arg, sum) |> ignore
 
         cmdArg.Reply(sb.ToString())
 
     [<CommandHandlerMethod("#选择题", "考试专用", "")>]
-    member x.HandleChoice(cmdArg : CommandEventArgs) =
+    member x.HandleChoice(cmdArg: CommandEventArgs) =
         let mutable count = 10
 
         for arg in cmdArg.HeaderArgs do
@@ -141,7 +128,7 @@ type DiceModule() =
                            "接受数字参数。
 小于10的记为概率，大于等于10记为抽数，以最后一次出现的为准。
 如#gacha 6 300或#gacha 300 6")>]
-    member x.HandleGacha(cmdArg : CommandEventArgs) =
+    member x.HandleGacha(cmdArg: CommandEventArgs) =
         let mutable cutoff = 3
         let mutable count = 10
 
@@ -151,9 +138,12 @@ type DiceModule() =
             if succ then
                 let i = int i
 
-                if i > 300 then cmdArg.Abort(InputError, "一井还不够你用？")
-                elif i >= 10 then count <- i
-                else cutoff <- i
+                if i > 300 then
+                    cmdArg.Abort(InputError, "一井还不够你用？")
+                elif i >= 10 then
+                    count <- i
+                else
+                    cutoff <- i
 
         let ret =
             Array.init count (fun _ -> Dicer.RandomDicer.GetPositive(100u) |> int)

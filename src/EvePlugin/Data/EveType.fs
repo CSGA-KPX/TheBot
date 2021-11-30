@@ -15,16 +15,16 @@ open KPX.EvePlugin.Data.Group
 [<CLIMutable>]
 type EveType =
     { [<LiteDB.BsonId(false)>]
-      Id : int
-      Name : string
-      GroupId : int
-      CategoryId : int
-      Volume : float
-      MetaGroupId : int
+      Id: int
+      Name: string
+      GroupId: int
+      CategoryId: int
+      Volume: float
+      MetaGroupId: int
       /// 用途不明，可能是最小精炼单位
-      PortionSize : int
-      MarketGroupId : int
-      BasePrice : float }
+      PortionSize: int
+      MarketGroupId: int
+      BasePrice: float }
 
 type EveTypeCollection private () =
     inherit CachedTableCollection<int, EveType>()
@@ -38,12 +38,10 @@ type EveTypeCollection private () =
     override x.Depends = [| typeof<EveGroupCollection> |]
 
     override x.InitializeCollection() =
-        x.DbCollection.EnsureIndex(LiteDB.BsonExpression.Create("Name"))
-        |> ignore
+        x.DbCollection.EnsureIndex(LiteDB.BsonExpression.Create("Name")) |> ignore
 
         seq {
-            use archive =
-                KPX.EvePlugin.Data.Utils.GetEveDataArchive()
+            use archive = KPX.EvePlugin.Data.Utils.GetEveDataArchive()
 
             use f = archive.GetEntry("evetypes.json").Open()
             use r = new JsonTextReader(new StreamReader(f))
@@ -66,8 +64,7 @@ type EveTypeCollection private () =
 
                     let tid = o.GetValue("typeID").ToObject<int>()
 
-                    let name =
-                        o.GetValue("typeName").ToObject<string>()
+                    let name = o.GetValue("typeName").ToObject<string>()
 
                     let vol =
                         if o.ContainsKey("volume") then
@@ -116,23 +113,25 @@ type EveTypeCollection private () =
         |> x.DbCollection.InsertBulk
         |> ignore
 
-    member x.Item(typeId : int) = x.GetById(typeId)
+    member x.Item(typeId: int) = x.GetById(typeId)
 
-    member x.GetById(tid : int) =
+    member x.GetById(tid: int) =
         x.PassOrRaise(x.DbCollection.TryFindById(tid), "找不到物品:{0}", tid)
 
-    member x.TryGetById(tid : int) = x.DbCollection.TryFindById(tid)
+    member x.TryGetById(tid: int) = x.DbCollection.TryFindById(tid)
 
-    member x.GetByName(name : string) =
+    member x.GetByName(name: string) =
         x.PassOrRaise(x.TryGetByName(name), "找不到物品:{0}", name)
 
-    member x.TryGetByName(name : string) =
+    member x.TryGetByName(name: string) =
         let bson = LiteDB.BsonValue(name)
 
-        let ret =
-            x.DbCollection.FindOne(LiteDB.Query.EQ("Name", bson))
+        let ret = x.DbCollection.FindOne(LiteDB.Query.EQ("Name", bson))
 
-        if isNull (box ret) then None else Some(ret)
+        if isNull (box ret) then
+            None
+        else
+            Some(ret)
 
     interface IDataTest with
         member x.RunTest() =

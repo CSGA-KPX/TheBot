@@ -7,8 +7,8 @@ open KPX.FsCqHttp
 
 type GroupUploadEvent =
     { [<JsonProperty("group_id")>]
-      GroupId : GroupId
+      GroupId: GroupId
       [<JsonProperty("user_id")>]
-      UserId : UserId
+      UserId: UserId
       [<JsonProperty("file")>]
-      File : GroupFile }
+      File: GroupFile }

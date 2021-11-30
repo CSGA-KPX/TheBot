@@ -10,12 +10,12 @@ open KPX.XivPlugin.Data
 [<CLIMutable>]
 type SpecialShopInfo =
     { [<BsonId(true)>]
-      Id : int
-      ReceiveItem : int32
-      ReceiveCount : int32
-      ReceiveHQ : bool
-      CostItem : int32
-      CostCount : int32 }
+      Id: int
+      ReceiveItem: int32
+      ReceiveCount: int32
+      ReceiveHQ: bool
+      CostItem: int32
+      CostCount: int32 }
 
 type SpecialShopCollection private () =
     inherit CachedTableCollection<int, SpecialShopInfo>()
@@ -28,8 +28,7 @@ type SpecialShopCollection private () =
     override x.IsExpired = false
 
     override x.InitializeCollection() =
-        x.DbCollection.EnsureIndex(BsonExpression.Create("ReceiveItem"))
-        |> ignore
+        x.DbCollection.EnsureIndex(BsonExpression.Create("ReceiveItem")) |> ignore
 
         let col = XivProvider.XivCollectionChs
 
@@ -37,8 +36,7 @@ type SpecialShopCollection private () =
         //|> ignore // 缓存
 
         seq {
-            let existed =
-                System.Collections.Generic.HashSet<string>()
+            let existed = System.Collections.Generic.HashSet<string>()
 
             for row in col.SpecialShop.TypedRows do
                 let rItem = row.``Item{Receive}``.AsRows()
@@ -50,8 +48,8 @@ type SpecialShopCollection private () =
 
                 for i = rItem.GetLowerBound(0) to rItem.GetUpperBound(0) do
                     for j = rItem.GetLowerBound(1) to rItem.GetUpperBound(1) do
-                        let key =
-                            $"%i{rItem.[i, j].Key.Main}%i{cItem.[i, j]}"
+                        let key = $"%i{rItem.[i, j].Key.Main}%i{cItem.[i, j]}"
+
                         if not <| (existed.Contains(key))
                            && cItem.[i, j] > 0
                            && rItem.[i, j].Key.Main > 0
@@ -60,6 +58,7 @@ type SpecialShopCollection private () =
                            && rItem.[i, j].IsUntradable.AsBool() = false
                            && rItem.[i, j].Name.AsString() <> "" then
                             existed.Add(key) |> ignore
+
                             yield
                                 { Id = 0
                                   ReceiveItem = rItem.[i, j].Key.Main
@@ -80,8 +79,7 @@ type SpecialShopCollection private () =
         |> Seq.map (fun id -> ic.GetByItemId(id))
         |> Seq.toArray
 
-    member x.SearchByCostItemId(id : int) =
-        let ret =
-            x.DbCollection.Find(Query.EQ("CostItem", BsonValue(id)))
+    member x.SearchByCostItemId(id: int) =
+        let ret = x.DbCollection.Find(Query.EQ("CostItem", BsonValue(id)))
 
         ret |> Seq.toArray

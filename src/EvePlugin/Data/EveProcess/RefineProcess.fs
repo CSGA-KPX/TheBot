@@ -21,11 +21,9 @@ type RefineProcessCollection private () =
 
     override x.InitializeCollection() =
         seq {
-            use archive =
-                KPX.EvePlugin.Data.Utils.GetEveDataArchive()
+            use archive = KPX.EvePlugin.Data.Utils.GetEveDataArchive()
 
-            use f =
-                archive.GetEntry("typematerials.json").Open()
+            use f = archive.GetEntry("typematerials.json").Open()
 
             use r = new JsonTextReader(new StreamReader(f))
 
@@ -38,16 +36,14 @@ type RefineProcessCollection private () =
 
                     let yields =
                         [| for m in ms do
-                            let m = m :?> JObject
+                               let m = m :?> JObject
 
-                            let tid =
-                                m.GetValue("materialTypeID").ToObject<int>()
+                               let tid = m.GetValue("materialTypeID").ToObject<int>()
 
-                            let q = m.GetValue("quantity").ToObject<float>()
-                            yield { Item = tid; Quantity = q } |]
+                               let q = m.GetValue("quantity").ToObject<float>()
+                               yield { Item = tid; Quantity = q } |]
 
-                    let t =
-                        EveTypeCollection.Instance.TryGetById(inputTypeId)
+                    let t = EveTypeCollection.Instance.TryGetById(inputTypeId)
 
                     if t.IsSome then
                         let t = t.Value
@@ -65,4 +61,8 @@ type RefineProcessCollection private () =
         |> x.DbCollection.InsertBulk
         |> ignore
 
-    member x.GetProcessFor(item : EveType) = x.DbCollection.SafeFindById(item.Id).AsEveProcess()
+    member x.GetProcessFor(item: EveType) =
+        x
+            .DbCollection
+            .SafeFindById(item.Id)
+            .AsEveProcess()

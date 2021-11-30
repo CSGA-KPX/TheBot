@@ -7,8 +7,8 @@ open KPX.TheBot.Host.DataCache
 [<CLIMutable>]
 type XivItem =
     { [<LiteDB.BsonId(false)>]
-      Id : int
-      Name : string }
+      Id: int
+      Name: string }
 
     override x.ToString() = $"%s{x.Name}(%i{x.Id})"
 
@@ -28,11 +28,9 @@ type ItemCollection private () =
     override x.InitializeCollection() =
         let db = x.DbCollection
 
-        db.EnsureIndex(LiteDB.BsonExpression.Create("_id"), true)
-        |> ignore
+        db.EnsureIndex(LiteDB.BsonExpression.Create("_id"), true) |> ignore
 
-        db.EnsureIndex(LiteDB.BsonExpression.Create("Name"))
-        |> ignore
+        db.EnsureIndex(LiteDB.BsonExpression.Create("Name")) |> ignore
 
         let col = XivProvider.XivCollectionChs
 
@@ -45,28 +43,28 @@ type ItemCollection private () =
         |> db.InsertBulk
         |> ignore
 
-    member x.GetByItemId(id : int) =
+    member x.GetByItemId(id: int) =
         x.PassOrRaise(x.DbCollection.TryFindById(id), "找不到物品:{0}", id)
 
-    member x.TryGetByItemId(id : int) = x.DbCollection.TryFindById(id)
+    member x.TryGetByItemId(id: int) = x.DbCollection.TryFindById(id)
 
-    member x.TryGetByName(name : string) =
-        let ret =
-            x.DbCollection.FindOne(LiteDB.Query.EQ("Name", LiteDB.BsonValue(name)))
+    member x.TryGetByName(name: string) =
+        let ret = x.DbCollection.FindOne(LiteDB.Query.EQ("Name", LiteDB.BsonValue(name)))
 
-        if isNull (box ret) then None else Some ret
+        if isNull (box ret) then
+            None
+        else
+            Some ret
 
     member x.SearchByName(str) =
-        x.DbCollection.Find(LiteDB.Query.Contains("Name", str))
-        |> Seq.toArray
-        
+        x.DbCollection.Find(LiteDB.Query.Contains("Name", str)) |> Seq.toArray
+
     interface IDataTest with
         member x.RunTest() =
-             Expect.equal (ItemCollection.Instance.GetByItemId(4).Name) "风之碎晶"
+            Expect.equal (ItemCollection.Instance.GetByItemId(4).Name) "风之碎晶"
 
-             let ret =
-                 ItemCollection.Instance.TryGetByName("风之碎晶")
+            let ret = ItemCollection.Instance.TryGetByName("风之碎晶")
 
-             Expect.isSome ret
-             Expect.equal ret.Value.Name "风之碎晶"
-             Expect.equal ret.Value.Id 4
+            Expect.isSome ret
+            Expect.equal ret.Value.Name "风之碎晶"
+            Expect.equal ret.Value.Id 4
