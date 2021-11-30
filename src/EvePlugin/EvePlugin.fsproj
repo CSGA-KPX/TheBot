@@ -64,7 +64,7 @@
   </ItemGroup>
   
   <ItemGroup>
-    <ProjectReference Include="..\TheBotHost\TheBotHost.fsproj">
+    <ProjectReference Include="..\TheBotHost\TheBot.fsproj">
         <Private>False</Private>
     </ProjectReference>
     <ProjectReference Include="..\FsCqHttp\FsCqHttp.fsproj">

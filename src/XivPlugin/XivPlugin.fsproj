@@ -64,7 +64,7 @@
 
   <ItemGroup>
 	<ProjectReference Include="..\..\..\LibFFXIV\LibFFXIV.GameData\LibFFXIV.GameData.fsproj" />
-    <ProjectReference Include="..\TheBotHost\TheBotHost.fsproj">
+    <ProjectReference Include="..\TheBotHost\TheBot.fsproj">
         <Private>False</Private>
 		<IncludeAssets>compile</IncludeAssets>
     </ProjectReference>
