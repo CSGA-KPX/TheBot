@@ -97,7 +97,7 @@ module BotDataInitializer =
             if isCollection then
                 t
                     .GetMethod("InitializeCollection")
-                    .Invoke(cols, null)
+                    .Invoke(col, null)
                 |> ignore
 
         GC.Collect()

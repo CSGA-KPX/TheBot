@@ -1,6 +1,7 @@
 module KPX.TheBot.Host.Program
 
 open System
+open System.Reflection
 
 open KPX.FsCqHttp
 open KPX.FsCqHttp.Instance
@@ -18,6 +19,9 @@ let main argv =
 
     for arg in cfg.DumpDefinedOptions() do
         logger.Info("启动参数：{0}", arg)
+
+    discover.ScanAssembly(Assembly.GetExecutingAssembly())
+    discover.AddModule(KPX.TheBot.Module.DataCacheModule.DataCacheModule(discover))
 
     cfg.Start(ContextModuleLoader(discover.AllDefinedModules))
 

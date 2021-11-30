@@ -34,6 +34,11 @@
     <Compile Include="Utils\GenericRPN.fs" />
     <Compile Include="Utils\HandlerUtils.fs" />
     <Compile Include="Utils\RecipeRPN.fs" />
+    <Compile Include="Modules\DebugModule.fs" />
+    <Compile Include="Modules\HelpModule.fs" />
+    <Compile Include="Modules\SudoModule.fs" />
+    <Compile Include="Modules\DataCacheModule.fs" />
+    <Compile Include="Modules\TestModule.fs" />
     <Compile Include="Program.fs" />
     <None Include="NLog.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
@@ -43,10 +48,6 @@
   <ItemGroup>
     <PackageReference Include="LiteDB" Version="5.0.11" />
     <PackageReference Include="McMaster.NETCore.Plugins" Version="1.4.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Modules\" />
   </ItemGroup>
 
   <ItemGroup>

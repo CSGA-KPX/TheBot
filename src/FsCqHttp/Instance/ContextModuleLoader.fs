@@ -22,7 +22,10 @@ type ModuleDiscover() =
 
     default x.ProcessType(t: Type) =
         if t.IsSubclassOf(typeof<HandlerModuleBase>) && (not <| t.IsAbstract) then
-            x.AddModule(Activator.CreateInstance(t) :?> HandlerModuleBase)
+            if t.GetConstructor(Type.EmptyTypes) <> null then
+                x.AddModule(Activator.CreateInstance(t) :?> HandlerModuleBase)
+            else
+                logger.Info($"跳过类型{t.FullName}：没有无参数构造函数")
 
     member x.ScanAssembly(asm: Assembly) =
         logger.Info($"正在导入程序集：{asm.GetName().Name}")
