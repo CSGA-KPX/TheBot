@@ -362,3 +362,4 @@ coverage.xml
 /src/TheBotHost/Properties/launchSettings.json
 /datafiles/EVEData.zip
 /datafiles/ffxiv-datamining-cn-master.zip
+/build/persist
