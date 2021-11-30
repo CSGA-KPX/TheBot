@@ -44,12 +44,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\TheBotHost\TheBot.fsproj">
-        <Private>False</Private>
-    </ProjectReference>
     <ProjectReference Include="..\FsCqHttp\FsCqHttp.fsproj">
         <Private>False</Private>
     </ProjectReference>
+    <ProjectReference Include="..\TheBot\TheBot.fsproj" />
   </ItemGroup>
 
 </Project>
