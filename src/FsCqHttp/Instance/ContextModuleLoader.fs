@@ -1,8 +1,8 @@
-﻿namespace rec KPX.FsCqHttp.Instance
+namespace rec KPX.FsCqHttp.Instance
 
 open System
 open System.Collections.Generic
-
+open System.Reflection
 open System.Threading
 
 open KPX.FsCqHttp
@@ -10,14 +10,33 @@ open KPX.FsCqHttp.Handler
 
 
 [<AbstractClass>]
-type ContextModuleLoader() =
-    static let logger = NLog.LogManager.GetCurrentClassLogger()
+type ModuleDiscover() =
+    let modules = ResizeArray<HandlerModuleBase>()
+    let logger = NLog.LogManager.GetCurrentClassLogger()
 
-    static let cacheBuiltEvent = new ManualResetEvent(false)
+    member x.AllDefinedModules = modules :> IReadOnlyList<_>
 
-    static let moduleInstanceCache = ResizeArray<HandlerModuleBase>()
+    member x.AddModule(m: HandlerModuleBase) = modules.Add(m)
 
-    static do
+    abstract ProcessType: Type -> unit
+
+    default x.ProcessType(t: Type) =
+        if t.IsSubclassOf(typeof<HandlerModuleBase>) && (not <| t.IsAbstract) then
+            if t.GetConstructor(Type.EmptyTypes) <> null then
+                x.AddModule(Activator.CreateInstance(t) :?> HandlerModuleBase)
+            else
+                logger.Info($"跳过类型{t.FullName}：没有无参数构造函数")
+
+    member x.ScanAssembly(asm: Assembly) =
+        logger.Info($"正在导入程序集：{asm.GetName().Name}")
+
+        for t in asm.GetTypes() do
+            x.ProcessType(t)
+
+type LoadedAssemblyDiscover() as x =
+    inherit ModuleDiscover()
+
+    do
         for asm in AppDomain.CurrentDomain.GetAssemblies() do
             let name = asm.GetName().Name
 
@@ -27,34 +46,17 @@ type ContextModuleLoader() =
                    || name.StartsWith("System.")
                    || name.StartsWith("FSharp.")
                    || name.StartsWith("Microsoft.")) then
-                logger.Info("正在导入程序集：{0}", name)
+                x.ScanAssembly(asm)
 
-                for t in asm.GetTypes() do
-                    if t.IsSubclassOf(typeof<HandlerModuleBase>)
-                       && (not <| t.IsAbstract) then
-                        moduleInstanceCache.Add(Activator.CreateInstance(t) :?> HandlerModuleBase)
+type ContextModuleLoader(modules: IReadOnlyList<HandlerModuleBase>) =
+    let logger = NLog.LogManager.GetCurrentClassLogger()
 
-        cacheBuiltEvent.Set() |> ignore
+    member val AllDefinedModules = modules
 
-    static member CacheBuiltEvent = cacheBuiltEvent
-
-    member x.AllDefinedModules = moduleInstanceCache :> IReadOnlyList<_>
-
-    member x.RegisterModuleFor(botUserId : UserId, mi : ContextModuleInfo) =
+    member x.RegisterModuleFor(botUserId: UserId, mi: ContextModuleInfo) =
         for m in x.GetModulesFor(botUserId) do
             logger.Debug("为{0}加载模块{1}", botUserId, m.GetType().FullName)
             mi.RegisterModule(m)
 
-    abstract GetModulesFor : botUserId : UserId -> seq<HandlerModuleBase>
-
-    /// 获取或设置为Context添加模块的加载器
-    static member val Instance : ContextModuleLoader =
-        DefaultContextModuleLoader() :> ContextModuleLoader with get, set
-
-/// 默认加载FsCqHttp项目和EntryAssembly中的所有模块。
-type DefaultContextModuleLoader() =
-    inherit ContextModuleLoader()
-
-    override x.GetModulesFor _ = x.AllDefinedModules |> Seq.cast
-    
-    member x.GetModules() = x.AllDefinedModules |> Seq.cast
+    abstract GetModulesFor: botUserId: UserId -> seq<HandlerModuleBase>
+    override x.GetModulesFor _ = x.AllDefinedModules

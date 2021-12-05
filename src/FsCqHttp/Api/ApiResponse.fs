@@ -27,11 +27,11 @@ type ApiRetType =
 
 [<JsonConverter(typeof<ApiResponseConverter>)>]
 type ApiResponse =
-    { Status : string
-      ReturnCode : ApiRetCode
-      DataType : ApiRetType
-      Data : IReadOnlyDictionary<string, string>
-      Echo : string }
+    { Status: string
+      ReturnCode: ApiRetCode
+      DataType: ApiRetType
+      Data: IReadOnlyDictionary<string, string>
+      Echo: string }
 
     member x.TryParseArrayData<'T>() =
         let json = x.Data.[ApiResponse.ArrayDataKey]
@@ -42,9 +42,10 @@ type ApiResponse =
 and ApiResponseConverter() =
     inherit JsonConverter<ApiResponse>()
 
-    override x.WriteJson(_ : JsonWriter, _ : ApiResponse, _ : JsonSerializer) = raise<unit> <| NotImplementedException()
+    override x.WriteJson(_: JsonWriter, _: ApiResponse, _: JsonSerializer) =
+        raise<unit> <| NotImplementedException()
 
-    override x.ReadJson(r : JsonReader, _ : Type, _ : ApiResponse, _ : bool, _ : JsonSerializer) =
+    override x.ReadJson(r: JsonReader, _: Type, _: ApiResponse, _: bool, _: JsonSerializer) =
         let obj = JObject.Load(r)
 
         { Status = obj.["status"].Value<string>()
@@ -57,14 +58,14 @@ and ApiResponseConverter() =
               | _ -> failwithf "不应该有其他类型"
           Data =
               [| if obj.["data"].HasValues then
-                  match obj.["data"].Type with
-                  | JTokenType.Array -> yield (ApiResponse.ArrayDataKey, obj.["data"].ToString())
-                  | JTokenType.Object ->
-                      let child = obj.["data"].Value<JObject>()
+                     match obj.["data"].Type with
+                     | JTokenType.Array -> yield (ApiResponse.ArrayDataKey, obj.["data"].ToString())
+                     | JTokenType.Object ->
+                         let child = obj.["data"].Value<JObject>()
 
-                      for p in child.Properties() do
-                          yield (p.Name, p.Value.ToString())
-                  | JTokenType.Null -> ()
-                  | _ -> failwithf "不应该有其他类型" |]
+                         for p in child.Properties() do
+                             yield (p.Name, p.Value.ToString())
+                     | JTokenType.Null -> ()
+                     | _ -> failwithf "不应该有其他类型" |]
               |> readOnlyDict
           Echo = obj.["echo"].Value<string>() }

@@ -1,0 +1,53 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <OtherFlags>--warnon:1182</OtherFlags>
+    <Tailcalls>true</Tailcalls>
+    <OutputPath>..\..\build\bin\plugins\DicePlugin\</OutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <OutputPath>..\..\build\bin\plugins\DicePlugin\</OutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="LifestyleModule\EatUtils.fs" />
+    <Compile Include="LifestyleModule\EatModule.fs" />
+    <Compile Include="DiceModule\DiceUtils.fs" />
+    <Compile Include="DiceModule\DiceModule.fs" />
+    <Compile Include="TRpgModule\Strings.fs" />
+    <Compile Include="TRpgModule\Coc7.fs" />
+    <Compile Include="TRpgModule\CharacterCard.fs" />
+    <Compile Include="TRpgModule\CardManager.fs" />
+    <Compile Include="TRpgModule\NameOption.fs" />
+    <Compile Include="TRpgModule\StCommand\PcSubcommands.fs" />
+    <Compile Include="TRpgModule\StCommand\TRpgStModule.fs" />
+    <Compile Include="TRpgModule\TRpgModule.fs" />
+    <Compile Include="TRpgModule\DailySanModule.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\Funny.jpg" />
+    <EmbeddedResource Update="Resources\Eat.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Resources\TRpg.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FsCqHttp\FsCqHttp.fsproj">
+        <Private>False</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\TheBot\TheBot.fsproj" />
+  </ItemGroup>
+
+</Project>

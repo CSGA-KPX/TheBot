@@ -1,0 +1,79 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <OtherFlags>--warnon:1182</OtherFlags>
+    <Tailcalls>true</Tailcalls>
+    <OutputPath>..\..\build\bin\plugins\EvePlugin\</OutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <OutputPath>..\..\build\bin\plugins\EvePlugin\</OutputPath>
+  </PropertyGroup>
+
+
+  <ItemGroup>
+    <Compile Include="Data\Utils.fs" />
+    <Compile Include="Data\EveGroup.fs" />
+    <Compile Include="Data\EveMarketGroup.fs" />
+    <Compile Include="Data\EveType.fs" />
+    <Compile Include="Data\EveProcess\Base.fs" />
+    <Compile Include="Data\EveProcess\BlueprintProcess.fs" />
+    <Compile Include="Data\EveProcess\PlanetProcess.fs" />
+    <Compile Include="Data\EveProcess\RefineProcess.fs" />
+    <Compile Include="Data\EveProcess\ProcessManager.fs" />
+    <Compile Include="Data\EveProcess\ProcessSearchCache.fs" />
+    <Compile Include="Data\EveProcess\ProcessTest.fs" />
+    <Compile Include="Data\NpcCorporation.fs" />
+    <Compile Include="Data\LoyaltyStoreOffer.fs" />
+    <Compile Include="Data\MarketPriceCache.fs" />
+    <Compile Include="Data\MarketHistoryCache.fs" />
+    <Compile Include="Data\GameInternalPriceCache.fs" />
+    <Compile Include="Data\SolarSystems.fs" />
+    <Compile Include="Data\SystemCostIndexCache.fs" />
+    
+    <Compile Include="Utils\Helpers.fs" />
+    <Compile Include="Utils\Data.fs" />
+    <Compile Include="Utils\Config.fs" />
+    <Compile Include="Utils\Extensions.fs" />
+    <Compile Include="Utils\EveExpression.fs" />
+    <Compile Include="Utils\MarketUtils.fs" />
+    <Compile Include="Utils\UserInventory.fs" />
+    
+    <Compile Include="Modules\MarketModule.fs" />
+    <Compile Include="Modules\LpStoreModule.fs" />
+    <Compile Include="Modules\RecipeModule.fs" />
+    <Compile Include="Modules\EveInvModule.fs" />
+    <Compile Include="Modules\EveMiscModule.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="../../datafiles/EVEData.zip" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <EmbeddedResource Update="EVE.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\FsCqHttp\FsCqHttp.fsproj">
+        <Private>False</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\TheBot\TheBot.fsproj" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Update="FSharp.Core">
+      <ExcludeAssets>contentFiles</ExcludeAssets>
+    </PackageReference>
+  </ItemGroup>
+  
+</Project>

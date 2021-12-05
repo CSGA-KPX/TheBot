@@ -11,14 +11,15 @@ type MetaEvent =
     | PluginEnabled
     /// WebSocket模式下不存在
     | PluginDisabled
-    | WebSocketConnected of SelfId : UserId * TimeStamp : uint64
+    | WebSocketConnected of SelfId: UserId * TimeStamp: uint64
     /// 心跳事件
     ///
     /// Status字段实现情况不同。请通过get_status获取。
-    | HeartBeat of SelfId : UserId * TimeStamp : uint64 * Interval : uint64
+    | HeartBeat of SelfId: UserId * TimeStamp: uint64 * Interval: uint64
 
-    static member FromJObject(obj : JObject) =
-        if not <| obj.ContainsKey("meta_event_type") then invalidArg "obj" "输入不是元事件"
+    static member FromJObject(obj: JObject) =
+        if not <| obj.ContainsKey("meta_event_type") then
+            invalidArg "obj" "输入不是元事件"
 
         match obj.["meta_event_type"].Value<string>() with
         | "lifecycle" ->

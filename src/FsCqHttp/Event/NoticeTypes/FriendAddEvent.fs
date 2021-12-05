@@ -7,4 +7,4 @@ open Newtonsoft.Json
 
 type FriendAddEvent =
     { [<JsonProperty("user_id")>]
-      UserId : UserId }
+      UserId: UserId }

@@ -10,15 +10,13 @@ open KPX.FsCqHttp.Handler
 type ActiveWebsocket(url, token) =
     let mutable lastRestart = DateTimeOffset.Now
     let mutable leftRestartCount = 3 + 1
-    let mutable context : CqWsContext option = None
+    let mutable context: CqWsContext option = None
 
     member x.GetContext() =
         if context.IsSome && (leftRestartCount <= 0) then
             failwithf $"ActiveWebsocket:%s{context.Value.BotIdString} 超过重连次数上限"
 
-        if context.IsSome
-           && (DateTimeOffset.Now - lastRestart).TotalMinutes
-              <= 1.0 then
+        if context.IsSome && (DateTimeOffset.Now - lastRestart).TotalMinutes <= 1.0 then
             failwithf $"ActiveWebsocket:%s{context.Value.BotIdString} 重连间隔过短"
 
         context <- Some(x.StartContext())

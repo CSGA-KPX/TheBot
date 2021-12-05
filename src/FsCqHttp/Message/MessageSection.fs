@@ -12,7 +12,7 @@ open KPX.FsCqHttp.Message
 
 
 [<AbstractClass>]
-type MessageSection(typeName : string) =
+type MessageSection(typeName: string) =
 
     static let sectionInfoCache =
         let parent = typeof<MessageSection>
@@ -20,15 +20,10 @@ type MessageSection(typeName : string) =
         let asm = Assembly.GetExecutingAssembly()
 
         asm.GetTypes()
-        |> Array.filter
-            (fun t ->
-                t.IsSubclassOf(parent)
-                && (not t.IsAbstract)
-                && (t <> rawClass))
+        |> Array.filter (fun t -> t.IsSubclassOf(parent) && (not t.IsAbstract) && (t <> rawClass))
         |> Array.map
             (fun t ->
-                let obj =
-                    Activator.CreateInstance(t) :?> MessageSection
+                let obj = Activator.CreateInstance(t) :?> MessageSection
 
                 obj.TypeName, t)
         |> readOnlyDict
@@ -42,9 +37,9 @@ type MessageSection(typeName : string) =
 
     member internal x.SetValue(name, value) = values.[name] <- value
 
-    member x.GetValue(name : string) = values.[name]
+    member x.GetValue(name: string) = values.[name]
 
-    member x.TryGetValue(name : string) =
+    member x.TryGetValue(name: string) =
         let succ, item = values.TryGetValue(name)
         if succ then Some item else None
 
@@ -53,7 +48,7 @@ type MessageSection(typeName : string) =
         MessageSection.CreateFrom(x.TypeName, values |> Seq.map (fun kv -> kv.Key, kv.Value))
 
     /// 从指定JObject对象解析消息段
-    member internal x.ParseFrom(sec : JObject) =
+    member internal x.ParseFrom(sec: JObject) =
         let typeName = sec.["type"].Value<string>()
 
         if (x.TypeName <> "") && (x.TypeName <> typeName) then
@@ -66,13 +61,11 @@ type MessageSection(typeName : string) =
                 values.Add(p.Name, p.Value.ToString())
 
     override x.ToString() =
-        let args =
-            x.Values
-            |> Seq.map (fun a -> $"%s{a.Key}=%s{a.Value}")
+        let args = x.Values |> Seq.map (fun a -> $"%s{a.Key}=%s{a.Value}")
 
         sprintf "[%s:%s]" x.TypeName (String.Join(";", args))
 
-    static member internal CreateFrom(typeName : string, values : seq<string * string>) =
+    static member internal CreateFrom(typeName: string, values: seq<string * string>) =
         let mutable typeName = typeName
 
         if String.IsNullOrEmpty(typeName) then
@@ -80,9 +73,7 @@ type MessageSection(typeName : string) =
 
         let section =
             if sectionInfoCache.ContainsKey(typeName) then
-                sectionInfoCache.[typeName]
-                |> Activator.CreateInstance
-                :?> MessageSection
+                sectionInfoCache.[typeName] |> Activator.CreateInstance :?> MessageSection
             else
                 RawMessageSection(typeName) :> MessageSection
 
@@ -113,7 +104,7 @@ type FaceSection() =
 
     member x.FaceId = x.Values.["id"]
 
-    static member Create(id : int) =
+    static member Create(id: int) =
         MessageSection.CreateFrom("face", [ "id", id.ToString() ])
 
 type ImageSection() =
@@ -135,10 +126,9 @@ type ImageSection() =
     /// 未实现
     member x.Timeout = raise<int> <| NotImplementedException()
 
-    static member Create(img : SKImage) =
+    static member Create(img: SKImage) =
         let data = img.Encode(SKEncodedImageFormat.Png, 70).AsSpan()
-        let b64 =
-            Convert.ToBase64String(data, Base64FormattingOptions.None)
+        let b64 = Convert.ToBase64String(data, Base64FormattingOptions.None)
 
         MessageSection.CreateFrom("image", [ "file", ("base64://" + b64) ])
 
@@ -150,10 +140,7 @@ type RecordSection() =
     member x.Url = x.TryGetValue("url")
 
     /// false 默认， true 变声
-    member x.RecordType =
-        x.TryGetValue("magic")
-        |> Option.map Boolean.Parse
-        |> Option.defaultValue false
+    member x.RecordType = x.TryGetValue("magic") |> Option.map Boolean.Parse |> Option.defaultValue false
 
     /// 未实现
     member x.Cache = raise<bool> <| NotImplementedException()
@@ -185,7 +172,7 @@ type AtSection() =
 
     member x.At = AtUserType.FromString(x.GetValue("qq"))
 
-    static member Create(at : AtUserType) =
+    static member Create(at: AtUserType) =
         MessageSection.CreateFrom("at", [ "qq", at.ToString() ])
 
 /// 掷骰子魔法表情

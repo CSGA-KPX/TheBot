@@ -1,21 +1,26 @@
-module KPX.TheBot.Program
+module KPX.TheBot.Host.Program
 
 open System
+open System.Reflection
 
 open KPX.FsCqHttp
 open KPX.FsCqHttp.Instance
+open KPX.TheBot.Host.Data
 
 
-let logger =
-    NLog.LogManager.GetLogger("KPX.TheBot.Program")
+let logger = NLog.LogManager.GetLogger("KPX.TheBot.Program")
 
 [<EntryPoint>]
 let main argv =
-    let cfgFile =
-        IO.Path.Join(KPX.TheBot.Data.Common.Resource.StaticDataPath, "thebot.txt")
+    let discover = HostedModuleDiscover()
+    discover.ScanPlugins()
+    discover.ScanAssembly(Assembly.GetExecutingAssembly())
+    discover.AddModule(KPX.TheBot.Module.DataCacheModule.DataCacheModule(discover))
 
     let cfg = FsCqHttpConfigParser()
-    
+
+    let cfgFile = DataAgent.GetPersistFile("thebot.txt")
+
     let runTest = cfg.RegisterOption("runCmdTest")
 
     if argv.Length <> 0 then
@@ -27,23 +32,25 @@ let main argv =
 
     for arg in cfg.DumpDefinedOptions() do
         logger.Info("启动参数：{0}", arg)
+
     
+
     if runTest.IsDefined then
         try
             let cmi = ContextModuleInfo()
-            DefaultContextModuleLoader().GetModules()
-            |> Seq.iter cmi.RegisterModule
-            
+            discover.AllDefinedModules |> Seq.iter cmi.RegisterModule
+
             for name, action in cmi.TestCallbacks do
                 logger.Info($"正在执行{name}")
                 action.Invoke()
+
             0
         with
         | e ->
             logger.Fatal(e)
             1
     else
-        cfg.Start()
+        cfg.Start(ContextModuleLoader(discover.AllDefinedModules))
 
         use mtx = new Threading.ManualResetEvent(false)
         AppDomain.CurrentDomain.ProcessExit.Add(fun _ -> mtx.Set() |> ignore)

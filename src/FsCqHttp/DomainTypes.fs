@@ -13,48 +13,45 @@ type FeatureSpecification =
     | OneBot = 0
     | FsCqHttp = 1
     | GoCqHttp = 2
-    
+
 /// 标记特性的相关信息
 /// 运行过程中不使用，用来标记信息方便人工检查。
 type FeatureAnnotationAttribute(source, ver, reviewed) =
     inherit Attribute()
-    
+
     /// 特性的规格信息
-    member x.Source : FeatureSpecification = source
-    
+    member x.Source: FeatureSpecification = source
+
     /// 规格版本
-    member x.SourceVersion : string = ver
-    
+    member x.SourceVersion: string = ver
+
     /// 最后复核日期
-    member x.Reviewed : string = reviewed
-    
+    member x.Reviewed: string = reviewed
+
 /// 当前规范不含有需求的特性
 type FeatureNotSupportedException(msg) =
     inherit Exception(msg)
-    
+
 /// Json字符串值到DU的转换器
 type SingleCaseInlineConverter<'T>() =
     inherit JsonConverter<'T>()
 
-    static let caseCache =
-        FSharpType.GetUnionCases(typeof<'T>, false).[0]
+    static let caseCache = FSharpType.GetUnionCases(typeof<'T>, false).[0]
 
     static let fieldCache = caseCache.GetFields().[0]
 
-    override this.WriteJson(writer : JsonWriter, value : 'T, _ : JsonSerializer) : unit =
-        let obj =
-            fieldCache.GetMethod.Invoke(value, Array.empty)
+    override this.WriteJson(writer: JsonWriter, value: 'T, _: JsonSerializer) : unit =
+        let obj = fieldCache.GetMethod.Invoke(value, Array.empty)
 
         writer.WriteValue(obj.ToString())
 
     override this.ReadJson(reader, _, _, _, _) =
-        let obj =
-            Convert.ChangeType(reader.Value, fieldCache.PropertyType)
+        let obj = Convert.ChangeType(reader.Value, fieldCache.PropertyType)
 
         FSharpValue.MakeUnion(caseCache, Array.singleton obj, false) :?> 'T
 
 /// 字符串枚举类型DU中不美观值进行重命名
-type AltStringEnumValue(value : string) =
+type AltStringEnumValue(value: string) =
     inherit Attribute()
 
     member x.Value = value
@@ -63,16 +60,13 @@ type AltStringEnumValue(value : string) =
 type StringEnumConverter<'T>() =
     inherit JsonConverter<'T>()
 
-    static let fieldDict =
-        Dictionary<string, UnionCaseInfo>(StringComparer.OrdinalIgnoreCase)
+    static let fieldDict = Dictionary<string, UnionCaseInfo>(StringComparer.OrdinalIgnoreCase)
 
     static do
-        let fields =
-            FSharpType.GetUnionCases(typeof<'T>, false)
+        let fields = FSharpType.GetUnionCases(typeof<'T>, false)
 
         for f in fields do
-            let attrs =
-                f.GetCustomAttributes(typeof<AltStringEnumValue>)
+            let attrs = f.GetCustomAttributes(typeof<AltStringEnumValue>)
 
             if attrs.Length = 0 then
                 fieldDict.Add(f.Name, f)
@@ -80,12 +74,10 @@ type StringEnumConverter<'T>() =
                 let n = (attrs.[0] :?> AltStringEnumValue).Value
                 fieldDict.Add(n, f)
 
-    override this.WriteJson(writer : JsonWriter, value : 'T, _ : JsonSerializer) : unit =
-        let ui, _ =
-            FSharpValue.GetUnionFields(value, typeof<'T>)
+    override this.WriteJson(writer: JsonWriter, value: 'T, _: JsonSerializer) : unit =
+        let ui, _ = FSharpValue.GetUnionFields(value, typeof<'T>)
 
-        let attrs =
-            ui.GetCustomAttributes(typeof<AltStringEnumValue>)
+        let attrs = ui.GetCustomAttributes(typeof<AltStringEnumValue>)
 
         if attrs.Length = 0 then
             writer.WriteValue(ui.Name)
@@ -139,8 +131,8 @@ type MessageId =
 [<Sealed>]
 /// 包装OneBot上报的Json对象
 /// 同时提供缓存的ToString()方法避免多次求值
-type PostContent (ctx : Linq.JObject) = 
-    
+type PostContent(ctx: Linq.JObject) =
+
     let str = lazy (ctx.ToString(Formatting.Indented))
 
     member x.RawEventPost = ctx

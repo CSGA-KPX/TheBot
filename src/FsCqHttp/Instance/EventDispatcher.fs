@@ -14,10 +14,9 @@ type private TaskSchedulerMessage =
 
 [<RequireQualifiedAccess>]
 module internal TaskScheduler =
-    let private logger =
-        NLog.LogManager.GetLogger("TaskScheduler")
+    let private logger = NLog.LogManager.GetLogger("TaskScheduler")
 
-    let rec private getRootExn (exn : exn) =
+    let rec private getRootExn (exn: exn) =
         if isNull exn.InnerException then
             exn
         else
@@ -25,7 +24,7 @@ module internal TaskScheduler =
 
     let private maxConcurrentCommands = Environment.ProcessorCount
 
-    let private handleEvent (mi : ContextModuleInfo, args : CqEventArgs) =
+    let private handleEvent (mi: ContextModuleInfo, args: CqEventArgs) =
         try
             match args with
             | :? CqMetaEventArgs as args ->
@@ -43,8 +42,7 @@ module internal TaskScheduler =
                     for c in mi.MessageCallbacks do
                         c args
                 | Some ci ->
-                    let cmdArgs =
-                        CommandEventArgs(args, ci.CommandAttribute)
+                    let cmdArgs = CommandEventArgs(args, ci.CommandAttribute)
 
                     if Config.LogCommandCall then
                         args.Logger.Info(

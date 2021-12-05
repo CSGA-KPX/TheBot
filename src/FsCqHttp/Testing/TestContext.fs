@@ -18,7 +18,8 @@ open Newtonsoft.Json.Linq
 
 
 module private Strings =
-    let msgEvent = """{
+    let msgEvent =
+        """{
    "font":0,
    "message":[],
    "message_id":0,
@@ -39,7 +40,7 @@ module private Strings =
 
 exception AssertFailedException of string
 
-type TestContext(m : HandlerModuleBase, ?parent : CqWsContextBase) as x =
+type TestContext(m: HandlerModuleBase, ?parent: CqWsContextBase) as x =
     inherit CqWsContextBase()
 
     static let logger = NLog.LogManager.GetCurrentClassLogger()
@@ -61,25 +62,26 @@ type TestContext(m : HandlerModuleBase, ?parent : CqWsContextBase) as x =
         x.Modules.RegisterModule(m)
 
 
-    member x.AddApiResponse<'T when 'T :> CqHttpApiBase>(obj : obj) =
-        let api =
-            Activator.CreateInstance(typeof<'T>) :?> CqHttpApiBase
+    member x.AddApiResponse<'T when 'T :> CqHttpApiBase>(obj: obj) =
+        let api = Activator.CreateInstance(typeof<'T>) :?> CqHttpApiBase
 
         x.AddApiResponse(api.ActionName, obj)
 
     member x.AddApiResponse(str, obj) = apiResponse.Add(str, obj)
 
-    member x.InvokeCommand(cmdLine : string) =
+    member x.InvokeCommand(cmdLine: string) =
         let msg = Message()
         msg.Add(cmdLine)
         x.InvokeCommand(msg)
 
-    member x.InvokeCommand(msg : ReadOnlyMessage) =
+    member x.InvokeCommand(msg: ReadOnlyMessage) =
         logger.Info("正在测试 : {0}", msg.ToCqString())
         let msgEvent = x.MakeEvent(msg)
 
         let cmd = x.Modules.TryCommand(msgEvent)
-        if cmd.IsNone then invalidArg "cmdLine/msg" "指定模块不含指定指令"
+
+        if cmd.IsNone then
+            invalidArg "cmdLine/msg" "指定模块不含指定指令"
 
         let attr = cmd.Value.CommandAttribute
         let cmdArgs = CommandEventArgs(msgEvent, attr)
@@ -90,37 +92,42 @@ type TestContext(m : HandlerModuleBase, ?parent : CqWsContextBase) as x =
 
         response
 
-    member x.ShouldThrow(cmdLine : string) =
+    member x.ShouldThrow(cmdLine: string) =
         let ret =
             try
                 x.InvokeCommand(cmdLine) |> ignore
                 false
-            with _ -> true
+            with
+            | _ -> true
 
-        if not ret then raise <| AssertFailedException "失败：预期捕获异常"
+        if not ret then
+            raise <| AssertFailedException "失败：预期捕获异常"
 
-    member x.ShouldNotThrow(cmdLine : string) =
+    member x.ShouldNotThrow(cmdLine: string) =
         try
             x.InvokeCommand(cmdLine) |> ignore
-        with _ -> reraise ()
+        with
+        | _ -> reraise ()
 
-    member x.ShouldReturn(cmdLine : string) =
+    member x.ShouldReturn(cmdLine: string) =
         let ret =
             try
                 x.InvokeCommand(cmdLine)
-            with _ -> reraise ()
+            with
+            | _ -> reraise ()
 
         ret.IsSome
 
-    member x.ReturnContains (cmdLine : string) (value : string) =
-        let ret : string option =
+    member x.ReturnContains (cmdLine: string) (value: string) =
+        let ret: string option =
             try
                 x.InvokeCommand(cmdLine)
-            with _ -> reraise ()
+            with
+            | _ -> reraise ()
 
         ret.Value.Contains(value)
 
-    member private x.MakeEvent(msg : ReadOnlyMessage) =
+    member private x.MakeEvent(msg: ReadOnlyMessage) =
         let raw = JObject.Parse(Strings.msgEvent)
 
         // 更新Bot信息
@@ -157,7 +164,10 @@ type TestContext(m : HandlerModuleBase, ?parent : CqWsContextBase) as x =
                 localRestart <- v
 
     override x.IsOnline =
-        if parent.IsSome then parent.Value.IsOnline else true
+        if parent.IsSome then
+            parent.Value.IsOnline
+        else
+            true
 
     override x.BotNickname =
         if parent.IsSome then
@@ -166,7 +176,10 @@ type TestContext(m : HandlerModuleBase, ?parent : CqWsContextBase) as x =
             botUserName
 
     override x.BotUserId =
-        if parent.IsSome then parent.Value.BotUserId else botUserId
+        if parent.IsSome then
+            parent.Value.BotUserId
+        else
+            botUserId
 
     override x.BotIdString =
         if parent.IsSome then
@@ -178,7 +191,7 @@ type TestContext(m : HandlerModuleBase, ?parent : CqWsContextBase) as x =
 
     override x.Stop() = raise <| NotImplementedException()
 
-    override x.CallApi(req : #ApiBase) =
+    override x.CallApi(req: #ApiBase) =
         // 拦截所有回复调用
         match req :> ApiBase with
         | :? System.QuickOperation as q ->

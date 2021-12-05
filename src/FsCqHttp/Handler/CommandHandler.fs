@@ -9,17 +9,17 @@ open KPX.FsCqHttp.Handler
 
 [<Sealed>]
 [<AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = true)>]
-type CommandHandlerMethodAttribute(command : string, desc, lh) =
+type CommandHandlerMethodAttribute(command: string, desc, lh) =
     inherit Attribute()
 
     /// 指令名称
-    member x.Command : string = command
+    member x.Command: string = command
 
     /// 指令概述
-    member x.HelpDesc : string = desc
+    member x.HelpDesc: string = desc
 
     /// 完整帮助文本
-    member x.LongHelp : string = lh
+    member x.LongHelp: string = lh
 
     /// 如果为true则不会被CommandHandlerBase.Commands加载
     member val Disabled = false with get, set
@@ -32,10 +32,10 @@ type CommandHandlerMethodAttribute(command : string, desc, lh) =
     member val ExecuteImmediately = false with get, set
 
 [<Sealed>]
-type CommandEventArgs(args : CqMessageEventArgs, attr : CommandHandlerMethodAttribute) =
+type CommandEventArgs(args: CqMessageEventArgs, attr: CommandHandlerMethodAttribute) =
     inherit CqMessageEventArgs(args.ApiCaller, args.RawEvent, args.Event)
 
-    let splitString (str : string) =
+    let splitString (str: string) =
         str.Split([| ' '; Config.FullWidthSpace |], StringSplitOptions.RemoveEmptyEntries)
 
     let lines =
@@ -82,34 +82,36 @@ type CommandEventArgs(args : CqMessageEventArgs, attr : CommandHandlerMethodAttr
     member x.CommandName = attr.Command
 
     /// 从字符串获取可能的指令名
-    static member TryGetCommand(str : string) =
+    static member TryGetCommand(str: string) =
         let idx = str.IndexOfAny([| ' '; '\r'; '\n' |])
-        if idx = -1 then str else str.[0..idx - 1]
+
+        if idx = -1 then
+            str
+        else
+            str.[0..idx - 1]
 
 type ICommandResponse =
-    abstract Response : CqMessageEventArgs -> unit
+    abstract Response: CqMessageEventArgs -> unit
 
 type MethodAction =
     | ManualAction of Action<CommandEventArgs>
     | AutoAction of Func<CommandEventArgs, ICommandResponse>
 
-    static member CreateFrom(method : MethodInfo, instance : obj) =
-        let isAuto =
-            typeof<ICommandResponse>.IsAssignableFrom(method.ReturnType)
+    static member CreateFrom(method: MethodInfo, instance: obj) =
+        let isAuto = typeof<ICommandResponse>.IsAssignableFrom (method.ReturnType)
 
         if isAuto then
             method.CreateDelegate(typeof<Func<CommandEventArgs, ICommandResponse>>, instance)
             :?> Func<CommandEventArgs, ICommandResponse>
             |> AutoAction
         else
-            method.CreateDelegate(typeof<Action<CommandEventArgs>>, instance)
-            :?> Action<CommandEventArgs>
+            method.CreateDelegate(typeof<Action<CommandEventArgs>>, instance) :?> Action<CommandEventArgs>
             |> ManualAction
 
 type CommandInfo =
-    { CommandAttribute : CommandHandlerMethodAttribute
-      MethodName : string
-      MethodAction : MethodAction }
+    { CommandAttribute: CommandHandlerMethodAttribute
+      MethodName: string
+      MethodAction: MethodAction }
 
 [<AbstractClass>]
 type CommandHandlerBase() =
@@ -123,8 +125,7 @@ type CommandHandlerBase() =
     member x.Commands =
         if not commandGenerated then
             for method in x.GetType().GetMethods() do
-                let ret =
-                    method.GetCustomAttributes(typeof<CommandHandlerMethodAttribute>, true)
+                let ret = method.GetCustomAttributes(typeof<CommandHandlerMethodAttribute>, true)
 
                 for attrib in ret do
                     let attr = attrib :?> CommandHandlerMethodAttribute
@@ -134,7 +135,9 @@ type CommandHandlerBase() =
                           MethodName = method.Name
                           MethodAction = MethodAction.CreateFrom(method, x) }
 
-                    if not attr.Disabled then commands.Add(cmd)
+                    if not attr.Disabled then
+                        commands.Add(cmd)
+
                     commandGenerated <- true
 
         commands :> Collections.Generic.IEnumerable<_>

@@ -26,10 +26,9 @@ exception IgnoreException
 /// 用于包装ErrorLevel的异常类型
 ///
 /// 用于内部实现代码不方便的调用相关AbortExecution方法时抛出
-type ModuleException(level : ErrorLevel, msg : string) =
+type ModuleException(level: ErrorLevel, msg: string) =
     inherit Exception(msg)
 
-    new(level : ErrorLevel, fmt : string, [<ParamArray>] args : obj []) =
-        ModuleException(level, String.Format(fmt, args))
+    new(level: ErrorLevel, fmt: string, [<ParamArray>] args: obj []) = ModuleException(level, String.Format(fmt, args))
 
     member _.ErrorLevel = level

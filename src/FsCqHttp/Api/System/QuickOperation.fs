@@ -6,7 +6,7 @@ open KPX.FsCqHttp.Api
 
 
 /// 快速操作
-type QuickOperation(context : PostContent) =
+type QuickOperation(context: PostContent) =
     inherit CqHttpApiBase(".handle_quick_operation")
 
     member val Reply = EmptyResponse with get, set

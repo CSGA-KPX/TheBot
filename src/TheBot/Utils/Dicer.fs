@@ -1,4 +1,4 @@
-﻿namespace KPX.TheBot.Utils.Dicer
+﻿namespace KPX.TheBot.Host.Utils.Dicer
 
 open System
 open System.Collections.Generic
@@ -24,37 +24,33 @@ type SeedOption =
         | SeedCustom s -> s
         | SeedUserId uid -> uid.Value.ToString()
 
-    static member GetSeedString(seeds : seq<SeedOption>) = String.Join("|", seeds)
+    static member GetSeedString(seeds: seq<SeedOption>) = String.Join("|", seeds)
 
-    static member SeedByUserDay(msg : MessageEvent) =
-        [| SeedDate DateTimeOffset.Now
-           SeedUserId msg.UserId |]
+    static member SeedByUserDay(msg: MessageEvent) =
+        [| SeedDate DateTimeOffset.Now; SeedUserId msg.UserId |]
 
-    static member SeedByAtUserDay(msg : MessageEvent) =
+    static member SeedByAtUserDay(msg: MessageEvent) =
         [| yield SeedDate DateTimeOffset.Now
            match msg.Message.TryGetAt() with
            | None -> raise <| InvalidOperationException("没有用户被At！")
            | Some AtUserType.All -> raise <| InvalidOperationException("At全员无效！")
            | Some (AtUserType.User uid) -> yield SeedUserId uid |]
 
-type private DRng(seeds : seq<SeedOption>) =
+type private DRng(seeds: seq<SeedOption>) =
     static let utf8 = Text.Encoding.UTF8
 
     // 因为数据量很小，Md5和xxHash速度都差不多
     // 而且DieHarder和rngtest测试结果也差不多
     // 没有其他问题还是固定用Md5了
-    let hash =
-        Security.Cryptography.MD5.Create() :> Security.Cryptography.HashAlgorithm
+    let hash = Security.Cryptography.MD5.Create() :> Security.Cryptography.HashAlgorithm
 
     let mutable frozen = false
 
-    let mutable seed =
-        SeedOption.GetSeedString(seeds)
-        |> utf8.GetBytes
-        |> hash.ComputeHash
+    let mutable seed = SeedOption.GetSeedString(seeds) |> utf8.GetBytes |> hash.ComputeHash
 
     let iterate () =
-        if not frozen then seed <- hash.ComputeHash(seed)
+        if not frozen then
+            seed <- hash.ComputeHash(seed)
 
     /// 指示该DRng是否继续衍生
     member x.Freeze() = frozen <- true
@@ -85,20 +81,18 @@ type private DRng(seeds : seq<SeedOption>) =
             iterate ()
             seed
 
-    member private x.GetBytes(str : string) =
+    member private x.GetBytes(str: string) =
         if frozen then
-            Array.append seed (utf8.GetBytes(str))
-            |> hash.ComputeHash
+            Array.append seed (utf8.GetBytes(str)) |> hash.ComputeHash
         else
             iterate ()
 
-            Array.append seed (utf8.GetBytes(str))
-            |> hash.ComputeHash
+            Array.append seed (utf8.GetBytes(str)) |> hash.ComputeHash
 
-type Dicer(seeds : seq<SeedOption>) =
+type Dicer(seeds: seq<SeedOption>) =
     let drng = DRng(seeds)
 
-    new(opt : SeedOption) = Dicer(Seq.singleton opt)
+    new(opt: SeedOption) = Dicer(Seq.singleton opt)
 
     /// 通用的随机骰子
     static member RandomDicer = Dicer(SeedOption.SeedRandom)
@@ -107,47 +101,46 @@ type Dicer(seeds : seq<SeedOption>) =
 
     member x.IsFrozen = drng.IsFrozen
 
-    member x.GetInteger(min : uint32, max : uint32) =
+    member x.GetInteger(min: uint32, max: uint32) =
         if (max - min) = UInt32.MaxValue then
             drng.GetUInt32()
         else
             drng.GetUInt32() % (max - min + 1u) + min
 
-    member x.GetInteger(min : uint64, max : uint64) =
+    member x.GetInteger(min: uint64, max: uint64) =
         if (max - min) = UInt64.MaxValue then
             drng.GetUInt64()
         else
             drng.GetUInt64() % (max - min + 1UL) + min
 
-    member x.GetInteger(min : int, max : int) =
+    member x.GetInteger(min: int, max: int) =
         let max = max - min
         (x.GetInteger(0u, uint32 max) |> int) + min
 
-    member x.GetInteger(min : int64, max : int64) =
+    member x.GetInteger(min: int64, max: int64) =
         let max = max - min
         (x.GetInteger(0UL, uint64 max) |> int64) + min
 
-    member x.GetInteger(min : uint32, max : uint32, str : string) =
+    member x.GetInteger(min: uint32, max: uint32, str: string) =
         if (max - min) = UInt32.MaxValue then
             drng.GetUInt32(str)
         else
             drng.GetUInt32(str) % (max - min + 1u) + min
 
-    member x.GetInteger(min : uint64, max : uint64, str : string) =
+    member x.GetInteger(min: uint64, max: uint64, str: string) =
         if (max - min) = UInt64.MaxValue then
             drng.GetUInt64(str)
         else
             drng.GetUInt64(str) % (max - min + 1UL) + min
 
-    member x.GetInteger(min : int, max : int, str : string) =
+    member x.GetInteger(min: int, max: int, str: string) =
         let max = max - min
         (x.GetInteger(0u, uint32 max, str) |> int) + min
 
-    member x.GetInteger(min : int64, max : int64, str : string) =
+    member x.GetInteger(min: int64, max: int64, str: string) =
         let max = max - min
 
-        (x.GetInteger(0UL, uint64 max, str) |> int64)
-        + min
+        (x.GetInteger(0UL, uint64 max, str) |> int64) + min
 
     member x.GetNatural(upper) = x.GetInteger(0, upper)
     member x.GetNatural(upper) = x.GetInteger(0L, upper)
@@ -169,8 +162,9 @@ type Dicer(seeds : seq<SeedOption>) =
     member x.GetPositive(upper, str) = x.GetInteger(1u, upper, str)
     member x.GetPositive(upper, str) = x.GetInteger(1UL, upper, str)
 
-    member x.GetIntegerArray(lower : int, upper : int, count : int, unique : bool) =
-        if count < 0 then invalidArg "count" "数量不能小于0"
+    member x.GetIntegerArray(lower: int, upper: int, count: int, unique: bool) =
+        if count < 0 then
+            invalidArg "count" "数量不能小于0"
 
         if unique && (upper - lower + 1) < count then
             invalidArg "count" "获取唯一数大于可能数"
@@ -188,16 +182,16 @@ type Dicer(seeds : seq<SeedOption>) =
         ret.CopyTo(r, 0)
         r
 
-    member x.GetNaturalArray(upper : int, count : int, ?unique : bool) =
+    member x.GetNaturalArray(upper: int, count: int, ?unique: bool) =
         x.GetIntegerArray(0, upper, count, defaultArg unique false)
 
-    member x.GetPositiveArray(upper : int, count : int, ?unique : bool) =
+    member x.GetPositiveArray(upper: int, count: int, ?unique: bool) =
         x.GetIntegerArray(1, upper, count, defaultArg unique false)
 
-    member x.GetArrayItem(items : 'T []) =
+    member x.GetArrayItem(items: 'T []) =
         let idx = x.GetNatural(items.Length - 1)
         items.[idx]
 
-    member x.GetArrayItem(items : 'T [], count, ?unique : bool) =
+    member x.GetArrayItem(items: 'T [], count, ?unique: bool) =
         x.GetNaturalArray(items.Length - 1, count, defaultArg unique false)
         |> Array.map (fun idx -> items.[idx])

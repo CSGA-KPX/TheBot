@@ -10,7 +10,7 @@ open KPX.FsCqHttp.Instance
 
 type private ColorCell(cb, name, def) =
     inherit OptionCell<SKColor>(cb, name, def)
-    
+
     override x.ConvertValue(str) = SKColor.Parse(str)
 
 type FsCqHttpConfigParser() as x =
@@ -18,55 +18,39 @@ type FsCqHttpConfigParser() as x =
 
     do x.UndefinedOptionHandling <- UndefinedOptionHandling.Ignore
 
-    let logEventPost =
-        OptionCellSimple<bool>(x, "LogEventPost", false)
+    let logEventPost = OptionCellSimple<bool>(x, "LogEventPost", false)
 
-    let logApiCall =
-        OptionCellSimple<bool>(x, "LogApiCall", false)
+    let logApiCall = OptionCellSimple<bool>(x, "LogApiCall", false)
 
-    let logApiJson =
-        OptionCellSimple<bool>(x, "LogApiJson", false)
+    let logApiJson = OptionCellSimple<bool>(x, "LogApiJson", false)
 
-    let logCommandCall =
-        OptionCellSimple<bool>(x, "LogCommandCall", true)
+    let logCommandCall = OptionCellSimple<bool>(x, "LogCommandCall", true)
 
-    let newLine =
-        OptionCellSimple<string>(x, "NewLine", "\r")
+    let newLine = OptionCellSimple<string>(x, "NewLine", "\r")
 
-    let textLengthLimit =
-        OptionCellSimple<int>(x, "TextLengthLimit", 3000)
+    let textLengthLimit = OptionCellSimple<int>(x, "TextLengthLimit", 3000)
 
-    let imgIgnoreCheck =
-        OptionCellSimple<bool>(x, "ImageIgnoreSendCheck", true)
+    let imgIgnoreCheck = OptionCellSimple<bool>(x, "ImageIgnoreSendCheck", true)
 
-    let imgOutputFont =
-        OptionCellSimple<string>(x, "ImageOutputFont", "Sarasa Fixed CL")
+    let imgOutputFont = OptionCellSimple<string>(x, "ImageOutputFont", "Sarasa Fixed CL")
 
-    let imgOutputSize =
-        OptionCellSimple<float32>(x, "ImageOutputSize", 12.0f)
+    let imgOutputSize = OptionCellSimple<float32>(x, "ImageOutputSize", 12.0f)
 
-    let imgTextColor =
-        ColorCell(x, "ImageTextColor", SKColors.Black)
+    let imgTextColor = ColorCell(x, "ImageTextColor", SKColors.Black)
 
-    let imgRowBgColorA =
-        ColorCell(x, "ImageRowColorA", SKColors.White)
+    let imgRowBgColorA = ColorCell(x, "ImageRowColorA", SKColors.White)
 
-    let imgRowBgColorB =
-        ColorCell(x, "ImageRowColorB", SKColors.LightGray)
+    let imgRowBgColorB = ColorCell(x, "ImageRowColorB", SKColors.LightGray)
 
-    let tblCellPadding =
-        OptionCellSimple<string>(x, "TableCellPadding", "--")
+    let tblCellPadding = OptionCellSimple<string>(x, "TableCellPadding", "--")
 
-    let tblGraphicMeasure =
-        OptionCellSimple<bool>(x, "TableGraphicMeasure", true)
+    let tblGraphicMeasure = OptionCellSimple<bool>(x, "TableGraphicMeasure", true)
 
-    let endpoint =
-        OptionCellSimple<string>(x, "endpoint", "")
+    let endpoint = OptionCellSimple<string>(x, "endpoint", "")
 
     let token = OptionCellSimple<string>(x, "token", "")
 
-    let reverse =
-        OptionCellSimple<int>(x, "reverse", 5004)
+    let reverse = OptionCellSimple<int>(x, "reverse", 5004)
 
     member private x.UpdateConfig() = Config <- FsCqHttpConfig(x)
 
@@ -75,8 +59,7 @@ type FsCqHttpConfigParser() as x =
             (fun () ->
                 let endpoint = $"http://localhost:%i{reverse.Value}/"
 
-                let wss =
-                    new CqWebSocketServer(endpoint, token.Value)
+                let wss = new CqWebSocketServer(endpoint, token.Value)
 
                 wss.Start())
         elif endpoint.IsDefined && token.IsDefined then
@@ -89,16 +72,24 @@ type FsCqHttpConfigParser() as x =
         else
             failwithf "需要定义endpoint&token或者reverse&token"
 
-    member x.Start() =
+    /// <summary>
+    /// 使用自定义的ContextModuleLoader启动
+    /// </summary>
+    member x.Start(loader: ContextModuleLoader) =
+        CqWsContextPool.ContextModuleLoader <- loader
         x.UpdateConfig()
         x.GetStartupFunction() ()
+
+    /// <summary>
+    /// 使用LoadedAssemblyDiscover启动
+    /// </summary>
+    member x.Start() =
+        x.Start(ContextModuleLoader(LoadedAssemblyDiscover().AllDefinedModules))
 
     /// 从环境变量读取配置
     member x.ParseEnvironment() =
         seq {
-            let vars =
-                Environment.GetEnvironmentVariables()
-                |> Seq.cast<Collections.DictionaryEntry>
+            let vars = Environment.GetEnvironmentVariables() |> Seq.cast<Collections.DictionaryEntry>
 
             for kv in vars do
                 yield $"{string kv.Key}:{string kv.Value}"

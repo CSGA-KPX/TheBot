@@ -1,16 +1,15 @@
-﻿module KPX.TheBot.Utils.RecipeRPN
+module KPX.TheBot.Host.Utils.RecipeRPN
 
 open System
 
-open KPX.TheBot.Utils.GenericRPN
+open KPX.TheBot.Host.Utils.GenericRPN
 
-open KPX.TheBot.Data.CommonModule.Recipe
+open KPX.TheBot.Host.DataModel.Recipe
 
 
-type ItemAccumulator<'Item when 'Item : equality> =
-    KPX.TheBot.Data.CommonModule.Recipe.ItemAccumulator<'Item>
+type ItemAccumulator<'Item when 'Item: equality> = KPX.TheBot.Host.DataModel.Recipe.ItemAccumulator<'Item>
 
-type RecipeOperand<'Item when 'Item : equality> =
+type RecipeOperand<'Item when 'Item: equality> =
     | Number of float
     | Accumulator of ItemAccumulator<'Item>
 
@@ -56,23 +55,26 @@ type RecipeOperand<'Item when 'Item : equality> =
 
 /// 用于计算物品数量的RPN解析器
 [<AbstractClass>]
-type RecipeExpression<'Item when 'Item : equality>() =
+type RecipeExpression<'Item when 'Item: equality>() =
     inherit GenericRPNParser<RecipeOperand<'Item>>(seq {
-                                                       GenericOperator<_>('+', 2, BinaryFunc = Some (+))
-                                                       GenericOperator<_>('-', 2, BinaryFunc = Some (-))
-                                                       GenericOperator<_>('*', 3, BinaryFunc = Some (*))
-                                                       GenericOperator<_>('/', 3, BinaryFunc = Some (/))
+                                                       GenericOperator<_>('+', 2, BinaryFunc = Some(+))
+                                                       GenericOperator<_>('-', 2, BinaryFunc = Some(-))
+                                                       GenericOperator<_>('*', 3, BinaryFunc = Some(*))
+                                                       GenericOperator<_>('/', 3, BinaryFunc = Some(/))
                                                    })
 
     /// 把物品名称转换为物品类型
     ///
     /// 如果没有匹配，返回None
-    abstract TryGetItemByName : string -> 'Item option
+    abstract TryGetItemByName: string -> 'Item option
 
     override x.Tokenize(token) =
         match token with
         | _ when String.forall Char.IsDigit token -> Operand(Number(token |> float))
         | _ ->
             let item = x.TryGetItemByName(token)
-            if item.IsNone then failwithf $"找不到物品 %s{token}"
+
+            if item.IsNone then
+                failwithf $"找不到物品 %s{token}"
+
             Operand(Accumulator(ItemAccumulator.SingleItemOf(item.Value)))

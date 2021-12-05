@@ -8,11 +8,11 @@ open Newtonsoft.Json
 
 type FriendRequestEvent =
     { [<JsonProperty("user_id")>]
-      UserId : UserId
+      UserId: UserId
       [<JsonProperty("comment")>]
-      Comment : string
+      Comment: string
       [<JsonProperty("flag")>]
-      Flag : string }
+      Flag: string }
 
-    member x.Response(approve : bool, ?remark : string) =
+    member x.Response(approve: bool, ?remark: string) =
         FriendAddResponse(approve, (defaultArg remark ""))

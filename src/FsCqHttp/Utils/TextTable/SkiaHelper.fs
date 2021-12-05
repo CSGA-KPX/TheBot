@@ -11,9 +11,7 @@ let fontSize = Config.ImageOutputSize
 
 let familyName = Config.ImageOutputFont
 
-let typeface =
-    (familyName, SKFontStyle.Normal)
-    |> SKFontManager.Default.MatchFamily
+let typeface = (familyName, SKFontStyle.Normal) |> SKFontManager.Default.MatchFamily
 
 let fontRegular = new SKFont(typeface, fontSize)
 
@@ -48,7 +46,7 @@ let rowSpacing =
 
     space + 0.5f |> round // 保证能被2整除
 
-let measureText (str : string, skp : SKPaint) =
+let measureText (str: string, skp: SKPaint) =
     if String.IsNullOrEmpty(str) then
         SKRect.Empty
     else

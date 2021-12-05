@@ -15,10 +15,10 @@ type EssenceSubType =
 
 type GroupEssence =
     { [<JsonProperty("sub_type")>]
-      SubType : EssenceSubType
+      SubType: EssenceSubType
       [<JsonProperty("sender_id")>]
-      SenderId : UserId
+      SenderId: UserId
       [<JsonProperty("operator_id")>]
-      OperatorId : UserId
+      OperatorId: UserId
       [<JsonProperty("message_id")>]
-      MessageId : MessageId }
+      MessageId: MessageId }

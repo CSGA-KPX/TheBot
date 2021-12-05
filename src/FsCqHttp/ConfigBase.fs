@@ -6,27 +6,27 @@ open SkiaSharp
 /// 用于传递配置信息
 /// 具体注释请参阅KPX.FsCqHttp.FsCqHttpConfig
 type IFsCqHttpConfig =
-    abstract LogEventPost : bool
-    abstract LogApiCall : bool
-    abstract LogApiJson : bool
-    abstract LogCommandCall : bool
+    abstract LogEventPost: bool
+    abstract LogApiCall: bool
+    abstract LogApiJson: bool
+    abstract LogCommandCall: bool
 
-    abstract NewLine : string
-    abstract TextLengthLimit : int32
+    abstract NewLine: string
+    abstract TextLengthLimit: int32
 
-    abstract ImageIgnoreSendCheck : bool
-    abstract ImageOutputFont : string
-    abstract ImageOutputSize : float32
-    abstract ImageTextColor : SKColor
-    abstract ImageRowColorA : SKColor
-    abstract ImageRowColorB : SKColor
+    abstract ImageIgnoreSendCheck: bool
+    abstract ImageOutputFont: string
+    abstract ImageOutputSize: float32
+    abstract ImageTextColor: SKColor
+    abstract ImageRowColorA: SKColor
+    abstract ImageRowColorB: SKColor
 
-    abstract TableCellPadding : string
-    abstract TableGraphicMeasure : bool
+    abstract TableCellPadding: string
+    abstract TableGraphicMeasure: bool
 
 /// 从IFsCqHttpConfig复制信息并缓存
 /// 并提供读写支持
-type FsCqHttpConfig(cfg : IFsCqHttpConfig) =
+type FsCqHttpConfig(cfg: IFsCqHttpConfig) =
     /// 是否记录事件上报
     member val LogEventPost = cfg.LogEventPost with get, set
     /// 是否记录API调用

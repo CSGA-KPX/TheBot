@@ -7,13 +7,13 @@ open System.Collections.Concurrent
 open KPX.FsCqHttp.Utils.TextResponse
 
 
-type OptionCell(cb : OptionBase, key : string) =
+type OptionCell(cb: OptionBase, key: string) =
     /// 该选项的主要键名
     member x.KeyName = key
 
     /// 指示该选项是否已被设置
-    abstract IsDefined : bool
-    
+    abstract IsDefined: bool
+
     default x.IsDefined = x.TryGetRealKey().IsSome
 
     /// 获取或更改该选项的别名
@@ -27,21 +27,20 @@ type OptionCell(cb : OptionBase, key : string) =
             x.Aliases |> Array.tryFind cb.IsDefined
 
 [<AbstractClass>]
-type OptionCell<'T>(cb : OptionBase, key : string, defValue : 'T) =
+type OptionCell<'T>(cb: OptionBase, key: string, defValue: 'T) =
     inherit OptionCell(cb, key)
 
     /// 获取或更改该选项的默认值
     member val Default = defValue with get, set
 
     /// 是否从OptionBase的TryIndex中读取值
-    member val ArgIndex : int option = None with get, set
-    
+    member val ArgIndex: int option = None with get, set
+
     override x.IsDefined =
-        let nonOpts : IReadOnlyList<string> = cb.NonOptionStrings
-        (x.ArgIndex.IsSome && (x.ArgIndex.Value < nonOpts.Count))
-        || base.IsDefined
-        
-    abstract ConvertValue : string -> 'T
+        let nonOpts: IReadOnlyList<string> = cb.NonOptionStrings
+        (x.ArgIndex.IsSome && (x.ArgIndex.Value < nonOpts.Count)) || base.IsDefined
+
+    abstract ConvertValue: string -> 'T
 
     member private x.ValueSequence =
         // 首先从K:V里读值
@@ -71,7 +70,7 @@ type OptionCell<'T>(cb : OptionBase, key : string, defValue : 'T) =
     /// 获取所有设定值，如果没有则返回默认值
     member x.Values = x.ValueSequence |> Seq.toArray
 
-type OptionCellSimple<'T when 'T :> IConvertible>(cb : OptionBase, key : string, defValue : 'T) =
+type OptionCellSimple<'T when 'T :> IConvertible>(cb: OptionBase, key: string, defValue: 'T) =
     inherit OptionCell<'T>(cb, key, defValue)
 
     override x.ConvertValue value =
@@ -89,9 +88,8 @@ type UndefinedOptionHandling =
 
 /// 不提供任何默认选项
 type OptionBase() =
-    static let conOptCache =
-        ConcurrentDictionary<string, HashSet<string>>()
-        
+    static let conOptCache = ConcurrentDictionary<string, HashSet<string>>()
+
     static let separators = [| ';'; '；'; '：'; ':' |]
 
     let localOpts = HashSet<string>()
@@ -100,8 +98,7 @@ type OptionBase() =
 
     let nonOption = ResizeArray<string>()
 
-    let data =
-        Dictionary<string, ResizeArray<string>>(StringComparer.OrdinalIgnoreCase)
+    let data = Dictionary<string, ResizeArray<string>>(StringComparer.OrdinalIgnoreCase)
 
     member val UndefinedOptionHandling = UndefinedOptionHandling.Raise with get, set
 
@@ -115,24 +112,24 @@ type OptionBase() =
         if not isParsed then invalidOp "尚未解析数据"
         data.[key] :> IReadOnlyList<_>
 
-    member x.RegisterOption(keyName : string) =
+    member x.RegisterOption(keyName: string) =
         let cell = OptionCell(x, keyName)
         x.RegisterOptionCore(cell)
         cell
 
-    member x.RegisterOption<'T when 'T :> IConvertible>(keyName : string, defValue : 'T) =
-        let cell =
-            OptionCellSimple<'T>(x, keyName, defValue)
+    member x.RegisterOption<'T when 'T :> IConvertible>(keyName: string, defValue: 'T) =
+        let cell = OptionCellSimple<'T>(x, keyName, defValue)
 
         x.RegisterOptionCore(cell)
         cell
 
-    member x.RegisterOption<'T when 'T :> OptionCell>(cell : 'T) =
+    member x.RegisterOption<'T when 'T :> OptionCell>(cell: 'T) =
         x.RegisterOptionCore(cell)
         cell
 
-    member private x.RegisterOptionCore(cell : OptionCell) =
-        if isParsed then invalidOp "不能再解析参数后添加选项"
+    member private x.RegisterOptionCore(cell: OptionCell) =
+        if isParsed then
+            invalidOp "不能再解析参数后添加选项"
 
         localOpts.Add(cell.KeyName) |> ignore
 
@@ -140,22 +137,21 @@ type OptionBase() =
             localOpts.Add(alias) |> ignore
 
     /// 解析前的前处理操作
-    abstract PreParse : seq<string> -> seq<string>
+    abstract PreParse: seq<string> -> seq<string>
     default x.PreParse(args) = args
 
-    member x.Parse(input : seq<string>) =
+    member x.Parse(input: seq<string>) =
         data.Clear()
         nonOption.Clear()
         isParsed <- false
 
-        let defKeys : HashSet<string> = x.GetOptionKeys()
+        let defKeys: HashSet<string> = x.GetOptionKeys()
 
         for item in x.PreParse(input) do
             let isOption = item.IndexOfAny(separators) <> -1
 
             if isOption then
-                let s =
-                    item.Split(separators, 2, StringSplitOptions.RemoveEmptyEntries)
+                let s = item.Split(separators, 2, StringSplitOptions.RemoveEmptyEntries)
 
                 let key = s.[0]
 
@@ -197,7 +193,7 @@ type OptionBase() =
             Some nonOption.[idx]
 
     /// 尝试从OptionStrings的指定位置解析参数
-    member x.TryIndexed<'T when 'T :> IConvertible>(idx : int, defValue : 'T) =
+    member x.TryIndexed<'T when 'T :> IConvertible>(idx: int, defValue: 'T) =
         x.TryIndexed(idx)
         |> Option.map (fun value -> Convert.ChangeType(value, typeof<'T>) :?> 'T)
         |> Option.defaultValue defValue
@@ -217,9 +213,7 @@ type OptionBase() =
     /// 获取类在设计时定义的选项
     member private x.GetOptions() : seq<OptionCell> =
         seq {
-            let flag =
-                Reflection.BindingFlags.Instance
-                ||| Reflection.BindingFlags.NonPublic
+            let flag = Reflection.BindingFlags.Instance ||| Reflection.BindingFlags.NonPublic
 
             let targetType = typeof<OptionCell>
 

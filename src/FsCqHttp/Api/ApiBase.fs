@@ -19,7 +19,8 @@ type ApiBase() =
         and internal set v = executed <- v
 
     member x.EnsureExecuted() =
-        if not executed then invalidOp "该API尚未被执行"
+        if not executed then
+            invalidOp "该API尚未被执行"
 
     /// 将子类的属性转换为字符串格式
     override x.ToString() =
@@ -38,29 +39,26 @@ type ApiBase() =
         sb.AppendLine(header) |> ignore
 
         for prop in props do
-            sb.AppendFormat("{0} => {1}\r\n", prop.Name, prop.GetValue(x))
-            |> ignore
+            sb.AppendFormat("{0} => {1}\r\n", prop.Name, prop.GetValue(x)) |> ignore
 
-        sb.AppendLine("".PadRight(header.Length, '-'))
-        |> ignore
+        sb.AppendLine("".PadRight(header.Length, '-')) |> ignore
 
         sb.ToString()
 
 [<AbstractClass>]
 /// OneBot API基类
-type CqHttpApiBase(action : string) =
+type CqHttpApiBase(action: string) =
     inherit ApiBase()
 
     member x.ActionName = action
 
     /// 生成请求Json
-    member x.GetRequestJson(echo : string) =
+    member x.GetRequestJson(echo: string) =
         let sb = StringBuilder()
         use sw = new StringWriter(sb)
         let js = JsonSerializer()
 
-        use w =
-            new JsonTextWriter(sw, Formatting = Formatting.None)
+        use w = new JsonTextWriter(sw, Formatting = Formatting.None)
 
         w.WriteStartObject()
 
@@ -77,20 +75,20 @@ type CqHttpApiBase(action : string) =
         w.WriteEndObject()
         sb.ToString()
 
-    abstract HandleResponse : ApiResponse -> unit
+    abstract HandleResponse: ApiResponse -> unit
 
     /// 写入Params对象内
-    abstract WriteParams : JsonTextWriter * JsonSerializer -> unit
+    abstract WriteParams: JsonTextWriter * JsonSerializer -> unit
 
     default x.HandleResponse _ = ()
     default x.WriteParams(_, _) = ()
 
 /// 指示衍生类型可以提供API访问
 type IApiCallProvider =
-    abstract ProviderUserId : UserId
-    abstract ProviderId : string
-    abstract ProviderName : string
+    abstract ProviderUserId: UserId
+    abstract ProviderId: string
+    abstract ProviderName: string
 
     abstract CallApi<'T when 'T :> ApiBase> : 'T -> 'T
     /// 调用一个不需要额外设定的api
-    abstract CallApi<'T when 'T :> ApiBase and 'T : (new : unit -> 'T)> : unit -> 'T
+    abstract CallApi<'T when 'T :> ApiBase and 'T: (new: unit -> 'T)> : unit -> 'T

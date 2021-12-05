@@ -9,7 +9,7 @@ open KPX.FsCqHttp.Utils.UserOption
 
 
 [<AttributeUsage(AttributeTargets.Property, AllowMultiple = false)>]
-type AltCommandNameAttribute([<ParamArray>] names : string []) =
+type AltCommandNameAttribute([<ParamArray>] names: string []) =
     inherit Attribute()
 
     member x.Names = names
@@ -23,7 +23,7 @@ type DefaultCommandAttribute() =
 
 type ISubcommandTemplate =
     /// 返回每种子命令的DU的帮助文本
-    abstract Usage : string
+    abstract Usage: string
 
 [<RequireQualifiedAccess>]
 type private SubCommandParamsInfo =
@@ -32,11 +32,11 @@ type private SubCommandParamsInfo =
     | Arguments of Type []
 
 type private SubCommandCaseInfo =
-    { CommandNames : string []
-      UnionCase : UnionCaseInfo
-      ParamsInfo : SubCommandParamsInfo }
+    { CommandNames: string []
+      UnionCase: UnionCaseInfo
+      ParamsInfo: SubCommandParamsInfo }
 
-    static member Parse(ui : UnionCaseInfo) =
+    static member Parse(ui: UnionCaseInfo) =
         let names = ResizeArray<string>()
         names.Add(ui.Name.ToUpperInvariant())
 
@@ -47,10 +47,7 @@ type private SubCommandCaseInfo =
         let obp, args =
             ui.GetFields()
             |> Array.map (fun p -> p.PropertyType)
-            |> Array.partition
-                (fun t ->
-                    t.IsSubclassOf(typeof<OptionBase>)
-                    || t = typeof<OptionBase>)
+            |> Array.partition (fun t -> t.IsSubclassOf(typeof<OptionBase>) || t = typeof<OptionBase>)
 
         let paramsInfo =
             match obp.Length, args.Length with
@@ -67,7 +64,7 @@ type private SubCommandCaseInfo =
           UnionCase = ui }
 
 type SubcommandParser private () =
-    static member Parse<'T when 'T :> ISubcommandTemplate>(args : string []) =
+    static member Parse<'T when 'T :> ISubcommandTemplate>(args: string []) =
         // 生成指令模板
         let subs =
             FSharpType.GetUnionCases(typeof<'T>, false)
@@ -79,18 +76,19 @@ type SubcommandParser private () =
             (fun cmd ->
                 let u = cmd.ToUpperInvariant()
 
-                subs
-                |> Array.tryFind (fun sub -> sub.CommandNames |> Array.exists ((=) u)))
+                subs |> Array.tryFind (fun sub -> sub.CommandNames |> Array.exists ((=) u)))
         |> Option.flatten
         |> Option.map
             (fun info ->
                 // 第一个用来表示子命令了，所以从第二个开始算参数
                 let argTail =
-                    if args.Length = 1 then Array.empty else args |> Array.tail
+                    if args.Length = 1 then
+                        Array.empty
+                    else
+                        args |> Array.tail
 
                 match info.ParamsInfo with
-                | SubCommandParamsInfo.None ->
-                    FSharpValue.MakeUnion(info.UnionCase, Array.empty) :?> 'T
+                | SubCommandParamsInfo.None -> FSharpValue.MakeUnion(info.UnionCase, Array.empty) :?> 'T
                 | SubCommandParamsInfo.Option ob ->
                     ob.Parse(argTail)
                     FSharpValue.MakeUnion(info.UnionCase, Array.singleton<obj> ob) :?> 'T
@@ -98,15 +96,11 @@ type SubcommandParser private () =
                     if argTail.Length <> args.Length then
                         invalidOp $"输入参数不正确：需要%i{args.Length}个参数，而提供了%i{argTail.Length}个"
 
-                    let uiParams =
-                        Array.map2
-                            (fun (t : Type) (s : string) -> Convert.ChangeType(s, t))
-                            args
-                            argTail
+                    let uiParams = Array.map2 (fun (t: Type) (s: string) -> Convert.ChangeType(s, t)) args argTail
 
                     FSharpValue.MakeUnion(info.UnionCase, uiParams) :?> 'T)
 
-    static member Parse<'T when 'T :> ISubcommandTemplate>(cmdArg : CommandEventArgs) =
+    static member Parse<'T when 'T :> ISubcommandTemplate>(cmdArg: CommandEventArgs) =
         SubcommandParser.Parse<'T>(cmdArg.HeaderArgs)
 
     static member GenerateHelp<'T when 'T :> ISubcommandTemplate>() =

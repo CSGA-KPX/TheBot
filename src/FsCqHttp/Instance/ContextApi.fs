@@ -38,7 +38,7 @@ type GetCtxCommands() =
     override x.Invoke(ctx) = c <- ctx.Commands |> Seq.toArray
 
 /// 根据名称（含CommandStart）查找模块内指令
-type TryGetCommand(cmdName : string) =
+type TryGetCommand(cmdName: string) =
     inherit WsContextApiBase()
 
     let mutable cmd = None
@@ -56,10 +56,10 @@ type TryGetCommand(cmdName : string) =
 
 /// 将制定CommandEventArgs事件重写为其他指令
 /// 强制使用调度器
-type RewriteCommand(e : CommandEventArgs, messages : seq<ReadOnlyMessage>) =
+type RewriteCommand(e: CommandEventArgs, messages: seq<ReadOnlyMessage>) =
     inherit WsContextApiBase()
 
-    new(e, cmdLines : seq<string>) =
+    new(e, cmdLines: seq<string>) =
         RewriteCommand(
             e,
             cmdLines
@@ -75,6 +75,6 @@ type RewriteCommand(e : CommandEventArgs, messages : seq<ReadOnlyMessage>) =
             let obj = e.RawEvent.RawEventPost.DeepClone() :?> JObject
             obj.["message"] <- JToken.FromObject(msg) :?> JArray
             obj.["raw_message"] <- JValue(msg.ToCqString())
-            
+
             let ex = CqEventArgs.Parse(ctx, PostContent(obj))
             TaskScheduler.enqueue (ctx.Modules, ex)
