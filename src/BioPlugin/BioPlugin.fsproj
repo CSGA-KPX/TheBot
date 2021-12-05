@@ -1,0 +1,50 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+	<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <OtherFlags>--warnon:1182</OtherFlags>
+    <Tailcalls>true</Tailcalls>
+    <OutputPath>..\..\build\bin\plugins\BioPlugin\</OutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <OutputPath>..\..\build\bin\plugins\BioPlugin\</OutputPath>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <Compile Include="ShRnaDataCache.fs" />
+    <Compile Include="ShRnaModule.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="../../datafiles/trc_public.05Apr11.zip" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BioFSharp" Version="1.2.0" />
+    <PackageReference Include="BioFSharp.IO" Version="1.2.0" />
+    <PackageReference Include="FastCsvParser" Version="1.1.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FsCqHttp\FsCqHttp.fsproj">
+        <Private>False</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\TheBot\TheBot.fsproj" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Update="FSharp.Core">
+      <ExcludeAssets>contentFiles</ExcludeAssets>
+    </PackageReference>
+  </ItemGroup>
+  
+
+</Project>

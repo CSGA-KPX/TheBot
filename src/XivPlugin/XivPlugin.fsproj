@@ -75,9 +75,9 @@
     <PackageReference Update="FSharp.Core">
       <IncludeAssets>compile</IncludeAssets>
     </PackageReference>
-	  <PackageReference Update="FastCsvParser">
-		  <IncludeAssets>all</IncludeAssets>
-	  </PackageReference>
+	<PackageReference Update="FastCsvParser">
+      <IncludeAssets>all</IncludeAssets>
+	</PackageReference>
   </ItemGroup>
   
 </Project>

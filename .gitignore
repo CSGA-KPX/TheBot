@@ -365,3 +365,4 @@ coverage.xml
 /build/persist
 /src/TheBot/Properties/launchSettings.json
 /build/cache
+/datafiles/trc_public.05Apr11.zip
