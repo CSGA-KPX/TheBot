@@ -1,0 +1,384 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="ChsDCInfo" xml:space="preserve">
+    <value>一区 晨曦王座,沃仙曦染,宇宙和音,红玉海,萌芽池,神意之地,幻影群岛,拉诺西亚
+二区 拂晓之间,龙巢神殿,旅人栈桥,白金幻象,白银乡,神拳痕,潮风亭
+三区 琥珀原,柔风海湾,海猫茶屋,延夏,静语庄园,摩杜纳,紫水栈桥</value>
+    <comment>空格分隔，然后逗号</comment>
+  </data>
+  <data name="ChsWorldName" xml:space="preserve">
+    <value>拉诺西亚 LaNuoXiYa
+紫水栈桥 ZiShuiZhanQiao
+幻影群岛 HuanYingQunDao
+摩杜纳 MoDuNa
+萌芽池 MengYaChi
+白金幻象 BaiJinHuanXiang
+神意之地 ShenYiZhiDi
+静语庄园 JingYuZhuangYuan
+旅人栈桥 LvRenZhanQiao
+拂晓之间 FuXiaoZhiJian
+龙巢神殿 Longchaoshendian
+红玉海 HongYuHai
+延夏 YanXia
+潮风亭 ChaoFengTing
+神拳痕 ShenQuanHen
+白银乡 BaiYinXiang
+宇宙和音 YuZhouHeYin
+沃仙曦染 WoXianXiRan
+晨曦王座 ChenXiWangZuo
+海猫茶屋 HaiMaoChaWu
+柔风海湾 RouFengHaiWan
+琥珀原 HuPoYuan</value>
+    <comment>空格分隔</comment>
+  </data>
+  <data name="ClassJobMapping" xml:space="preserve">
+    <value>暗 DRK
+暗黑骑士 DRK
+白 WHM
+白魔法师 WHM
+捕鱼人 FSH
+裁 WVR
+裁衣匠 WVR
+采矿工 MIN
+赤 RDM
+赤魔法师 RDM
+雕 GSM
+雕金匠 GSM
+锻 BSM
+锻铁匠 BSM
+斧 MRD
+斧术师 MRD
+革 LTW
+格 PGL
+格斗家 PGL
+弓 ARC
+弓箭手 ARC
+黑 BLM
+黑魔法师 BLM
+幻 CNJ
+幻术师 CNJ
+机 MCH
+机工士 MCH
+甲 ARM
+剑 GLA
+剑术师 GLA
+绝 GNB
+绝枪战士 GNB
+刻木匠 CRP
+矿 MIN
+炼 ALC
+炼金术士 ALC
+龙 DRG
+龙骑士 DRG
+冒险者 ADV
+秘 ACN
+秘术师 ACN
+木 CRP
+烹 CUL
+烹调师 CUL
+骑 PLD
+骑士 PLD
+枪 LNC
+枪术师 LNC
+青 BLU
+青魔法师 BLU
+忍 NIN
+忍者 NIN
+僧 MNK
+诗 BRD
+诗人 BRD
+双 ROG
+双剑师 ROG
+武 SAM
+武僧 MNK
+武士 SAM
+舞 DNC
+舞者 DNC
+学 SCH
+学者 SCH
+吟游诗人 BRD
+鱼 FSH
+园 BTN
+园艺工 BTN
+占 AST
+占星 AST
+占星术士 AST
+战 WAR
+战士 WAR
+召 SMN
+召唤师 SMN
+制革匠 LTW
+咒 THM
+咒术师 THM
+铸甲匠 ARM
+ACN ACN
+ADV ADV
+ALC ALC
+ARC ARC
+ARM ARM
+AST AST
+BLM BLM
+BLU BLU
+BRD BRD
+BSM BSM
+BTN BTN
+CNJ CNJ
+CRP CRP
+CUL CUL
+DNC DNC
+DRG DRG
+DRK DRK
+FSH FSH
+GLA GLA
+GNB GNB
+GSM GSM
+LNC LNC
+LTW LTW
+MCH MCH
+MIN MIN
+MNK MNK
+MRD MRD
+NIN NIN
+PGL PGL
+PLD PLD
+RDM RDM
+ROG ROG
+SAM SAM
+SCH SCH
+SMN SMN
+THM THM
+WAR WAR
+WHM WHM
+WVR WVR</value>
+    <comment>空格分隔</comment>
+  </data>
+  <data name="DCNameAlias" xml:space="preserve">
+    <value>一区 鸟区,陆行鸟区,鸟
+二区 猪区,莫古力区,猪
+三区 猫区,猫小胖区,猫
+Elemental 元素
+Gaia 盖亚,盖娅
+Mana 魔力,玛那,玛娜
+Aether 以太
+Primal 蛮神
+Crystal 水晶
+Chaos 混沌
+Light 光</value>
+    <comment>空格，然后逗号</comment>
+  </data>
+  <data name="WorldNameAlias" xml:space="preserve">
+    <value>//国服
+拉诺西亚 拉诺
+静语庄园 鲸鱼 静语
+海猫茶屋 海猫
+紫水栈桥 紫水
+白金幻象 白金
+龙巢神殿 龙巢
+旅人栈桥 旅人
+拂晓之间 拂晓
+神意之地 神意
+幻影群岛 幻影
+
+//Elemental
+Aegis 圣盾
+Atomos 阿托莫斯
+Carbuncle 宝石兽
+Garuda 迦楼罗
+Gungnir 神枪 昆古尼尔 神枪昆古尼尔
+Kujata 库加塔
+Ramuh 拉姆
+Tonberry 冬贝利
+Typhon 提丰
+Unicorn 独角兽
+
+//Gaia
+Alexander 亚历山大
+Bahamut 巴哈姆特
+Durandal 圣剑 杜兰德尔 圣剑杜兰德尔
+Fenrir 芬里尔
+Ifrit 伊弗利特
+Ridill 里德尔
+Tiamat 提亚马特
+Ultima 究极
+Valefor 瓦利弗
+Yojimbo 保镖
+Zeromus 扎罗姆斯
+
+//Mana
+Anima 元灵
+Asura 阿修罗
+Belias 贝利亚斯
+Chocobo 陆行鸟
+Hades 哈迪斯
+Ixion 伊克西翁
+Mandragora 蔓德拉
+Masamune 正宗
+Pandaemonium 伏魔殿
+Shinryu 神龙
+Titan 泰坦
+
+//Aether
+Adamantoise 精金龟
+Cactuar 仙人掌
+Faerie 仙子
+Gilgamesh 吉尔伽美什
+Jenova 杰诺瓦
+Midgardsormr 尘世幻龙
+Sargatanas 撒伽塔纳斯
+Siren 塞壬
+
+//Primal
+Behemoth 贝希摩斯
+Excalibur 王者之剑
+Exodus 埃克斯狄斯
+Famfrit 法姆弗里特
+Hyperion 亥伯龙
+Lamia 拉米亚
+Leviathan 利维亚桑
+Ultros 奥尔特罗斯
+
+//Crystal
+Balmung 巴鲁姆克
+Brynhildr 布伦希尔德
+Coeurl 长须豹
+Diabolos 迪亚波罗斯
+Goblin 哥布林
+Malboro 魔界花
+Mateus 马提乌斯
+Zalera 扎尔艾拉
+
+//Chaos
+Cerberus 刻耳柏洛斯
+Louisoix 路易索瓦
+Moogle 混沌莫古力 莫古力服
+Omega 欧米茄
+Ragnarok 诸神黄昏
+Spriggan 魔石精
+
+//Light
+Lich 巫妖
+Odin 奥丁
+Phoenix 不死鸟 凤凰
+Shiva 希瓦
+Twintania 双塔尼亚
+Zodiark 佐迪亚克</value>
+    <comment>忽略//和空行。空格分隔</comment>
+  </data>
+</root>

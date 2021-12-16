@@ -19,6 +19,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="DataFiles.fs" />
+    <Compile Include="DataModel\XivDataSource.fs" />
     <Compile Include="Data\XivProvider.fs" />
     <Compile Include="Data\Item.fs" />
     <Compile Include="Data\Recipe\XivRecipe.fs" />
@@ -54,6 +56,9 @@
 
   <ItemGroup>
     <EmbeddedResource Update="XivOceanFishing.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="XivStrings.resx">
       <Generator>ResXFileCodeGenerator</Generator>
     </EmbeddedResource>
   </ItemGroup>

@@ -23,7 +23,7 @@ type SpecialShopCollection private () =
     static let instance = SpecialShopCollection()
     static member Instance = instance
 
-    override x.Depends = [| typeof<ItemCollection> |]
+    override x.Depends = Array.empty
 
     override x.IsExpired = false
 
