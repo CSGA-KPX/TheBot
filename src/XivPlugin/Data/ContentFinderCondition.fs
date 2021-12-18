@@ -1,6 +1,7 @@
 module KPX.XivPlugin.Data.ContentFinderCondition
 
 open KPX.TheBot.Host.DataCache
+open KPX.TheBot.Host.DataCache.LiteDb
 
 open LiteDB
 

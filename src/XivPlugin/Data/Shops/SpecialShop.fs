@@ -3,6 +3,7 @@ namespace KPX.XivPlugin.Data.Shops
 open LiteDB
 
 open KPX.TheBot.Host.DataCache
+open KPX.TheBot.Host.DataCache.LiteDb
 
 open KPX.XivPlugin.Data
 

@@ -6,6 +6,7 @@ open System.IO
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 
+open KPX.TheBot.Host.DataCache.LiteDb
 open KPX.TheBot.Host.DataModel.Recipe
 
 open KPX.EvePlugin.Data.EveType

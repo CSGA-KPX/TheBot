@@ -6,6 +6,7 @@ open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 
 open KPX.TheBot.Host.DataCache
+open KPX.TheBot.Host.DataCache.LiteDb
 
 
 [<CLIMutable>]

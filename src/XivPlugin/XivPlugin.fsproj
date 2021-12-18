@@ -20,7 +20,23 @@
 
   <ItemGroup>
     <Compile Include="DataFiles.fs" />
-    <Compile Include="DataModel\XivDataSource.fs" />
+    <Compile Include="DataModel\Common\World.fs" />
+    <Compile Include="DataModel\Item.fs" />
+    <Compile Include="DataModel\Recipe\XivRecipe.fs" />
+    <Compile Include="DataModel\Recipe\CraftRecipeProvider.fs" />
+    <Compile Include="DataModel\Recipe\CompanyCraftRecipeProvider.fs" />
+    <Compile Include="DataModel\Recipe\XivRecipeProvider.fs" />
+    <Compile Include="DataModel\Shops\ShopLocation.fs" />
+    <Compile Include="DataModel\Shops\GCScriptShop.fs" />
+    <Compile Include="DataModel\Shops\GilShop.fs" />
+    <Compile Include="DataModel\Shops\SpecialShop.fs" />
+    <Compile Include="DataModel\Common\ClassJobMapping.fs" />
+    <Compile Include="DataModel\CraftGearSet.fs" />
+    <Compile Include="DataModel\OceanFishing.fs" />
+    <Compile Include="DataModel\UniversalisMarketCache.fs" />
+    <Compile Include="DataModel\ContentFinderCondition.fs" />
+    <Compile Include="DataModel\CraftLeve.fs" />
+    
     <Compile Include="Data\XivProvider.fs" />
     <Compile Include="Data\Item.fs" />
     <Compile Include="Data\Recipe\XivRecipe.fs" />

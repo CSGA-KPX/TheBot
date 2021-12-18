@@ -81,10 +81,13 @@ type DataAgent private () =
 
     static member GetPersistFile(fileName: string) = Path.Combine(persistDir, fileName)
 
+    [<MethodImpl(MethodImplOptions.NoInlining)>]
     static member GetCacheDatabase() =
-        let path = DataAgent.GetCacheFile("theBotCache")
+        let assembly = Assembly.GetCallingAssembly().FullName
+        let path = DataAgent.GetCacheFile($"theBotCache-{assembly}")
         getDb (path)
 
+    [<MethodImpl(MethodImplOptions.NoInlining)>]
     static member GetPersistDatabase(fileName: string) =
         let path = DataAgent.GetPersistFile(fileName)
         getDb (path)

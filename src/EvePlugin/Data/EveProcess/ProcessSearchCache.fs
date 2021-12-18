@@ -4,6 +4,7 @@ open System
 
 open KPX.TheBot.Host.Data
 open KPX.TheBot.Host.DataCache
+open KPX.TheBot.Host.DataCache.LiteDb
 open KPX.TheBot.Host.DataModel.Recipe
 
 open KPX.EvePlugin.Data.Group

@@ -8,6 +8,7 @@ open Newtonsoft.Json.Linq
 open KPX.TheBot.Host
 open KPX.TheBot.Host.Data
 open KPX.TheBot.Host.DataCache
+open KPX.TheBot.Host.DataCache.LiteDb
 
 open KPX.EvePlugin.Data.EveType
 

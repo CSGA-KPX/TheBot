@@ -3,6 +3,7 @@ namespace rec KPX.TheBot.Host.DataCache
 open System
 
 open KPX.TheBot.Host.Data
+open KPX.TheBot.Host.DataCache.LiteDb
 
 open LiteDB
 
@@ -37,10 +38,12 @@ type internal TableUpdateInfo private () =
             ret.Updated
 
 [<AbstractClass>]
-type CachedTableCollection<'Key, 'Item>() =
-    inherit BotDataCollection<'Key, 'Item>()
+type CachedTableCollection<'Key, 'Item>(colName) =
+    inherit BotDataCollection<'Key, 'Item>(colName)
 
     let updateLock = obj ()
+
+    new () as x = CachedTableCollection<'Key, 'Item>(x.GetType().Name)
 
     abstract IsExpired: bool
 

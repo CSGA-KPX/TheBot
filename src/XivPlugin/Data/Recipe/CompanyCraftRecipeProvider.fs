@@ -1,6 +1,7 @@
 namespace KPX.XivPlugin.Data.Recipe
 
 open KPX.TheBot.Host.DataCache
+open KPX.TheBot.Host.DataCache.LiteDb
 open KPX.TheBot.Host.DataModel.Recipe
 
 open KPX.XivPlugin.Data

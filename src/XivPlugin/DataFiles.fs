@@ -1,4 +1,4 @@
-namespace KPX.XivPlugin.DataFiles
+namespace KPX.XivPlugin
 
 open System
 open System.IO.Compression
@@ -8,8 +8,8 @@ open LibFFXIV.GameData.Provided
 
 open KPX.TheBot.Host.Data
 
-
-module Chinese =
+[<RequireQualifiedAccess>]
+module ChinaDistroData =
     //from https://github.com/thewakingsands/ffxiv-datamining-cn
 
     [<Literal>]
@@ -34,14 +34,15 @@ module Chinese =
         else
             col
 
-module International =
+[<RequireQualifiedAccess>]
+module OfficalDistroData =
     //from https://github.com/xivapi/ffxiv-datamining
 
     [<Literal>]
     let SampleFile = __SOURCE_DIRECTORY__ + "/../../datafiles/ffxiv-datamining-master.zip"
 
     [<Literal>]
-    let private Prefix = "csv/"
+    let private Prefix = "ffxiv-datamining-master/csv/"
 
     type TypedXivCollection = XivCollectionProvider<SampleFile, "none", Prefix>
 
@@ -51,7 +52,7 @@ module International =
         let succ, col = instance.TryGetTarget()
 
         if not succ then
-            let stream = EmbeddedResource.GetResFileStream("XivPlugin.ffxiv-datamining-cn-master.zip")
+            let stream = EmbeddedResource.GetResFileStream("XivPlugin.ffxiv-datamining-master.zip")
             let archive = new ZipArchive(stream, ZipArchiveMode.Read)
             let col = new TypedXivCollection(XivLanguage.None, archive, Prefix)
             instance.SetTarget(col)

@@ -1,13 +1,16 @@
 namespace KPX.TheBot.Host.DataCache
 
 open KPX.TheBot.Host.Data
+open KPX.TheBot.Host.DataCache.LiteDb
 
 open LiteDB
 
 
 [<AbstractClass>]
-type CachedItemCollection<'Key, 'Item>() =
-    inherit BotDataCollection<'Key, 'Item>()
+type CachedItemCollection<'Key, 'Item>(colName) =
+    inherit BotDataCollection<'Key, 'Item>(colName)
+
+    new() as x = CachedItemCollection<'Key, 'Item>(x.GetType().Name)
 
     /// 获取一个'Value，不经过不写入缓存
     abstract DoFetchItem: 'Key -> 'Item

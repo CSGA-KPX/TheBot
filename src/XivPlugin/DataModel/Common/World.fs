@@ -1,0 +1,143 @@
+namespace KPX.XivPlugin.DataModel
+
+open System
+open System.Collections.Generic
+
+open KPX.TheBot.Host.Data
+
+
+[<Struct>]
+type WorldId = WorldId of int
+
+type World =
+    { /// 服务器编号
+      WorldId: WorldId
+      /// 服务器名称
+      mutable WorldName: string
+      /// 所属数据中心
+      mutable DataCenter: string
+      /// 是否开放
+      mutable IsPublic: bool }
+
+module World =
+    open KPX.XivPlugin
+
+
+    let private idMapping = Dictionary<WorldId, World>()
+
+    let private nameMapping = Dictionary<string, World>(StringComparer.OrdinalIgnoreCase)
+
+    let private dcNameMapping = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+
+    /// <summary>
+    /// 已经定义的服务器
+    /// </summary>
+    let AllWorlds = idMapping.Values |> Seq.readonly
+
+    /// <summary>
+    /// 所有公开服务器
+    /// </summary>
+    let PublicWorlds =
+        seq {
+            for kv in nameMapping do
+                if kv.Value.IsPublic then yield kv.Value
+        }
+
+    /// <summary>
+    /// 所有数据中心名称
+    /// </summary>
+    let DataCenters = dcNameMapping.Keys |> Seq.readonly
+
+    /// <summary>
+    /// 检查是否存在指定名称的服务器
+    /// </summary>
+    /// <param name="name">服务器名称</param>
+    let DefinedWorld (name: string) = nameMapping.ContainsKey(name)
+
+    /// <summary>
+    /// 检查是否存在指定名称的数据中心
+    /// </summary>
+    /// <param name="name">数据中心名称</param>
+    let DefinedDC (name: string) = dcNameMapping.ContainsKey(name)
+
+    let GetDCByName (name: string) = dcNameMapping.[name]
+    
+    let GetWorldById (id: WorldId) = idMapping.[id]
+
+    let GetWorldByName (name: string) = nameMapping.[name]
+
+    let GetWorldsByDC (dcName: string) =
+        let mapped = dcNameMapping.[dcName]
+
+        PublicWorlds |> Seq.filter (fun w -> w.DataCenter = mapped)
+
+    do
+        // 添加已经定义的服务器
+        let col = OfficalDistroData.GetCollection()
+
+        // 世界服定义的DC
+        for dc in col.WorldDCGroupType.TypedRows do
+            let name = dc.Name.AsString()
+            if dc.Region.AsInt() <> 0 then
+                dcNameMapping.Add(name, name)
+
+        // 世界服定义的服务器
+        for world in col.World.TypedRows do
+            let id = WorldId world.Key.Main
+            let name = world.Name.AsString()
+            let isPublic = world.IsPublic.AsBool()
+            let dc = world.DataCenter.AsRow().Name.AsString()
+
+            let world =
+                { WorldId = id
+                  WorldName = name
+                  DataCenter = dc
+                  IsPublic = isPublic }
+
+            idMapping.Add(id, world)
+
+            if not <| nameMapping.TryAdd(name, world) then
+                printfn $"World : 服务器添加失败 %A{world}"
+
+        // 处理国服
+        let res = ResxManager("XivPlugin.Resources.XivStrings")
+
+        // 添加国服服务器名称
+        for lines in res.GetLinesWithoutComment("ChsWorldName", "//") do
+            let data = lines.Split(' ')
+            let chs = data.[0]
+            let eng = data.[1]
+            let w = GetWorldByName(eng)
+            w.WorldName <- chs
+            nameMapping.Add(chs, w)
+
+        // 处理国服的大区信息
+        for lines in res.GetLines("ChsDCInfo") do
+            let data = lines.Split(' ')
+            let dcName = data.[0]
+            let worlds = data.[1].Split(',')
+
+            for world in worlds do
+                GetWorldByName(world).DataCenter <- dcName
+                GetWorldByName(world).IsPublic <- true
+
+        // 处理大区别名
+        for lines in res.GetLines("DCNameAlias") do
+            let data = lines.Split(' ')
+            let dc = data.[0]
+            let aliases = data.[1].Split(',')
+            dcNameMapping.TryAdd(dc, dc) |> ignore
+            for alias in aliases do
+                dcNameMapping.TryAdd(alias, dc) |> ignore
+
+        // 处理服务器别名
+        for lines in res.GetLinesWithoutComment("WorldNameAlias", "//") do
+            let data = lines.Split(' ')
+            let world = data.[0]
+
+            let aliases =
+                data.[1]
+                    .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+
+            for alias in aliases do
+                nameMapping.TryAdd(alias, GetWorldByName(world)) |> ignore
