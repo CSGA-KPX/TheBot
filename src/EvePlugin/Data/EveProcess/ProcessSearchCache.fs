@@ -89,7 +89,7 @@ type ProcessSearchCache =
       Processes: EveProcess [] }
 
 type EveProcessSearch private () =
-    inherit CachedTableCollection<string, ProcessSearchCache>()
+    inherit CachedTableCollection<ProcessSearchCache>()
 
     static let instance = EveProcessSearch()
 

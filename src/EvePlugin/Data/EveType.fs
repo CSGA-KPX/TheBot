@@ -28,7 +28,7 @@ type EveType =
       BasePrice: float }
 
 type EveTypeCollection private () =
-    inherit CachedTableCollection<int, EveType>()
+    inherit CachedTableCollection<EveType>()
 
     static let instance = EveTypeCollection()
 

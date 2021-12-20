@@ -8,7 +8,7 @@ open KPX.XivPlugin.Data
 
 
 type CraftRecipeProvider private () =
-    inherit CachedTableCollection<int, XivDbRecipe>()
+    inherit CachedTableCollection<XivDbRecipe>()
 
     static let instance = CraftRecipeProvider()
     static member Instance = instance

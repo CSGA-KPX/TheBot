@@ -11,7 +11,7 @@ open KPX.TheBot.Host.Data
 [<Literal>]
 let XivTPSample = __SOURCE_DIRECTORY__ + "/../../../datafiles/ffxiv-datamining-cn-master.zip"
 
-type TypedXivCollection = XivCollectionProvider<XivTPSample, "none", "ffxiv-datamining-cn-master/">
+type TypedXivCollection = XivCollectionProvider<XivTPSample, "none", "FFXIV-Datamining-CN/">
 
 let mutable private xivCollection: TypedXivCollection option = None
 
@@ -22,7 +22,7 @@ let UpdateXivCollection () =
 
     xivCollection <-
         Some
-        <| new TypedXivCollection(XivLanguage.None, archive, "ffxiv-datamining-cn-master/")
+        <| new TypedXivCollection(XivLanguage.None, archive, "FFXIV-Datamining-CN/")
 
 /// 全局的中文FF14数据库
 let XivCollectionChs =

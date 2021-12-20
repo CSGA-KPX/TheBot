@@ -13,11 +13,8 @@ type XivItem =
 
     override x.ToString() = $"%s{x.Name}(%i{x.Id})"
 
-    static member GetUnknown() = { Id = -1; Name = "Unknown" }
-
-
 type ItemCollection private () =
-    inherit CachedTableCollection<int, XivItem>()
+    inherit CachedTableCollection<XivItem>()
 
     static let instance = ItemCollection()
     static member Instance = instance

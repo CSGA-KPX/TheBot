@@ -76,7 +76,7 @@ type EveDbProcess =
 
 [<AbstractClass>]
 type EveProcessCollection() =
-    inherit CachedTableCollection<int, EveDbProcess>()
+    inherit CachedTableCollection<EveDbProcess>()
 
     override x.IsExpired = false
 

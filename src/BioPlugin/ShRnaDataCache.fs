@@ -38,7 +38,7 @@ type Taxon =
         | Mouse -> 10090
 
 type ShRnaCollection private () =
-    inherit CachedTableCollection<string, TRCNInfo>()
+    inherit CachedTableCollection<TRCNInfo>()
 
     static let instance = ShRnaCollection()
     static member Instance = instance

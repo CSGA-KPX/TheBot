@@ -85,7 +85,7 @@ module BotDataInitializer =
             |> Seq.toArray
             |> Utils.solveDependency
 
-        let gt = typeof<CachedTableCollection<_, _>>
+        let gt = typeof<CachedTableCollection<_>>
 
         for col in cols do
             let t = col.GetType()

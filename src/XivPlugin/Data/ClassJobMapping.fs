@@ -14,7 +14,7 @@ type ClassJobMapping =
       Value: string }
 
 type ClassJobMappingCollection private () =
-    inherit CachedTableCollection<string, ClassJobMapping>()
+    inherit CachedTableCollection<ClassJobMapping>()
 
     static let instance = ClassJobMappingCollection()
     static member Instance = instance

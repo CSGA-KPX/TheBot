@@ -9,6 +9,11 @@ open KPX.TheBot.Host.Data
 [<Struct>]
 type WorldId = WorldId of int
 
+[<Struct>]
+type VersionRegion =
+    | China
+    | Offical
+
 type World =
     { /// 服务器编号
       WorldId: WorldId
@@ -17,7 +22,9 @@ type World =
       /// 所属数据中心
       mutable DataCenter: string
       /// 是否开放
-      mutable IsPublic: bool }
+      mutable IsPublic: bool
+      /// 所属发行区域
+      mutable VersionRegion: VersionRegion }
 
 module World =
     open KPX.XivPlugin
@@ -61,7 +68,7 @@ module World =
     let DefinedDC (name: string) = dcNameMapping.ContainsKey(name)
 
     let GetDCByName (name: string) = dcNameMapping.[name]
-    
+
     let GetWorldById (id: WorldId) = idMapping.[id]
 
     let GetWorldByName (name: string) = nameMapping.[name]
@@ -78,6 +85,7 @@ module World =
         // 世界服定义的DC
         for dc in col.WorldDCGroupType.TypedRows do
             let name = dc.Name.AsString()
+
             if dc.Region.AsInt() <> 0 then
                 dcNameMapping.Add(name, name)
 
@@ -92,7 +100,8 @@ module World =
                 { WorldId = id
                   WorldName = name
                   DataCenter = dc
-                  IsPublic = isPublic }
+                  IsPublic = isPublic
+                  VersionRegion = VersionRegion.Offical }
 
             idMapping.Add(id, world)
 
@@ -109,6 +118,7 @@ module World =
             let eng = data.[1]
             let w = GetWorldByName(eng)
             w.WorldName <- chs
+            w.VersionRegion <- VersionRegion.China
             nameMapping.Add(chs, w)
 
         // 处理国服的大区信息
@@ -127,6 +137,7 @@ module World =
             let dc = data.[0]
             let aliases = data.[1].Split(',')
             dcNameMapping.TryAdd(dc, dc) |> ignore
+
             for alias in aliases do
                 dcNameMapping.TryAdd(alias, dc) |> ignore
 

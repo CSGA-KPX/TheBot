@@ -19,7 +19,7 @@ type SpecialShopInfo =
       CostCount: int32 }
 
 type SpecialShopCollection private () =
-    inherit CachedTableCollection<int, SpecialShopInfo>()
+    inherit CachedTableCollection<SpecialShopInfo>()
 
     static let instance = SpecialShopCollection()
     static member Instance = instance

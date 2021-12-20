@@ -17,7 +17,7 @@ type GCScriptExchange =
       ReceiveQuantity: int }
 
 type GCScriptShop private () =
-    inherit CachedTableCollection<int, GCScriptExchange>()
+    inherit CachedTableCollection<GCScriptExchange>()
 
     static let instance = GCScriptShop()
 

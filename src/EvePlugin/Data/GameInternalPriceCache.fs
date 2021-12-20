@@ -24,7 +24,7 @@ type GameInternalPrice =
       AveragePrice: float }
 
 type GameInternalPriceCollection private () =
-    inherit CachedTableCollection<int, GameInternalPrice>()
+    inherit CachedTableCollection<GameInternalPrice>()
 
     static let instance = GameInternalPriceCollection()
 

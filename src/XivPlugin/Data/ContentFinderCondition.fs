@@ -14,7 +14,7 @@ type XivContent =
       IsDailyFrontlineChallengeRoulette: bool }
 
 type XivContentCollection private () =
-    inherit CachedTableCollection<int, XivContent>()
+    inherit CachedTableCollection<XivContent>()
 
     static let instance = XivContentCollection()
     static member Instance = instance

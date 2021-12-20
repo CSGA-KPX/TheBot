@@ -16,7 +16,7 @@ type NpcCorporation =
       CorporationName: string }
 
 type NpcCorporationCollection private () =
-    inherit CachedTableCollection<int, NpcCorporation>()
+    inherit CachedTableCollection<NpcCorporation>()
 
     static let instance = NpcCorporationCollection()
 

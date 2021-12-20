@@ -18,7 +18,7 @@ type MarketGroup =
       ParentGroupId: int }
 
 type MarketGroupCollection private () =
-    inherit CachedTableCollection<int, MarketGroup>()
+    inherit CachedTableCollection<MarketGroup>()
 
     static let instance = MarketGroupCollection()
 

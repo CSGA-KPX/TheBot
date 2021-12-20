@@ -12,7 +12,7 @@ open KPX.TheBot.Host.DataCache.LiteDb
 type SolarSystem = { Id: int; Name: string }
 
 type SolarSystemCollection private () =
-    inherit CachedTableCollection<int, SolarSystem>()
+    inherit CachedTableCollection<SolarSystem>()
 
     static let instance = SolarSystemCollection()
 

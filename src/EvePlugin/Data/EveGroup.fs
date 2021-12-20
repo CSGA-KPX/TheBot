@@ -20,7 +20,7 @@ type EveGroup =
       IsPublished: bool }
 
 type EveGroupCollection private () =
-    inherit CachedTableCollection<int, EveGroup>()
+    inherit CachedTableCollection<EveGroup>()
 
     static let instance = EveGroupCollection()
     static member Instance = instance

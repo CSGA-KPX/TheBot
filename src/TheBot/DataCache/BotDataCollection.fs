@@ -12,7 +12,7 @@ type IInitializationInfo =
     abstract Depends: Type []
 
 [<AbstractClass>]
-type BotDataCollection<'Key, 'Item>(colName: string) =
+type BotDataCollection<'Item>(colName: string) =
 
     member internal x.CollectionName = colName
 
@@ -40,13 +40,10 @@ type BotDataCollection<'Key, 'Item>(colName: string) =
         member x.Depends = x.Depends
 
 
-
 namespace KPX.TheBot.Host.DataCache.LiteDb
 
 open System
 open System.Collections.Generic
-
-open LiteDB
 
 open KPX.TheBot.Host.Data
 open KPX.TheBot.Host.DataCache
@@ -54,7 +51,9 @@ open KPX.TheBot.Host.DataCache
 
 [<AutoOpen>]
 module BotDataCollectionExtension =
-    type BotDataCollection<'Key, 'Item> with
+
+    type BotDataCollection<'Item> with
+
         member x.DbCollection = x.LiteCollection
 
         /// 清空当前集合，不释放空间

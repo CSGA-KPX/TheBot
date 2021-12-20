@@ -17,7 +17,7 @@ type GilShopInfo =
       Bid: int32 }
 
 type GilShopCollection private () =
-    inherit CachedTableCollection<int, GilShopInfo>()
+    inherit CachedTableCollection<GilShopInfo>()
 
     static let instance = GilShopCollection()
     static member Instance = instance

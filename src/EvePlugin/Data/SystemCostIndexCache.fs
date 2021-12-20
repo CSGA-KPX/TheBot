@@ -30,7 +30,7 @@ type SystemCostIndex =
           Reaction = 0.0 }
 
 type SystemCostIndexCollection private () =
-    inherit CachedTableCollection<int, SystemCostIndex>()
+    inherit CachedTableCollection<SystemCostIndex>()
 
     static let instance = SystemCostIndexCollection()
 

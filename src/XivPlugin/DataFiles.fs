@@ -16,7 +16,7 @@ module ChinaDistroData =
     let private SampleFile = __SOURCE_DIRECTORY__ + "/../../datafiles/ffxiv-datamining-cn-master.zip"
 
     [<Literal>]
-    let private Prefix = "ffxiv-datamining-cn-master/"
+    let private Prefix = "FFXIV-Datamining-CN/"
 
     type TypedXivCollection = XivCollectionProvider<SampleFile, "none", Prefix>
 
@@ -39,10 +39,10 @@ module OfficalDistroData =
     //from https://github.com/xivapi/ffxiv-datamining
 
     [<Literal>]
-    let SampleFile = __SOURCE_DIRECTORY__ + "/../../datafiles/ffxiv-datamining-master.zip"
+    let SampleFile = __SOURCE_DIRECTORY__ + "/../../datafiles/ffxiv-datamining-ja-master.zip"
 
     [<Literal>]
-    let private Prefix = "ffxiv-datamining-master/csv/"
+    let private Prefix = "FFXIV-Datamining-JA/"
 
     type TypedXivCollection = XivCollectionProvider<SampleFile, "none", Prefix>
 

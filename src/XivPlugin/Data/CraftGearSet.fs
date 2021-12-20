@@ -21,7 +21,7 @@ type CraftableGear =
       ClassJobCategory: string }
 
 type CraftableGearCollection private () =
-    inherit CachedTableCollection<int, CraftableGear>()
+    inherit CachedTableCollection<CraftableGear>()
 
     static let instance = CraftableGearCollection()
     static member Instance = instance

@@ -23,7 +23,7 @@ type CraftLeveInfo =
       GilReward: int }
 
 type CraftLeveInfoCollection private () =
-    inherit CachedTableCollection<string, CraftLeveInfo>()
+    inherit CachedTableCollection<CraftLeveInfo>()
     static let instance = CraftLeveInfoCollection()
     static member Instance = instance
 

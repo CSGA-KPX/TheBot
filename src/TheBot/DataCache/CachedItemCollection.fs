@@ -8,7 +8,7 @@ open LiteDB
 
 [<AbstractClass>]
 type CachedItemCollection<'Key, 'Item>(colName) =
-    inherit BotDataCollection<'Key, 'Item>(colName)
+    inherit BotDataCollection<'Item>(colName)
 
     new() as x = CachedItemCollection<'Key, 'Item>(x.GetType().Name)
 

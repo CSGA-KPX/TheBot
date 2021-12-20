@@ -22,14 +22,14 @@ type internal TableUpdateInfo private () =
             .GetCollection<TableUpdateTime>()
 
     /// 记录CachedTableCollection<>的更新时间
-    static member RegisterCollectionUpdate(col: CachedTableCollection<_, _>) =
+    static member RegisterCollectionUpdate(col: CachedTableCollection<_>) =
         let record =
             { Id = col.GetType().Name
               Updated = DateTimeOffset.Now }
 
         updateCol.Upsert(record) |> ignore
 
-    static member GetCollectionUpdateTime(col: CachedTableCollection<_, _>) =
+    static member GetCollectionUpdateTime(col: CachedTableCollection<_>) =
         let ret = updateCol.FindById(BsonValue(col.GetType().Name))
 
         if isNull (box ret) then
@@ -38,12 +38,12 @@ type internal TableUpdateInfo private () =
             ret.Updated
 
 [<AbstractClass>]
-type CachedTableCollection<'Key, 'Item>(colName) =
-    inherit BotDataCollection<'Key, 'Item>(colName)
+type CachedTableCollection<'Item>(colName) =
+    inherit BotDataCollection<'Item>(colName)
 
     let updateLock = obj ()
 
-    new () as x = CachedTableCollection<'Key, 'Item>(x.GetType().Name)
+    new () as x = CachedTableCollection<'Item>(x.GetType().Name)
 
     abstract IsExpired: bool
 
