@@ -19,6 +19,21 @@ open System.Runtime.CompilerServices
 [<AutoOpen>]
 module LiteDBExtensions =
     type ILiteCollection<'T> with
+
+        member x.QueryOne(f: 'T -> bool) = x.Query().Where(f).First()
+
+        member x.TryQueryOne(f: 'T -> bool) =
+            let ret = x.Query().Where(f).FirstOrDefault()
+
+            if isNull (box ret) then
+                None
+            else
+                Some ret
+
+        member x.QueryAll(f: 'T -> bool) = x.Query().Where(f).ToEnumerable()
+
+        member x.QueryAllArray(f: 'T -> bool) = x.Query().Where(f).ToArray()
+
         member x.SafeFindById(id: obj) =
             let ret = x.FindById(BsonValue(id))
 

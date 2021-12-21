@@ -10,6 +10,11 @@ open KPX.TheBot.Host.Data
 type WorldId = WorldId of int
 
 [<Struct>]
+/// <summary>
+/// 版本区
+///
+/// 根据地区标记版本不同的地区。
+///</summary>
 type VersionRegion =
     | China
     | Offical

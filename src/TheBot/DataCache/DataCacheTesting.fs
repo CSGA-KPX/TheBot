@@ -6,7 +6,7 @@ type IDataTest =
     abstract RunTest: unit -> unit
 
 [<AbstractClass>]
-/// 对于不使用LiteDB的数据集进行测试的辅助类
+/// 对于不方便使用IDataTest情况下的辅助测试基类
 type DataTest() =
     abstract RunTest: unit -> unit
 

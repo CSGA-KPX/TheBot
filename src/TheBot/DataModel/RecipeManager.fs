@@ -5,7 +5,9 @@ open System.Collections.Generic
 
 [<Struct>]
 type ProcessQuantity =
+    /// 按流程数计量
     | ByRun of runs: float
+    /// 按产出物品数量计量
     | ByItem of items: float
 
     member x.ToItems(proc: RecipeProcess<_>) =
