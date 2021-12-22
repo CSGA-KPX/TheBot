@@ -41,7 +41,7 @@ type CraftRecipeProviderChina private () =
                 let retAmount = row.``Amount{Result}``.AsDouble()
 
                 yield
-                    { Id = 0
+                    { LiteDbId = 0
                       Region = VersionRegion.China
                       Process =
                           { Output = [| { Item = retItem; Quantity = retAmount } |]
@@ -85,7 +85,7 @@ type CraftRecipeProviderOffical private () =
                 let retAmount = row.``Amount{Result}``.AsDouble()
 
                 yield
-                    { Id = 0
+                    { LiteDbId = 0
                       Region = VersionRegion.Offical
                       Process =
                           { Output = [| { Item = retItem; Quantity = retAmount } |]

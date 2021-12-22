@@ -7,9 +7,14 @@ open KPX.TheBot.Host.Data
 
 
 [<Struct>]
-type ClassJob = ClassJob of string
+type ClassJob =
+    | ClassJob of string
+    
+    member x.Value =
+        let (ClassJob v) = x
+        v
 
-type internal ClassJobMapping = { Key: string; Value: ClassJob }
+type ClassJobMapping = { Key: string; Value: ClassJob }
 
 module ClassJobMapping =
     open KPX.XivPlugin

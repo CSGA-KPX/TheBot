@@ -26,3 +26,7 @@ module Expect =
     let isSome (v: 'a option) = if v.IsNone then failwithf "Is None"
 
     let isNone (v: 'a option) = if v.IsSome then failwithf "Is Some"
+
+    let isTrue v = if v = false then failwithf "Expect true"
+
+    let isFalse v = if v = true then failwithf "Expect false"

@@ -7,9 +7,6 @@ open KPX.TheBot.Host.Data
 
 
 [<Struct>]
-type WorldId = WorldId of int
-
-[<Struct>]
 /// <summary>
 /// 版本区
 ///
@@ -21,7 +18,7 @@ type VersionRegion =
 
 type World =
     { /// 服务器编号
-      WorldId: WorldId
+      WorldId: int
       /// 服务器名称
       mutable WorldName: string
       /// 所属数据中心
@@ -35,7 +32,7 @@ module World =
     open KPX.XivPlugin
 
 
-    let private idMapping = Dictionary<WorldId, World>()
+    let private idMapping = Dictionary<int, World>()
 
     let private nameMapping = Dictionary<string, World>(StringComparer.OrdinalIgnoreCase)
 
@@ -74,7 +71,7 @@ module World =
 
     let GetDCByName (name: string) = dcNameMapping.[name]
 
-    let GetWorldById (id: WorldId) = idMapping.[id]
+    let GetWorldById (id: int) = idMapping.[id]
 
     let GetWorldByName (name: string) = nameMapping.[name]
 
@@ -96,7 +93,7 @@ module World =
 
         // 世界服定义的服务器
         for world in col.World.TypedRows do
-            let id = WorldId world.Key.Main
+            let id = world.Key.Main
             let name = world.Name.AsString()
             let isPublic = world.IsPublic.AsBool()
             let dc = world.DataCenter.AsRow().Name.AsString()

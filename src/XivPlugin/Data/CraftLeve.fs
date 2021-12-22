@@ -78,8 +78,6 @@ type CraftLeveInfoCollection private () =
         |> db.InsertBulk
         |> ignore
 
-    member x.GetById(id: int) = x.DbCollection.SafeFindById(id)
-
     member x.GetByClassJob(job: ClassJobMapping) =
         let query = Query.EQ("ClassJob", BsonValue(job.Value))
 

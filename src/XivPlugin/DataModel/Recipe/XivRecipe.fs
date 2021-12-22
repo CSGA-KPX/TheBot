@@ -16,7 +16,8 @@ module private Utils =
 
 [<CLIMutable>]
 type XivDbRecipe =
-    { Id: int
+    { [<LiteDB.BsonIdAttribute>]
+      LiteDbId: int
       Region : VersionRegion
       Process: RecipeProcess<int> }
 

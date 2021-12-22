@@ -51,7 +51,7 @@ type CompanyCraftRecipeProviderChina private () =
                                 ia.Update(items.[i], amounts.[i] * sets.[i])
 
                 yield
-                    { Id = 0
+                    { LiteDbId = 0
                       Region = VersionRegion.China
                       Process =
                           { Output = output
@@ -106,7 +106,7 @@ type CompanyCraftRecipeProviderOffical private () =
                                 ia.Update(items.[i], amounts.[i] * sets.[i])
 
                 yield
-                    { Id = 0
+                    { LiteDbId = 0
                       Region = VersionRegion.China
                       Process =
                           { Output = output

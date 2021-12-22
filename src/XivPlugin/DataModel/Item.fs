@@ -13,7 +13,7 @@ open LiteDB
 [<Struct>]
 type XivItem =
     { [<BsonId>]
-      Id: int
+      LiteDbId: int
       ItemId: int
       Region: VersionRegion
       Name: string }
@@ -21,7 +21,7 @@ type XivItem =
     /// <summary>
     /// 转换为 区域/名称(id) 格式
     /// </summary>
-    override x.ToString() = $"%A{x.Region}/%s{x.Name}(%i{x.Id})"
+    override x.ToString() = $"%A{x.Region}/%s{x.Name}(%i{x.ItemId})"
 
 [<Sealed>]
 type ItemCollection private () =
@@ -44,7 +44,7 @@ type ItemCollection private () =
 
             for row in col.Item.TypedRows do
                 yield
-                    { Id = 0
+                    { LiteDbId = 0
                       ItemId = row.Key.Main
                       Region = VersionRegion.China
                       Name = row.Name.AsString() }
@@ -53,7 +53,7 @@ type ItemCollection private () =
 
             for row in col.Item.TypedRows do
                 yield
-                    { Id = 0
+                    { LiteDbId = 0
                       ItemId = row.Key.Main
                       Region = VersionRegion.Offical
                       Name = row.Name.AsString() }
@@ -110,7 +110,7 @@ type ItemCollection private () =
 
             Expect.isSome ret
             Expect.equal ret.Value.Name "风之碎晶"
-            Expect.equal ret.Value.Id 4
+            Expect.equal ret.Value.LiteDbId 4
 
             // 国际服/日区
             Expect.equal (i.GetByItemId(4, VersionRegion.Offical).Name) "ウィンドシャード"
@@ -119,4 +119,4 @@ type ItemCollection private () =
 
             Expect.isSome ret
             Expect.equal ret.Value.Name "ウィンドシャード"
-            Expect.equal ret.Value.Id 4
+            Expect.equal ret.Value.LiteDbId 4

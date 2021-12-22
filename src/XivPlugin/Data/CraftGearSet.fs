@@ -39,17 +39,6 @@ type CraftableGearCollection private () =
 
         let col = XivProvider.XivCollectionChs
 
-        (*let fields =
-            [| "EquipSlotCategory"
-               "IsUntradable"
-               "Level{Equip}"
-               "ClassJobCategory"
-               "Level{Item}"
-               "CanBeHq"
-               "IsAdvancedMeldingPermitted" |]
-
-        let chs = col.GetSheet("Item", fields)*)
-
         let ClassJobCategory =
             seq {
                 let sheet = col.GetSheet("ClassJobCategory")
@@ -72,7 +61,7 @@ type CraftableGearCollection private () =
                    && (not <| item.IsUntradable.AsBool())
                    && (item.``Level{Item}``.AsInt() >= 340)
                    && (item.CanBeHq.AsBool())
-                   && (item.IsAdvancedMeldingPermitted.AsBool()) then // 部分装备天书能给个5孔的华美型，此时会禁用禁断
+                   && (item.IsAdvancedMeldingPermitted.AsBool()) then // 部分装备天书能给个5孔的华美型，此时没有禁断
                     yield
                         { Id = item.Key.Main
                           ItemLv = item.``Level{Item}``.AsInt()
