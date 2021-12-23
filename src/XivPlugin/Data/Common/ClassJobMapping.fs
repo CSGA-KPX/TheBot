@@ -6,19 +6,10 @@ open System.Collections.Generic
 open KPX.TheBot.Host.Data
 
 
-[<Struct>]
-type ClassJob =
-    | ClassJob of string
-    
-    member x.Value =
-        let (ClassJob v) = x
-        v
-
-type ClassJobMapping = { Key: string; Value: ClassJob }
+type ClassJobMapping = { Key: string; Value: string }
 
 module ClassJobMapping =
     open KPX.XivPlugin
-
 
     let private mapping = Dictionary<string, ClassJobMapping>()
 
@@ -47,8 +38,16 @@ module ClassJobMapping =
                 yield row.Name.AsString(), abbr
                 yield row.RAW_2.AsString(), abbr
 
+            let col = OfficalDistroData.GetCollection()
+
+            for row in col.ClassJob.TypedRows do
+                let abbr = row.Abbreviation.AsString()
+                yield abbr, abbr
+                yield row.Name.AsString(), abbr
+                yield row.RAW_2.AsString(), abbr
+
             // 来自资源文件的补充项目
-            let res = ResxManager("XivPlugin.Resources.XivStrings")
+            let res = ResxManager("XivPlugin.XivStrings")
 
             for lines in res.GetLines("ClassJobMapping") do
                 let data = lines.Split(' ')
@@ -61,5 +60,5 @@ module ClassJobMapping =
         |> Seq.filter (fun (a, _) -> not <| String.IsNullOrWhiteSpace(a))
         |> Seq.iter
             (fun (a, b) ->
-                let item = { Key = a; Value = ClassJob b }
-                mapping.Add(a, item))
+                let item = { Key = a; Value = b }
+                mapping.TryAdd(a, item) |> ignore)

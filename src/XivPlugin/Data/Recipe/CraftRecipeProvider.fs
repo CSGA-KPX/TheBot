@@ -23,7 +23,7 @@ type CraftRecipeProviderChina private () =
 
     override x.InitializeCollection() =
         let db = x.DbCollection
-        db.EnsureIndex(fun x -> x.Process.Output.[0].Item) |> ignore
+        db.EnsureIndex("Process.Output[0].Item") |> ignore
 
         seq {
             let col = ChinaDistroData.GetCollection()
@@ -52,7 +52,8 @@ type CraftRecipeProviderChina private () =
 
     interface IRecipeProvider<XivItem, RecipeProcess<XivItem>> with
         override x.TryGetRecipe(item) =
-            x.DbCollection.TryQueryOne(fun x -> x.Process.Output.[0].Item = item.ItemId)
+            LiteDB.Query.EQ("Process.Output[0].Item", item.ItemId)
+            |> x.DbCollection.TryFindOne
             |> Option.map (fun r -> r.CastProcess())
 
 [<Sealed>]
@@ -67,7 +68,7 @@ type CraftRecipeProviderOffical private () =
 
     override x.InitializeCollection() =
         let db = x.DbCollection
-        db.EnsureIndex(fun x -> x.Process.Output.[0].Item) |> ignore
+        db.EnsureIndex("Process.Output[0].Item") |> ignore
 
         seq {
             let col = OfficalDistroData.GetCollection()
@@ -96,5 +97,6 @@ type CraftRecipeProviderOffical private () =
 
     interface IRecipeProvider<XivItem, RecipeProcess<XivItem>> with
         override x.TryGetRecipe(item) =
-            x.DbCollection.TryQueryOne(fun x -> x.Process.Output.[0].Item = item.ItemId)
+            LiteDB.Query.EQ("Process.Output[0].Item", item.ItemId)
+            |> x.DbCollection.TryFindOne
             |> Option.map (fun r -> r.CastProcess())

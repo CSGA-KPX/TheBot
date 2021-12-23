@@ -19,7 +19,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="DataFiles.fs" />
+    <Compile Include="Data\DataFiles.fs" />
     <Compile Include="Data\Common\World.fs" />
     <Compile Include="Data\Common\ClassJobMapping.fs" />
     <Compile Include="Data\Item.fs" />

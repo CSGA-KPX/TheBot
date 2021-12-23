@@ -35,7 +35,7 @@ type CraftableGearCollection private () =
         x.DbCollection.EnsureIndex(fun x -> x.ItemLv) |> ignore
         ()
 
-    member x.TryLookupByItem(item: XivItem) = x.DbCollection.TryFindById(item.ItemId)
+    //member x.TryLookupByItem(item: XivItem) = x.DbCollection.TryFindById(item.ItemId)
 
     member x.Search(iLv: int, jobCode: string) =
         let query = Query.And(Query.EQ("ItemLv", BsonValue(iLv)), Query.Contains("ClassJobCategory", jobCode))

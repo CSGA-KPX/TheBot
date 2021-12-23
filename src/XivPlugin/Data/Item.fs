@@ -14,7 +14,7 @@ open LiteDB
 
 [<CLIMutable>]
 type XivItem =
-    { [<BsonId>]
+    { [<BsonId(false)>]
       ItemId: int
       ChineseName: string
       OfficalName: string }
@@ -67,7 +67,7 @@ type ItemCollection private () =
     /// <param name="id">ItemId</param>
     /// <param name="region">版本区</param>
     member x.GetByItemId(id: int) =
-        let ret = x.DbCollection.TryQueryOne(fun x -> x.ItemId = id)
+        let ret = x.DbCollection.TryFindOne(Query.EQ("_id", id))
 
         x.PassOrRaise(ret, "找不到物品:{0}", id)
 
@@ -77,7 +77,7 @@ type ItemCollection private () =
     /// <param name="id">ItemId</param>
     /// <param name="region">版本区</param>
     member x.TryGetByItemId(id: int) =
-        x.DbCollection.TryQueryOne(fun x -> x.ItemId = id)
+        x.DbCollection.TryFindOne(Query.EQ("_id", id))
 
     /// <summary>
     /// 根据名称匹配道具
@@ -85,7 +85,8 @@ type ItemCollection private () =
     /// <param name="name">物品名</param>
     /// <param name="region">版本区</param>
     member x.TryGetByName(name: string) =
-        x.DbCollection.TryQueryOne(fun x -> x.ChineseName = name || x.OfficalName = name)
+        Query.Or(Query.EQ("ChineseName", name), Query.EQ("OfficalName", name))
+        |> x.DbCollection.TryFindOne
 
     /// <summary>
     /// 查找名称包含指定字符的物品。默认最多返回50个。

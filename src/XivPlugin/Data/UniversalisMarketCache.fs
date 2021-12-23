@@ -80,9 +80,7 @@ type MarketInfoCollection private () =
 
     static let threshold = TimeSpan.FromHours(2.0)
 
-    static let instance = MarketInfoCollection()
-
-    static member Instance = instance
+    static member val Instance = MarketInfoCollection()
 
     override x.IsExpired(item) =
         (DateTimeOffset.Now - item.LastFetchTime) >= threshold

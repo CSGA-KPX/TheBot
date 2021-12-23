@@ -38,8 +38,8 @@ type MiscModule() =
     //    else
     //        false
 
-    let chsDfcRoulettes = XivContentCollection.Instance.GetDailyFrontline(VersionRegion.China)
-    let officalDfcRoulettes = XivContentCollection.Instance.GetDailyFrontline(VersionRegion.Offical)
+    let chsDfcRoulettes = lazy (XivContentCollection.Instance.GetDailyFrontline(VersionRegion.China))
+    let officalDfcRoulettes = lazy (XivContentCollection.Instance.GetDailyFrontline(VersionRegion.Offical))
 
     [<CommandHandlerMethod("#纷争前线", "今日轮转查询", "")>]
     member x.HandleDailyFrontlineChallenge(cmdArg: CommandEventArgs) =
@@ -68,8 +68,8 @@ type MiscModule() =
         use resp = cmdArg.OpenResponse(ForceImage)
 
         resp.Table {
-            let c = chsDfcRoulettes
-            let o = officalDfcRoulettes
+            let c = chsDfcRoulettes.Value
+            let o = officalDfcRoulettes.Value
 
             [ CellBuilder() { literal $"国服当前：%s{getString (startDate, c)}" }
               CellBuilder() { literal $"世界服当前：%s{getString (startDate, o)}" } ]

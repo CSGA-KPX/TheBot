@@ -12,6 +12,7 @@ open KPX.XivPlugin.Data
 open LiteDB
 
 
+[<CLIMutable>]
 type ShopLocation =
     { [<BsonId>]
       LiteDbId: int
@@ -171,7 +172,7 @@ type ShopLocationCollection private () =
         |> Seq.map
             (fun kv ->
                 { LiteDbId = 0
-                  Region = VersionRegion.China
+                  Region = VersionRegion.Offical
                   ShopPropId = kv.Key
                   Locations = kv.Value.ToArray() })
         |> x.DbCollection.InsertBulk
@@ -182,21 +183,24 @@ type ShopLocationCollection private () =
     /// </summary>
     /// <param name="id"></param>
     /// <param name="region"></param>
-    member x.ShopPropIdExists(id: int, region) =
-        x.DbCollection.Exists(fun x -> x.ShopPropId = id && x.Region = region)
-
+    member x.ShopPropIdExists(id: int, region : VersionRegion) =
+        Query.And(Query.EQ("ShopPropId", id), Query.EQ("Region", region.BsonValue))
+        |> x.DbCollection.Exists
+ 
     /// <summary>
     /// 获取指定区域和id的信息
     /// </summary>
     /// <param name="id"></param>
     /// <param name="region"></param>
-    member x.GetByShopPropId(id: int, region) =
-        x.DbCollection.QueryOne(fun x -> x.ShopPropId = id && x.Region = region)
+    member x.GetByShopPropId(id: int, region : VersionRegion) =
+        Query.And(Query.EQ("ShopPropId", id), Query.EQ("Region", region.BsonValue))
+        |> x.DbCollection.SafeFindOne
 
     /// <summary>
     /// 尝试获取指定区域和id的信息
     /// </summary>
     /// <param name="id"></param>
     /// <param name="region"></param>
-    member x.TryGetByShopPropId(id: int, region) =
-        x.DbCollection.TryQueryOne(fun x -> x.ShopPropId = id && x.Region = region)
+    member x.TryGetByShopPropId(id: int, region : VersionRegion) =
+        Query.And(Query.EQ("ShopPropId", id), Query.EQ("Region", region.BsonValue))
+        |> x.DbCollection.TryFindOne

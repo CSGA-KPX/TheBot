@@ -1,6 +1,5 @@
 namespace KPX.XivPlugin.Data.Shop
 
-open KPX.TheBot.Host.Data
 open KPX.TheBot.Host.DataCache
 open KPX.TheBot.Host.DataCache.LiteDb
 
@@ -68,6 +67,6 @@ type GCScriptShop private () =
         |> x.DbCollection.InsertBulk
         |> ignore
 
-    member x.GetByItem(item: XivItem, region) =
-        let itemId = item.ItemId
-        x.DbCollection.Find(fun x -> x.ReceiveItem = itemId && x.Region = region)
+    member x.GetByItem(item: XivItem, region : VersionRegion) =
+        Query.And(Query.EQ("ReceiveItem", item.ItemId), Query.EQ("Region", region.BsonValue))
+        |> x.DbCollection.Find

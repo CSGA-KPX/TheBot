@@ -123,31 +123,6 @@
 三区 琥珀原,柔风海湾,海猫茶屋,延夏,静语庄园,摩杜纳,紫水栈桥</value>
     <comment>空格分隔，然后逗号</comment>
   </data>
-  <data name="ChsWorldName" xml:space="preserve">
-    <value>拉诺西亚 LaNuoXiYa
-紫水栈桥 ZiShuiZhanQiao
-幻影群岛 HuanYingQunDao
-摩杜纳 MoDuNa
-萌芽池 MengYaChi
-白金幻象 BaiJinHuanXiang
-神意之地 ShenYiZhiDi
-静语庄园 JingYuZhuangYuan
-旅人栈桥 LvRenZhanQiao
-拂晓之间 FuXiaoZhiJian
-龙巢神殿 Longchaoshendian
-红玉海 HongYuHai
-延夏 YanXia
-潮风亭 ChaoFengTing
-神拳痕 ShenQuanHen
-白银乡 BaiYinXiang
-宇宙和音 YuZhouHeYin
-沃仙曦染 WoXianXiRan
-晨曦王座 ChenXiWangZuo
-海猫茶屋 HaiMaoChaWu
-柔风海湾 RouFengHaiWan
-琥珀原 HuPoYuan</value>
-    <comment>空格分隔</comment>
-  </data>
   <data name="ClassJobMapping" xml:space="preserve">
     <value>暗 DRK
 暗黑骑士 DRK

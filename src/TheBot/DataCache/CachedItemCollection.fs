@@ -10,7 +10,7 @@ open LiteDB
 type CachedItemCollection<'Key, 'Item>(colName) =
     inherit BotDataCollection<'Item>(colName)
 
-    new () = CachedItemCollection<'Key, 'Item>(System.String.Empty)
+    new() = CachedItemCollection<'Key, 'Item>(System.String.Empty)
 
     /// 获取一个'Value，不经过不写入缓存
     abstract DoFetchItem: 'Key -> 'Item
@@ -25,7 +25,7 @@ type CachedItemCollection<'Key, 'Item>(colName) =
 
     /// 获得一个'Item，如果有缓存优先拿缓存
     member x.GetItem(key: 'Key) =
-        let ret = x.DbCollection.TryFindById(BsonValue(key))
+        let ret = Query.EQ("_id", BsonValue(key)) |> x.DbCollection.TryFindOne
 
         if ret.IsNone || x.IsExpired(ret.Value) then
             x.FetchItem(key)

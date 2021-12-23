@@ -121,9 +121,10 @@ type SpecialShopCollection private () =
         |> Seq.map (fun id -> ic.GetByItemId(id))
         |> Seq.toArray
 
-    member x.SearchByCostItem(item: XivItem, region) =
-        let itemId = item.ItemId
-        x.DbCollection.QueryAllArray(fun x -> x.CostItem = itemId && x.Region = region)
+    member x.SearchByCostItem(item: XivItem, region: VersionRegion) =
+        Query.And(Query.EQ("CostItem", item.ItemId), Query.EQ("Region", region.BsonValue))
+        |> x.DbCollection.Find
+        |> Seq.toArray
 
-    member x.SearchByCostItem(item: XivItem, world : World) =
+    member x.SearchByCostItem(item: XivItem, world: World) =
         x.SearchByCostItem(item, world.VersionRegion)

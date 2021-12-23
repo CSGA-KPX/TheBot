@@ -6,9 +6,9 @@ open System.IO
 open System.Reflection
 open System.Text.RegularExpressions
 open System.Resources
+open System.Runtime.CompilerServices
 
 open LiteDB
-open System.Runtime.CompilerServices
 
 
 (*
@@ -19,20 +19,6 @@ open System.Runtime.CompilerServices
 [<AutoOpen>]
 module LiteDBExtensions =
     type ILiteCollection<'T> with
-
-        member x.QueryOne(f: 'T -> bool) = x.Query().Where(f).First()
-
-        member x.TryQueryOne(f: 'T -> bool) =
-            let ret = x.Query().Where(f).FirstOrDefault()
-
-            if isNull (box ret) then
-                None
-            else
-                Some ret
-
-        member x.QueryAll(f: 'T -> bool) = x.Query().Where(f).ToEnumerable()
-
-        member x.QueryAllArray(f: 'T -> bool) = x.Query().Where(f).ToArray()
 
         member x.SafeFindById(id: BsonValue) =
             let ret = x.FindById(id)
@@ -67,6 +53,12 @@ module LiteDBExtensions =
             else
                 Some ret
 
+        member x.SafeFindOne(query: Query) =
+            x.TryFindOne(query).Value
+
+        member x.SafeFindOne(expr: BsonExpression) =
+            x.TryFindOne(expr).Value
+
 type DataAgent private () =
     static let hostPath =
         let location = Assembly.GetExecutingAssembly().Location
@@ -98,7 +90,7 @@ type DataAgent private () =
 
     [<MethodImpl(MethodImplOptions.NoInlining)>]
     static member GetCacheDatabase() =
-        let assembly = Assembly.GetCallingAssembly().FullName
+        let assembly = Assembly.GetCallingAssembly().GetName().Name
         let path = DataAgent.GetCacheFile($"theBotCache-{assembly}")
         getDb (path)
 

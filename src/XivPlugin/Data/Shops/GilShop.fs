@@ -60,6 +60,6 @@ type GilShopCollection private () =
         |> x.DbCollection.InsertBulk
         |> ignore
 
-    member x.TryLookupByItem(item: XivItem, region) =
-        let itemId = item.ItemId
-        x.DbCollection.TryQueryOne(fun x -> x.ItemId = itemId && x.Region = region)
+    member x.TryLookupByItem(item: XivItem, region : VersionRegion) =
+        Query.And(Query.EQ("ItemId", item.ItemId), Query.EQ("Region", region.BsonValue))
+        |> x.DbCollection.TryFindOne

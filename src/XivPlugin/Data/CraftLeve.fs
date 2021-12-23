@@ -70,7 +70,7 @@ type CraftLeveInfoCollection private () =
                           LeveLevel = leveLevel
                           Repeats = repeats
                           Items = acc.AsMaterials()
-                          ClassJob = job.Value
+                          ClassJob = job
                           GilReward = gil }
         }
         |> x.DbCollection.InsertBulk
@@ -108,7 +108,7 @@ type CraftLeveInfoCollection private () =
                           LeveLevel = leveLevel
                           Repeats = repeats
                           Items = acc.AsMaterials()
-                          ClassJob = job.Value
+                          ClassJob = job
                           GilReward = gil }
         }
         |> x.DbCollection.InsertBulk
@@ -119,6 +119,7 @@ type CraftLeveInfoCollection private () =
     /// </summary>
     /// <param name="job"></param>
     /// <param name="region"></param>
-    member x.GetByClassJob(job: ClassJob, region) =
-        let job = job.Value
-        x.DbCollection.QueryAllArray(fun x -> x.ClassJob = job && x.Region = region)
+    member x.GetByClassJob(job: string, region : VersionRegion) =
+        Query.And(Query.EQ("ClassJob", job), Query.EQ("Region", region.BsonValue))
+        |> x.DbCollection.Find
+        |> Seq.toArray

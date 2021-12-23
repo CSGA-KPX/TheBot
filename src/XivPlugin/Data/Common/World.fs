@@ -5,39 +5,6 @@ open System.Collections.Generic
 
 open KPX.TheBot.Host.Data
 
-open LiteDB
-
-
-[<Struct>]
-[<RequireQualifiedAccess>]
-/// <summary>
-/// 版本区
-///
-/// 根据地区标记版本不同的地区。
-///</summary>
-type VersionRegion =
-    | China
-    | Offical
-
-    override x.ToString() =
-        match x with
-        | China -> "china"
-        | Offical -> "offical"
-
-    member x.BsonValue = BsonValue(x.ToString())
-
-[<AutoOpen>]
-module VersionRegionUtils = 
-    let fromBsonValue(value : BsonValue) =
-        match value.AsString with
-        | "china" -> VersionRegion.China
-        | "offical" -> VersionRegion.Offical
-        | str -> invalidArg (nameof value) $"Version值不合法：当前为{str}"
-
-    do
-        BsonMapper.Global.RegisterType<VersionRegion>((fun x -> x.BsonValue), fromBsonValue)
-        |> ignore
-
 
 type World =
     { /// 服务器编号
@@ -52,8 +19,6 @@ type World =
       mutable VersionRegion: VersionRegion }
 
 module World =
-    open KPX.XivPlugin
-
     let private idMapping = Dictionary<int, World>()
 
     let private nameMapping = Dictionary<string, World>(StringComparer.OrdinalIgnoreCase)
@@ -72,6 +37,12 @@ module World =
         seq {
             for kv in nameMapping do
                 if kv.Value.IsPublic then yield kv.Value
+        }
+
+    let WorldNames =
+        seq {
+            for kv in nameMapping do
+                if kv.Value.IsPublic then yield kv.Key
         }
 
     /// <summary>
@@ -111,7 +82,7 @@ module World =
             let name = dc.Name.AsString()
 
             if dc.Region.AsInt() <> 0 then
-                dcNameMapping.Add(name, name)
+                dcNameMapping.TryAdd(name, name) |> ignore
 
         // 世界服定义的服务器
         for world in col.World.TypedRows do
@@ -133,17 +104,20 @@ module World =
                 printfn $"World : 服务器添加失败 %A{world}"
 
         // 处理国服
-        let res = ResxManager("XivPlugin.Resources.XivStrings")
+        let res = ResxManager("XivPlugin.XivStrings")
 
         // 添加国服服务器名称
-        for lines in res.GetLinesWithoutComment("ChsWorldName", "//") do
-            let data = lines.Split(' ')
-            let chs = data.[0]
-            let eng = data.[1]
-            let w = GetWorldByName(eng)
-            w.WorldName <- chs
-            w.VersionRegion <- VersionRegion.China
-            nameMapping.Add(chs, w)
+        // 6.0开始World.csv区分内部名称和显示名称
+        // 所以不再进行处理ChsWorldName
+
+        //for lines in res.GetLinesWithoutComment("ChsWorldName", "//") do
+        //    let data = lines.Split(' ')
+        //    let chs = data.[0]
+        //    let eng = data.[1]
+        //    let w = GetWorldByName(eng)
+        //    w.WorldName <- chs
+        //    w.VersionRegion <- VersionRegion.China
+        //    nameMapping.Add(chs, w)
 
         // 处理国服的大区信息
         for lines in res.GetLines("ChsDCInfo") do
@@ -152,8 +126,10 @@ module World =
             let worlds = data.[1].Split(',')
 
             for world in worlds do
-                GetWorldByName(world).DataCenter <- dcName
-                GetWorldByName(world).IsPublic <- true
+                let mutable world = GetWorldByName(world)
+                world.VersionRegion <- VersionRegion.China
+                world.DataCenter <- dcName
+                world.IsPublic <- true
 
         // 处理大区别名
         for lines in res.GetLines("DCNameAlias") do

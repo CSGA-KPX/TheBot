@@ -63,7 +63,8 @@ type CompanyCraftRecipeProviderChina private () =
 
     interface IRecipeProvider<XivItem, RecipeProcess<XivItem>> with
         override x.TryGetRecipe(item) =
-            x.DbCollection.TryQueryOne(fun x -> x.Process.Output.[0].Item = item.ItemId)
+            LiteDB.Query.EQ("Process.Output[0].Item", item.ItemId)
+            |> x.DbCollection.TryFindOne
             |> Option.map (fun r -> r.CastProcess())
 
 [<Sealed>]
@@ -118,5 +119,6 @@ type CompanyCraftRecipeProviderOffical private () =
 
     interface IRecipeProvider<XivItem, RecipeProcess<XivItem>> with
         override x.TryGetRecipe(item) =
-            x.DbCollection.TryQueryOne(fun x -> x.Process.Output.[0].Item = item.ItemId)
+            LiteDB.Query.EQ("Process.Output[0].Item", item.ItemId)
+            |> x.DbCollection.TryFindOne
             |> Option.map (fun r -> r.CastProcess())

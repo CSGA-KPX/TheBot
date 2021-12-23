@@ -1,10 +1,8 @@
 namespace KPX.XivPlugin.Data
 
-open KPX.TheBot.Host.Data
 open KPX.TheBot.Host.DataCache
 open KPX.TheBot.Host.DataCache.LiteDb
 
-open KPX.XivPlugin
 open KPX.XivPlugin.Data
 
 open LiteDB
@@ -55,9 +53,10 @@ type XivContentCollection private () =
         |> x.DbCollection.InsertBulk
         |> ignore
 
-    member x.GetDailyFrontline(region) =
-        
-        x.DbCollection.QueryAllArray(fun x -> x.Region = region && x.IsDailyFrontlineChallengeRoulette)
+    member x.GetDailyFrontline(region : VersionRegion) =
+        Query.And(Query.EQ("Region", region.BsonValue), Query.EQ("IsDailyFrontlineChallengeRoulette", true))
+        |> x.DbCollection.Find
+        |> Seq.toArray
 
     interface IDataTest with
         member x.RunTest() =
