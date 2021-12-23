@@ -53,7 +53,7 @@ type CraftRecipeProviderChina private () =
     interface IRecipeProvider<XivItem, RecipeProcess<XivItem>> with
         override x.TryGetRecipe(item) =
             x.DbCollection.TryQueryOne(fun x -> x.Process.Output.[0].Item = item.ItemId)
-            |> Option.map (fun r -> r.CastProcess(VersionRegion.China))
+            |> Option.map (fun r -> r.CastProcess())
 
 [<Sealed>]
 type CraftRecipeProviderOffical private () =
@@ -97,4 +97,4 @@ type CraftRecipeProviderOffical private () =
     interface IRecipeProvider<XivItem, RecipeProcess<XivItem>> with
         override x.TryGetRecipe(item) =
             x.DbCollection.TryQueryOne(fun x -> x.Process.Output.[0].Item = item.ItemId)
-            |> Option.map (fun r -> r.CastProcess(VersionRegion.Offical))
+            |> Option.map (fun r -> r.CastProcess())

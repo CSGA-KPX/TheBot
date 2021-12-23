@@ -1,11 +1,10 @@
-﻿module KPX.XivPlugin.Modules.Utils.MarketUtils
+module KPX.XivPlugin.Modules.Utils.MarketUtils
 
 open System
 
 open KPX.FsCqHttp.Utils.AliasMapper
 
 open KPX.XivPlugin.Data
-open KPX.XivPlugin.Data.UniversalisMarketCache
 
 
 type StdEv =

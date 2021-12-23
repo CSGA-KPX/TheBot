@@ -5,8 +5,9 @@ open System
 open KPX.FsCqHttp.Handler
 
 open KPX.TheBot.Host.DataModel.Recipe
+
 open KPX.XivPlugin.Data
-open KPX.XivPlugin.Data.Shops
+open KPX.XivPlugin.Data.Shop
 
 open KPX.XivPlugin.Modules.Utils
 

@@ -20,7 +20,7 @@ type ServerListModule() =
                 setBold
             }
 
-            [ for chunk in World.DataCenterNames |> Seq.chunkBySize colsNum do
+            [ for chunk in World.DataCenters |> Seq.chunkBySize colsNum do
                   chunk |> Array.map (fun name -> CellBuilder() { literal name }) ]
 
             CellBuilder() {
@@ -28,7 +28,7 @@ type ServerListModule() =
                 setBold
             }
 
-            [ for chunk in World.WorldNames |> Seq.chunkBySize colsNum do
+            [ for chunk in World.PublicWorlds |> Seq.map (fun x -> x.WorldName) |> Seq.chunkBySize colsNum do
                   chunk |> Array.map (fun name -> CellBuilder() { literal name }) ]
 
         }

@@ -12,15 +12,21 @@ type IInitializationInfo =
     abstract Depends: Type []
 
 [<AbstractClass>]
-type BotDataCollection<'Item>(colName: string) =
+type BotDataCollection<'Item>(cName: string) as x =
 
-    member internal x.CollectionName = colName
+    let colName = 
+        if String.IsNullOrWhiteSpace(cName) then
+            x.GetType().Name
+        else
+            cName
 
     /// 获取LiteCollection
     member val internal LiteCollection =
         DataAgent
             .GetCacheDatabase()
             .GetCollection<'Item>(colName)
+
+    member x.CollectionName = colName
 
     /// 调用InitializeCollection时的依赖项
     /// 仅在使用BotDataInitializer.buildAllCache时使用
@@ -45,7 +51,6 @@ namespace KPX.TheBot.Host.DataCache.LiteDb
 open System
 open System.Collections.Generic
 
-open KPX.TheBot.Host.Data
 open KPX.TheBot.Host.DataCache
 
 

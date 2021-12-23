@@ -28,7 +28,7 @@ type MarketInfo =
         let iid = ret.[1] |> int
 
         { World = world
-          Item = ItemCollection.Instance.GetByItemId(iid, world.VersionRegion) }
+          Item = ItemCollection.Instance.GetByItemId(iid) }
 
 type XivCity =
     | LimsaLominsa = 1

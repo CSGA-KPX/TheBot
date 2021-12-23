@@ -56,6 +56,7 @@ type XivContentCollection private () =
         |> ignore
 
     member x.GetDailyFrontline(region) =
+        
         x.DbCollection.QueryAllArray(fun x -> x.Region = region && x.IsDailyFrontlineChallengeRoulette)
 
     interface IDataTest with

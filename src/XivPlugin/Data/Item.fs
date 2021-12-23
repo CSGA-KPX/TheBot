@@ -1,5 +1,8 @@
 namespace KPX.XivPlugin.Data
 
+open System
+open System.Collections.Generic
+
 open KPX.TheBot.Host.Data
 open KPX.TheBot.Host.DataCache
 open KPX.TheBot.Host.DataCache.LiteDb
@@ -10,18 +13,23 @@ open LiteDB
 
 
 [<CLIMutable>]
-[<Struct>]
 type XivItem =
     { [<BsonId>]
-      LiteDbId: int
       ItemId: int
-      Region: VersionRegion
-      Name: string }
+      ChineseName: string
+      OfficalName: string }
 
     /// <summary>
     /// 转换为 区域/名称(id) 格式
     /// </summary>
-    override x.ToString() = $"%A{x.Region}/%s{x.Name}(%i{x.ItemId})"
+    override x.ToString() =
+        $"(%i{x.ItemId}) : %A{x.ChineseName}/%s{x.OfficalName}"
+
+    member x.DisplayName =
+        match String.IsNullOrWhiteSpace(x.ChineseName), String.IsNullOrWhiteSpace(x.OfficalName) with
+        | false, _ -> x.ChineseName
+        | true, false -> x.OfficalName
+        | true, true -> "NoName"
 
 [<Sealed>]
 type ItemCollection private () =
@@ -34,31 +42,23 @@ type ItemCollection private () =
     override x.IsExpired = false
 
     override x.InitializeCollection() =
-        let db = x.DbCollection
-
-        db.EnsureIndex(fun x -> x.ItemId) |> ignore
-        db.EnsureIndex(fun x -> x.Region) |> ignore
+        x.DbCollection.EnsureIndex(fun x -> x.ChineseName) |> ignore
+        x.DbCollection.EnsureIndex(fun x -> x.OfficalName) |> ignore
 
         seq {
-            use col = ChinaDistroData.GetCollection()
+            let cDict = Dictionary<int, string>()
 
-            for row in col.Item.TypedRows do
-                yield
-                    { LiteDbId = 0
-                      ItemId = row.Key.Main
-                      Region = VersionRegion.China
-                      Name = row.Name.AsString() }
+            for row in ChinaDistroData.GetCollection().Item.TypedRows do
+                cDict.Add(row.Key.Main, row.Name.AsString())
 
-            use col = OfficalDistroData.GetCollection()
+            for row in OfficalDistroData.GetCollection().Item.TypedRows do
+                let succ, cName = cDict.TryGetValue(row.Key.Main)
 
-            for row in col.Item.TypedRows do
-                yield
-                    { LiteDbId = 0
-                      ItemId = row.Key.Main
-                      Region = VersionRegion.Offical
-                      Name = row.Name.AsString() }
+                { ItemId = row.Key.Main
+                  ChineseName = if succ then cName else String.Empty
+                  OfficalName = row.Name.AsString() }
         }
-        |> db.InsertBulk
+        |> x.DbCollection.InsertBulk
         |> ignore
 
     /// <summary>
@@ -66,8 +66,8 @@ type ItemCollection private () =
     /// </summary>
     /// <param name="id">ItemId</param>
     /// <param name="region">版本区</param>
-    member x.GetByItemId(id: int, region: VersionRegion) =
-        let ret = x.DbCollection.TryQueryOne(fun x -> x.ItemId = id && x.Region = region)
+    member x.GetByItemId(id: int) =
+        let ret = x.DbCollection.TryQueryOne(fun x -> x.ItemId = id)
 
         x.PassOrRaise(ret, "找不到物品:{0}", id)
 
@@ -76,16 +76,16 @@ type ItemCollection private () =
     /// </summary>
     /// <param name="id">ItemId</param>
     /// <param name="region">版本区</param>
-    member x.TryGetByItemId(id: int, region: VersionRegion) =
-        x.DbCollection.TryQueryOne(fun x -> x.ItemId = id && x.Region = region)
+    member x.TryGetByItemId(id: int) =
+        x.DbCollection.TryQueryOne(fun x -> x.ItemId = id)
 
     /// <summary>
     /// 根据名称匹配道具
     /// </summary>
     /// <param name="name">物品名</param>
     /// <param name="region">版本区</param>
-    member x.TryGetByName(name: string, region: VersionRegion) =
-        x.DbCollection.TryQueryOne(fun x -> x.Name = name && x.Region = region)
+    member x.TryGetByName(name: string) =
+        x.DbCollection.TryQueryOne(fun x -> x.ChineseName = name || x.OfficalName = name)
 
     /// <summary>
     /// 查找名称包含指定字符的物品。默认最多返回50个。
@@ -93,30 +93,13 @@ type ItemCollection private () =
     /// <param name="str">查找字符</param>
     /// <param name="region">查找版本区</param>
     /// <param name="limit">上限</param>
-    member x.SearchByName(str, region: VersionRegion, ?limit: int) =
-        x.DbCollection.Find(Query.Contains("Name", str))
-        |> Seq.filter (fun x -> x.Region = region)
-        |> Seq.truncate (defaultArg limit 50)
-        |> Seq.toArray
+    member x.SearchByName(str, ?limit: int) =
+        let query = Query.Or(Query.Contains("ChineseName", str), Query.Contains("OfficalName", str))
+        x.DbCollection.Find(query) |> Seq.truncate (defaultArg limit 50) |> Seq.toArray
 
     interface IDataTest with
         member x.RunTest() =
             let i = ItemCollection.Instance
 
-            // 中国服
-            Expect.equal (i.GetByItemId(4, VersionRegion.China).Name) "风之碎晶"
-
-            let ret = i.TryGetByName("风之碎晶", VersionRegion.China)
-
-            Expect.isSome ret
-            Expect.equal ret.Value.Name "风之碎晶"
-            Expect.equal ret.Value.LiteDbId 4
-
-            // 国际服/日区
-            Expect.equal (i.GetByItemId(4, VersionRegion.Offical).Name) "ウィンドシャード"
-
-            let ret = i.TryGetByName("ウィンドシャード", VersionRegion.Offical)
-
-            Expect.isSome ret
-            Expect.equal ret.Value.Name "ウィンドシャード"
-            Expect.equal ret.Value.LiteDbId 4
+            Expect.equal (i.GetByItemId(4).ChineseName) "风之碎晶"
+            Expect.equal (i.GetByItemId(4).OfficalName) "ウィンドシャード"

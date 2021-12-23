@@ -112,15 +112,18 @@ type SpecialShopCollection private () =
         |> x.DbCollection.InsertBulk
         |> ignore
 
-    member x.AllCostItems(region) =
+    member x.AllCostItems() =
         let ic = ItemCollection.Instance
 
         x.DbCollection.FindAll()
         |> Seq.map (fun r -> r.CostItem)
         |> Seq.distinct
-        |> Seq.map (fun id -> ic.GetByItemId(id, region))
+        |> Seq.map (fun id -> ic.GetByItemId(id))
         |> Seq.toArray
 
     member x.SearchByCostItem(item: XivItem, region) =
         let itemId = item.ItemId
         x.DbCollection.QueryAllArray(fun x -> x.CostItem = itemId && x.Region = region)
+
+    member x.SearchByCostItem(item: XivItem, world : World) =
+        x.SearchByCostItem(item, world.VersionRegion)

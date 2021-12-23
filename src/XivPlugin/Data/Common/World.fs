@@ -5,8 +5,11 @@ open System.Collections.Generic
 
 open KPX.TheBot.Host.Data
 
+open LiteDB
+
 
 [<Struct>]
+[<RequireQualifiedAccess>]
 /// <summary>
 /// 版本区
 ///
@@ -15,6 +18,26 @@ open KPX.TheBot.Host.Data
 type VersionRegion =
     | China
     | Offical
+
+    override x.ToString() =
+        match x with
+        | China -> "china"
+        | Offical -> "offical"
+
+    member x.BsonValue = BsonValue(x.ToString())
+
+[<AutoOpen>]
+module VersionRegionUtils = 
+    let fromBsonValue(value : BsonValue) =
+        match value.AsString with
+        | "china" -> VersionRegion.China
+        | "offical" -> VersionRegion.Offical
+        | str -> invalidArg (nameof value) $"Version值不合法：当前为{str}"
+
+    do
+        BsonMapper.Global.RegisterType<VersionRegion>((fun x -> x.BsonValue), fromBsonValue)
+        |> ignore
+
 
 type World =
     { /// 服务器编号
@@ -30,7 +53,6 @@ type World =
 
 module World =
     open KPX.XivPlugin
-
 
     let private idMapping = Dictionary<int, World>()
 

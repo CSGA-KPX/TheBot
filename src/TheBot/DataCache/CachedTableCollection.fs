@@ -43,7 +43,7 @@ type CachedTableCollection<'Item>(colName) =
 
     let updateLock = obj ()
 
-    new () as x = CachedTableCollection<'Item>(x.GetType().Name)
+    new() = CachedTableCollection<'Item>(String.Empty)
 
     abstract IsExpired: bool
 

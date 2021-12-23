@@ -8,7 +8,7 @@ open KPX.TheBot.Host.DataModel.Recipe
 open KPX.TheBot.Host.Utils.RecipeRPN
 
 open KPX.XivPlugin.Data
-open KPX.XivPlugin.Data.Shops
+open KPX.XivPlugin.Data.Shop
 open KPX.XivPlugin.Modules.Utils
 open KPX.XivPlugin.Modules.Utils.MarketUtils
 
@@ -16,20 +16,19 @@ open KPX.XivPlugin.Modules.Utils.MarketUtils
 type XivRecipeModule() =
     inherit CommandHandlerBase()
 
-    let rm = Recipe.XivRecipeManager.Instance
+    let getRm (w : World) = XivRecipeManager.GetInstance w
     let gilShop = GilShopCollection.Instance
     let xivExpr = XivExpression.XivExpression()
-
-    let universalis = UniversalisMarketCache.MarketInfoCollection.Instance
+    let universalis = MarketInfoCollection.Instance
 
     /// 给物品名备注上NPC价格
-    let tryLookupNpcPrice (item: XivItem) =
-        let ret = gilShop.TryLookupByItem(item)
+    let tryLookupNpcPrice (item: XivItem, world : World) =
+        let ret = gilShop.TryLookupByItem(item, world.VersionRegion)
 
         if ret.IsSome then
-            $"%s{item.Name}(%i{ret.Value.Ask})"
+            $"%s{item.DisplayName}(%i{ret.Value.AskPrice})"
         else
-            item.Name
+            item.DisplayName
 
     [<CommandHandlerMethod("#r", "根据表达式汇总多个物品的材料，不查询价格", "可以使用text:选项返回文本。如#r 白钢锭 text:")>]
     [<CommandHandlerMethod("#rr", "根据表达式汇总多个物品的基础材料，不查询价格", "可以使用text:选项返回文本。如#rr 白钢锭 text:")>]
@@ -44,16 +43,17 @@ type XivRecipeModule() =
     member _.GeneralRecipeCalculator(cmdArg: CommandEventArgs) =
         let doCalculateCost = cmdArg.CommandName = "#rrc" || cmdArg.CommandName = "#rc"
 
+        let opt = CommandUtils.XivOption()
+        opt.Parse(cmdArg.HeaderArgs)
+
+        let world = opt.World.Value
+        let rm = getRm world
+
         let materialFunc =
             if cmdArg.CommandName = "#rr" || cmdArg.CommandName = "#rrc" then
                 fun (item: XivItem) -> rm.TryGetRecipeRec(item, ByItem 1.0)
             else
                 fun (item: XivItem) -> rm.TryGetRecipe(item)
-
-        let opt = CommandUtils.XivOption()
-        opt.Parse(cmdArg.HeaderArgs)
-
-        let world = opt.World.Value
 
         let product = XivExpression.ItemAccumulator()
         let acc = XivExpression.ItemAccumulator()
@@ -68,7 +68,7 @@ type XivRecipeModule() =
                     let recipe = materialFunc mr.Item // 一个物品的材料
 
                     if recipe.IsNone then
-                        cmdArg.Abort(InputError, $"%s{mr.Item.Name} 没有生产配方")
+                        cmdArg.Abort(InputError, $"%s{mr.Item.DisplayName} 没有生产配方")
                     else
                         for m in recipe.Value.Input do
                             acc.Update(m.Item, m.Quantity * mr.Quantity)
@@ -102,7 +102,7 @@ type XivRecipeModule() =
             // 单项列
             let mutable sum = StdEv.Zero
 
-            [ for mr in acc |> Seq.sortBy (fun kv -> kv.Item.Id) do
+            [ for mr in acc |> Seq.sortBy (fun kv -> kv.Item.ItemId) do
                   let market =
                       lazy
                           (universalis
@@ -110,7 +110,7 @@ type XivRecipeModule() =
                               .GetListingAnalyzer()
                               .TakeVolume())
 
-                  [ CellBuilder() { literal (mr.Item |> tryLookupNpcPrice) }
+                  [ CellBuilder() { literal (tryLookupNpcPrice(mr.Item, world)) }
                     CellBuilder() { integer mr.Quantity }
                     if doCalculateCost then
                         let stdPrice = market.Value.StdEvPrice()

@@ -10,7 +10,7 @@ open LiteDB
 type CachedItemCollection<'Key, 'Item>(colName) =
     inherit BotDataCollection<'Item>(colName)
 
-    new() as x = CachedItemCollection<'Key, 'Item>(x.GetType().Name)
+    new () = CachedItemCollection<'Key, 'Item>(System.String.Empty)
 
     /// 获取一个'Value，不经过不写入缓存
     abstract DoFetchItem: 'Key -> 'Item

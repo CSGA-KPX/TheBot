@@ -30,8 +30,7 @@ type XivMarketPriceModule() =
 
     let itemCol = ItemCollection.Instance
     let xivExpr = XivExpression.XivExpression()
-
-    let universalis = UniversalisMarketCache.MarketInfoCollection.Instance
+    let universalis = MarketInfoCollection.Instance
 
     [<TestFixture>]
     member x.TestXivMarket() =
@@ -156,7 +155,7 @@ text 以文本格式输出结果
                       sumTradeAll <- sumTradeAll + logAll
                       sumTradeHq <- sumTradeHq + logHq
 
-                      [ CellBuilder() { literal mr.Item.Name }
+                      [ CellBuilder() { literal mr.Item.DisplayName }
                         CellBuilder() { literal world.WorldName }
                         CellBuilder() { integer mr.Quantity }
                         CellBuilder() { integer lstAll }

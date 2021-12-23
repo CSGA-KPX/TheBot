@@ -12,18 +12,15 @@ open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.UserOption
 
 open KPX.XivPlugin.Data
+open KPX.XivPlugin.Modules
 
 open KPX.TheBot.Host.Utils.Dicer
-
-open KPX.XivPlugin.Modules
 
 
 type DfcOption() as x =
     inherit CommandOption()
 
     member val ListCount = OptionCellSimple<int>(x, "list", 7)
-
-    member val RebuildData = OptionCell(x, "rebuild")
 
 type SeaFishingOption() as x =
     inherit CommandOption()
@@ -35,73 +32,66 @@ type SeaFishingOption() as x =
 type MiscModule() =
     inherit CommandHandlerBase()
 
-    let isNumber (str: string) =
-        if str.Length <> 0 then
-            String.forall Char.IsDigit str
-        else
-            false
+    //let isNumber (str: string) =
+    //    if str.Length <> 0 then
+    //        String.forall Char.IsDigit str
+    //    else
+    //        false
 
-    let buildDfc () =
-        ContentFinderCondition.XivContentCollection.Instance.GetAll()
-        |> Seq.filter (fun i -> i.IsDailyFrontlineChallengeRoulette)
-        |> Seq.toArray
-        |> Array.sortBy (fun i -> i.Id)
-
-    let mutable dfcRoulettes = buildDfc ()
+    let chsDfcRoulettes = XivContentCollection.Instance.GetDailyFrontline(VersionRegion.China)
+    let officalDfcRoulettes = XivContentCollection.Instance.GetDailyFrontline(VersionRegion.Offical)
 
     [<CommandHandlerMethod("#纷争前线", "今日轮转查询", "")>]
     member x.HandleDailyFrontlineChallenge(cmdArg: CommandEventArgs) =
         let opt = DfcOption()
         opt.Parse(cmdArg.HeaderArgs)
 
-        if opt.RebuildData.IsDefined then
-            dfcRoulettes <- buildDfc ()
-            cmdArg.Reply $"重建完成，当前有%i{dfcRoulettes.Length}个副本"
-        else
-            if dfcRoulettes.Length = 0 then
-                cmdArg.Abort(ModuleError, "模块错误：副本表为空。请使用rebuild")
+        let listCount = 7
+        let dateFmt = "yyyy/MM/dd HH:00"
+        let JSTOffset = TimeSpan.FromHours(9.0)
 
-            let dateFmt = "yyyy/MM/dd HH:00"
-            let JSTOffset = TimeSpan.FromHours(9.0)
+        let getString (dt: DateTimeOffset, dfcRoulettes: XivContent []) =
+            let dt = dt.ToOffset(JSTOffset)
 
-            let getString (dt: DateTimeOffset) =
-                let dt = dt.ToOffset(JSTOffset)
+            let utc = DateTimeOffset.UnixEpoch.ToOffset(JSTOffset)
 
-                let utc = DateTimeOffset.UnixEpoch.ToOffset(JSTOffset)
+            let index = ((dt - utc).Days + 2) % dfcRoulettes.Length
 
-                let index = ((dt - utc).Days + 2) % dfcRoulettes.Length
+            dfcRoulettes.[index].Name
 
-                dfcRoulettes.[index].Name
+        let startDate =
+            let jst = DateTimeOffset.Now.ToOffset(JSTOffset)
 
-            let startDate =
-                let jst = DateTimeOffset.Now.ToOffset(JSTOffset)
+            (jst - jst.TimeOfDay)
+                .ToOffset(TimeSpan.FromHours(8.0))
 
-                (jst - jst.TimeOfDay)
-                    .ToOffset(TimeSpan.FromHours(8.0))
+        use resp = cmdArg.OpenResponse(ForceImage)
 
-            let list = opt.ListCount.Value
+        resp.Table {
+            let c = chsDfcRoulettes
+            let o = officalDfcRoulettes
 
-            if list > 31 then
-                cmdArg.Abort(InputError, "一个月还不够嘛？")
+            [ CellBuilder() { literal $"国服当前：%s{getString (startDate, c)}" }
+              CellBuilder() { literal $"世界服当前：%s{getString (startDate, o)}" } ]
 
-            use resp = cmdArg.OpenResponse(ForceImage)
 
-            resp.Table {
-                $"当前为：%s{getString startDate}"
+            [ CellBuilder() { literal "中国时间" }
+              CellBuilder() { literal "国服" }
+              CellBuilder() { literal "世界服" } ]
 
-                [ CellBuilder() { literal "中国时间" }; CellBuilder() { literal "副本" } ]
+            [ for i = 0 to listCount do
+                  let date = startDate.AddDays(float i)
 
-                [ for i = 0 to list do
-                      let date = startDate.AddDays(float i)
+                  let dateStr =
+                      startDate
+                          .AddDays(Operators.float i)
+                          .ToString(dateFmt)
 
-                      let dateStr =
-                          startDate
-                              .AddDays(Operators.float i)
-                              .ToString(dateFmt)
-
-                      [ CellBuilder() { literal dateStr }; CellBuilder() { literal (getString date) } ] ]
-            }
-            |> ignore
+                  [ CellBuilder() { literal dateStr }
+                    CellBuilder() { literal (getString (date, c)) }
+                    CellBuilder() { literal (getString (date, o)) } ] ]
+        }
+        |> ignore
 
     [<TestFixture>]
     member x.TestXivDFC() =
@@ -136,7 +126,7 @@ type MiscModule() =
     member x.TestXivFantasia() =
         let tc = TestContext(x)
         tc.ShouldNotThrow("#幻想药")
-
+    (*
     [<CommandHandlerMethod("#cgss",
                            "查找指定职业和品级的套装。用于#r/rr/rc/rrc计算",
                            "#cgss 职业 品级
@@ -185,7 +175,7 @@ type MiscModule() =
         let tc = TestContext(x)
         tc.ShouldNotThrow("#cgss 占星 510")
 
-    (*    [<CommandHandlerMethod("#is", "（FF14）查找名字包含字符的物品", "关键词（大小写敏感）")>]
+    [<CommandHandlerMethod("#is", "（FF14）查找名字包含字符的物品", "关键词（大小写敏感）")>]
     member x.HandleItemSearch(cmdArg : CommandEventArgs) =
         cmdArg.Reply("砍掉重练中")
 
@@ -303,7 +293,7 @@ type MiscModule() =
 
         let dateFmt = "yyyy/MM/dd HH:00"
         use ret = cmdArg.OpenResponse(ForceImage)
-        ret.WriteLine("警告：国服数据，世界服不一定适用。时间为中国标准时间。")
+        ret.WriteLine("缺少国际服资料，目前仅查询国服攻略。时间为中国标准时间。")
 
         let mutable now = DateTimeOffset.Now.ToOffset(TimeSpan.FromHours(8.0))
 
@@ -322,7 +312,7 @@ type MiscModule() =
 
                     [ for i = 0 to count - 1 do
                           let cd = now.AddHours((float i) * 2.0)
-                          let info = OceanFishing.CalculateCooldown(cd)
+                          let info = OceanFishing.CalculateCooldown(cd, VersionRegion.China)
 
                           [ CellBuilder() { dateTime info.CooldownDate }
                             CellBuilder() { literal info.Message.[0] }
@@ -336,7 +326,7 @@ type MiscModule() =
                 if next <> 0 then
                     now <- now.AddHours(2.0 * (float next))
 
-                let info = OceanFishing.CalculateCooldown(now)
+                let info = OceanFishing.CalculateCooldown(now, VersionRegion.China)
 
                 let date = info.CooldownDate.ToString(dateFmt)
                 ret.WriteLine("预计CD时间为：{0}", date)

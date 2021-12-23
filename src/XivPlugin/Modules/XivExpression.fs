@@ -10,7 +10,7 @@ open KPX.TheBot.Host.Utils.RecipeRPN
 
 type ItemAccumulator = ItemAccumulator<XivItem>
 
-type XivExpression() as x =
+type XivExpression () as x =
     inherit RecipeExpression<XivItem>()
 
     do
@@ -22,7 +22,6 @@ type XivExpression() as x =
                 let acu = ItemAccumulator.SingleItemOf item
                 Accumulator acu
             | Accumulator _ -> failwithf "#符号仅对数字使用"
-
 
         let itemOperator = GenericOperator<_>('#', Int32.MaxValue, UnaryFunc = Some unaryFunc)
 

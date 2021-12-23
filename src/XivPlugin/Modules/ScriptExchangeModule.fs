@@ -7,7 +7,7 @@ open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Testing
 
 open KPX.XivPlugin.Data
-open KPX.XivPlugin.Data.Shops
+open KPX.XivPlugin.Data.Shop
 
 open KPX.XivPlugin.Modules.Utils
 open KPX.XivPlugin.Modules.Utils.MarketUtils
@@ -18,7 +18,7 @@ type ScriptExchangeModule() =
 
     let itemCol = ItemCollection.Instance
 
-    let universalis = UniversalisMarketCache.MarketInfoCollection.Instance
+    let universalis = MarketInfoCollection.Instance
 
     let isNumber (str: string) =
         if str.Length <> 0 then
@@ -53,21 +53,21 @@ type ScriptExchangeModule() =
 
             [ for chunk in
                   sc.AllCostItems()
-                  |> Array.sortBy (fun item -> item.Id)
+                  |> Array.sortBy (fun item -> item.ItemId)
                   |> Array.chunkBySize cols do
                   [ for item in chunk do
-                        CellBuilder() { literal item.Id }
-                        CellBuilder() { literal item.Name } ] ]
+                        CellBuilder() { literal item.ItemId }
+                        CellBuilder() { literal item.DisplayName } ] ]
         }
 
     member private x.ShowExchangeableProfit(cost: XivItem, world: World) =
-        let ia = sc.SearchByCostItemId(cost.Id)
+        let ia = sc.SearchByCostItem(cost, world)
 
         if ia.Length = 0 then
-            raise <| ModuleException(InputError, $"%s{cost.Name}不能兑换道具")
+            raise <| ModuleException(InputError, $"%s{cost.DisplayName}不能兑换道具")
 
         TextTable(ForceImage) {
-            $"兑换道具:%s{cost.Name} 土豆：%s{world.DataCenter}/%s{world.WorldName}"
+            $"兑换道具:%s{cost.DisplayName} 土豆：%s{world.DataCenter}/%s{world.WorldName}"
 
             [ CellBuilder() { literal "兑换物品" }
               CellBuilder() {
@@ -101,7 +101,7 @@ type ScriptExchangeModule() =
                     let updated = market.LastUpdateTime()
 
                     (updated,
-                     [ CellBuilder() { literal receive.Name }
+                     [ CellBuilder() { literal receive.DisplayName }
                        CellBuilder() { integer (market.StdEvPrice().Average) }
                        CellBuilder() { integer (market.MinPrice()) }
                        let costItemValue =

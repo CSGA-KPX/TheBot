@@ -34,8 +34,8 @@ module LiteDBExtensions =
 
         member x.QueryAllArray(f: 'T -> bool) = x.Query().Where(f).ToArray()
 
-        member x.SafeFindById(id: obj) =
-            let ret = x.FindById(BsonValue(id))
+        member x.SafeFindById(id: BsonValue) =
+            let ret = x.FindById(id)
 
             if isNull (box ret) then
                 let msg = $"不能在%s{x.Name}中找到%A{id}"
@@ -43,8 +43,8 @@ module LiteDBExtensions =
 
             ret
 
-        member x.TryFindById(id: obj) =
-            let ret = x.FindById(BsonValue(id))
+        member x.TryFindById(id: BsonValue) =
+            let ret = x.FindById(id)
 
             if isNull (box ret) then
                 None
