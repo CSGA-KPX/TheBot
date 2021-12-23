@@ -1,4 +1,4 @@
-namespace KPX.XivPlugin.DataModel
+namespace KPX.XivPlugin.Data
 
 open System
 open System.Collections.Generic

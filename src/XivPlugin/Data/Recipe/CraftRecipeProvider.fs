@@ -1,17 +1,21 @@
 namespace KPX.XivPlugin.Data.Recipe
 
+open KPX.TheBot.Host.Data
 open KPX.TheBot.Host.DataCache
 open KPX.TheBot.Host.DataCache.LiteDb
+
 open KPX.TheBot.Host.DataModel.Recipe
 
+open KPX.XivPlugin
 open KPX.XivPlugin.Data
+open KPX.XivPlugin.Data.Recipe
 
 
-type CraftRecipeProvider private () =
+[<Sealed>]
+type CraftRecipeProviderChina private () =
     inherit CachedTableCollection<XivDbRecipe>()
 
-    static let instance = CraftRecipeProvider()
-    static member Instance = instance
+    static member val Instance = CraftRecipeProviderChina()
 
     override x.Depends = Array.empty
 
@@ -19,14 +23,11 @@ type CraftRecipeProvider private () =
 
     override x.InitializeCollection() =
         let db = x.DbCollection
-
-        db.EnsureIndex(LiteDB.BsonExpression.Create("_id"), true) |> ignore
-
-        db.EnsureIndex(LiteDB.BsonExpression.Create("Process.Output[0].Item")) |> ignore
-
-        let col = XivProvider.XivCollectionChs
+        db.EnsureIndex(fun x -> x.Process.Output.[0].Item) |> ignore
 
         seq {
+            let col = ChinaDistroData.GetCollection()
+
             for row in col.Recipe.TypedRows do
                 let materials =
                     let items = row.``Item{Ingredient}``.AsInts()
@@ -40,7 +41,8 @@ type CraftRecipeProvider private () =
                 let retAmount = row.``Amount{Result}``.AsDouble()
 
                 yield
-                    { Id = 0
+                    { LiteDbId = 0
+                      Region = VersionRegion.China
                       Process =
                           { Output = [| { Item = retItem; Quantity = retAmount } |]
                             Input = materials } }
@@ -50,11 +52,49 @@ type CraftRecipeProvider private () =
 
     interface IRecipeProvider<XivItem, RecipeProcess<XivItem>> with
         override x.TryGetRecipe(item) =
-            let id = LiteDB.BsonValue(item.Id)
+            x.DbCollection.TryQueryOne(fun x -> x.Process.Output.[0].Item = item.ItemId)
+            |> Option.map (fun r -> r.CastProcess(VersionRegion.China))
 
-            let ret = x.DbCollection.FindOne(LiteDB.Query.EQ("Process.Output[0].Item", id))
+[<Sealed>]
+type CraftRecipeProviderOffical private () =
+    inherit CachedTableCollection<XivDbRecipe>()
 
-            if isNull (box ret) then
-                None
-            else
-                Some(ret.CastProcess())
+    static member val Instance = CraftRecipeProviderOffical()
+
+    override x.Depends = Array.empty
+
+    override x.IsExpired = false
+
+    override x.InitializeCollection() =
+        let db = x.DbCollection
+        db.EnsureIndex(fun x -> x.Process.Output.[0].Item) |> ignore
+
+        seq {
+            let col = OfficalDistroData.GetCollection()
+
+            for row in col.Recipe.TypedRows do
+                let materials =
+                    let items = row.``Item{Ingredient}``.AsInts()
+                    let amounts = row.``Amount{Ingredient}``.AsDoubles()
+
+                    Array.zip items amounts
+                    |> Array.filter (fun (id, _) -> id > 0)
+                    |> Array.map (fun (id, runs) -> { Item = id; Quantity = runs })
+
+                let retItem = row.``Item{Result}``.AsInt()
+                let retAmount = row.``Amount{Result}``.AsDouble()
+
+                yield
+                    { LiteDbId = 0
+                      Region = VersionRegion.Offical
+                      Process =
+                          { Output = [| { Item = retItem; Quantity = retAmount } |]
+                            Input = materials } }
+        }
+        |> db.InsertBulk
+        |> ignore
+
+    interface IRecipeProvider<XivItem, RecipeProcess<XivItem>> with
+        override x.TryGetRecipe(item) =
+            x.DbCollection.TryQueryOne(fun x -> x.Process.Output.[0].Item = item.ItemId)
+            |> Option.map (fun r -> r.CastProcess(VersionRegion.Offical))

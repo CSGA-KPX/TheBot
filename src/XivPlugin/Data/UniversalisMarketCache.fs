@@ -1,16 +1,16 @@
-namespace KPX.XivPlugin.Data.UniversalisMarketCache
+namespace KPX.XivPlugin.Data
 
 open System
+
+open KPX.TheBot.Host.Network
+open KPX.TheBot.Host.DataCache
+
+open KPX.XivPlugin.Data
 
 open LiteDB
 
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
-
-open KPX.TheBot.Host
-open KPX.TheBot.Host.DataCache
-
-open KPX.XivPlugin.Data
 
 
 exception UniversalisAccessException of Net.Http.HttpResponseMessage
@@ -19,15 +19,16 @@ type MarketInfo =
     { World: World
       Item: XivItem }
 
-    override x.ToString() = $"%i{x.World.WorldId}/%i{x.Item.Id}"
+    override x.ToString() =
+        $"%i{x.World.WorldId}/%i{x.Item.ItemId}"
 
     static member FromString(str: string) =
         let ret = str.Split('/')
-        let wid = ret.[0] |> uint16
+        let world = World.GetWorldById(ret.[0] |> int)
         let iid = ret.[1] |> int
 
-        { World = World.GetWorldById(wid)
-          Item = ItemCollection.Instance.GetByItemId(iid) }
+        { World = world
+          Item = ItemCollection.Instance.GetByItemId(iid, world.VersionRegion) }
 
 type XivCity =
     | LimsaLominsa = 1
@@ -91,13 +92,12 @@ type MarketInfoCollection private () =
     override x.DoFetchItem(info) =
         let info = MarketInfo.FromString(info)
 
-        let url = $"https://universalis.app/api/%i{info.World.WorldId}/%i{info.Item.Id}"
+        let url = $"https://universalis.app/api/%i{info.World.WorldId}/%i{info.Item.ItemId}"
 
         x.Logger.Info $"正在访问 %s{url}"
 
         let resp =
-            Network
-                .HttpClient
+            HttpClient
                 .GetAsync(url)
                 .ConfigureAwait(false)
                 .GetAwaiter()

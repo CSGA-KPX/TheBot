@@ -1,17 +1,20 @@
-namespace KPX.XivPlugin.Data.Shops
+namespace KPX.XivPlugin.Data.Shop
 
-open LiteDB
-
+open KPX.TheBot.Host.Data
 open KPX.TheBot.Host.DataCache
 open KPX.TheBot.Host.DataCache.LiteDb
 
+open KPX.XivPlugin
 open KPX.XivPlugin.Data
+
+open LiteDB
 
 
 [<CLIMutable>]
 type GCScriptExchange =
-    { [<BsonId(false)>]
-      Id: int
+    { [<BsonId>]
+      LiteDbId: int
+      Region: VersionRegion
       CostSeals: int
       ReceiveItem: int
       ReceiveQuantity: int }
@@ -19,30 +22,45 @@ type GCScriptExchange =
 type GCScriptShop private () =
     inherit CachedTableCollection<GCScriptExchange>()
 
-    static let instance = GCScriptShop()
-
-    static member Instance = instance
+    static member val Instance = GCScriptShop()
 
     override x.IsExpired = false
 
     override x.Depends = Array.empty
 
     override x.InitializeCollection() =
-        x.DbCollection.EnsureIndex(BsonExpression.Create("ReceiveItem")) |> ignore
-
-        let col = XivProvider.XivCollectionChs
+        x.DbCollection.EnsureIndex(fun x -> x.ReceiveItem) |> ignore
 
         seq {
+            let col = ChinaDistroData.GetCollection()
+
             for row in col.GCScripShopItem.TypedRows do
                 let key = row.Key.Main
                 let item = row.Item.AsInt()
 
                 if key >= 34 && item <> 0 then
                     let seals = row.``Cost{GCSeals}``.AsInt()
-                    let dbKey = row.Key.Main * 100 + row.Key.Alt
 
                     yield
-                        { Id = dbKey
+                        { LiteDbId = 0
+                          Region = VersionRegion.China
+                          CostSeals = seals
+                          ReceiveItem = item
+                          ReceiveQuantity = 1 }
+
+
+            let col = OfficalDistroData.GetCollection()
+
+            for row in col.GCScripShopItem.TypedRows do
+                let key = row.Key.Main
+                let item = row.Item.AsInt()
+
+                if key >= 34 && item <> 0 then
+                    let seals = row.``Cost{GCSeals}``.AsInt()
+
+                    yield
+                        { LiteDbId = 0
+                          Region = VersionRegion.Offical
                           CostSeals = seals
                           ReceiveItem = item
                           ReceiveQuantity = 1 }
@@ -50,5 +68,6 @@ type GCScriptShop private () =
         |> x.DbCollection.InsertBulk
         |> ignore
 
-    member x.GetByItem(item: XivItem) =
-        x.DbCollection.Find(Query.EQ("ReceiveItem", BsonValue(item.Id)))
+    member x.GetByItem(item: XivItem, region) =
+        let itemId = item.ItemId
+        x.DbCollection.Find(fun x -> x.ReceiveItem = itemId && x.Region = region)

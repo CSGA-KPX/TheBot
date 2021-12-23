@@ -1,17 +1,20 @@
-namespace KPX.XivPlugin.Data.Shops
+namespace KPX.XivPlugin.Data.Shop
 
-open LiteDB
-
+open KPX.TheBot.Host.Data
 open KPX.TheBot.Host.DataCache
 open KPX.TheBot.Host.DataCache.LiteDb
 
+open KPX.XivPlugin
 open KPX.XivPlugin.Data
+
+open LiteDB
 
 
 [<CLIMutable>]
 type SpecialShopInfo =
-    { [<BsonId(true)>]
-      Id: int
+    { [<BsonId>]
+      LiteDbId: int
+      Region: VersionRegion
       ReceiveItem: int32
       ReceiveCount: int32
       ReceiveHQ: bool
@@ -21,22 +24,21 @@ type SpecialShopInfo =
 type SpecialShopCollection private () =
     inherit CachedTableCollection<SpecialShopInfo>()
 
-    static let instance = SpecialShopCollection()
-    static member Instance = instance
+    static member val Instance = SpecialShopCollection()
 
     override x.Depends = Array.empty
 
     override x.IsExpired = false
 
     override x.InitializeCollection() =
-        x.DbCollection.EnsureIndex(BsonExpression.Create("ReceiveItem")) |> ignore
+        x.DbCollection.EnsureIndex(fun x -> x.ReceiveItem) |> ignore
 
-        let col = XivProvider.XivCollectionChs
+        x.InitChs()
+        x.InitOffical()
 
-        //col.GetSheet("Item", [| "Name"; "IsUntradable" |])
-        //|> ignore // 缓存
-
+    member private x.InitChs() =
         seq {
+            let col = ChinaDistroData.GetCollection()
             let existed = System.Collections.Generic.HashSet<string>()
 
             for row in col.SpecialShop.TypedRows do
@@ -61,7 +63,8 @@ type SpecialShopCollection private () =
                             existed.Add(key) |> ignore
 
                             yield
-                                { Id = 0
+                                { LiteDbId = 0
+                                  Region = VersionRegion.China
                                   ReceiveItem = rItem.[i, j].Key.Main
                                   ReceiveCount = rCount.[i, j]
                                   ReceiveHQ = rHq.[i, j]
@@ -71,16 +74,53 @@ type SpecialShopCollection private () =
         |> x.DbCollection.InsertBulk
         |> ignore
 
-    member x.AllCostItems() =
+    member private x.InitOffical() =
+        seq {
+            let col = OfficalDistroData.GetCollection()
+            let existed = System.Collections.Generic.HashSet<string>()
+
+            for row in col.SpecialShop.TypedRows do
+                let rItem = row.``Item{Receive}``.AsRows()
+                let rCount = row.``Count{Receive}``.AsInts()
+                let rHq = row.``HQ{Receive}``.AsBools()
+
+                let cItem = row.``Item{Cost}``.AsInts()
+                let cCount = row.``Count{Cost}``.AsInts()
+
+                for i = rItem.GetLowerBound(0) to rItem.GetUpperBound(0) do
+                    for j = rItem.GetLowerBound(1) to rItem.GetUpperBound(1) do
+                        let key = $"%i{rItem.[i, j].Key.Main}%i{cItem.[i, j]}"
+
+                        if not <| (existed.Contains(key))
+                           && cItem.[i, j] > 0
+                           && rItem.[i, j].Key.Main > 0
+                           && rCount.[i, j] > 0
+                           && rHq.[i, j] = false
+                           && rItem.[i, j].IsUntradable.AsBool() = false
+                           && rItem.[i, j].Name.AsString() <> "" then
+                            existed.Add(key) |> ignore
+
+                            yield
+                                { LiteDbId = 0
+                                  Region = VersionRegion.Offical
+                                  ReceiveItem = rItem.[i, j].Key.Main
+                                  ReceiveCount = rCount.[i, j]
+                                  ReceiveHQ = rHq.[i, j]
+                                  CostItem = cItem.[i, j]
+                                  CostCount = cCount.[i, j] }
+        }
+        |> x.DbCollection.InsertBulk
+        |> ignore
+
+    member x.AllCostItems(region) =
         let ic = ItemCollection.Instance
 
         x.DbCollection.FindAll()
         |> Seq.map (fun r -> r.CostItem)
         |> Seq.distinct
-        |> Seq.map (fun id -> ic.GetByItemId(id))
+        |> Seq.map (fun id -> ic.GetByItemId(id, region))
         |> Seq.toArray
 
-    member x.SearchByCostItemId(id: int) =
-        let ret = x.DbCollection.Find(Query.EQ("CostItem", BsonValue(id)))
-
-        ret |> Seq.toArray
+    member x.SearchByCostItem(item: XivItem, region) =
+        let itemId = item.ItemId
+        x.DbCollection.QueryAllArray(fun x -> x.CostItem = itemId && x.Region = region)
