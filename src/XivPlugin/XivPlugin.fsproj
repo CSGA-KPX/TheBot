@@ -68,6 +68,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="../../datafiles/ffxiv-datamining-cn-master.zip" />
+    <EmbeddedResource Include="../../datafiles/ffxiv-datamining-jp-master.zip" />
   </ItemGroup>
 
   <ItemGroup>
