@@ -16,13 +16,13 @@ open KPX.XivPlugin.Modules.Utils.MarketUtils
 type XivRecipeModule() =
     inherit CommandHandlerBase()
 
-    let getRm (w : World) = XivRecipeManager.GetInstance w
+    let getRm (r: VersionRegion) = XivRecipeManager.GetInstance r
     let gilShop = GilShopCollection.Instance
     let xivExpr = XivExpression.XivExpression()
     let universalis = MarketInfoCollection.Instance
 
     /// 给物品名备注上NPC价格
-    let tryLookupNpcPrice (item: XivItem, world : World) =
+    let tryLookupNpcPrice (item: XivItem, world: World) =
         let ret = gilShop.TryLookupByItem(item, world.VersionRegion)
 
         if ret.IsSome then
@@ -47,9 +47,11 @@ type XivRecipeModule() =
         opt.Parse(cmdArg.HeaderArgs)
 
         let world = opt.World.Value
-        let rm = getRm world
+        let mutable region = world.VersionRegion
 
-        let materialFunc =
+        let getMaterialFunc region =
+            let rm = getRm region
+
             if cmdArg.CommandName = "#rr" || cmdArg.CommandName = "#rrc" then
                 fun (item: XivItem) -> rm.TryGetRecipeRec(item, ByItem 1.0)
             else
@@ -63,6 +65,14 @@ type XivRecipeModule() =
             | Error err -> raise err
             | Ok (Number i) -> cmdArg.Abort(InputError, "计算结果为数字{0}，物品Id请加#", i)
             | Ok (Accumulator a) ->
+                // 如果物品里面有国服名称为空（即国际服才有的物品）
+                // 则覆盖区域到世界服
+                for mr in a do
+                    if System.String.IsNullOrWhiteSpace(mr.Item.ChineseName) then
+                        region <- VersionRegion.Offical
+
+                let materialFunc = getMaterialFunc (region)
+
                 for mr in a do
                     product.Update(mr)
                     let recipe = materialFunc mr.Item // 一个物品的材料
@@ -79,6 +89,10 @@ type XivRecipeModule() =
         TextTable(opt.ResponseType) {
             if doCalculateCost then
                 $"土豆：%s{world.WorldName}"
+
+                if world.VersionRegion <> region then
+                    $"警告：服务器版本[{world.VersionRegion}]和物品版本[{region}]不符"
+                    $"如非预期结果，请写明想要查询的服务器"
 
             // 表头
             [ CellBuilder() { literal "物品" }
@@ -110,7 +124,7 @@ type XivRecipeModule() =
                               .GetListingAnalyzer()
                               .TakeVolume())
 
-                  [ CellBuilder() { literal (tryLookupNpcPrice(mr.Item, world)) }
+                  [ CellBuilder() { literal (tryLookupNpcPrice (mr.Item, world)) }
                     CellBuilder() { integer mr.Quantity }
                     if doCalculateCost then
                         let stdPrice = market.Value.StdEvPrice()
