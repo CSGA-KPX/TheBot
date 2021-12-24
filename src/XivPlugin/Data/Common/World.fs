@@ -35,8 +35,8 @@ module World =
     /// </summary>
     let PublicWorlds =
         seq {
-            for kv in nameMapping do
-                if kv.Value.IsPublic then yield kv.Value
+            for v in idMapping.Values do
+                if v.IsPublic then yield v
         }
 
     let WorldNames =
