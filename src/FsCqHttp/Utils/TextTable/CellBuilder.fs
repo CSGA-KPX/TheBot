@@ -31,6 +31,23 @@ type CellBuilder() =
 
         x
 
+    [<CustomOperation("quantity")>]
+    /// <summary>
+    /// 整数无小数点，小数保留2位
+    /// </summary>
+    member _.Quantity(x: CellBuilder, value: obj) =
+        TableCellHelper.EnsureNumberType value
+        x.Align <- TextAlignment.Right
+
+        let str = String.Format("{0:N2}", value)
+
+        if str.EndsWith(".00") then
+            x.Builder.AppendFormat("{0:N0}", value) |> ignore
+        else
+            x.Builder.Append(str) |> ignore
+
+        x
+
     [<CustomOperation("float")>]
     member _.Float(x: CellBuilder, value: obj) =
         TableCellHelper.EnsureNumberType value

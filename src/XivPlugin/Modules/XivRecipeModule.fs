@@ -125,7 +125,7 @@ type XivRecipeModule() =
                               .TakeVolume())
 
                   [ CellBuilder() { literal (tryLookupNpcPrice (mr.Item, world)) }
-                    CellBuilder() { integer mr.Quantity }
+                    CellBuilder() { quantity mr.Quantity }
                     if doCalculateCost then
                         let stdPrice = market.Value.StdEvPrice()
                         CellBuilder() { integer stdPrice.Average }

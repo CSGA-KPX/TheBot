@@ -39,6 +39,9 @@ module World =
                 if v.IsPublic then yield v
         }
 
+    /// <summary>
+    /// 所有服务器名称和别名
+    /// </summary>
     let WorldNames =
         seq {
             for kv in nameMapping do
@@ -103,21 +106,8 @@ module World =
             if not <| nameMapping.TryAdd(name, world) then
                 printfn $"World : 服务器添加失败 %A{world}"
 
-        // 处理国服
+        // 处理自定义数据
         let res = ResxManager("XivPlugin.XivStrings")
-
-        // 添加国服服务器名称
-        // 6.0开始World.csv区分内部名称和显示名称
-        // 所以不再进行处理ChsWorldName
-
-        //for lines in res.GetLinesWithoutComment("ChsWorldName", "//") do
-        //    let data = lines.Split(' ')
-        //    let chs = data.[0]
-        //    let eng = data.[1]
-        //    let w = GetWorldByName(eng)
-        //    w.WorldName <- chs
-        //    w.VersionRegion <- VersionRegion.China
-        //    nameMapping.Add(chs, w)
 
         // 处理国服的大区信息
         for lines in res.GetLines("ChsDCInfo") do
