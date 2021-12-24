@@ -71,15 +71,15 @@ type MiscModule() =
             let c = chsDfcRoulettes.Value
             let o = officalDfcRoulettes.Value
 
-            [ CellBuilder() { literal $"国服当前：%s{getString (startDate, c)}" }
-              CellBuilder() { literal $"世界服当前：%s{getString (startDate, o)}" } ]
-
-
             [ CellBuilder() { literal "中国时间" }
               CellBuilder() { literal "国服" }
               CellBuilder() { literal "世界服" } ]
 
-            [ for i = 0 to listCount do
+            [ CellBuilder() { literal $"当前" }
+              CellBuilder() { literal $"%s{getString (startDate, c)}" }
+              CellBuilder() { literal $"%s{getString (startDate, o)}" } ]
+
+            [ for i = 1 to listCount do
                   let date = startDate.AddDays(float i)
 
                   let dateStr =

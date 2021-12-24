@@ -3,16 +3,16 @@ namespace rec KPX.FsCqHttp.Instance
 open System
 open System.Collections.Generic
 open System.Reflection
-open System.Threading
 
 open KPX.FsCqHttp
 open KPX.FsCqHttp.Handler
 
 
 [<AbstractClass>]
-type ModuleDiscover() =
+type ModuleDiscover() as x=
     let modules = ResizeArray<HandlerModuleBase>()
-    let logger = NLog.LogManager.GetCurrentClassLogger()
+
+    member val Logger = NLog.LogManager.GetLogger(x.GetType().FullName)
 
     member x.AllDefinedModules = modules :> IReadOnlyList<_>
 
@@ -25,10 +25,10 @@ type ModuleDiscover() =
             if t.GetConstructor(Type.EmptyTypes) <> null then
                 x.AddModule(Activator.CreateInstance(t) :?> HandlerModuleBase)
             else
-                logger.Info($"跳过类型{t.FullName}：没有无参数构造函数")
+                x.Logger.Info($"跳过类型{t.FullName}：没有无参数构造函数")
 
     member x.ScanAssembly(asm: Assembly) =
-        logger.Info($"正在导入程序集：{asm.GetName().Name}")
+        x.Logger.Info($"正在导入程序集：{asm.GetName().Name}")
 
         for t in asm.GetTypes() do
             x.ProcessType(t)
