@@ -63,6 +63,12 @@ type ScriptExchangeModule() =
     member private x.ShowExchangeableProfit(cost: XivItem, world: World) =
         let ia = sc.SearchByCostItem(cost, world)
 
+        if
+            world.VersionRegion = VersionRegion.China
+            && String.IsNullOrWhiteSpace(cost.ChineseName)
+        then
+            raise <| ModuleException(InputError, $"此物品不属于当前服务器版本{world.WorldName}/{world.VersionRegion}")
+
         if ia.Length = 0 then
             raise <| ModuleException(InputError, $"%s{cost.DisplayName}不能兑换道具")
 
