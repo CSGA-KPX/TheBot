@@ -57,6 +57,7 @@ type XivContentCollection private () =
         Query.And(Query.EQ("Region", region.BsonValue), Query.EQ("IsDailyFrontlineChallengeRoulette", true))
         |> x.DbCollection.Find
         |> Seq.toArray
+        |> Array.sortBy (fun ctx -> ctx.ContentId)
 
     interface IDataTest with
         member x.RunTest() =
