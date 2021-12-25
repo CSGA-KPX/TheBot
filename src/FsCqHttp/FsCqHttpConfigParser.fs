@@ -1,4 +1,4 @@
-﻿namespace rec KPX.FsCqHttp
+namespace rec KPX.FsCqHttp
 
 open System
 
@@ -32,7 +32,7 @@ type FsCqHttpConfigParser() as x =
 
     let imgIgnoreCheck = OptionCellSimple<bool>(x, "ImageIgnoreSendCheck", true)
 
-    let imgOutputFont = OptionCellSimple<string>(x, "ImageOutputFont", "Sarasa Fixed CL")
+    let imgOutputFont = OptionCellSimple<string>(x, "ImageOutputFont", "Sarasa Fixed SC")
 
     let imgOutputSize = OptionCellSimple<float32>(x, "ImageOutputSize", 12.0f)
 

@@ -1,4 +1,4 @@
-﻿namespace KPX.FsCqHttp
+namespace KPX.FsCqHttp
 
 open SkiaSharp
 
@@ -82,7 +82,7 @@ module ConfigInstance =
             member x.TextLengthLimit = 3000
 
             member x.ImageIgnoreSendCheck = true
-            member x.ImageOutputFont = "Sarasa Fixed CL"
+            member x.ImageOutputFont = "Sarasa Fixed SC"
             member x.ImageOutputSize = 12.0f
             member x.ImageTextColor = SKColors.Black
             member x.ImageRowColorA = SKColors.White
