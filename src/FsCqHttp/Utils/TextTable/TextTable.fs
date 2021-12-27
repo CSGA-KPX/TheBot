@@ -138,10 +138,7 @@ type TextTable(?retType: ResponseType) =
                             else
                                 cell)
 
-                let rowHeight =
-                    (cols |> Array.maxBy (fun col -> col.RectHeight))
-                        .RectHeight
-                    + dParams.RowVerticalSpacing
+                let rowHeight = dParams.RowHeight + dParams.RowVerticalSpacing
 
                 let rowSize = SKSize(ctx.SrcWidth, rowHeight)
                 ctx.Canvas.DrawRect(SKRect.Create(ctx.Position, rowSize), ctx.GetBandColor())
@@ -157,6 +154,11 @@ type TextTable(?retType: ResponseType) =
                             sum <- sum + x + padOffset
                             sum)
 
+                let baseLine =
+                    cols
+                    |> Seq.map (fun col -> ctx.Position.Y - col.RectTop + dParams.RowVerticalSpacing / 2.0f)
+                    |> Seq.max
+
                 cols
                 |> Array.iteri
                     (fun i col ->
@@ -168,13 +170,9 @@ type TextTable(?retType: ResponseType) =
                             else
                                 rowPos.[i] - padOffset
 
-                        let y = ctx.Position.Y - col.RectTop + dParams.RowVerticalSpacing / 2.0f
-
-                        ctx.Canvas.DrawText(col.Text, SKPoint(x, y), dParams.Paint))
+                        ctx.Canvas.DrawText(col.Text, SKPoint(x, baseLine), dParams.Paint))
 
                 ctx.UpdateLine(rowSize)
-
-
 
     member x.CalculateImageSize() =
         let mutable size = SKSize()

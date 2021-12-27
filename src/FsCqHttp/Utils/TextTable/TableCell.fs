@@ -75,14 +75,14 @@ type DrawParameters() as x =
         width / 2.0f
 
     member val RowVerticalSpacing =
-        let space = rowHeight * 0.15f |> ceil
+        let space = rowHeight * 0.10f |> ceil
         space + 0.5f |> round // 保证能被2整除
 
     member x.Paint = paint
 
     member x.RowHeight = rowHeight
 
-    member x.RowHorizontalSpacing = x.SingleWidth * 2.0f
+    member x.RowHorizontalSpacing = 10.0f
 
     member x.DrawScale = 1.5f
 
