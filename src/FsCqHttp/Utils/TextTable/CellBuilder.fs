@@ -145,7 +145,7 @@ type CellBuilder() =
 
         x
 
-    member x.ToTableCells(skp: SKPaint) =
+    member x.ToTableCells(dParams : DrawParameters) =
         if x.Builder.Length <> 0 then
             x.EndLine(x) |> ignore
         // 保证至少有一个？
@@ -158,7 +158,7 @@ type CellBuilder() =
             invalidOp "TableCell不允许包含多行文本，请使用相关指令拆分"
 
         [| for line in x.Content do
-               let cell = TableCell(line, skp)
+               let cell = TableCell(line, dParams)
                cell.Align <- x.Align
                cell.FakeBold <- x.FakeBold
                cell.TextColor <- x.TextColor

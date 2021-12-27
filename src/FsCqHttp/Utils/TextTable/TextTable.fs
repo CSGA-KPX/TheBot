@@ -9,7 +9,7 @@ open SkiaSharp
 open KPX.FsCqHttp
 
 
-type TableDrawContext(srcWidth: float32, srcHeight: float32, drawScale: float32) =
+type internal TableDrawContext(srcWidth: float32, srcHeight: float32, drawScale: float32) =
     static let rowA = new SKPaint(Style = SKPaintStyle.Fill, Color = SKColors.White)
 
     static let rowB = new SKPaint(Style = SKPaintStyle.Fill, Color = SKColors.LightGray)
@@ -79,7 +79,7 @@ type TextTable(?retType: ResponseType) =
 
     let items = ResizeArray<TableItem>()
 
-    let skp = SkiaHelper.getPaint ()
+    let dParams = DrawParameters()
 
     member val PreferResponseType = defaultArg retType PreferImage with get, set
 
@@ -90,7 +90,7 @@ type TextTable(?retType: ResponseType) =
     member x.GetImage() =
         let size: SKSize = x.CalculateImageSize()
 
-        use ctx = new TableDrawContext(size.Width, size.Height, SkiaHelper.drawScale)
+        use ctx = new TableDrawContext(size.Width, size.Height, dParams.DrawScale)
 
         x.DrawImage(ctx)
         ctx.GetImage()
@@ -103,27 +103,27 @@ type TextTable(?retType: ResponseType) =
                 /// 如果是空的，替换
                 let cell =
                     if String.IsNullOrWhiteSpace(cell.Text) then
-                        TableCell.Empty
+                        dParams.EmptyTableCell
                     else
                         cell
 
-                cell.ApplyPaint(skp)
+                cell.ApplyPaint(dParams.Paint)
 
-                let rowSize = SKSize(ctx.SrcWidth, cell.RectHeight + SkiaHelper.rowSpacing)
+                let rowSize = SKSize(ctx.SrcWidth, cell.RectHeight + dParams.RowVerticalSpacing)
 
                 ctx.Canvas.DrawRect(SKRect.Create(ctx.Position, rowSize), ctx.GetBandColor())
 
                 let textPos =
                     SKPoint(
                         ctx.Position.X - cell.RectLeft,
-                        ctx.Position.Y - cell.RectTop + SkiaHelper.rowSpacing / 2.0f
+                        ctx.Position.Y - cell.RectTop + dParams.RowVerticalSpacing / 2.0f
                     )
 
                 if cell.Align = TextAlignment.Right then
                     let rightPos = SKPoint(ctx.SrcWidth, textPos.Y)
-                    ctx.Canvas.DrawText(cell.Text, rightPos, skp)
+                    ctx.Canvas.DrawText(cell.Text, rightPos, dParams.Paint)
                 else
-                    ctx.Canvas.DrawText(cell.Text, textPos, skp)
+                    ctx.Canvas.DrawText(cell.Text, textPos, dParams.Paint)
 
                 // 更新坐标
                 ctx.UpdateLine(rowSize)
@@ -134,19 +134,19 @@ type TextTable(?retType: ResponseType) =
                         (fun cell ->
                             /// 如果是空的，替换
                             if String.IsNullOrWhiteSpace(cell.Text) then
-                                TableCell.Empty
+                                dParams.EmptyTableCell
                             else
                                 cell)
 
                 let rowHeight =
                     (cols |> Array.maxBy (fun col -> col.RectHeight))
                         .RectHeight
-                    + SkiaHelper.rowSpacing
+                    + dParams.RowVerticalSpacing
 
                 let rowSize = SKSize(ctx.SrcWidth, rowHeight)
                 ctx.Canvas.DrawRect(SKRect.Create(ctx.Position, rowSize), ctx.GetBandColor())
 
-                let padOffset = 4.0f * SkiaHelper.chrSizeInfo.SingleWidth
+                let padOffset = 4.0f * dParams.SingleWidth
 
                 let rowPos =
                     let mutable sum = 0f
@@ -160,7 +160,7 @@ type TextTable(?retType: ResponseType) =
                 cols
                 |> Array.iteri
                     (fun i col ->
-                        col.ApplyPaint(skp)
+                        col.ApplyPaint(dParams.Paint)
 
                         let x =
                             if col.Align = TextAlignment.Left then
@@ -168,9 +168,9 @@ type TextTable(?retType: ResponseType) =
                             else
                                 rowPos.[i] - padOffset
 
-                        let y = ctx.Position.Y - col.RectTop + SkiaHelper.rowSpacing / 2.0f
+                        let y = ctx.Position.Y - col.RectTop + dParams.RowVerticalSpacing / 2.0f
 
-                        ctx.Canvas.DrawText(col.Text, SKPoint(x, y), skp))
+                        ctx.Canvas.DrawText(col.Text, SKPoint(x, y), dParams.Paint))
 
                 ctx.UpdateLine(rowSize)
 
@@ -189,7 +189,7 @@ type TextTable(?retType: ResponseType) =
                     max
                         (cols |> Array.maxBy (fun col -> col.RectHeight))
                             .RectHeight
-                        SkiaHelper.chrSizeInfo.Height
+                        dParams.RowHeight
 
                 size.Height <- size.Height + maxHeight
             // 不计算宽度，用x.GetMaxColumnWidth()求解。
@@ -198,7 +198,7 @@ type TextTable(?retType: ResponseType) =
 
                 size.Width <- max size.Width cell.RectWidth
 
-                size.Height <- size.Height + (max cell.RectHeight SkiaHelper.chrSizeInfo.Height)
+                size.Height <- size.Height + (max cell.RectHeight dParams.RowHeight)
             | TableItem.Table t ->
                 let box = t.CalculateImageSize()
                 size.Width <- max size.Width box.Width
@@ -208,14 +208,14 @@ type TextTable(?retType: ResponseType) =
             let sizeInfo = x.GetMaxColumnWidth()
             let rowSize = sizeInfo |> Array.sum
 
-            let padSize = (sizeInfo.Length - 1 |> float32) * 4.0f * SkiaHelper.chrSizeInfo.SingleWidth
+            let padSize = (sizeInfo.Length - 1 |> float32) * 4.0f * dParams.SingleWidth
 
             rowSize + padSize
 
         size.Width <- max size.Width maxRowSize
 
 
-        size.Height <- size.Height + SkiaHelper.rowSpacing * (float32 !lines)
+        size.Height <- size.Height + dParams.RowVerticalSpacing * (float32 !lines)
 
         size
 
@@ -246,7 +246,7 @@ type TextTable(?retType: ResponseType) =
                     let col = cols.[i]
 
                     let paddingFull, paddingHalf =
-                        let paddingCols = (maxCols.[i] - col.RectWidth) / SkiaHelper.chrSizeInfo.SingleWidth |> int
+                        let paddingCols = (maxCols.[i] - col.RectWidth) / dParams.SingleWidth |> int
 
                         Math.DivRem(paddingCols, 2)
 
@@ -328,18 +328,18 @@ type TextTable(?retType: ResponseType) =
         if line.Contains('\n') then
             invalidOp "TableCell不允许包含多行文本，请使用相关指令拆分"
 
-        items.Add(TableItem.Line <| TableCell(line, skp))
+        items.Add(TableItem.Line <| TableCell(line, dParams))
         x
 
     member x.Yield(cell: CellBuilder) =
         // Line
-        cell.ToTableCells(skp) |> Seq.map TableItem.Line |> items.AddRange
+        cell.ToTableCells(dParams) |> Seq.map TableItem.Line |> items.AddRange
 
         x
 
     member x.YieldFrom(rows: seq<CellBuilder>) =
         for row in rows do
-            row.ToTableCells(skp) |> Array.map TableItem.Line |> items.AddRange
+            row.ToTableCells(dParams) |> Array.map TableItem.Line |> items.AddRange
 
         x
 
@@ -347,7 +347,7 @@ type TextTable(?retType: ResponseType) =
         row
         |> Seq.map
             (fun c ->
-                let cell = c.ToTableCells(skp)
+                let cell = c.ToTableCells(dParams)
 
                 if cell.Length <> 1 then
                     invalidOp $"row模式下Cell必须有且只有一段内容，当前有%A{c.Content}"

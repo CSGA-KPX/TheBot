@@ -73,7 +73,6 @@
     <Compile Include="Handler\CommandHandler.fs" />
     <Compile Include="Utils\AuthLevel.fs" />
     <Compile Include="Utils\TextTable\Common.fs" />
-    <Compile Include="Utils\TextTable\SkiaHelper.fs" />
     <Compile Include="Utils\TextTable\TableCell.fs" />
     <Compile Include="Utils\TextTable\TableCellHelper.fs" />
     <Compile Include="Utils\TextTable\CellBuilder.fs" />
@@ -100,8 +99,8 @@
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="NLog" Version="4.7.8" />
-    <PackageReference Include="SkiaSharp" Version="2.80.3" />
-    <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="2.80.3" />
+    <PackageReference Include="SkiaSharp" Version="2.88.0-preview.179" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="2.88.0-preview.179" />
     <PackageReference Include="System.Net.WebSockets.Client" Version="4.3.2" />
   </ItemGroup>
 
