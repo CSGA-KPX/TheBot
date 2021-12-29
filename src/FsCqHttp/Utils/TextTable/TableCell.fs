@@ -1,21 +1,19 @@
 namespace rec KPX.FsCqHttp.Utils.TextResponse
 
 open System
-
-open KPX.FsCqHttp
+open System.Collections.Generic
 
 open SkiaSharp
 
 
-[<Struct>]
 [<RequireQualifiedAccess>]
-type TextAlignment =
-    | Left
-    | Right
+[<Struct>]
+type TableItem =
+    | Row of cols: TableCell []
+    | Line of value: TableCell
+    | Table of table: IReadOnlyList<TableItem>
 
-type TableCell(content: string, dParams: DrawParameters) =
-
-    let rect: SKRect = dParams.MeasureText(content)
+type TableCell private (content: string) =
 
     member val Align = TextAlignment.Left with get, set
 
@@ -25,14 +23,10 @@ type TableCell(content: string, dParams: DrawParameters) =
 
     member x.Text = content
 
-    member x.RectTop = rect.Top
-
-    member x.RectLeft = rect.Left
-
-    member x.RectWidth = rect.Width
-
-    member x.RectHeight = rect.Height
-
+    /// <summary>
+    /// 将当前TableCell的设定反映到给定SKPaint上
+    /// </summary>
+    /// <param name="skp">被更新的SKPaint</param>
     member x.ApplyPaint(skp: SKPaint) =
         match x.Align with
         | TextAlignment.Left -> skp.TextAlign <- SKTextAlign.Left
@@ -41,61 +35,17 @@ type TableCell(content: string, dParams: DrawParameters) =
         skp.FakeBoldText <- x.FakeBold
         skp.Color <- x.TextColor
 
-type DrawParameters() as x =
+    /// 返回一个有内容但是颜色透明的单元格
+    static member val EmptyTableCell = TableCell("X", TextColor = SKColor.Parse("00FFFFFF"))
 
-    let fontSize = Config.ImageOutputSize
-
-    let familyName = Config.ImageOutputFont
-
-    let typeface = (familyName, SKFontStyle.Normal) |> SKFontManager.Default.MatchFamily
-
-    let fontRegular = new SKFont(typeface, fontSize)
-
-    let paint =
-        new SKPaint(
-            fontRegular,
-            IsAutohinted = true,
-            IsAntialias = true,
-            Color = SKColors.Black,
-            IsStroke = false,
-            TextAlign = SKTextAlign.Left,
-            FakeBoldText = false
-        )
-
-    let rowHeight =
-        let mutable rect = SKRect()
-        paint.MeasureText("---qwertyuiopasdfghjklzxcvbnm\u5BBD", &rect) |> ignore
-        rect.Height
-
-    let emptyCell = lazy (TableCell("X", x, TextColor = SKColor.Parse("00FFFFFF")))
-
-    member val SingleWidth =
-        let mutable rect = SKRect()
-        let width = paint.MeasureText("\u5BBD", &rect)
-        width / 2.0f
-
-    member val RowVerticalSpacing =
-        let space = rowHeight * 0.10f |> ceil
-        space + 0.5f |> round // 保证能被2整除
-
-    member x.Paint = paint
-
-    member x.RowHeight = rowHeight
-
-    member x.RowHorizontalSpacing = 10.0f
-
-    member x.DrawScale = 1.5f
-
-    member x.MeasureText(str: string) =
-        if String.IsNullOrEmpty(str) then
-            SKRect.Empty
+    /// <summary>
+    /// 根据内容创建TableCell
+    ///
+    /// 如果内容为空，返回TableCell.EmptyTableCell
+    /// </summary>
+    /// <param name="content"></param>
+    static member Create(content: string) =
+        if String.IsNullOrWhiteSpace(content) then
+            TableCell.EmptyTableCell
         else
-            let mutable rect = SKRect()
-            let width = paint.MeasureText(str, &rect)
-
-            // 警告：MeasureText中rect不考虑空白字符
-            // 如果有任何字符，保证高度为一个汉字高度
-            //SKRect.Create(rect.Left, rect.Top, width, max x.RowHeight rect.Height)
-            SKRect.Create(rect.Left, rect.Top, width, x.RowHeight)
-
-    member x.EmptyTableCell = emptyCell.Force()
+            TableCell(content)

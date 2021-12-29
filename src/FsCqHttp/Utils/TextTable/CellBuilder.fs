@@ -145,7 +145,7 @@ type CellBuilder() =
 
         x
 
-    member x.ToTableCells(dParams : DrawParameters) =
+    member x.ToTableCells() =
         if x.Builder.Length <> 0 then
             x.EndLine(x) |> ignore
         // 保证至少有一个？
@@ -158,7 +158,7 @@ type CellBuilder() =
             invalidOp "TableCell不允许包含多行文本，请使用相关指令拆分"
 
         [| for line in x.Content do
-               let cell = TableCell(line, dParams)
+               let cell = TableCell.Create(line)
                cell.Align <- x.Align
                cell.FakeBold <- x.FakeBold
                cell.TextColor <- x.TextColor
