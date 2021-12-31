@@ -15,6 +15,8 @@ type TableItem =
 
 type TableCell private (content: string) =
 
+    static let emptyCellContent = "--"
+
     member val Align = TextAlignment.Left with get, set
 
     member val FakeBold = false with get, set
@@ -35,9 +37,6 @@ type TableCell private (content: string) =
         skp.FakeBoldText <- x.FakeBold
         skp.Color <- x.TextColor
 
-    /// 返回一个有内容但是颜色透明的单元格
-    static member val EmptyTableCell = TableCell("X", TextColor = SKColor.Parse("00FFFFFF"))
-
     /// <summary>
     /// 根据内容创建TableCell
     ///
@@ -46,6 +45,6 @@ type TableCell private (content: string) =
     /// <param name="content"></param>
     static member Create(content: string) =
         if String.IsNullOrWhiteSpace(content) then
-            TableCell.EmptyTableCell
+            TableCell(emptyCellContent)
         else
             TableCell(content)

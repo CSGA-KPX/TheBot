@@ -186,12 +186,14 @@ type CellBuilder() =
     [<CustomOperation("leftPad")>]
     member _.LeftPad(x: CellBuilder) =
         x.Align <- TextAlignment.Left
+        x.TextColor <- SKColor.Parse("00FFFFFF")
         x.Builder.Append("") |> ignore
         x
 
     [<CustomOperation("rightPad")>]
     member _.RightPad(x: CellBuilder) =
         x.Align <- TextAlignment.Right
+        x.TextColor <- SKColor.Parse("00FFFFFF")
         x.Builder.Append("") |> ignore
         x
 
