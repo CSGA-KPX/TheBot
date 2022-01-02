@@ -24,6 +24,11 @@ type internal TableTextRender(table: IReadOnlyList<TableItem>, dParams: DrawPara
                     | _ -> None)
             |> dParams.MeasureMaxColumnWidth
 
+        let inline getText (col: TableCell) =
+            match col.RenderMode with
+            | RenderMode.IgnoreAll -> String.Empty
+            | _ -> col.Text
+
         for item in table do
             match item with
             | TableItem.Row cols ->
@@ -45,7 +50,7 @@ type internal TableTextRender(table: IReadOnlyList<TableItem>, dParams: DrawPara
                     match col.Align with
                     | TextAlignment.Left ->
                         sb
-                            .Append(col.Text)
+                            .Append(getText (col))
                             .Append(FullWidthSpace, paddingFull)
                             .Append(' ', paddingHalf)
                         |> ignore
@@ -53,13 +58,13 @@ type internal TableTextRender(table: IReadOnlyList<TableItem>, dParams: DrawPara
                         sb
                             .Append(FullWidthSpace, paddingFull)
                             .Append(' ', paddingHalf)
-                            .Append(col.Text)
+                            .Append(getText (col))
                         |> ignore
 
                 ret.Add(sb.ToString())
             | TableItem.Line cell ->
                 // 文本输出模式下，不考虑右对齐
-                ret.Add(cell.Text)
+                ret.Add(getText (cell))
             | TableItem.Table items -> ret.AddRange(TableTextRender(items, dParams).GetLines())
 
         (ret :> IReadOnlyList<string>)

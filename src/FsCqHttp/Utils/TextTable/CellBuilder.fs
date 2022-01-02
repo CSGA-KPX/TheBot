@@ -13,6 +13,7 @@ type CellBuilder() =
     member val Align = TextAlignment.Left with get, set
     member val FakeBold = false with get, set
     member val TextColor = SKColors.Black with get, set
+    member val RenderMode = RenderMode.Normal with get, set
 
     [<CustomOperation("integer")>]
     member _.Integer(x: CellBuilder, value: obj) =
@@ -142,7 +143,7 @@ type CellBuilder() =
             x.Builder.Clear() |> ignore
 
         x.Content.Add(String.Empty)
-
+        x.RenderMode <- RenderMode.IgnoreAll
         x
 
     member x.ToTableCells() =
@@ -151,10 +152,9 @@ type CellBuilder() =
         // 保证至少有一个？
         if x.Content.Count = 0 then
             x.Content.Add(String.Empty)
+            x.RenderMode <- RenderMode.IgnoreIfImage
 
-        let contains = x.Content |> Seq.exists (fun str -> str.Contains('\n'))
-
-        if contains then
+        if x.Content |> Seq.exists (fun str -> str.Contains('\n')) then
             invalidOp "TableCell不允许包含多行文本，请使用相关指令拆分"
 
         [| for line in x.Content do
@@ -162,7 +162,7 @@ type CellBuilder() =
                cell.Align <- x.Align
                cell.FakeBold <- x.FakeBold
                cell.TextColor <- x.TextColor
-
+               cell.RenderMode <- x.RenderMode
                cell |]
 
     [<CustomOperation("literal")>]
@@ -186,14 +186,14 @@ type CellBuilder() =
     [<CustomOperation("leftPad")>]
     member _.LeftPad(x: CellBuilder) =
         x.Align <- TextAlignment.Left
-        x.TextColor <- SKColor.Parse("00FFFFFF")
+        x.RenderMode <- RenderMode.IgnoreIfImage
         x.Builder.Append("") |> ignore
         x
 
     [<CustomOperation("rightPad")>]
     member _.RightPad(x: CellBuilder) =
         x.Align <- TextAlignment.Right
-        x.TextColor <- SKColor.Parse("00FFFFFF")
+        x.RenderMode <- RenderMode.IgnoreIfImage
         x.Builder.Append("") |> ignore
         x
 
