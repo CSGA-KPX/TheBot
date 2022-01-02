@@ -21,9 +21,9 @@ type World =
 module World =
     let private idMapping = Dictionary<int, World>()
 
-    let private nameMapping = Dictionary<string, World>(StringComparer.OrdinalIgnoreCase)
+    let private nameMapping = SortedDictionary<string, World>(StringComparer.OrdinalIgnoreCase)
 
-    let private dcNameMapping = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    let private dcNameMapping = SortedDictionary<string, string>(StringComparer.OrdinalIgnoreCase)
 
     /// <summary>
     /// 已经定义的服务器
@@ -84,7 +84,7 @@ module World =
         for dc in col.WorldDCGroupType.TypedRows do
             let name = dc.Name.AsString()
 
-            if dc.Region.AsInt() <> 0 then
+            if dc.Region.AsInt() <> 0 && name <> "" then
                 dcNameMapping.TryAdd(name, name) |> ignore
 
         // 世界服定义的服务器

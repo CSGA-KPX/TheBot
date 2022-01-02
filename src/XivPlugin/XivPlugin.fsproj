@@ -36,6 +36,7 @@
     <Compile Include="Data\UniversalisMarketCache.fs" />
     <Compile Include="Data\ContentFinderCondition.fs" />
     <Compile Include="Data\CraftLeve.fs" />
+    <Compile Include="Data\Race.fs" />
     <Compile Include="Modules\MarketUtils.fs" />
     <Compile Include="Modules\CommandUtils.fs" />
     <Compile Include="Modules\XivExpression.fs" />

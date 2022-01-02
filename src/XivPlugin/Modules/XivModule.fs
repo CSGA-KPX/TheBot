@@ -101,7 +101,11 @@ type MiscModule() =
     [<CommandHandlerMethod("#洗澡水", "", "", IsHidden = true)>]
     [<CommandHandlerMethod("#幻想药", "洗个啥？", "")>]
     member x.HandleFantasia(cmdArg: CommandEventArgs) =
-        let choices = [| "屯着别用"; "猫男"; "猫女"; "龙男"; "龙女"; "男精"; "女精"; "公肥"; "母肥"; "鲁加男"; "鲁加女"; "大猫"; "兔子" |]
+        let choices =
+            seq {
+                yield! Race.RaceCombinations
+                yield "屯着别用"
+            }
 
         let atUser = cmdArg.MessageEvent.Message.TryGetAt()
 
@@ -117,9 +121,9 @@ type MiscModule() =
             [ CellBuilder() { literal "D100" }; CellBuilder() { literal "选项" } ]
 
             choices
-            |> Array.map (fun str -> str, dicer.GetPositive(100u, str))
-            |> Array.sortBy snd
-            |> Array.map (fun (str, d) -> [ CellBuilder() { integer d }; CellBuilder() { literal str } ])
+            |> Seq.map (fun str -> str, dicer.GetPositive(100u, str))
+            |> Seq.sortBy snd
+            |> Seq.map (fun (str, d) -> [ CellBuilder() { integer d }; CellBuilder() { literal str } ])
         }
 
     [<TestFixture>]
