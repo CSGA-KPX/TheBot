@@ -51,7 +51,9 @@ text 以文本格式输出结果
         opt.Parse(cmdArg.HeaderArgs)
 
         let acc = XivExpression.ItemAccumulator()
-        let worlds = opt.World.Values
+        let worlds =
+            opt.World.Values
+            |> Array.sortBy (fun w -> w.WorldName)
 
         // 扩展子指令的物品表
         match SubcommandParser.Parse<MarketSubcommands>(cmdArg.HeaderArgs) with
@@ -87,8 +89,6 @@ text 以文本格式输出结果
 
                 for grade in MateriaGrades do
                     acc.Update(itemCol.TryGetByName($"%s{key}魔晶石%s{grade}").Value)
-
-            ()
 
         if acc.Count * worlds.Length >= 50 then
             cmdArg.Abort(InputError, "查询数量超过上线")
