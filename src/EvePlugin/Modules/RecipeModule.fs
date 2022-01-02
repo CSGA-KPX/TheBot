@@ -528,7 +528,7 @@ type EveRecipeModule() =
                 (fun (group, data) ->
                     ret.Table {
                         // 表格和表格之间空一行
-                        CellBuilder() { newLine }
+                        CellBuilder() { nullify }
 
                         CellBuilder() {
                             literal $">>{group.Name}<<"

@@ -143,7 +143,20 @@ type CellBuilder() =
             x.Builder.Clear() |> ignore
 
         x.Content.Add(String.Empty)
+        x
+
+    [<CustomOperation("nullify")>]
+    /// 同时清空所有内容，并设定单元格在图像和文本模式下都不可见
+    member _.NullCell(x: CellBuilder) =
+        x.Builder.Clear() |> ignore
+        x.Content.Clear() |> ignore
         x.RenderMode <- RenderMode.IgnoreAll
+        x
+
+    [<CustomOperation("hide")>]
+    /// 设置单元格在图像模式下隐藏，在文本模式下可见
+    member _.HiddenCell(x: CellBuilder) =
+        x.RenderMode <- RenderMode.IgnoreIfImage
         x
 
     member x.ToTableCells() =
@@ -184,6 +197,7 @@ type CellBuilder() =
         x
 
     [<CustomOperation("leftPad")>]
+    /// 设置为左对齐填充单元格，隐含RenderMode.IgnoreIfImage
     member _.LeftPad(x: CellBuilder) =
         x.Align <- TextAlignment.Left
         x.RenderMode <- RenderMode.IgnoreIfImage
@@ -191,6 +205,7 @@ type CellBuilder() =
         x
 
     [<CustomOperation("rightPad")>]
+    /// 设置为右对齐填充单元格，隐含RenderMode.IgnoreIfImage
     member _.RightPad(x: CellBuilder) =
         x.Align <- TextAlignment.Right
         x.RenderMode <- RenderMode.IgnoreIfImage
