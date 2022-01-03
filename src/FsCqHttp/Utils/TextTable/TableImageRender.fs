@@ -21,9 +21,11 @@ type internal TableBand() =
         if status then rowA else rowB
 
 type internal TableImageRender(table: IReadOnlyList<TableItem>, dParams: DrawParameters) =
+    let imgXOffset = dParams.SingleWidth / 2.0f
+
     let (srcWidth, srcHeight) =
         let size: SKSize = dParams.Measure(table)
-        (size.Width, size.Height)
+        (size.Width + imgXOffset * 2.0f, size.Height)
 
     let surface =
         let actWidth = srcWidth * dParams.DrawScale
@@ -55,7 +57,7 @@ type internal TableImageRender(table: IReadOnlyList<TableItem>, dParams: DrawPar
 
                 canvas.DrawRect(SKRect.Create(pos, rowSize), band.BandPaint)
 
-                let textPos = SKPoint(pos.X - textRect.Left, pos.Y - textRect.Top + halfVerticalSpacing)
+                let textPos = SKPoint(pos.X - textRect.Left + imgXOffset, pos.Y - textRect.Top + halfVerticalSpacing)
 
                 if cell.Align = TextAlignment.Right then
                     let rightPos = SKPoint(srcWidth, textPos.Y)
@@ -101,7 +103,7 @@ type internal TableImageRender(table: IReadOnlyList<TableItem>, dParams: DrawPar
                         else
                             rowPos.[i] - padOffset
 
-                    canvas.DrawText(col.Text, SKPoint(x, baseLine), dParams.Paint)
+                    canvas.DrawText(col.Text, SKPoint(x + imgXOffset, baseLine), dParams.Paint)
 
                 x.UpdateLine(rowSize)
 
