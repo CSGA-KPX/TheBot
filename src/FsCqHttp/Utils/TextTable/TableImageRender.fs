@@ -57,7 +57,7 @@ type internal TableImageRender(table: IReadOnlyList<TableItem>, dParams: DrawPar
 
                 canvas.DrawRect(SKRect.Create(pos, rowSize), band.BandPaint)
 
-                let textPos = SKPoint(pos.X + imgXOffset, pos.Y - textRect.Top + halfVerticalSpacing)
+                let textPos = SKPoint(pos.X + imgXOffset, pos.Y + dParams.BaseLineOffset + halfVerticalSpacing)
 
                 if cell.Align = TextAlignment.Right then
                     let rightPos = SKPoint(srcWidth, textPos.Y)
@@ -84,12 +84,7 @@ type internal TableImageRender(table: IReadOnlyList<TableItem>, dParams: DrawPar
                             sum <- sum + x + padOffset
                             sum)
 
-                let textRects = cols |> Array.map dParams.Measure
-
-                let baseLine =
-                    textRects
-                    |> Seq.map (fun col -> pos.Y - col.Top + halfVerticalSpacing)
-                    |> Seq.max
+                let baseLine = pos.Y + dParams.BaseLineOffset + halfVerticalSpacing
 
                 for i = 0 to cols.Length - 1 do
                     let col = cols.[i]

@@ -44,6 +44,10 @@ type DrawParameters() =
         let space = rowHeight * 0.10f |> ceil
         space + 0.5f |> round // 保证能被2整除
 
+    member val BaseLineOffset =
+        paint.MeasureText("\u5BBD", &rect) |> ignore
+        -rect.Top
+
     member x.Paint = paint
 
     member x.RowHeight = rowHeight
