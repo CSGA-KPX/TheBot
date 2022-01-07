@@ -120,7 +120,8 @@
   <data name="ChsDCInfo" xml:space="preserve">
     <value>一区 晨曦王座,沃仙曦染,宇宙和音,红玉海,萌芽池,神意之地,幻影群岛,拉诺西亚
 二区 拂晓之间,龙巢神殿,旅人栈桥,白金幻象,白银乡,神拳痕,潮风亭
-三区 琥珀原,柔风海湾,海猫茶屋,延夏,静语庄园,摩杜纳,紫水栈桥</value>
+三区 琥珀原,柔风海湾,海猫茶屋,延夏,静语庄园,摩杜纳,紫水栈桥
+四区 水晶塔,银泪湖</value>
     <comment>空格分隔，然后逗号</comment>
   </data>
   <data name="ClassJobMapping" xml:space="preserve">
@@ -248,6 +249,7 @@ WVR WVR</value>
     <value>一区 鸟区,陆行鸟区,鸟
 二区 猪区,莫古力区,猪
 三区 猫区,猫小胖区,猫
+四区 狗区,豆豆柴区,豆柴,柴,狗
 Elemental 元素
 Gaia 盖亚,盖娅
 Mana 魔力,玛那,玛娜
