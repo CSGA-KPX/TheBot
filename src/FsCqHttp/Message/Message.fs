@@ -72,7 +72,9 @@ type ReadOnlyMessage internal (sections: IReadOnlyList<MessageSection>) =
 
             sb.ToString()
 
+    /// <summary>
     /// 转换为cq码表示
+    /// </summary>
     /// <remarks>OneBot v12移除</remarks>
     member x.ToCqString() =
         let escape (str: string) =

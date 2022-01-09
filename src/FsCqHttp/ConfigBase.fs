@@ -47,8 +47,6 @@ type FsCqHttpConfig(cfg: IFsCqHttpConfig) =
     /// 可以减少一次API调用时间
     member val ImageIgnoreSendCheck = cfg.ImageIgnoreSendCheck with get, set
     /// 图片输出下使用的字体，请使用等宽字体
-    /// Mono上GDI+处理和Windows不同，字体渲染存在差异
-    // 目前已知Sarasa Fixed CL字体输出比较稳定，其他不明
     member val ImageOutputFont = cfg.ImageOutputFont with get, set
     /// 图片输出时的字号
     member val ImageOutputSize = cfg.ImageOutputSize with get, set

@@ -40,12 +40,12 @@ type SingleCaseInlineConverter<'T>() =
 
     static let fieldCache = caseCache.GetFields().[0]
 
-    override this.WriteJson(writer: JsonWriter, value: 'T, _: JsonSerializer) : unit =
+    override _.WriteJson(writer: JsonWriter, value: 'T, _: JsonSerializer) : unit =
         let obj = fieldCache.GetMethod.Invoke(value, Array.empty)
 
         writer.WriteValue(obj.ToString())
 
-    override this.ReadJson(reader, _, _, _, _) =
+    override _.ReadJson(reader, _, _, _, _) =
         let obj = Convert.ChangeType(reader.Value, fieldCache.PropertyType)
 
         FSharpValue.MakeUnion(caseCache, Array.singleton obj, false) :?> 'T
@@ -74,7 +74,7 @@ type StringEnumConverter<'T>() =
                 let n = (attrs.[0] :?> AltStringEnumValue).Value
                 fieldDict.Add(n, f)
 
-    override this.WriteJson(writer: JsonWriter, value: 'T, _: JsonSerializer) : unit =
+    override _.WriteJson(writer: JsonWriter, value: 'T, _: JsonSerializer) : unit =
         let ui, _ = FSharpValue.GetUnionFields(value, typeof<'T>)
 
         let attrs = ui.GetCustomAttributes(typeof<AltStringEnumValue>)
@@ -84,7 +84,7 @@ type StringEnumConverter<'T>() =
         else
             writer.WriteValue((attrs.[0] :?> AltStringEnumValue).Value)
 
-    override this.ReadJson(reader, _, _, _, _) =
+    override _.ReadJson(reader, _, _, _, _) =
         let v = reader.Value :?> string
         let succ, ui = fieldDict.TryGetValue(v)
 

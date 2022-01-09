@@ -18,33 +18,33 @@ type FsCqHttpConfigParser() as x =
 
     do x.UndefinedOptionHandling <- UndefinedOptionHandling.Ignore
 
-    let logEventPost = OptionCellSimple<bool>(x, "LogEventPost", false)
+    let logEventPost = OptionCellSimple<bool>(x, "LogEventPost", Config.LogEventPost)
 
-    let logApiCall = OptionCellSimple<bool>(x, "LogApiCall", false)
+    let logApiCall = OptionCellSimple<bool>(x, "LogApiCall", Config.LogApiCall)
 
-    let logApiJson = OptionCellSimple<bool>(x, "LogApiJson", false)
+    let logApiJson = OptionCellSimple<bool>(x, "LogApiJson", Config.LogApiJson)
 
-    let logCommandCall = OptionCellSimple<bool>(x, "LogCommandCall", true)
+    let logCommandCall = OptionCellSimple<bool>(x, "LogCommandCall", Config.LogCommandCall)
 
-    let newLine = OptionCellSimple<string>(x, "NewLine", "\r")
+    let newLine = OptionCellSimple<string>(x, "NewLine", Config.NewLine)
 
-    let textLengthLimit = OptionCellSimple<int>(x, "TextLengthLimit", 3000)
+    let textLengthLimit = OptionCellSimple<int>(x, "TextLengthLimit", Config.TextLengthLimit)
 
-    let imgIgnoreCheck = OptionCellSimple<bool>(x, "ImageIgnoreSendCheck", true)
+    let imgIgnoreCheck = OptionCellSimple<bool>(x, "ImageIgnoreSendCheck", Config.ImageIgnoreSendCheck)
 
-    let imgOutputFont = OptionCellSimple<string>(x, "ImageOutputFont", "Sarasa Fixed SC")
+    let imgOutputFont = OptionCellSimple<string>(x, "ImageOutputFont", Config.ImageOutputFont)
 
-    let imgOutputSize = OptionCellSimple<float32>(x, "ImageOutputSize", 12.0f)
+    let imgOutputSize = OptionCellSimple<float32>(x, "ImageOutputSize", Config.ImageOutputSize)
 
-    let imgTextColor = ColorCell(x, "ImageTextColor", SKColors.Black)
+    let imgTextColor = ColorCell(x, "ImageTextColor", Config.ImageTextColor)
 
-    let imgRowBgColorA = ColorCell(x, "ImageRowColorA", SKColors.White)
+    let imgRowBgColorA = ColorCell(x, "ImageRowColorA", Config.ImageRowColorA)
 
-    let imgRowBgColorB = ColorCell(x, "ImageRowColorB", SKColors.LightGray)
+    let imgRowBgColorB = ColorCell(x, "ImageRowColorB", Config.ImageRowColorB)
 
-    let tblCellPadding = OptionCellSimple<string>(x, "TableCellPadding", "--")
+    let tblCellPadding = OptionCellSimple<string>(x, "TableCellPadding", Config.TableCellPadding)
 
-    let tblGraphicMeasure = OptionCellSimple<bool>(x, "TableGraphicMeasure", true)
+    let tblGraphicMeasure = OptionCellSimple<bool>(x, "TableGraphicMeasure", Config.TableGraphicMeasure)
 
     let endpoint = OptionCellSimple<string>(x, "endpoint", "")
 

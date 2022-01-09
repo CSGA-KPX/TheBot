@@ -1,4 +1,4 @@
-﻿namespace KPX.FsCqHttp.Message.Sections
+namespace KPX.FsCqHttp.Message.Sections
 
 open System
 open System.Collections.Generic
@@ -12,8 +12,10 @@ open KPX.FsCqHttp.Message
 
 
 [<AbstractClass>]
+/// OneBot消息段
 type MessageSection(typeName: string) =
 
+    // 缓存当前FsCqHttp中定义的所有消息段
     static let sectionInfoCache =
         let parent = typeof<MessageSection>
         let rawClass = typeof<RawMessageSection>
@@ -30,16 +32,32 @@ type MessageSection(typeName: string) =
 
     let values = Dictionary<string, string>()
 
-    member val Values = values :> IReadOnlyDictionary<_, _>
+    /// 消息段中所有的项
+    member _.Values = values :> IReadOnlyDictionary<_, _>
 
     /// 该消息段的类型名称
-    member x.TypeName = typeName
+    member _.TypeName = typeName
 
-    member internal x.SetValue(name, value) = values.[name] <- value
+    /// <summary>
+    /// 设定值
+    /// </summary>
+    /// <param name="name">键名</param>
+    /// <param name="value">键值</param>
+    member internal _.SetValue(name, value) = values.[name] <- value
 
-    member x.GetValue(name: string) = values.[name]
+    /// <summary>
+    /// 获取指定键的值
+    ///
+    /// 如果不存在抛异常
+    /// </summary>
+    /// <param name="name">键名</param>
+    member _.GetValue(name: string) = values.[name]
 
-    member x.TryGetValue(name: string) =
+    /// <summary>
+    /// 尝试获取指定键的值
+    /// </summary>
+    /// <param name="name">键名</param>
+    member _.TryGetValue(name: string) =
         let succ, item = values.TryGetValue(name)
         if succ then Some item else None
 
@@ -60,11 +78,19 @@ type MessageSection(typeName: string) =
             for p in child.Properties() do
                 values.Add(p.Name, p.Value.ToString())
 
+    /// <summary>
+    /// 生成调试用信息字符串
+    /// </summary>
     override x.ToString() =
         let args = x.Values |> Seq.map (fun a -> $"%s{a.Key}=%s{a.Value}")
 
         sprintf "[%s:%s]" x.TypeName (String.Join(";", args))
 
+    /// <summary>
+    /// 创建消息段
+    /// </summary>
+    /// <param name="typeName">消息段类型名称</param>
+    /// <param name="values">消息段信息</param>
     static member internal CreateFrom(typeName: string, values: seq<string * string>) =
         let mutable typeName = typeName
 

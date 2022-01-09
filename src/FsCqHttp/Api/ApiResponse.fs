@@ -7,6 +7,7 @@ open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 
 
+[<RequireQualifiedAccess>]
 type ApiRetCode =
     | OK = 0
     | Async = 1
@@ -20,6 +21,7 @@ type ApiRetCode =
     | Http403 = 1403
     | Http404 = 1404
 
+[<RequireQualifiedAccess>]
 type ApiRetType =
     | Object
     | Array
@@ -37,6 +39,11 @@ type ApiResponse =
         let json = x.Data.[ApiResponse.ArrayDataKey]
         JArray.Parse(json).ToObject<'T []>()
 
+    member x.IsSuccessResponse =
+        match x.ReturnCode with
+        | ApiRetCode.OK -> true
+        | _ -> false
+
     static member internal ArrayDataKey = "ArrayData"
 
 and ApiResponseConverter() =
@@ -52,9 +59,9 @@ and ApiResponseConverter() =
           ReturnCode = enum<ApiRetCode> (obj.["retcode"].Value<int32>())
           DataType =
               match obj.["data"].Type with
-              | JTokenType.Array -> Array
-              | JTokenType.Object -> Object
-              | JTokenType.Null -> Null
+              | JTokenType.Array -> ApiRetType.Array
+              | JTokenType.Object -> ApiRetType.Object
+              | JTokenType.Null -> ApiRetType.Null
               | _ -> failwithf "不应该有其他类型"
           Data =
               [| if obj.["data"].HasValues then
