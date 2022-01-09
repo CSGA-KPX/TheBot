@@ -1,4 +1,4 @@
-﻿namespace rec KPX.FsCqHttp.Handler
+namespace rec KPX.FsCqHttp.Handler
 
 open System
 
@@ -14,7 +14,7 @@ open KPX.FsCqHttp.Handler
 open Newtonsoft.Json.Linq
 
 
-type CqEventArgs(api, ctx) =
+type CqEventArgs internal (api, ctx) =
 
     static let logger = NLog.LogManager.GetCurrentClassLogger()
 
@@ -30,7 +30,12 @@ type CqEventArgs(api, ctx) =
 
     member x.BotId = api.ProviderId
 
-    /// 中断执行过程
+    /// <summary>
+    /// 中断执行，并记录日志
+    /// </summary>
+    /// <param name="level">错误级别</param>
+    /// <param name="fmt">格式化模板</param>
+    /// <param name="args">格式化参数</param>
     member x.Abort(level: ErrorLevel, fmt: string, [<ParamArray>] args: obj []) : 'T =
         match level with
         | IgnoreError -> raise IgnoreException
@@ -57,6 +62,11 @@ type CqEventArgs(api, ctx) =
             rep.Reply <- r
             api.CallApi(rep) |> ignore
 
+    /// <summary>
+    /// 根据信息创建对应的CqEventArgs
+    /// </summary>
+    /// <param name="api">消息提供方的IApiCallProvider</param>
+    /// <param name="ctx"></param>
     static member Parse(api, ctx: PostContent) =
         match ctx.RawEventPost.["post_type"].Value<string>() with
         | "message" -> CqMessageEventArgs(api, ctx, ctx.RawEventPost.ToObject<MessageEvent>()) :> CqEventArgs
@@ -65,40 +75,62 @@ type CqEventArgs(api, ctx) =
         | "meta_event" -> CqMetaEventArgs(api, ctx, MetaEvent.FromJObject(ctx.RawEventPost)) :> CqEventArgs
         | other -> raise <| ArgumentException("未知上报类型：" + other)
 
+    /// <summary>
+    /// 根据信息创建对应的CqEventArgs
+    /// </summary>
+    /// <param name="api">消息提供方的IApiCallProvider</param>
+    /// <param name="eventJson">上报事件json</param>
     static member Parse(api, eventJson: string) =
         CqEventArgs.Parse(api, PostContent(JObject.Parse(eventJson)))
 
-type CqMessageEventArgs(api: IApiCallProvider, ctx: PostContent, e: MessageEvent) =
+type CqMessageEventArgs internal (api: IApiCallProvider, ctx: PostContent, e: MessageEvent) =
     inherit CqEventArgs(api, ctx)
 
     member x.Event: MessageEvent = e
 
+    /// <summary>
+    /// 回复错误信息，并中断执行+记录日志
+    /// </summary>
+    /// <param name="level">错误级别</param>
+    /// <param name="fmt">格式化模板</param>
+    /// <param name="args">格式化参数</param>
     member x.Abort(level: ErrorLevel, fmt: string, [<ParamArray>] args: obj []) : 'T =
         x.Reply(String.Format(fmt, args))
         base.Abort(level, fmt, args)
 
+    /// <summary>
+    /// 回复消息
+    /// </summary>
+    /// <param name="msg">OneBot消息</param>
     member x.Reply(msg: ReadOnlyMessage) =
         if msg.ToString().Length > Config.TextLengthLimit then
             invalidOp "回复字数超过上限。"
 
         x.Reply(x.Event.Response(msg))
 
+    /// <summary>
+    /// 回复文本
+    /// </summary>
+    /// <param name="str">文本信息</param>
     member x.Reply(str: string) =
         let msg = Message()
         msg.Add(str)
         x.Reply(msg)
 
-type CqNoticeEventArgs(api, ctx, e) =
+[<Sealed>]
+type CqNoticeEventArgs internal (api, ctx, e) =
     inherit CqEventArgs(api, ctx)
 
     member x.Event: NoticeEvent = e
 
-type CqRequestEventArgs(api, ctx, e) =
+[<Sealed>]
+type CqRequestEventArgs internal (api, ctx, e) =
     inherit CqEventArgs(api, ctx)
 
     member x.Event: RequestEvent = e
 
-type CqMetaEventArgs(api, ctx, e) =
+[<Sealed>]
+type CqMetaEventArgs internal (api, ctx, e) =
     inherit CqEventArgs(api, ctx)
 
     member x.Event: MetaEvent = e

@@ -1,4 +1,4 @@
-﻿namespace KPX.FsCqHttp.Instance
+namespace KPX.FsCqHttp.Instance
 
 open System
 open System.Collections.Generic
@@ -8,8 +8,17 @@ open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Instance
 
 
+[<RequireQualifiedAccess>]
+[<Struct>]
+type internal TaskContext =
+    | Meta of meta: CqMetaEventArgs
+    | Notice of notice: CqNoticeEventArgs
+    | Request of request: CqRequestEventArgs
+    | Command of cmd: CommandEventArgs * info: CommandInfo
+    | Message of msg: CqMessageEventArgs
+
 type private TaskSchedulerMessage =
-    | Task of ContextModuleInfo * CqEventArgs
+    | Task of ContextModuleInfo * TaskContext
     | Finished
 
 [<RequireQualifiedAccess>]
@@ -24,41 +33,39 @@ module internal TaskScheduler =
 
     let private maxConcurrentCommands = Environment.ProcessorCount
 
-    let private handleEvent (mi: ContextModuleInfo, args: CqEventArgs) =
+    let private handleEvent (mi: ContextModuleInfo, task: TaskContext) =
         try
-            match args with
-            | :? CqMetaEventArgs as args ->
+
+            match task with
+            | TaskContext.Meta args ->
                 for c in mi.MetaCallbacks do
                     c args
-            | :? CqNoticeEventArgs as args ->
+            | TaskContext.Notice args ->
                 for c in mi.NoticeCallbacks do
                     c args
-            | :? CqRequestEventArgs as args ->
+            | TaskContext.Request args ->
                 for c in mi.RequestCallbacks do
                     c args
-            | :? CqMessageEventArgs as args ->
-                match mi.TryCommand(args) with
-                | None ->
-                    for c in mi.MessageCallbacks do
-                        c args
-                | Some ci ->
-                    let cmdArgs = CommandEventArgs(args, ci.CommandAttribute)
+            | TaskContext.Command (args, ci) ->
+                if Config.LogCommandCall then
+                    args.Logger.Info("Calling handler {0}\r\n Command Context {1}", ci.MethodName, $"%A{args.Event}")
 
-                    if Config.LogCommandCall then
-                        args.Logger.Info(
-                            "Calling handler {0}\r\n Command Context {1}",
-                            ci.MethodName,
-                            $"%A{args.Event}"
-                        )
-
-                    match ci.MethodAction with
-                    | MethodAction.ManualAction action -> action.Invoke(cmdArgs)
-                    | MethodAction.AutoAction func -> func.Invoke(cmdArgs).Response(cmdArgs)
-
-            | _ -> invalidArg "args" $"未知事件类型:%s{args.GetType().FullName}"
-
+                match ci.MethodAction with
+                | ManualAction action -> action.Invoke(args)
+                | AutoAction func -> func.Invoke(args).Response(args)
+            | TaskContext.Message args ->
+                for c in mi.MessageCallbacks do
+                    c args
         with
         | e ->
+            let args: CqEventArgs =
+                match task with
+                | TaskContext.Meta args -> args
+                | TaskContext.Notice args -> args
+                | TaskContext.Request args -> args
+                | TaskContext.Message args -> args
+                | TaskContext.Command (args, _) -> args
+
             let rootExn = getRootExn e
 
             match rootExn with
@@ -110,4 +117,9 @@ module internal TaskScheduler =
                             logger.Warn("队列已满，当前并发：{0}，队列数：{1}。", !count, queue.Count)
                 })
 
+    /// <summary>
+    /// 将任务装入调度器
+    /// </summary>
+    /// <param name="ctx">模块环境</param>
+    /// <param name="args">事件</param>
     let enqueue (ctx, args) = agent.Post(Task(ctx, args))

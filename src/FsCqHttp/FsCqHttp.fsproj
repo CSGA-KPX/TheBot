@@ -67,7 +67,6 @@
     <Compile Include="Api\Group\SetGroupLeave.fs" />
     <Compile Include="Api\Group\SetGroupSpecialTitle.fs" />
     <Compile Include="Handler\HandlerErrorHandling.fs" />
-    <Compile Include="Handler\CqEvent.fsi" />
     <Compile Include="Handler\CqEvent.fs" />
     <Compile Include="Handler\HandlerBase.fs" />
     <Compile Include="Handler\CommandHandler.fs" />

@@ -32,7 +32,7 @@ type CommandHandlerMethodAttribute(command: string, desc, lh) =
     member val ExecuteImmediately = false with get, set
 
 [<Sealed>]
-type CommandEventArgs(args: CqMessageEventArgs, attr: CommandHandlerMethodAttribute) =
+type CommandEventArgs internal (args: CqMessageEventArgs, attr: CommandHandlerMethodAttribute) =
     inherit CqMessageEventArgs(args.ApiCaller, args.RawEvent, args.Event)
 
     let splitString (str: string) =
@@ -67,10 +67,13 @@ type CommandEventArgs(args: CqMessageEventArgs, attr: CommandHandlerMethodAttrib
     /// 所有行
     member x.AllLines = lines
 
+    /// 第一行按参数拆分
     member x.HeaderArgs = x.HeaderLine |> splitString
 
+    /// 后续行按参数拆分
     member x.BodyArgs = x.BodyLines |> Seq.map splitString
 
+    /// 所有行按参数拆分
     member x.AllArgs = lines |> Seq.map splitString
 
     /// 原始消息对象
@@ -94,7 +97,9 @@ type ICommandResponse =
     abstract Response: CqMessageEventArgs -> unit
 
 type MethodAction =
+    /// 方法返回unit，由方法自行处理指令回复
     | ManualAction of Action<CommandEventArgs>
+    /// 方法返回ICommandResponse对象，由调度器处理指令回复
     | AutoAction of Func<CommandEventArgs, ICommandResponse>
 
     static member CreateFrom(method: MethodInfo, instance: obj) =

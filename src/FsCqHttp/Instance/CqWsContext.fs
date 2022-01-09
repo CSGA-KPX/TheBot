@@ -1,4 +1,4 @@
-﻿namespace rec KPX.FsCqHttp.Instance
+namespace rec KPX.FsCqHttp.Instance
 
 open System
 open System.IO
@@ -203,33 +203,31 @@ type CqWsContext(ws: WebSocket) =
                     logger.Trace $"%s{x.BotIdString}收到上报：{ctx}"
 
                 match CqEventArgs.Parse(x, ctx) with
-                | :? CqMetaEventArgs when x.Modules.MetaCallbacks.Count = 0 -> ()
-                | :? CqNoticeEventArgs when x.Modules.NoticeCallbacks.Count = 0 -> ()
-                | :? CqRequestEventArgs when x.Modules.RequestCallbacks.Count = 0 -> ()
-                | :? CqMessageEventArgs as args when
-                    (x.Modules.TryCommand(args).IsNone) && x.Modules.MessageCallbacks.Count = 0
-                    ->
-                    ()
+                | :? CqMetaEventArgs as args when x.Modules.MetaCallbacks.Count <> 0 ->
+                    TaskScheduler.enqueue (x.Modules, TaskContext.Meta args)
                 | :? CqMessageEventArgs as args ->
                     let isCmd = x.Modules.TryCommand(args)
 
                     if isCmd.IsSome then
-                        if isCmd.Value.CommandAttribute.ExecuteImmediately then
+                        let ci = isCmd.Value
+                        let cmdArgs = CommandEventArgs(args, ci.CommandAttribute)
+
+                        if ci.CommandAttribute.ExecuteImmediately then
                             // 需要立刻执行的指令，不通过调度器
-                            let ci = isCmd.Value
-
-                            let cmdArgs = CommandEventArgs(args, ci.CommandAttribute)
-
                             match ci.MethodAction with
-                            | MethodAction.ManualAction action -> action.Invoke(cmdArgs)
-                            | MethodAction.AutoAction func -> func.Invoke(cmdArgs).Response(cmdArgs)
+                            | ManualAction action -> action.Invoke(cmdArgs)
+                            | AutoAction func -> func.Invoke(cmdArgs).Response(cmdArgs)
                         else
                             // 正常指令走调度器
-                            TaskScheduler.enqueue (x.Modules, args)
+                            TaskScheduler.enqueue (x.Modules, TaskContext.Command(cmdArgs, ci))
                     else if x.Modules.MessageCallbacks.Count <> 0 then
                         // 如果有其他类需要监听消息事件
-                        TaskScheduler.enqueue (x.Modules, args)
-                | args -> TaskScheduler.enqueue (x.Modules, args)
+                        TaskScheduler.enqueue (x.Modules, TaskContext.Message args)
+                | :? CqNoticeEventArgs as args when x.Modules.NoticeCallbacks.Count <> 0 ->
+                    TaskScheduler.enqueue (x.Modules, TaskContext.Notice args)
+                | :? CqRequestEventArgs as args when x.Modules.RequestCallbacks.Count <> 0 ->
+                    TaskScheduler.enqueue (x.Modules, TaskContext.Request args)
+                | _ -> ()
 
             elif ctx.RawEventPost.ContainsKey("retcode") then //API调用结果
                 if Config.LogApiCall then

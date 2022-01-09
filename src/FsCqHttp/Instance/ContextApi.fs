@@ -1,4 +1,4 @@
-﻿// 此命名空间提供访问CqWsContext内信息的API
+// 此命名空间提供访问CqWsContext内信息的API
 //
 // 目前架构上无法通过IApiCallProvider访问CqWsContext的数据
 // 所以使用API的方式实现访问和并发控制
@@ -54,7 +54,7 @@ type TryGetCommand(cmdName: string) =
             ctx.Commands
             |> Seq.tryFind (fun cmd -> cmp.Equals(cmd.CommandAttribute.Command, cmdName))
 
-/// 将制定CommandEventArgs事件重写为其他指令
+/// 将指定CommandEventArgs事件重写为其他指令
 /// 强制使用调度器
 type RewriteCommand(e: CommandEventArgs, messages: seq<ReadOnlyMessage>) =
     inherit WsContextApiBase()
@@ -76,5 +76,13 @@ type RewriteCommand(e: CommandEventArgs, messages: seq<ReadOnlyMessage>) =
             obj.["message"] <- JToken.FromObject(msg) :?> JArray
             obj.["raw_message"] <- JValue(msg.ToCqString())
 
-            let ex = CqEventArgs.Parse(ctx, PostContent(obj))
-            TaskScheduler.enqueue (ctx.Modules, ex)
+            let msgEvent = CqEventArgs.Parse(ctx, PostContent(obj)) :?> CqMessageEventArgs
+
+            let isCmd = ctx.Modules.TryCommand(msgEvent)
+
+            if isCmd.IsSome then
+                let ci = isCmd.Value
+                let cmdArgs = CommandEventArgs(msgEvent, ci.CommandAttribute)
+                TaskScheduler.enqueue (ctx.Modules, TaskContext.Command(cmdArgs, ci))
+            else
+                TaskScheduler.enqueue (ctx.Modules, TaskContext.Message msgEvent)
