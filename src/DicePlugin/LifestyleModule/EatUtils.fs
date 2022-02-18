@@ -1,4 +1,4 @@
-﻿module KPX.DicePlugin.LifestyleModule.EatUtils
+module KPX.DicePlugin.LifestyleModule.EatUtils
 
 open System
 
@@ -55,7 +55,8 @@ type MappedOption =
         | _ -> raise <| ArgumentOutOfRangeException("value")
 
     /// 转换为带有值的字符串形式
-    override x.ToString() = $"%s{x.Original}(%i{x.Value})"
+    //override x.ToString() = $"%s{x.Original}(%i{x.Value})"
+    override x.ToString() = $"%s{x.Original}"
 
     static member Create(dicer: Dicer, option: string) =
         { Original = option
@@ -109,7 +110,8 @@ let scoreByMeals (dicer: Dicer) (options: string []) (ret: IO.TextWriter) =
         for t in dinnerTypes do
             let str = $"%s{t}吃%s{options.[0]}"
             let opt = MappedOption.Create(dicer, str)
-            ret.WriteLine $"%s{str} : %s{opt.DescribeValue()}(%i{opt.Value})"
+            //ret.WriteLine $"%s{str} : %s{opt.DescribeValue()}(%i{opt.Value})"
+            ret.WriteLine $"%s{str} : %s{opt.DescribeValue()}"
     | _ ->
         for t in dinnerTypes do
             let prefix = $"%s{t}吃"
@@ -124,12 +126,15 @@ let scoreByMeals (dicer: Dicer) (options: string []) (ret: IO.TextWriter) =
 let mealsFunc prefix options (dicer: Dicer) (ret: IO.TextWriter) =
     let mapped = EatChoices(options, dicer, prefix + "吃")
 
-    let eat = mapped.GetGoodOptions(5) |> Seq.map (fun opt -> opt.ToString())
+    let eat = mapped.GetGoodOptions(5) |> Seq.map (fun opt -> opt.ToString()) |> Seq.toArray
 
-    let notEat = mapped.GetBadOptions(96) |> Seq.map (fun opt -> opt.ToString())
+    let notEat = mapped.GetBadOptions(96) |> Seq.map (fun opt -> opt.ToString()) |> Seq.toArray
 
     ret.WriteLine("宜：{0}", String.Join(" ", eat))
     ret.WriteLine("忌：{0}", String.Join(" ", notEat))
+
+    let eatLogger = NLog.LogManager.GetLogger("EAT")
+    eatLogger.Warn($"EAT : G:%A{eat} NG:%A{notEat}")
 
 let hotpotFunc (dicer: Dicer) (ret: IO.TextWriter) =
 
