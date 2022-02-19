@@ -118,7 +118,7 @@ let scoreByMeals (dicer: Dicer) (options: string []) (ret: IO.TextWriter) =
 
             let mapped =
                 EatChoices(options, dicer, prefix).MappedOptions
-                |> Seq.map (fun x -> x.ToString())
+                |> Seq.map (fun x -> $"{x.Original}({x.DescribeValue()})")
 
             ret.WriteLine(sprintf "%s：%s" t (String.Join(" ", mapped)))
 
