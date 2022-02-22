@@ -103,8 +103,12 @@ module World =
 
             idMapping.Add(id, world)
 
-            if not <| nameMapping.TryAdd(name, world) then
-                printfn $"World : 服务器添加失败 %A{world}"
+            if nameMapping.ContainsKey(name) then
+                let now = nameMapping.[name]
+                nameMapping.[name] <- world
+                printfn $"World name change {now.WorldName} : {now.WorldId} -> {world.WorldId}"
+            else
+                nameMapping.Add(name, world)
 
         // 处理自定义数据
         let res = ResxManager("XivPlugin.XivStrings")
