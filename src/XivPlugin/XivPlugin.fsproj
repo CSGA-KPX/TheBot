@@ -21,6 +21,7 @@
   <ItemGroup>
     <Compile Include="Data\DataFiles.fs" />
     <Compile Include="Data\Common\World.fs" />
+    <Compile Include="Data\Common\ClassJobs.fs" />
     <Compile Include="Data\Common\ClassJobMapping.fs" />
     <Compile Include="Data\Item.fs" />
     <Compile Include="Data\Recipe\XivRecipe.fs" />

@@ -100,19 +100,27 @@ type MiscModule() =
 
     [<CommandHandlerMethod("#洗澡水", "", "", IsHidden = true)>]
     [<CommandHandlerMethod("#幻想药", "洗个啥？", "")>]
+    [<CommandHandlerMethod("#FF14职业", "", "")>]
     member x.HandleFantasia(cmdArg: CommandEventArgs) =
         let choices =
-            seq {
-                yield! Race.RaceCombinations
-                yield "屯着别用"
-            }
+            match cmdArg.CommandAttrib.Command with
+            | "#洗澡水"
+            | "#幻想药" ->
+                seq {
+                    yield! Race.RaceCombinations
+                    yield "屯着别用"
+                }
+            | "#FF14职业" -> ClassJobs.BattleClassJobs
+            | _ -> cmdArg.Abort(ModuleError, $"模块{(nameof x.HandleFantasia)}指令匹配失败")
 
         let atUser = cmdArg.MessageEvent.Message.TryGetAt()
 
         if atUser.IsSome then
+            cmdArg.Abort(InputError, "暂不支持@")
+            // 以下部分暂时不会执行
             match atUser.Value with
-            | AtUserType.All -> cmdArg.Abort(InputError, "全员发洗澡水？给我一瓶谢谢！")
-            | AtUserType.User i when i = cmdArg.BotUserId -> cmdArg.Abort(InputError, "请联系开发者")
+            | AtUserType.All -> cmdArg.Abort(InputError, "非法操作")
+            | AtUserType.User i when i = cmdArg.BotUserId -> cmdArg.Abort(InputError, "非法操作")
             | AtUserType.User _ -> cmdArg.Abort(ModuleError, "暂不支持")
 
         let dicer = Dicer(SeedOption.SeedByUserDay(cmdArg.MessageEvent))
@@ -197,8 +205,8 @@ type MiscModule() =
             [| "左"; "中"; "右" |]
             |> Array.map (fun door -> door, Dicer.RandomDicer.GetPositive(100u, door))
             |> Array.sortBy snd
-            |> Array.map
-                (fun (door, score) -> [ CellBuilder() { literal $"%03i{score}" }; CellBuilder() { literal door } ])
+            |> Array.map (fun (door, score) ->
+                [ CellBuilder() { literal $"%03i{score}" }; CellBuilder() { literal door } ])
         }
 
     [<TestFixture>]

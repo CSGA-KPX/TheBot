@@ -69,13 +69,13 @@ module ChinaDistroData =
 
 [<RequireQualifiedAccess>]
 module OfficalDistroData =
-    //from https://github.com/xivapi/ffxiv-datamining
+    //from https://github.com/MansonGit/ffxiv-datamining-jp
 
     [<Literal>]
     let SampleFile = __SOURCE_DIRECTORY__ + "/../../../datafiles/ffxiv-datamining-ja-master.zip"
 
     [<Literal>]
-    let private Prefix = "ffxiv-datamining-jp-master/csv/"
+    let private Prefix = "ffxiv-datamining-jp-main/"
 
     type TypedXivCollection = XivCollectionProvider<SampleFile, "none", Prefix>
 
