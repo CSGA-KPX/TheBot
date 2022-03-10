@@ -9,7 +9,6 @@ open KPX.TheBot.Host.Data
 type ClassJobMapping = { Key: string; Value: string }
 
 module ClassJobMapping =
-    open KPX.XivPlugin
 
     let private mapping = Dictionary<string, ClassJobMapping>()
 
