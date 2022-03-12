@@ -91,3 +91,5 @@ type CraftableGearCollection private () =
                    yield g
 
                yield g |]
+        |> Array.sortBy (fun g -> g.EquipSlotCategory)
+
