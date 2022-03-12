@@ -1,4 +1,4 @@
-﻿namespace KPX.TheBot.Host.Utils.GenericRPN
+namespace KPX.TheBot.Host.Utils.GenericRPN
 
 open System
 open System.Collections.Generic
@@ -83,6 +83,7 @@ type GenericRPNParser<'Operand>(ops: seq<_>) =
 
                     let isUnary =
                         ret.Count = 0
+                        || x.Operators.[c].BinaryFunc.IsNone
                         || match ret.[ret.Count - 1] with
                            | Operand _ -> false
                            | Operator (o, _) -> o.IsLeftParen
@@ -124,6 +125,8 @@ type GenericRPNParser<'Operand>(ops: seq<_>) =
             output.Enqueue(Operator(stack.Pop()))
 
         output |> Seq.toList
+
+    member x.Parse(str) = str |> x.SplitString |> x.InfixToPostfix
 
     member x.Eval(str) =
         let rpn = str |> x.SplitString |> x.InfixToPostfix
