@@ -100,7 +100,10 @@ type MiscModule() =
 
     [<CommandHandlerMethod("#洗澡水", "", "", IsHidden = true)>]
     [<CommandHandlerMethod("#幻想药", "洗个啥？", "")>]
-    [<CommandHandlerMethod("#FF14职业", "", "")>]
+    [<CommandHandlerMethod("#FF14职业", "", "", IsHidden = true)>]
+    [<CommandHandlerMethod("#FF14战斗职业", "", "")>]
+    [<CommandHandlerMethod("#FF14生采职业", "", "")>]
+    [<CommandHandlerMethod("#FF14生活职业", "", "", IsHidden = true)>]
     member x.HandleFantasia(cmdArg: CommandEventArgs) =
         let choices =
             match cmdArg.CommandAttrib.Command with
@@ -110,7 +113,10 @@ type MiscModule() =
                     yield! Race.RaceCombinations
                     yield "屯着别用"
                 }
-            | "#FF14职业" -> ClassJobs.BattleClassJobs
+            | "#FF14职业"
+            | "#FF14战斗职业" -> ClassJobs.BattleClassJobs
+            | "#FF14生采职业"
+            | "#FF14生活职业" -> ClassJobs.CraftGatherJobs
             | _ -> cmdArg.Abort(ModuleError, $"模块{(nameof x.HandleFantasia)}指令匹配失败")
 
         let atUser = cmdArg.MessageEvent.Message.TryGetAt()
