@@ -69,11 +69,15 @@ type CraftableGearCollection private () =
                     let cond = retItem.CanBeHq.AsBool() && retItem.IsAdvancedMeldingPermitted.AsBool()
 
                     if cond then
+                        let equipSlot =
+                            let row = retItem.EquipSlotCategory.AsRow()
+                            row.RawData |> Seq.findIndex ((=) "1")
+
                         yield
                             { LiteDbId = 0
                               ItemId = retItem.Key.Main
                               ItemLv = retItem.``Level{Item}``.AsInt()
-                              EquipSlotCategory = retItem.EquipSlotCategory.AsInt()
+                              EquipSlotCategory = equipSlot
                               ClassJobCategory = ClassJobCategory.[retItem.ClassJobCategory.AsInt()] }
         }
         |> x.DbCollection.InsertBulk
@@ -92,4 +96,3 @@ type CraftableGearCollection private () =
 
                yield g |]
         |> Array.sortBy (fun g -> g.EquipSlotCategory)
-
