@@ -113,8 +113,32 @@ type XivRecipeModule() =
                       rightAlign
                   } ]
 
+            [ CellBuilder() { literal "产出：" } ]
+
+            let mutable totalSell = StdEv.Zero
+
+            [ for mr in product do
+                  [ CellBuilder() { literal mr.Item.DisplayName }
+                    CellBuilder() { quantity mr.Quantity }
+
+                    if doCalculateCost then
+                        let listing =
+                            universalis
+                                .GetMarketInfo(world, mr.Item)
+                                .GetListingAnalyzer()
+                                .TakeVolume()
+
+                        let unitPrice = listing.StdEvPrice()
+                        let subTotal = unitPrice * mr.Quantity
+                        totalSell <- totalSell + subTotal
+                        CellBuilder() { integer unitPrice.Average }
+                        CellBuilder() { integer subTotal.Average }
+                        CellBuilder() { timeSpan (listing.LastUpdateTime()) } ] ]
+
             // 单项列
             let mutable sum = StdEv.Zero
+
+            [ CellBuilder() { literal "材料：" } ]
 
             [ for mr in acc |> Seq.sortBy (fun kv -> kv.Item.ItemId) do
                   let market =
@@ -139,18 +163,6 @@ type XivRecipeModule() =
                     CellBuilder() { rightPad }
                     CellBuilder() { rightPad }
                     CellBuilder() { integer sum.Average } ]
-
-                  let totalSell =
-                      product
-                      |> Seq.sumBy
-                          (fun mr ->
-                              let lst =
-                                  universalis
-                                      .GetMarketInfo(world, mr.Item)
-                                      .GetListingAnalyzer()
-                                      .TakeVolume()
-
-                              lst.StdEvPrice() * mr.Quantity)
 
                   [ CellBuilder() { literal "卖出价格" }
                     CellBuilder() { rightPad }
