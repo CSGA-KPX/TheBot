@@ -60,17 +60,25 @@ type ScriptExchangeModule() =
                         CellBuilder() { literal item.DisplayName } ] ]
         }
 
-    member private x.ShowExchangeableProfit(cost: XivItem, world: World) =
-        let ia = sc.SearchByCostItem(cost, world)
+    member private x.ShowExchangeableProfit(cost: XivItem, opt: CommandUtils.XivOption) =
+        let world = opt.World.Value
+        let mutable ia = sc.SearchByCostItem(cost, world)
 
         if
             world.VersionRegion = VersionRegion.China
             && String.IsNullOrWhiteSpace(cost.ChineseName)
         then
-            raise <| ModuleException(InputError, $"此物品不属于当前服务器版本{world.WorldName}/{world.VersionRegion}")
+            raise
+            <| ModuleException(InputError, $"此物品不属于当前服务器版本{world.WorldName}/{world.VersionRegion}")
 
         if ia.Length = 0 then
             raise <| ModuleException(InputError, $"%s{cost.DisplayName}不能兑换道具")
+
+        if opt.PatchNumber.IsNone && ia.Length >= 20 then
+            raise <| ModuleException(InputError, $"兑换列表长度达到上限，请指定版本号")
+
+        if opt.PatchNumber.IsSome then
+            ia <- ia |> Array.filter (fun x -> x.PatchNumber.MajorPatch = opt.PatchNumber.Value.MajorPatch)
 
         TextTable(ForceImage) {
             $"兑换道具:%s{cost.DisplayName} 土豆：%s{world.DataCenter}/%s{world.WorldName}"
@@ -94,32 +102,31 @@ type ScriptExchangeModule() =
               } ]
 
             ia
-            |> Array.map
-                (fun info ->
-                    let receive = itemCol.GetByItemId(info.ReceiveItem)
+            |> Array.map (fun info ->
+                let receive = itemCol.GetByItemId(info.ReceiveItem)
 
-                    let market =
-                        universalis
-                            .GetMarketInfo(world, receive)
-                            .GetListingAnalyzer()
-                            .TakeVolume()
+                let market =
+                    universalis
+                        .GetMarketInfo(world, receive)
+                        .GetListingAnalyzer()
+                        .TakeVolume()
 
-                    let updated = market.LastUpdateTime()
+                let updated = market.LastUpdateTime()
 
-                    (updated,
-                     [ CellBuilder() { literal receive.DisplayName }
-                       CellBuilder() { integer (market.StdEvPrice().Average) }
-                       CellBuilder() { integer (market.MinPrice()) }
-                       let costItemValue =
-                           (market.StdEvPrice() * (float <| info.ReceiveCount) / (float <| info.CostCount))
-                               .Average
+                (updated,
+                 [ CellBuilder() { literal receive.DisplayName }
+                   CellBuilder() { integer (market.StdEvPrice().Average) }
+                   CellBuilder() { integer (market.MinPrice()) }
+                   let costItemValue =
+                       (market.StdEvPrice() * (float <| info.ReceiveCount) / (float <| info.CostCount))
+                           .Average
 
-                       CellBuilder() { integer costItemValue }
+                   CellBuilder() { integer costItemValue }
 
-                       if market.IsEmpty then
-                           CellBuilder() { rightPad }
-                       else
-                           CellBuilder() { timeSpan updated } ]))
+                   if market.IsEmpty then
+                       CellBuilder() { rightPad }
+                   else
+                       CellBuilder() { timeSpan updated } ]))
             |> Array.sortBy fst
             |> Array.map snd
         }
@@ -142,7 +149,7 @@ type ScriptExchangeModule() =
             if ret.IsNone then
                 cmdArg.Abort(InputError, $"找不到物品%s{opt.NonOptionStrings.[0]}")
 
-            x.ShowExchangeableProfit(ret.Value, opt.World.Value)
+            x.ShowExchangeableProfit(ret.Value, opt)
 
     [<TestFixture>]
     member x.TestXivSSC() =

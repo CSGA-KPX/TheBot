@@ -15,6 +15,7 @@ type SpecialShopInfo =
     { [<BsonId>]
       LiteDbId: int
       Region: VersionRegion
+      PatchNumber: PatchNumber
       ReceiveItem: int32
       ReceiveCount: int32
       ReceiveHQ: bool
@@ -49,6 +50,8 @@ type SpecialShopCollection private () =
                 let cItem = row.``Item{Cost}``.AsInts()
                 let cCount = row.``Count{Cost}``.AsInts()
 
+                let patch = row.PatchNumber.AsInts()
+
                 for i = rItem.GetLowerBound(0) to rItem.GetUpperBound(0) do
                     for j = rItem.GetLowerBound(1) to rItem.GetUpperBound(1) do
                         let key = $"%i{rItem.[i, j].Key.Main}%i{cItem.[i, j]}"
@@ -59,12 +62,14 @@ type SpecialShopCollection private () =
                            && rCount.[i, j] > 0
                            && rHq.[i, j] = false
                            && rItem.[i, j].IsUntradable.AsBool() = false
-                           && rItem.[i, j].Name.AsString() <> "" then
+                           && rItem.[i, j].Name.AsString() <> ""
+                           && patch.[i] <> 0 then
                             existed.Add(key) |> ignore
 
                             yield
                                 { LiteDbId = 0
                                   Region = VersionRegion.China
+                                  PatchNumber = PatchNumber(patch.[i])
                                   ReceiveItem = rItem.[i, j].Key.Main
                                   ReceiveCount = rCount.[i, j]
                                   ReceiveHQ = rHq.[i, j]
@@ -87,6 +92,8 @@ type SpecialShopCollection private () =
                 let cItem = row.``Item{Cost}``.AsInts()
                 let cCount = row.``Count{Cost}``.AsInts()
 
+                let patch = row.PatchNumber.AsInts()
+
                 for i = rItem.GetLowerBound(0) to rItem.GetUpperBound(0) do
                     for j = rItem.GetLowerBound(1) to rItem.GetUpperBound(1) do
                         let key = $"%i{rItem.[i, j].Key.Main}%i{cItem.[i, j]}"
@@ -97,12 +104,14 @@ type SpecialShopCollection private () =
                            && rCount.[i, j] > 0
                            && rHq.[i, j] = false
                            && rItem.[i, j].IsUntradable.AsBool() = false
-                           && rItem.[i, j].Name.AsString() <> "" then
+                           && rItem.[i, j].Name.AsString() <> ""
+                           && patch.[i] <> 0 then
                             existed.Add(key) |> ignore
 
                             yield
                                 { LiteDbId = 0
                                   Region = VersionRegion.Offical
+                                  PatchNumber = PatchNumber(patch.[i])
                                   ReceiveItem = rItem.[i, j].Key.Main
                                   ReceiveCount = rCount.[i, j]
                                   ReceiveHQ = rHq.[i, j]

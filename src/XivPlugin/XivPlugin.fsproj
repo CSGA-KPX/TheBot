@@ -19,6 +19,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="Data\VersionRegion.fs" />
+    <Compile Include="Data\PatchNumber.fs" />
     <Compile Include="Data\DataFiles.fs" />
     <Compile Include="Data\Common\World.fs" />
     <Compile Include="Data\Common\ClassJobs.fs" />
