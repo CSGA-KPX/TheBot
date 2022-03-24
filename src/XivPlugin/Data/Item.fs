@@ -16,7 +16,8 @@ type XivItem =
       ItemId: int
       ChineseName: string
       OfficalName: string
-      PatchNumber: PatchNumber }
+      PatchNumber: PatchNumber
+      CanHq: bool }
 
     /// <summary>
     /// 转换为 区域/名称(id) 格式
@@ -61,7 +62,8 @@ type ItemCollection private () =
                 { ItemId = row.Key.Main
                   ChineseName = if succ then cName else String.Empty
                   OfficalName = row.Name.AsString()
-                  PatchNumber = patchNumber }
+                  PatchNumber = patchNumber
+                  CanHq = row.CanBeHq.AsBool() }
         }
         |> x.DbCollection.InsertBulk
         |> ignore

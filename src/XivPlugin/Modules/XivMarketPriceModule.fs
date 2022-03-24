@@ -51,9 +51,7 @@ text 以文本格式输出结果
         opt.Parse(cmdArg.HeaderArgs)
 
         let acc = XivExpression.ItemAccumulator()
-        let worlds =
-            opt.World.Values
-            |> Array.sortBy (fun w -> w.WorldName)
+        let worlds = opt.World.Values |> Array.sortBy (fun w -> w.WorldName)
 
         // 扩展子指令的物品表
         match SubcommandParser.Parse<MarketSubcommands>(cmdArg.HeaderArgs) with
@@ -93,6 +91,8 @@ text 以文本格式输出结果
         if acc.Count * worlds.Length >= 50 then
             cmdArg.Abort(InputError, "查询数量超过上线")
 
+        let canHq = acc |> Seq.exists (fun mr -> mr.Item.CanHq)
+
         TextTable(opt.ResponseType) {
             // 表头
             [ CellBuilder() { literal "物品" }
@@ -105,18 +105,20 @@ text 以文本格式输出结果
                   literal "总体出售"
                   rightAlign
               }
-              CellBuilder() {
-                  literal "HQ出售"
-                  rightAlign
-              }
+              if canHq then
+                  CellBuilder() {
+                      literal "HQ出售"
+                      rightAlign
+                  }
               CellBuilder() {
                   literal "总体交易"
                   rightAlign
               }
-              CellBuilder() {
-                  literal "HQ交易"
-                  rightAlign
-              }
+              if canHq then
+                  CellBuilder() {
+                      literal "HQ交易"
+                      rightAlign
+                  }
               CellBuilder() {
                   literal "更新时间"
                   rightAlign
@@ -159,9 +161,9 @@ text 以文本格式输出结果
                         CellBuilder() { literal world.WorldName }
                         CellBuilder() { integer mr.Quantity }
                         CellBuilder() { integer lstAll }
-                        CellBuilder() { integer lstHq }
+                        if canHq then CellBuilder() { integer lstHq }
                         CellBuilder() { integer logAll }
-                        CellBuilder() { integer logHq }
+                        if canHq then CellBuilder() { integer logHq }
                         if updated = TimeSpan.MaxValue then
                             CellBuilder() { rightPad }
                         else
