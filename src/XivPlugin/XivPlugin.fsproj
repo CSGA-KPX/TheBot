@@ -25,6 +25,7 @@
     <Compile Include="Data\Common\World.fs" />
     <Compile Include="Data\Common\ClassJobs.fs" />
     <Compile Include="Data\Common\ClassJobMapping.fs" />
+    <Compile Include="Data\PatchDifference.fs" />
     <Compile Include="Data\Item.fs" />
     <Compile Include="Data\Recipe\XivRecipe.fs" />
     <Compile Include="Data\Recipe\CraftRecipeProvider.fs" />
@@ -54,6 +55,7 @@
   <ItemGroup>
     <EmbeddedResource Include="../../datafiles/ffxiv-datamining-cn-master.zip" />
     <EmbeddedResource Include="../../datafiles/ffxiv-datamining-ja-master.zip" />
+    <EmbeddedResource Include="../../datafiles/ffxiv-datamining-patchdiff.zip" />
   </ItemGroup>
 
   <ItemGroup>

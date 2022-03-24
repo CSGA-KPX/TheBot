@@ -7,8 +7,6 @@ open KPX.TheBot.Host.Data
 open KPX.TheBot.Host.DataCache
 open KPX.TheBot.Host.DataCache.LiteDb
 
-open KPX.XivPlugin
-
 open LiteDB
 
 
@@ -17,7 +15,8 @@ type XivItem =
     { [<BsonId(false)>]
       ItemId: int
       ChineseName: string
-      OfficalName: string }
+      OfficalName: string
+      PatchNumber: PatchNumber }
 
     /// <summary>
     /// 转换为 区域/名称(id) 格式
@@ -57,9 +56,12 @@ type ItemCollection private () =
             for row in OfficalDistroData.GetCollection().Item.TypedRows do
                 let succ, cName = cDict.TryGetValue(row.Key.Main)
 
+                let patchNumber = ItemPatchDifference.ToPatchNumber(row.Key.Main)
+
                 { ItemId = row.Key.Main
                   ChineseName = if succ then cName else String.Empty
-                  OfficalName = row.Name.AsString() }
+                  OfficalName = row.Name.AsString()
+                  PatchNumber = patchNumber }
         }
         |> x.DbCollection.InsertBulk
         |> ignore

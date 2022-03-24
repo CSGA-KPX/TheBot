@@ -25,6 +25,7 @@ type PatchNumber(numCode: int) =
             logger.Warn($"未知版本号{numCode}")
             50
 
+    static member val Patch_Invalid = PatchNumber(999)
     static member val Patch2_0 = PatchNumber(200)
     static member val Patch3_0 = PatchNumber(300)
     static member val Patch4_0 = PatchNumber(400)
