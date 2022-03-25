@@ -5,6 +5,7 @@ open System.Text.RegularExpressions
 open LiteDB
 
 
+[<Struct>]
 type PatchNumber(numCode: int) =
     static let logger = NLog.LogManager.GetLogger("PatchNumber")
 
