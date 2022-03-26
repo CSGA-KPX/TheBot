@@ -32,12 +32,6 @@ type SeaFishingOption() as x =
 type MiscModule() =
     inherit CommandHandlerBase()
 
-    let isNumber (str: string) =
-        if str.Length <> 0 then
-            String.forall Char.IsDigit str
-        else
-            false
-
     let chsDfcRoulettes = lazy (XivContentCollection.Instance.GetDailyFrontline(VersionRegion.China))
     let officalDfcRoulettes = lazy (XivContentCollection.Instance.GetDailyFrontline(VersionRegion.Offical))
 
@@ -144,47 +138,6 @@ type MiscModule() =
     member x.TestXivFantasia() =
         let tc = TestContext(x)
         tc.ShouldNotThrow("#幻想药")
-
-    [<CommandHandlerMethod("#cgss",
-                           "查找指定职业和品级的套装。用于#r/rr/rc/rrc计算",
-                           "#cgss 职业 品级
-勉强能用。也不打算改")>]
-    member x.HandleCGSS(cmdArg: CommandEventArgs) =
-        let mutable job = None
-        let mutable iLv = None
-
-        for item in cmdArg.HeaderArgs do
-            if isNumber item then
-                iLv <- Some(Int32.Parse(item))
-            else
-                let ret = ClassJobMapping.TryParse(item.ToUpperInvariant())
-
-                if ret.IsSome then
-                    job <- Some(ret.Value)
-
-        if job.IsNone then
-            cmdArg.Abort(InputError, "没有职业信息。职业可以使用：单字简称/全程/英文简称")
-
-        if iLv.IsNone then
-            cmdArg.Abort(InputError, "没有品级信息")
-
-        let cgc = CraftableGearCollection.Instance
-
-        let items =
-            cgc.Search(iLv.Value, job.Value)
-            |> Array.map (fun g -> ItemCollection.Instance.GetByItemId(g.ItemId))
-
-        if items.Length <> 0 then
-            let byId = items |> Seq.map (fun item -> $"#%i{item.ItemId}")
-            let byName = items |> Seq.map (fun item -> item.DisplayName)
-            cmdArg.Reply($"{String.Join('+', byId)}\r\n{String.Join('+', byName)}")
-        else
-            cmdArg.Reply("没找到")
-
-    [<TestFixture>]
-    member x.TestXivCGSS() =
-        let tc = TestContext(x)
-        tc.ShouldNotThrow("#cgss 占星 510")
 
     (*
     [<CommandHandlerMethod("#is", "（FF14）查找名字包含字符的物品", "关键词（大小写敏感）")>]
