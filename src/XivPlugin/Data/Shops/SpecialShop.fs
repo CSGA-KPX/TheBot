@@ -48,12 +48,12 @@ type SpecialShopCollection private () =
 
             let tomestones =
                 seq {
-                    for row in col.TomestonesItem.TypedRows do
+                    for row in col.TomestonesItem do
                         row.Key.Main, row.Item.AsInt()
                 }
                 |> readOnlyDict
 
-            for row in col.SpecialShop.TypedRows do
+            for row in col.SpecialShop do
                 let rItem = row.``Item{Receive}``.AsRows()
                 let rCount = row.``Count{Receive}``.AsInts()
                 let rHq = row.``HQ{Receive}``.AsBools()
@@ -116,12 +116,12 @@ type SpecialShopCollection private () =
 
             let tomestones =
                 seq {
-                    for row in col.TomestonesItem.TypedRows do
+                    for row in col.TomestonesItem do
                         row.Key.Main, row.Item.AsInt()
                 }
                 |> readOnlyDict
 
-            for row in col.SpecialShop.TypedRows do
+            for row in col.SpecialShop do
                 let rItem = row.``Item{Receive}``.AsRows()
                 let rCount = row.``Count{Receive}``.AsInts()
                 let rHq = row.``HQ{Receive}``.AsBools()

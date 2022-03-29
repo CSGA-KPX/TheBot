@@ -32,7 +32,7 @@ type CompanyCraftRecipeProviderChina private () =
             let col = ChinaDistroData.GetCollection()
             let ia = ItemAccumulator<int>()
 
-            for ccs in col.CompanyCraftSequence.TypedRows do
+            for ccs in col.CompanyCraftSequence do
                 ia.Clear()
 
                 let output =
@@ -88,7 +88,7 @@ type CompanyCraftRecipeProviderOffical private () =
             let col = OfficalDistroData.GetCollection()
             let ia = ItemAccumulator<int>()
 
-            for ccs in col.CompanyCraftSequence.TypedRows do
+            for ccs in col.CompanyCraftSequence do
                 ia.Clear()
 
                 let output =

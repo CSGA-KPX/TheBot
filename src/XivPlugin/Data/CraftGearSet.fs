@@ -47,7 +47,7 @@ type CraftableGearCollection private () =
                 let sht = col.ClassJobCategory
                 let header = sht.Header.Headers
 
-                for cat in sht.TypedRows do
+                for cat in sht do
                     let jobs =
                         Seq.zip header cat.RawData
                         |> Seq.choose (fun (hdr, value) ->
@@ -61,7 +61,7 @@ type CraftableGearCollection private () =
             |> readOnlyDict
 
         seq {
-            for row in col.Recipe.TypedRows do
+            for row in col.Recipe do
                 let recipeLv = row.RecipeLevelTable.AsRow().ClassJobLevel.AsInt()
 
                 if recipeLv >= minCraftLevel then

@@ -28,7 +28,7 @@ type CraftRecipeProviderChina private () =
         seq {
             let col = ChinaDistroData.GetCollection()
 
-            for row in col.Recipe.TypedRows do
+            for row in col.Recipe do
                 let materials =
                     let items = row.``Item{Ingredient}``.AsInts()
                     let amounts = row.``Amount{Ingredient}``.AsDoubles()
@@ -73,7 +73,7 @@ type CraftRecipeProviderOffical private () =
         seq {
             let col = OfficalDistroData.GetCollection()
 
-            for row in col.Recipe.TypedRows do
+            for row in col.Recipe do
                 let materials =
                     let items = row.``Item{Ingredient}``.AsInts()
                     let amounts = row.``Amount{Ingredient}``.AsDoubles()

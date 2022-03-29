@@ -51,10 +51,10 @@ type ItemCollection private () =
         seq {
             let cDict = Dictionary<int, string>()
 
-            for row in ChinaDistroData.GetCollection().Item.TypedRows do
+            for row in ChinaDistroData.GetCollection().Item do
                 cDict.Add(row.Key.Main, row.Name.AsString())
 
-            for row in OfficalDistroData.GetCollection().Item.TypedRows do
+            for row in OfficalDistroData.GetCollection().Item do
                 let succ, cName = cDict.TryGetValue(row.Key.Main)
 
                 let patchNumber = ItemPatchDifference.ToPatchNumber(row.Key.Main)

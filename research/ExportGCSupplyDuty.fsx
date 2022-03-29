@@ -1,6 +1,6 @@
 (*
 
-此脚本导出理符任务到excel表格
+此脚本导出部队每日筹备到excel表格
 
 *)
 
@@ -43,7 +43,7 @@ let col = ChinaDistroData.GetCollection()
 let jobOrder =
     let jobMap =
         seq {
-            for row in col.ClassJob.TypedRows do
+            for row in col.ClassJob do
                 yield row.Abbreviation.AsString(), row.Name.AsString()
         }
         |> dict
@@ -65,7 +65,7 @@ let jobOrder =
 fsi.AddPrinter(fun (p: PatchNumber) -> $"Patch{p.PatchNumber}")
 
 let SupplyDuties =
-    [| for row in col.GCSupplyDuty.TypedRows do
+    [| for row in col.GCSupplyDuty do
            let level = row.Key.Main
            let items = row.Item.AsRows()
            let counts = row.ItemCount.AsInts()
@@ -85,3 +85,22 @@ let SupplyDuties =
                           Patch = PatchNumber.FromPlayerLevel(level) |} |]
     |> Array.sortBy (fun duty -> duty.Level)
     |> Array.groupBy (fun duty -> duty.Job)
+
+
+(*
+
+(fun () ->
+use p = new ExcelPackage()
+for (job, duties) in SupplyDuties |> Array.groupBy (fun sd -> sd.Job) do 
+    let sb = new Text.StringBuilder()
+    sb.AppendLine(sprintf "%s,%s,%s" "等级" "物品" "数量") |> ignore
+    for d in duties |> Array.sortByDescending (fun x -> x.Level) do
+        sb.AppendLine(sprintf "%i,%s,%i" d.Level d.Item d.Count) |> ignore
+    let csv = sb.ToString()
+    let ws  = p.Workbook.Worksheets.Add(job)
+    ws.Cells.["A1"].LoadFromText(csv) |> ignore
+    ws.Cells.AutoFitColumns(0.0) |> ignore
+    
+p.SaveAs(new IO.FileInfo(@"军队筹备.xlsx")))()
+
+*)

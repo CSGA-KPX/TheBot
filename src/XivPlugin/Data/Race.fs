@@ -15,13 +15,13 @@ module Race =
     let Races =
         [ let data = Dictionary<int, (string * bool * bool)>()
 
-          for row in OfficalDistroData.GetCollection().Race.TypedRows do
+          for row in OfficalDistroData.GetCollection().Race do
               let name = row.Masculine.AsString()
               let canMale = row.``RSE{M}{Body}``.AsInt() <> 0
               let canFemale = row.``RSE{F}{Body}``.AsInt() <> 0
               data.Add(row.Key.Main, (name, canMale, canFemale))
 
-          for row in ChinaDistroData.GetCollection().Race.TypedRows do
+          for row in ChinaDistroData.GetCollection().Race do
               let (_, m, f) = data.[row.Key.Main]
               data.[row.Key.Main] <- (row.Masculine.AsString().Trim('族'), m, f)
 

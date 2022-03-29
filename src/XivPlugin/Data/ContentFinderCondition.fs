@@ -32,7 +32,7 @@ type XivContentCollection private () =
         seq {
             let col = ChinaDistroData.GetCollection()
 
-            for row in col.ContentFinderCondition.TypedRows do
+            for row in col.ContentFinderCondition do
                 yield
                     { LiteDbId = 0
                       Region = VersionRegion.China
@@ -42,7 +42,7 @@ type XivContentCollection private () =
 
             let col = OfficalDistroData.GetCollection()
 
-            for row in col.ContentFinderCondition.TypedRows do
+            for row in col.ContentFinderCondition do
                 yield
                     { LiteDbId = 0
                       Region = VersionRegion.Offical

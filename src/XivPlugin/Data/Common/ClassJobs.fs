@@ -10,13 +10,13 @@ module ClassJobs =
 
         let nameMapping = Dictionary<string, string>()
 
-        for row in col.ClassJob.TypedRows do
+        for row in col.ClassJob do
             let key = row.Abbreviation.AsString()
             let name = row.``Name{English}``.AsString()
             nameMapping.[key] <- name
 
         // 用已知的中文名称替换
-        for row in ChinaDistroData.GetCollection().ClassJob.TypedRows do
+        for row in ChinaDistroData.GetCollection().ClassJob do
             let key = row.Abbreviation.AsString()
             let name = row.Name.AsString()
 
@@ -27,7 +27,7 @@ module ClassJobs =
         // 35 能工巧匠 大地使者
         // 110 战斗精英 魔法导师 特职专用
         let battle =
-            Seq.zip header (col.ClassJobCategory.GetItem(110).RawData)
+            Seq.zip header (col.ClassJobCategory.[110].RawData)
             |> Seq.choose (fun (hdr, value) ->
                 if value = "True" then
                     Some(nameMapping.[hdr.ColumnName])
@@ -36,7 +36,7 @@ module ClassJobs =
             |> Seq.cache
 
         let cg =
-            Seq.zip header (col.ClassJobCategory.GetItem(35).RawData)
+            Seq.zip header (col.ClassJobCategory.[35].RawData)
             |> Seq.choose (fun (hdr, value) ->
                 if value = "True" then
                     Some(nameMapping.[hdr.ColumnName])

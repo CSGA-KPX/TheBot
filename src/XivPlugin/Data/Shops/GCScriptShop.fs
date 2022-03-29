@@ -33,7 +33,7 @@ type GCScriptShop private () =
         seq {
             let col = ChinaDistroData.GetCollection()
 
-            for row in col.GCScripShopItem.TypedRows do
+            for row in col.GCScripShopItem do
                 let key = row.Key.Main
                 let item = row.Item.AsInt()
 
@@ -50,7 +50,7 @@ type GCScriptShop private () =
 
             let col = OfficalDistroData.GetCollection()
 
-            for row in col.GCScripShopItem.TypedRows do
+            for row in col.GCScripShopItem do
                 let key = row.Key.Main
                 let item = row.Item.AsInt()
 

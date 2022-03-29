@@ -1,7 +1,6 @@
 namespace KPX.XivPlugin.Data
 
 open System
-open System.IO.Compression
 
 open LibFFXIV.GameData
 open LibFFXIV.GameData.Provided
@@ -29,8 +28,7 @@ module ChinaDistroData =
 
         if not succ then
             let stream = EmbeddedResource.GetResFileStream("XivPlugin.ffxiv-datamining-cn-master.zip")
-            let archive = new ZipArchive(stream, ZipArchiveMode.Read)
-            let col = new TypedXivCollection(XivLanguage.None, archive, Prefix)
+            let col = new TypedXivCollection(XivLanguage.None, stream, Prefix)
             instance.SetTarget(col)
             col
         else
@@ -56,8 +54,7 @@ module OfficalDistroData =
 
         if not succ then
             let stream = EmbeddedResource.GetResFileStream("XivPlugin.ffxiv-datamining-ja-master.zip")
-            let archive = new ZipArchive(stream, ZipArchiveMode.Read)
-            let col = new TypedXivCollection(XivLanguage.None, archive, Prefix)
+            let col = new TypedXivCollection(XivLanguage.None, stream, Prefix)
             instance.SetTarget(col)
             col
         else

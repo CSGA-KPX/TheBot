@@ -55,7 +55,7 @@ type ShopLocationCollection private () =
 
         let level =
             seq {
-                for row in col.Level.TypedRows do
+                for row in col.Level do
                     let map = row.Map.AsRow()
                     let sf = map.SizeFactor.AsInt()
 
@@ -85,15 +85,13 @@ type ShopLocationCollection private () =
 
         let eNpcRes = col.ENpcResident
 
-        for row in col.ENpcBase.TypedRows do
+        for row in col.ENpcBase do
             let npcId = row.Key.Main
             let mutable npcInfo = ""
 
             if level.ContainsKey(npcId) then
                 let npcPos = level.[npcId]
-
-                let npcName = eNpcRes.GetItemTyped(npcId).Singular.AsString()
-
+                let npcName = eNpcRes.[npcId].Singular.AsString()
                 npcInfo <- $"%s{npcName}: %s{npcPos.Territory}(%.1f{npcPos.X}, %.1f{npcPos.Y})"
 
             for propId in row.ENpcData.AsInts() do
@@ -105,12 +103,11 @@ type ShopLocationCollection private () =
                         data.[propId].Add(npcInfo)
 
         data
-        |> Seq.map
-            (fun kv ->
-                { LiteDbId = 0
-                  Region = VersionRegion.China
-                  ShopPropId = kv.Key
-                  Locations = kv.Value.ToArray() })
+        |> Seq.map (fun kv ->
+            { LiteDbId = 0
+              Region = VersionRegion.China
+              ShopPropId = kv.Key
+              Locations = kv.Value.ToArray() })
         |> x.DbCollection.InsertBulk
         |> ignore
 
@@ -119,7 +116,7 @@ type ShopLocationCollection private () =
 
         let level =
             seq {
-                for row in col.Level.TypedRows do
+                for row in col.Level do
                     let map = row.Map.AsRow()
                     let sf = map.SizeFactor.AsInt()
 
@@ -149,14 +146,14 @@ type ShopLocationCollection private () =
 
         let eNpcRes = col.ENpcResident
 
-        for row in col.ENpcBase.TypedRows do
+        for row in col.ENpcBase do
             let npcId = row.Key.Main
             let mutable npcInfo = ""
 
             if level.ContainsKey(npcId) then
                 let npcPos = level.[npcId]
 
-                let npcName = eNpcRes.GetItemTyped(npcId).Singular.AsString()
+                let npcName = eNpcRes.[npcId].Singular.AsString()
 
                 npcInfo <- $"%s{npcName}: %s{npcPos.Territory}(%.1f{npcPos.X}, %.1f{npcPos.Y})"
 
@@ -169,12 +166,11 @@ type ShopLocationCollection private () =
                         data.[propId].Add(npcInfo)
 
         data
-        |> Seq.map
-            (fun kv ->
-                { LiteDbId = 0
-                  Region = VersionRegion.Offical
-                  ShopPropId = kv.Key
-                  Locations = kv.Value.ToArray() })
+        |> Seq.map (fun kv ->
+            { LiteDbId = 0
+              Region = VersionRegion.Offical
+              ShopPropId = kv.Key
+              Locations = kv.Value.ToArray() })
         |> x.DbCollection.InsertBulk
         |> ignore
 
@@ -183,16 +179,16 @@ type ShopLocationCollection private () =
     /// </summary>
     /// <param name="id"></param>
     /// <param name="region"></param>
-    member x.ShopPropIdExists(id: int, region : VersionRegion) =
+    member x.ShopPropIdExists(id: int, region: VersionRegion) =
         Query.And(Query.EQ("ShopPropId", id), Query.EQ("Region", region.BsonValue))
         |> x.DbCollection.Exists
- 
+
     /// <summary>
     /// 获取指定区域和id的信息
     /// </summary>
     /// <param name="id"></param>
     /// <param name="region"></param>
-    member x.GetByShopPropId(id: int, region : VersionRegion) =
+    member x.GetByShopPropId(id: int, region: VersionRegion) =
         Query.And(Query.EQ("ShopPropId", id), Query.EQ("Region", region.BsonValue))
         |> x.DbCollection.SafeFindOne
 
@@ -201,6 +197,6 @@ type ShopLocationCollection private () =
     /// </summary>
     /// <param name="id"></param>
     /// <param name="region"></param>
-    member x.TryGetByShopPropId(id: int, region : VersionRegion) =
+    member x.TryGetByShopPropId(id: int, region: VersionRegion) =
         Query.And(Query.EQ("ShopPropId", id), Query.EQ("Region", region.BsonValue))
         |> x.DbCollection.TryFindOne

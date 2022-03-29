@@ -81,14 +81,14 @@ module World =
         let col = OfficalDistroData.GetCollection()
 
         // 世界服定义的DC
-        for dc in col.WorldDCGroupType.TypedRows do
+        for dc in col.WorldDCGroupType do
             let name = dc.Name.AsString()
 
             if dc.Region.AsInt() <> 0 && name <> "" then
                 dcNameMapping.TryAdd(name, name) |> ignore
 
         // 世界服定义的服务器
-        for world in col.World.TypedRows do
+        for world in col.World do
             let id = world.Key.Main
             let name = world.Name.AsString()
             let isPublic = world.IsPublic.AsBool()

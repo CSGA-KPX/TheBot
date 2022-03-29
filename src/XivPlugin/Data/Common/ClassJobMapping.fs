@@ -31,7 +31,7 @@ module ClassJobMapping =
             // 来自国服定义
             let col = ChinaDistroData.GetCollection()
 
-            for row in col.ClassJob.TypedRows do
+            for row in col.ClassJob do
                 let abbr = row.Abbreviation.AsString()
                 yield abbr, abbr
                 yield row.Name.AsString(), abbr
@@ -39,7 +39,7 @@ module ClassJobMapping =
 
             let col = OfficalDistroData.GetCollection()
 
-            for row in col.ClassJob.TypedRows do
+            for row in col.ClassJob do
                 let abbr = row.Abbreviation.AsString()
                 yield abbr, abbr
                 yield row.Name.AsString(), abbr

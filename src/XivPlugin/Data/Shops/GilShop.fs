@@ -34,7 +34,7 @@ type GilShopCollection private () =
         seq {
             let col = ChinaDistroData.GetCollection()
 
-            for row in col.GilShopItem.TypedRows do
+            for row in col.GilShopItem do
                 let item = row.Item.AsRow()
 
                 yield
@@ -46,7 +46,7 @@ type GilShopCollection private () =
 
             let col = OfficalDistroData.GetCollection()
 
-            for row in col.GilShopItem.TypedRows do
+            for row in col.GilShopItem do
                 let item = row.Item.AsRow()
 
                 yield

@@ -43,7 +43,7 @@ type CraftLeveInfoCollection private () =
             let col = ChinaDistroData.GetCollection()
             let acc = ItemAccumulator<_>()
 
-            for row in col.CraftLeve.TypedRows do
+            for row in col.CraftLeve do
                 acc.Clear()
 
                 Array.iter2
@@ -81,7 +81,7 @@ type CraftLeveInfoCollection private () =
             let col = OfficalDistroData.GetCollection()
             let acc = ItemAccumulator<_>()
 
-            for row in col.CraftLeve.TypedRows do
+            for row in col.CraftLeve do
                 acc.Clear()
 
                 Array.iter2

@@ -21,7 +21,7 @@ module private China =
     let RouteDefine =
         let col = ChinaDistroData.GetCollection()
 
-        [| for row in col.IKDRoute.TypedRows do
+        [| for row in col.IKDRoute do
                let routeName = row.Name.AsString()
 
                let timeStr =
@@ -46,7 +46,7 @@ module private Offical =
     let RouteDefine =
         let col = OfficalDistroData.GetCollection()
 
-        [| for row in col.IKDRoute.TypedRows do
+        [| for row in col.IKDRoute do
                let routeName = row.Name.AsString()
 
                let timeStr =

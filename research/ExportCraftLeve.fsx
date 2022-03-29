@@ -41,7 +41,7 @@ let col = ChinaDistroData.GetCollection()
 
 let leveData =
     seq {
-        for row in col.CraftLeve.TypedRows do
+        for row in col.CraftLeve do
             if row.Leve.AsInt() <> 0 then
                 let leve = row.Leve.AsRow()
                 let name = leve.Name.AsString()
