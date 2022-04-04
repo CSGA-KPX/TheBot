@@ -92,7 +92,7 @@ type CraftableGearCollection private () =
         [| for g in x.DbCollection.Find(query) do
                if g.EquipSlotCategory = 12 then
                    //戒指要多一个
-                   yield g
-
-               yield g |]
-        |> Array.sortBy (fun g -> g.EquipSlotCategory)
+                   yield (g, 2)
+               else
+                   yield (g, 1) |]
+        |> Array.sortBy (fun (g, _) -> g.EquipSlotCategory)

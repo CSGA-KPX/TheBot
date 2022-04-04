@@ -5,7 +5,7 @@ open System.Collections.Generic
 
 
 module ClassJobs =
-    let BattleClassJobs, CraftGatherJobs =
+    let BattleClassJobs, GatherJobs, CraftJobs, CraftGatherJobs =
         let col = OfficalDistroData.GetCollection()
 
         let nameMapping = Dictionary<string, string>()
@@ -24,10 +24,13 @@ module ClassJobs =
                 nameMapping.[key] <- name
 
         let header = col.ClassJobCategory.Header.Headers
+        // 32 大地使者
+        // 33 能工巧匠
         // 35 能工巧匠 大地使者
         // 110 战斗精英 魔法导师 特职专用
-        let battle =
-            Seq.zip header (col.ClassJobCategory.[110].RawData)
+
+        let readData (headerId: int) =
+            Seq.zip header (col.ClassJobCategory.[headerId].RawData)
             |> Seq.choose (fun (hdr, value) ->
                 if value = "True" then
                     Some(nameMapping.[hdr.ColumnName])
@@ -35,13 +38,9 @@ module ClassJobs =
                     None)
             |> Seq.cache
 
-        let cg =
-            Seq.zip header (col.ClassJobCategory.[35].RawData)
-            |> Seq.choose (fun (hdr, value) ->
-                if value = "True" then
-                    Some(nameMapping.[hdr.ColumnName])
-                else
-                    None)
-            |> Seq.cache
+        let battle = readData 110
+        let gather = readData 32
+        let craft = readData 33
+        let craftGather = readData 35
 
-        (battle, cg)
+        (battle, gather, craft, craftGather)

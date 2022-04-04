@@ -42,24 +42,35 @@ type XivExpression() as x =
                 if tmp.Length <> 2 then
                     failwithf "装等表达式错误"
 
-                let job = ClassJobMapping.TryParse(tmp.[0])
-                let iLevel = int tmp.[1]
-                let cgc = CraftableGearCollection.Instance
+                let jobs = Collections.Generic.HashSet<string>()
 
-                if job.IsNone then
-                    failwith "未知职业，如确定无误请联系开发者添加简写"
+                match ClassJobMapping.TryParse(tmp.[0]) with
+                | Some (job) -> jobs.Add(job) |> ignore
+                | _ ->
+                    let func = ClassJobMapping.Parse >> jobs.Add >> ignore
 
-                let items =
-                    cgc.Search(iLevel, job.Value)
-                    |> Array.map (fun g -> ItemCollection.Instance.GetByItemId(g.ItemId))
+                    match tmp.[0] with
+                    | "生产" -> ClassJobs.CraftJobs |> Seq.iter func
+                    | "采集" -> ClassJobs.GatherJobs |> Seq.iter func
+                    | "生产采集"
+                    | "生活"
+                    | "生采" -> ClassJobs.CraftGatherJobs |> Seq.iter func
+                    | _ -> failwith "未知职业，如确定无误请联系开发者添加简写"
 
-                if items.Length = 0 then
-                    failwithf "不存在指定的装备"
 
                 let acu = ItemAccumulator()
+                let cgc = CraftableGearCollection.Instance
+                let iLevel = int tmp.[1]
 
-                for item in items do
-                    acu.Update(item)
+                for job in jobs do
+                    let gears = cgc.Search(iLevel, job)
+
+                    if gears.Length = 0 then
+                        failwith $"不存在指定的装备 {job}@{iLevel}"
+
+                    for (g, q) in gears do
+                        let item = ItemCollection.Instance.GetByItemId(g.ItemId)
+                        acu.Set(item, q)
 
                 Operand(Accumulator(acu))
             else
