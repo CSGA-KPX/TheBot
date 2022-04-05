@@ -42,19 +42,19 @@ type XivExpression() as x =
                 if tmp.Length <> 2 then
                     failwithf "装等表达式错误"
 
-                let jobs = Collections.Generic.HashSet<string>()
+                let jobs = Collections.Generic.HashSet<ClassJob>()
 
-                match ClassJobMapping.TryParse(tmp.[0]) with
+                match ClassJob.TryParse(tmp.[0]) with
                 | Some (job) -> jobs.Add(job) |> ignore
                 | _ ->
-                    let func = ClassJobMapping.Parse >> jobs.Add >> ignore
+                    let func = (fun map -> map.Code) >> jobs.Add >> ignore
 
                     match tmp.[0] with
-                    | "生产" -> ClassJobs.CraftJobs |> Seq.iter func
-                    | "采集" -> ClassJobs.GatherJobs |> Seq.iter func
+                    | "生产" -> ClassJob.CraftJobs |> Seq.iter func
+                    | "采集" -> ClassJob.GatherJobs |> Seq.iter func
                     | "生产采集"
                     | "生活"
-                    | "生采" -> ClassJobs.CraftGatherJobs |> Seq.iter func
+                    | "生采" -> ClassJob.CraftGatherJobs |> Seq.iter func
                     | _ -> failwith "未知职业，如确定无误请联系开发者添加简写"
 
 

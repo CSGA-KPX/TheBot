@@ -86,8 +86,9 @@ type CraftableGearCollection private () =
     member x.TryLookupByItem(item: XivItem) =
         x.DbCollection.TryFindOne(Query.EQ("ItemId", BsonValue(item.ItemId)))
 
-    member x.Search(iLv: int, jobCode: string) =
-        let query = Query.And(Query.EQ("ItemLv", BsonValue(iLv)), Query.Contains("ClassJobCategory", jobCode))
+    member x.Search(iLv: int, jobCode: ClassJob) =
+        let str = jobCode.ToString()
+        let query = Query.And(Query.EQ("ItemLv", iLv), Query.Contains("ClassJobCategory", str))
 
         [| for g in x.DbCollection.Find(query) do
                if g.EquipSlotCategory = 12 then

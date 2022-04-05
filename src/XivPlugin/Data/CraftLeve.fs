@@ -20,7 +20,7 @@ type CraftLeveInfo =
       LeveLevel: int
       Repeats: int
       Items: RecipeMaterial<int> []
-      ClassJob: string
+      ClassJob: ClassJob
       GilReward: int }
 
 type CraftLeveInfoCollection private () =
@@ -61,7 +61,7 @@ type CraftLeveInfoCollection private () =
                 let gil = leve.GilReward.AsInt()
 
                 if leveJobCatKey >= 8 && leveJobCatKey <= 15 then
-                    let job = ClassJobMapping.Parse(leveJobCat.Name.AsString())
+                    let job = ClassJob.Parse(leveJobCat.Name.AsString())
 
                     yield
                         { LiteDbId = 0
@@ -99,7 +99,7 @@ type CraftLeveInfoCollection private () =
                 let gil = leve.GilReward.AsInt()
 
                 if leveJobCatKey >= 8 && leveJobCatKey <= 15 then
-                    let job = ClassJobMapping.Parse(leveJobCat.Name.AsString())
+                    let job = ClassJob.Parse(leveJobCat.Name.AsString())
 
                     yield
                         { LiteDbId = 0

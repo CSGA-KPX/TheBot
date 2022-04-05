@@ -28,6 +28,7 @@ type XivItem =
     /// <summary>
     /// 优先中文，如果没有就日文
     /// </summary>
+    [<BsonIgnore>]
     member x.DisplayName =
         match String.IsNullOrWhiteSpace(x.ChineseName), String.IsNullOrWhiteSpace(x.OfficalName) with
         | false, _ -> x.ChineseName

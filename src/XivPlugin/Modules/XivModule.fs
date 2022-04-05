@@ -108,9 +108,9 @@ type MiscModule() =
                     yield "屯着别用"
                 }
             | "#FF14职业"
-            | "#FF14战斗职业" -> ClassJobs.BattleClassJobs
+            | "#FF14战斗职业" -> ClassJob.BattleClassJobs |> Seq.map (fun x -> x.Name)
             | "#FF14生采职业"
-            | "#FF14生活职业" -> ClassJobs.CraftGatherJobs
+            | "#FF14生活职业" -> ClassJob.CraftGatherJobs |> Seq.map (fun x -> x.Name)
             | _ -> cmdArg.Abort(ModuleError, $"模块{(nameof x.HandleFantasia)}指令匹配失败")
 
         let atUser = cmdArg.MessageEvent.Message.TryGetAt()
