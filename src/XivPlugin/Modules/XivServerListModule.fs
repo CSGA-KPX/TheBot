@@ -16,6 +16,11 @@ type ServerListModule() =
             let colsNum = 5 // 每行5个名字
 
             CellBuilder() {
+                literal "陆行鸟特指Choboco服务器，查询大区请使用鸟区/陆行鸟区/鸟"
+                setBold
+            }
+
+            CellBuilder() {
                 literal "可用大区及缩写有："
                 setBold
             }

@@ -133,7 +133,7 @@ type ScriptExchangeModule() =
 
 
     [<CommandHandlerMethod("#ssc",
-                           "计算部分道具兑换的价格",
+                           "FF14:计算部分道具兑换的价格",
                            "兑换所需道具的名称或ID，只处理1个
 可以设置查询服务器，已有服务器见#ff14help")>]
     member x.HandleSSC(cmdArg: CommandEventArgs) =

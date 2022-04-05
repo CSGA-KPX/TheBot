@@ -35,7 +35,7 @@ type MiscModule() =
     let chsDfcRoulettes = lazy (XivContentCollection.Instance.GetDailyFrontline(VersionRegion.China))
     let officalDfcRoulettes = lazy (XivContentCollection.Instance.GetDailyFrontline(VersionRegion.Offical))
 
-    [<CommandHandlerMethod("#纷争前线", "今日轮转查询", "")>]
+    [<CommandHandlerMethod("#纷争前线", "FF14:今日轮转查询", "")>]
     member x.HandleDailyFrontlineChallenge(cmdArg: CommandEventArgs) =
         let opt = DfcOption()
         opt.Parse(cmdArg.HeaderArgs)
@@ -150,7 +150,7 @@ type MiscModule() =
         tc.ShouldNotThrow("#is 风之水晶")
         tc.ShouldThrow("#is 第三期")*)
 
-    [<CommandHandlerMethod("#gate", "挖宝选门", "")>]
+    [<CommandHandlerMethod("#gate", "FF14:挖宝选门", "")>]
     member x.HandleGate(_: CommandEventArgs) =
         TextTable(ForceText) {
             [ CellBuilder() { literal "D100" }; CellBuilder() { literal "门" } ]
@@ -181,8 +181,8 @@ type MiscModule() =
         let tc = TestContext(x)
         tc.ShouldNotThrow("#仙人彩")
 
-    [<CommandHandlerMethod("#nuannuan", "暖暖", "")>]
-    [<CommandHandlerMethod("#nrnr", "暖暖", "")>]
+    [<CommandHandlerMethod("#nuannuan", "FF14暖暖查询", "")>]
+    [<CommandHandlerMethod("#nrnr", "FF14暖暖查询", "")>]
     member x.HandleNrnr(cmdArg: CommandEventArgs) =
         let handler = new Net.Http.HttpClientHandler()
         handler.AutomaticDecompression <- Net.DecompressionMethods.GZip

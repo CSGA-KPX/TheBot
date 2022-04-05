@@ -30,14 +30,14 @@ type XivRecipeModule() =
         else
             item.DisplayName
 
-    [<CommandHandlerMethod("#r", "根据表达式汇总多个物品的材料，不查询价格", "可以使用text:选项返回文本。如#r 白钢锭 text:")>]
-    [<CommandHandlerMethod("#rr", "根据表达式汇总多个物品的基础材料，不查询价格", "可以使用text:选项返回文本。如#rr 白钢锭 text:")>]
+    [<CommandHandlerMethod("#r", "FF14:根据表达式汇总多个物品的材料，不查询价格", "可以使用text:选项返回文本。如#r 白钢锭 text:")>]
+    [<CommandHandlerMethod("#rr", "FF14:根据表达式汇总多个物品的基础材料，不查询价格", "可以使用text:选项返回文本。如#rr 白钢锭 text:")>]
     [<CommandHandlerMethod("#rc",
-                           "计算物品基础材料成本",
+                           "FF14:计算物品基础材料成本",
                            "可以使用text:选项返回文本。
 可以设置查询服务器，已有服务器见#ff14help")>]
     [<CommandHandlerMethod("#rrc",
-                           "计算物品基础材料成本",
+                           "FF14:计算物品基础材料成本",
                            "可以使用text:选项返回文本。
 可以设置查询服务器，已有服务器见#ff14help")>]
     member _.GeneralRecipeCalculator(cmdArg: CommandEventArgs) =
