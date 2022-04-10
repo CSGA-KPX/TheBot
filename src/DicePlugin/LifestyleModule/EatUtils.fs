@@ -23,18 +23,6 @@ module Data =
 
     let dinnerTypes = [| "早餐"; "午餐"; "晚餐"; "加餐" |]
 
-    let saizeriya =
-        [| for row in mgr.GetLines("萨莉亚") do
-               let s = row.Split([| '：' |], StringSplitOptions.RemoveEmptyEntries)
-
-               let name = s.[0]
-
-               let c =
-                   s.[1]
-                       .Split(Array.empty<char>, StringSplitOptions.RemoveEmptyEntries)
-
-               yield name, c |]
-
 [<Struct>]
 type MappedOption =
     { Original: string
@@ -167,22 +155,3 @@ let hotpotFunc (dicer: Dicer) (ret: IO.TextWriter) =
     ret.WriteLine("蘸料：{0}", String.Join(" ", sauce))
     ret.WriteLine("　宜：{0}", String.Join(" ", goodDish))
     ret.WriteLine("　忌：{0}", String.Join(" ", badDish))
-
-let saizeriyaFunc (dicer: Dicer) (ret: IO.TextWriter) =
-
-    scoreByMeals dicer (Array.singleton "萨莉亚") ret
-
-    ret.WriteLine()
-
-    let prefix = "萨莉亚吃"
-
-    for section, options in saizeriya do
-        let opts =
-            EatChoices(options, dicer, prefix)
-                .GetGoodOptions(49)
-            |> Seq.truncate 5
-            |> Seq.map (fun x -> x.ToString())
-            |> Seq.toArray
-
-        if opts.Length <> 0 then
-            ret.WriteLine("{0}：{1}", section, String.Join(" ", opts))

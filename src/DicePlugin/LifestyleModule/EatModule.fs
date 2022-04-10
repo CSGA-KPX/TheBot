@@ -1,4 +1,4 @@
-﻿namespace KPX.DicePlugin.LifestyleModule
+namespace KPX.DicePlugin.LifestyleModule
 
 open KPX.FsCqHttp.Api.Group
 open KPX.FsCqHttp.Event
@@ -21,7 +21,6 @@ type EatSubCommand =
     | [<AltCommandName("午餐", "中", "中饭", "午")>] Lunch
     | [<AltCommandName("晚餐", "晚餐", "晚")>] Dinner
     | [<AltCommandName("加餐", "夜宵", "加")>] Extra
-    | [<AltCommandName("萨莉亚", "萨利亚")>] Saizeriya
     | [<AltCommandName("火锅")>] Hotpot
     | [<AltCommandName("饮料")>] Drinks
     | [<AltCommandName("零食")>] Snacks
@@ -33,7 +32,6 @@ type EatSubCommand =
             | Lunch -> "午餐"
             | Dinner -> "晚餐"
             | Extra -> "加餐"
-            | Saizeriya -> "萨莉亚点菜"
             | Hotpot -> "火锅"
             | Drinks -> "饮料"
             | Snacks -> "零食"
@@ -44,7 +42,7 @@ type EatModule() =
     [<CommandHandlerMethod("#eat",
                            "投掷吃什么",
                            "#eat 食物名称或预设名单
-预设名单：早 中 晚 加 火锅 萨莉亚
+预设名单：早 中 晚 加 火锅
 可以@一个群友帮他选。")>]
     member x.HandleEat(cmdArg: CommandEventArgs) =
         use ret = cmdArg.OpenResponse(ForceText)
@@ -91,7 +89,6 @@ type EatModule() =
             | Some Lunch -> mealsFunc "午餐" dinner dicer ret
             | Some Dinner -> mealsFunc "晚餐" dinner dicer ret
             | Some Extra -> mealsFunc "加餐" breakfast dicer ret
-            | Some Saizeriya -> saizeriyaFunc dicer ret
             | Some Hotpot -> hotpotFunc dicer ret
             | Some Drinks -> mealsFunc "饮料" breakfast dicer ret
             | Some Snacks -> mealsFunc "零食" breakfast dicer ret
