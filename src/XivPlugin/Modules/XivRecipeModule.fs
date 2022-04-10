@@ -55,7 +55,7 @@ type XivRecipeModule() =
             if cmdArg.CommandName = "#rr" || cmdArg.CommandName = "#rrc" then
                 fun (item: XivItem) -> rm.TryGetRecipeRec(item, ByItem 1.0)
             else
-                fun (item: XivItem) -> rm.TryGetRecipe(item)
+                fun (item: XivItem) -> rm.TryGetRecipe(item, ByItem 1.0)
 
         let product = XivExpression.ItemAccumulator()
         let acc = XivExpression.ItemAccumulator()
