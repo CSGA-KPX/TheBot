@@ -174,9 +174,9 @@ text 以文本格式输出结果
                     CellBuilder() { leftPad }
                     CellBuilder() { rightPad }
                     CellBuilder() { integer sumListingAll }
-                    CellBuilder() { integer sumListingHq }
+                    if canHq then CellBuilder() { integer sumListingHq }
                     CellBuilder() { integer sumTradeAll }
-                    CellBuilder() { integer sumTradeHq }
+                    if canHq then CellBuilder() { integer sumTradeHq }
                     CellBuilder() { rightPad } ] ]
 
         }
