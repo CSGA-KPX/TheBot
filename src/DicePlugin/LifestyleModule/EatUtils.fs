@@ -11,13 +11,15 @@ module Data =
     let diceSides = 100u
 
     let private mgr = ResxManager("DicePlugin.Resources.Eat")
+
     let breakfast = mgr.GetWords("早加餐") |> Array.distinct
     let dinner = mgr.GetWords("中晚餐") |> Array.distinct
+
     let hotpot_soup = mgr.GetWords("火锅底料") |> Array.distinct
     let hotpot_sauce = mgr.GetWords("火锅蘸料") |> Array.distinct
     let hotpot_dish = mgr.GetWords("火锅配菜") |> Array.distinct
 
-    let snacks = mgr.GetWordsWithoutComment("零食") |> Array.distinct
+    //let snacks = mgr.GetWordsWithoutComment("零食") |> Array.distinct
 
     let drinks = mgr.GetWordsWithoutComment("饮料") |> Array.distinct
 
@@ -65,12 +67,11 @@ type EatChoices(options: seq<string>, dicer: Dicer, ?prefix: string) =
             invalidArg (nameof dicer) "Dicer没有固定"
 
         options
-        |> Seq.map
-            (fun opt ->
-                if prefix = "" then
-                    MappedOption.Create(dicer, opt)
-                else
-                    MappedOption.Create(dicer, opt, prefix))
+        |> Seq.map (fun opt ->
+            if prefix = "" then
+                MappedOption.Create(dicer, opt)
+            else
+                MappedOption.Create(dicer, opt, prefix))
         |> Seq.sortBy (fun opt -> opt.Value)
         |> Seq.cache
 

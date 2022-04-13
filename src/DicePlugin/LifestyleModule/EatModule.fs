@@ -1,5 +1,7 @@
 namespace KPX.DicePlugin.LifestyleModule
 
+open System.Collections.Generic
+
 open KPX.FsCqHttp.Api.Group
 open KPX.FsCqHttp.Event
 open KPX.FsCqHttp.Message
@@ -22,8 +24,6 @@ type EatSubCommand =
     | [<AltCommandName("晚餐", "晚餐", "晚")>] Dinner
     | [<AltCommandName("加餐", "夜宵", "加")>] Extra
     | [<AltCommandName("火锅")>] Hotpot
-    | [<AltCommandName("饮料")>] Drinks
-    | [<AltCommandName("零食")>] Snacks
 
     interface ISubcommandTemplate with
         member x.Usage =
@@ -33,11 +33,57 @@ type EatSubCommand =
             | Dinner -> "晚餐"
             | Extra -> "加餐"
             | Hotpot -> "火锅"
-            | Drinks -> "饮料"
-            | Snacks -> "零食"
 
 type EatModule() =
     inherit CommandHandlerBase()
+
+    let allKnownOpts =
+        seq {
+            yield! breakfast
+            yield! dinner
+            yield! drinks
+        }
+        |> HashSet<string>
+
+    let newEat = HashSet<string>()
+    let newDrink = HashSet<string>()
+
+    let tryAdd (knownSet: HashSet<_>) (newSet: HashSet<_>) (opt) =
+        if not <| knownSet.Contains(opt) then
+            newSet.Add(opt) |> ignore
+
+    member private _.GetDicer(cmdArg: CommandEventArgs, ret: TextResponse) =
+        let mutable seed = SeedOption.SeedByUserDay(cmdArg.MessageEvent)
+
+        let at = cmdArg.MessageEvent.Message.TryGetAt()
+
+        match at with
+        | Some AtUserType.All //TryGetAt不接受@all，不会匹配
+        | None -> ()
+        | Some (AtUserType.User uid) when uid = cmdArg.BotUserId || uid = cmdArg.MessageEvent.UserId ->
+            // @自己 @Bot 迷惑行为
+            use s = EmbeddedResource.GetResFileStream("DicePlugin.Resources.Funny.jpg")
+
+            use img = SkiaSharp.SKImage.FromEncodedData(s)
+
+            let msg = Message()
+            msg.Add(img)
+            cmdArg.Reply(msg)
+            cmdArg.Abort(IgnoreError, "")
+
+        | Some (AtUserType.User uid) ->
+            seed <- SeedOption.SeedByAtUserDay(cmdArg.MessageEvent)
+            // 私聊不会有at，所以肯定是群聊消息
+            let gEvent = cmdArg.MessageEvent.AsGroup()
+
+            let atUserInfo = GetGroupMemberInfo(gEvent.GroupId, uid) |> cmdArg.ApiCaller.CallApi
+
+            ret.WriteLine("{0} 为 {1} 投掷：", cmdArg.MessageEvent.DisplayName, atUserInfo.DisplayName)
+
+        let dicer = Dicer(seed)
+        dicer.Freeze()
+
+        dicer
 
     [<CommandHandlerMethod("#eat",
                            "投掷吃什么",
@@ -53,58 +99,46 @@ type EatModule() =
             for line in help do
                 ret.WriteLine(line)
         else
-            let mutable seed = SeedOption.SeedByUserDay(cmdArg.MessageEvent)
-
-            let at = cmdArg.MessageEvent.Message.TryGetAt()
-
-            match at with
-            | Some AtUserType.All //TryGetAt不接受@all，不会匹配
-            | None -> ()
-            | Some (AtUserType.User uid) when uid = cmdArg.BotUserId || uid = cmdArg.MessageEvent.UserId ->
-                // @自己 @Bot 迷惑行为
-                use s = EmbeddedResource.GetResFileStream("DicePlugin.Resources.Funny.jpg")
-
-                use img = SkiaSharp.SKImage.FromEncodedData(s)
-
-                let msg = Message()
-                msg.Add(img)
-                cmdArg.Reply(msg)
-                ret.Abort(IgnoreError, "")
-
-            | Some (AtUserType.User uid) ->
-                seed <- SeedOption.SeedByAtUserDay(cmdArg.MessageEvent)
-                // 私聊不会有at，所以肯定是群聊消息
-                let gEvent = cmdArg.MessageEvent.AsGroup()
-
-                let atUserInfo = GetGroupMemberInfo(gEvent.GroupId, uid) |> cmdArg.ApiCaller.CallApi
-
-                ret.WriteLine("{0} 为 {1} 投掷：", cmdArg.MessageEvent.DisplayName, atUserInfo.DisplayName)
-
-            let dicer = Dicer(seed)
-            dicer.Freeze()
+            let dicer = x.GetDicer(cmdArg, ret)
 
             match SubcommandParser.Parse<EatSubCommand>(cmdArg) with
-            | None -> scoreByMeals dicer cmdArg.HeaderArgs ret
+            | None ->
+                for opt in cmdArg.HeaderArgs do
+                    tryAdd allKnownOpts newEat opt
+
+                scoreByMeals dicer cmdArg.HeaderArgs ret
             | Some Breakfast -> mealsFunc "早餐" breakfast dicer ret
             | Some Lunch -> mealsFunc "午餐" dinner dicer ret
             | Some Dinner -> mealsFunc "晚餐" dinner dicer ret
             | Some Extra -> mealsFunc "加餐" breakfast dicer ret
             | Some Hotpot -> hotpotFunc dicer ret
-            | Some Drinks -> mealsFunc "饮料" breakfast dicer ret
-            | Some Snacks -> mealsFunc "零食" breakfast dicer ret
 
-    [<CommandHandlerMethod("#饮料", "投掷喝什么饮料，可以@一个群友帮他选", "")>]
+    [<CommandHandlerMethod("#drink", "投掷喝什么饮料，可以@一个群友帮他选", "")>]
     member x.HandleDrink(cmdArg: CommandEventArgs) =
-        let msg = cmdArg.MessageEvent.Message
-        let tmp = Message()
-        tmp.Add("#eat 饮料")
+        use ret = cmdArg.OpenResponse(ForceText)
+        let dicer = x.GetDicer(cmdArg, ret)
+        let options = cmdArg.HeaderArgs
 
-        for at in msg.GetAts() do
-            tmp.Add(at)
+        match options.Length with
+        | 0 -> mealsFunc "饮料" drinks dicer ret
+        | _ ->
+            for opt in cmdArg.HeaderArgs do
+                tryAdd allKnownOpts newDrink opt
 
-        let api = KPX.FsCqHttp.Api.Context.RewriteCommand(cmdArg, Seq.singleton<ReadOnlyMessage> tmp)
+            let mapped =
+                EatChoices(options, dicer, "喝").MappedOptions
+                |> Seq.sortBy (fun opt -> opt.Value)
+                |> Seq.map (fun opt -> $"%s{opt.Original}(%s{opt.DescribeValue()})")
 
-        cmdArg.ApiCaller.CallApi(api) |> ignore
+            ret.WriteLine(sprintf "%s" (System.String.Join(" ", mapped)))
+
+    [<CommandHandlerMethod("#showneweats", "显示新添加的eat选项", "")>]
+    member x.ShowNewOpts(cmdArg: CommandEventArgs) =
+        use ret = cmdArg.OpenResponse(ForceText)
+        ret.WriteLine("吃的：")
+        ret.WriteLine(System.String.Join(" ", newEat))
+        ret.WriteLine("饮料：")
+        ret.WriteLine(System.String.Join(" ", newDrink))
 
     [<TestFixture>]
     member x.TestEat() =
@@ -114,4 +148,3 @@ type EatModule() =
         tc.ShouldNotThrow("#eat 早")
         tc.ShouldNotThrow("#eat 中")
         tc.ShouldNotThrow("#eat 晚")
-        tc.ShouldNotThrow("#饮料")
