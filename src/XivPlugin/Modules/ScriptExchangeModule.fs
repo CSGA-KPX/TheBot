@@ -78,22 +78,20 @@ type ScriptExchangeModule() =
             raise <| ModuleException(InputError, $"兑换列表长度达到上限，请指定版本号")
 
         if opt.PatchNumber.IsSome then
-            ia <- ia |> Array.filter (fun x -> x.PatchNumber.MajorPatch = opt.PatchNumber.Value.MajorPatch)
+            ia <-
+                ia
+                |> Array.filter (fun x -> x.PatchNumber.MajorPatch = opt.PatchNumber.Value.MajorPatch)
 
         TextTable(ForceImage) {
             $"兑换道具:%s{cost.DisplayName} 土豆：%s{world.DataCenter}/%s{world.WorldName}"
 
             [ CellBuilder() { literal "兑换物品" }
               CellBuilder() {
-                  literal "价格"
+                  literal "卖出价格"
                   rightAlign
               }
               CellBuilder() {
-                  literal "最低"
-                  rightAlign
-              }
-              CellBuilder() {
-                  literal "道具价值"
+                  literal "兑换价值"
                   rightAlign
               }
               CellBuilder() {
@@ -104,30 +102,19 @@ type ScriptExchangeModule() =
             ia
             |> Array.map (fun info ->
                 let receive = itemCol.GetByItemId(info.ReceiveItem)
-
-                let market =
-                    universalis
-                        .GetMarketInfo(world, receive)
-                        .GetListingAnalyzer()
-                        .TakeVolume()
-
-                let updated = market.LastUpdateTime()
+                let market = universalis.GetMarketInfo(world, receive)
+                let updated = market.LastUpdated
+                let price = market.AllPrice()
 
                 (updated,
-                 [ CellBuilder() { literal receive.DisplayName }
-                   CellBuilder() { integer (market.StdEvPrice().Average) }
-                   CellBuilder() { integer (market.MinPrice()) }
-                   let costItemValue =
-                       (market.StdEvPrice() * (float <| info.ReceiveCount) / (float <| info.CostCount))
-                           .Average
-
+                 [ CellBuilder() { literal $"{receive.DisplayName}*{info.ReceiveCount}" }
+                   let subTotal = price * (float info.ReceiveCount)
+                   CellBuilder() { integer subTotal }
+                   let costItemValue = market.AllPrice() * (float info.ReceiveCount) / (float info.CostCount)
                    CellBuilder() { integer costItemValue }
 
-                   if market.IsEmpty then
-                       CellBuilder() { rightPad }
-                   else
-                       CellBuilder() { timeSpan updated } ]))
-            |> Array.sortBy fst
+                   CellBuilder() { toTimeSpan updated } ]))
+            |> Array.sortByDescending fst
             |> Array.map snd
         }
 

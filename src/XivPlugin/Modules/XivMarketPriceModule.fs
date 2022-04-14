@@ -134,26 +134,15 @@ text 以文本格式输出结果
                   for world in worlds do
                       let uni = universalis.GetMarketInfo(world, mr.Item)
 
-                      let tradelog = uni.GetTradeLogAnalyzer()
-                      let listing = uni.GetListingAnalyzer()
-                      let mutable updated = TimeSpan.MaxValue
+                      let updated = uni.LastUpdated
 
-                      let lstAll = listing.TakeVolume(25).StdEvPrice().Average * mr.Quantity
+                      let lstAll = uni.ListingAllSampledPrice()
+                      let lstHq = uni.ListingHqSampledPrice()
+                      let logAll = uni.TradelogAllPrice()
+                      let logHq = uni.TradeLogHqPrice()
 
-                      let lstHq =
-                          listing.TakeHQ().TakeVolume(25).StdEvPrice()
-                              .Average
-                          * mr.Quantity
-
-                      updated <- min updated (listing.LastUpdateTime())
                       sumListingAll <- sumListingAll + lstAll
                       sumListingHq <- sumListingHq + lstHq
-
-                      let logAll = tradelog.StdEvPrice().Average * mr.Quantity
-
-                      let logHq = tradelog.TakeHQ().StdEvPrice().Average * mr.Quantity
-
-                      updated <- min updated (tradelog.LastUpdateTime())
                       sumTradeAll <- sumTradeAll + logAll
                       sumTradeHq <- sumTradeHq + logHq
 
@@ -161,22 +150,23 @@ text 以文本格式输出结果
                         CellBuilder() { literal world.WorldName }
                         CellBuilder() { integer mr.Quantity }
                         CellBuilder() { integer lstAll }
-                        if canHq then CellBuilder() { integer lstHq }
+                        if canHq then
+                            CellBuilder() { integer lstHq }
                         CellBuilder() { integer logAll }
-                        if canHq then CellBuilder() { integer logHq }
-                        if updated = TimeSpan.MaxValue then
-                            CellBuilder() { rightPad }
-                        else
-                            CellBuilder() { timeSpan updated } ] ]
+                        if canHq then
+                            CellBuilder() { integer logHq }
+                        CellBuilder() { toTimeSpan updated } ] ]
             // 合计行
             [ if worlds.Length = 1 && acc.Count >= 2 then
                   [ CellBuilder() { literal "合计" }
                     CellBuilder() { leftPad }
                     CellBuilder() { rightPad }
                     CellBuilder() { integer sumListingAll }
-                    if canHq then CellBuilder() { integer sumListingHq }
+                    if canHq then
+                        CellBuilder() { integer sumListingHq }
                     CellBuilder() { integer sumTradeAll }
-                    if canHq then CellBuilder() { integer sumTradeHq }
+                    if canHq then
+                        CellBuilder() { integer sumTradeHq }
                     CellBuilder() { rightPad } ] ]
 
         }

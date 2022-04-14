@@ -115,64 +115,55 @@ type XivRecipeModule() =
 
             [ CellBuilder() { literal "产出：" } ]
 
-            let mutable totalSell = StdEv.Zero
+            let mutable totalSell = 0.0
 
             [ for mr in product do
                   [ CellBuilder() { literal mr.Item.DisplayName }
                     CellBuilder() { quantity mr.Quantity }
 
                     if doCalculateCost then
-                        let listing =
-                            universalis
-                                .GetMarketInfo(world, mr.Item)
-                                .GetListingAnalyzer()
-                                .TakeVolume()
+                        let uni = universalis.GetMarketInfo(world, mr.Item)
 
-                        let unitPrice = listing.StdEvPrice()
+                        let unitPrice = uni.AllPrice()
                         let subTotal = unitPrice * mr.Quantity
                         totalSell <- totalSell + subTotal
-                        CellBuilder() { integer unitPrice.Average }
-                        CellBuilder() { integer subTotal.Average }
-                        CellBuilder() { timeSpan (listing.LastUpdateTime()) } ] ]
+                        CellBuilder() { integer unitPrice }
+                        CellBuilder() { integer subTotal }
+                        CellBuilder() { toTimeSpan uni.LastUpdated } ] ]
 
             // 单项列
-            let mutable sum = StdEv.Zero
+            let mutable sum = 0.0
 
             [ CellBuilder() { literal "材料：" } ]
 
             [ for mr in acc |> Seq.sortBy (fun kv -> kv.Item.ItemId) do
-                  let market =
-                      lazy
-                          (universalis
-                              .GetMarketInfo(world, mr.Item)
-                              .GetListingAnalyzer()
-                              .TakeVolume())
+                  let uni = lazy (universalis.GetMarketInfo(world, mr.Item))
 
                   [ CellBuilder() { literal (tryLookupNpcPrice (mr.Item, world)) }
                     CellBuilder() { quantity mr.Quantity }
                     if doCalculateCost then
-                        let stdPrice = market.Value.StdEvPrice()
-                        CellBuilder() { integer stdPrice.Average }
+                        let stdPrice = uni.Value.AllPrice()
+                        CellBuilder() { integer stdPrice }
                         let subtotal = stdPrice * mr.Quantity
                         sum <- sum + subtotal
-                        CellBuilder() { integer subtotal.Average }
-                        CellBuilder() { timeSpan (market.Value.LastUpdateTime()) } ] ]
+                        CellBuilder() { integer subtotal }
+                        CellBuilder() { toTimeSpan uni.Value.LastUpdated } ] ]
 
             [ if doCalculateCost then
                   [ CellBuilder() { literal "成本总计" }
                     CellBuilder() { rightPad }
                     CellBuilder() { rightPad }
-                    CellBuilder() { integer sum.Average } ]
+                    CellBuilder() { integer sum } ]
 
                   [ CellBuilder() { literal "卖出价格" }
                     CellBuilder() { rightPad }
                     CellBuilder() { rightPad }
-                    CellBuilder() { integer totalSell.Average } ]
+                    CellBuilder() { integer totalSell } ]
 
                   [ CellBuilder() { literal "税前利润" }
                     CellBuilder() { rightPad }
                     CellBuilder() { rightPad }
-                    CellBuilder() { integer (totalSell - sum).Average } ] ]
+                    CellBuilder() { integer (totalSell - sum) } ] ]
 
         }
 
