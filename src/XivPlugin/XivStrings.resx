@@ -119,9 +119,9 @@
   </resheader>
   <data name="ChsDCInfo" xml:space="preserve">
     <value>一区 晨曦王座,沃仙曦染,宇宙和音,红玉海,萌芽池,神意之地,幻影群岛,拉诺西亚
-二区 拂晓之间,龙巢神殿,旅人栈桥,白金幻象,白银乡,神拳痕,潮风亭
+二区 拂晓之间,龙巢神殿,旅人栈桥,白金幻象,白银乡,神拳痕,潮风亭,梦羽宝境
 三区 琥珀原,柔风海湾,海猫茶屋,延夏,静语庄园,摩杜纳,紫水栈桥
-四区 伊修加德,太阳海岸,银泪湖,水晶塔,红茶川</value>
+四区 红茶川,伊修加德,太阳海岸,银泪湖,水晶塔</value>
     <comment>空格分隔，然后逗号</comment>
   </data>
   <data name="ClassJobMapping" xml:space="preserve">

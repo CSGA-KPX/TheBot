@@ -49,7 +49,8 @@ type SpecialShopCollection private () =
             let tomestones =
                 seq {
                     for row in col.TomestonesItem do
-                        row.Key.Main, row.Item.AsInt()
+                        let key = row.Tomestones.AsInt()
+                        if key <> 0 then key, row.Item.AsInt()
                 }
                 |> readOnlyDict
 
@@ -117,7 +118,8 @@ type SpecialShopCollection private () =
             let tomestones =
                 seq {
                     for row in col.TomestonesItem do
-                        row.Key.Main, row.Item.AsInt()
+                        let key = row.Tomestones.AsInt()
+                        if key <> 0 then key, row.Item.AsInt()
                 }
                 |> readOnlyDict
 
