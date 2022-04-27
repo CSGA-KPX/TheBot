@@ -99,7 +99,7 @@ type XivRecipeModule() =
               CellBuilder() { literal "数量" }
               if doCalculateCost then
                   CellBuilder() {
-                      literal "价格"
+                      literal "税前价"
                       rightAlign
                   }
 
@@ -113,7 +113,31 @@ type XivRecipeModule() =
                       rightAlign
                   } ]
 
-            [ CellBuilder() { literal "产出：" } ]
+            // 单项列
+            let mutable sum = 0.0
+
+            CellBuilder() {
+                literal "材料："
+                setBold
+            }
+
+            [ for mr in acc |> Seq.sortBy (fun kv -> kv.Item.ItemId) do
+                  let uni = lazy (universalis.GetMarketInfo(world, mr.Item))
+
+                  [ CellBuilder() { literal (tryLookupNpcPrice (mr.Item, world)) }
+                    CellBuilder() { quantity mr.Quantity }
+                    if doCalculateCost then
+                        let stdPrice = uni.Value.AllPrice()
+                        CellBuilder() { integer stdPrice }
+                        let subtotal = stdPrice * mr.Quantity
+                        sum <- sum + subtotal
+                        CellBuilder() { integer subtotal }
+                        CellBuilder() { toTimeSpan uni.Value.LastUpdated } ] ]
+
+            CellBuilder() {
+                literal "产出："
+                setBold
+            }
 
             let mutable totalSell = 0.0
 
@@ -131,40 +155,30 @@ type XivRecipeModule() =
                         CellBuilder() { integer subTotal }
                         CellBuilder() { toTimeSpan uni.LastUpdated } ] ]
 
-            // 单项列
-            let mutable sum = 0.0
+            if doCalculateCost then
+                [ CellBuilder() {
+                      literal "产出/税后"
+                      setBold
+                  }
+                  CellBuilder() { rightPad }
+                  CellBuilder() { integer totalSell }
+                  CellBuilder() { integer (totalSell * 0.95) } ]
 
-            [ CellBuilder() { literal "材料：" } ]
+                [ CellBuilder() {
+                      literal "成本/税后"
+                      setBold
+                  }
+                  CellBuilder() { rightPad }
+                  CellBuilder() { integer sum }
+                  CellBuilder() { integer (sum * 1.05) } ]
 
-            [ for mr in acc |> Seq.sortBy (fun kv -> kv.Item.ItemId) do
-                  let uni = lazy (universalis.GetMarketInfo(world, mr.Item))
-
-                  [ CellBuilder() { literal (tryLookupNpcPrice (mr.Item, world)) }
-                    CellBuilder() { quantity mr.Quantity }
-                    if doCalculateCost then
-                        let stdPrice = uni.Value.AllPrice()
-                        CellBuilder() { integer stdPrice }
-                        let subtotal = stdPrice * mr.Quantity
-                        sum <- sum + subtotal
-                        CellBuilder() { integer subtotal }
-                        CellBuilder() { toTimeSpan uni.Value.LastUpdated } ] ]
-
-            [ if doCalculateCost then
-                  [ CellBuilder() { literal "成本总计" }
-                    CellBuilder() { rightPad }
-                    CellBuilder() { rightPad }
-                    CellBuilder() { integer sum } ]
-
-                  [ CellBuilder() { literal "卖出价格" }
-                    CellBuilder() { rightPad }
-                    CellBuilder() { rightPad }
-                    CellBuilder() { integer totalSell } ]
-
-                  [ CellBuilder() { literal "税前利润" }
-                    CellBuilder() { rightPad }
-                    CellBuilder() { rightPad }
-                    CellBuilder() { integer (totalSell - sum) } ] ]
-
+                [ CellBuilder() {
+                      literal "总税/利润"
+                      setBold
+                  }
+                  CellBuilder() { rightPad }
+                  CellBuilder() { integer ((totalSell + sum) * 0.05) }
+                  CellBuilder() { integer (totalSell * 0.95 - sum * 1.05) } ]
         }
 
     [<TestFixture>]
