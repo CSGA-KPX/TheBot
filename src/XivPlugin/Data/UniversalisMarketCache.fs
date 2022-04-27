@@ -143,11 +143,12 @@ type UniversalisAnalyzer internal (record: UniversalisRecord) =
 
     member x.ListingAllSampledPrice() = listings |> takeSample |> weightedPrice
 
-    member x.ListingHqSampledPrice() = listings |> takeHq |> takeSample |> weightedPrice
+    member x.ListingHqSampledPrice() =
+        listings |> takeHq |> takeSample |> weightedPrice
 
-    member x.TradelogAllPrice() = tradelogs |> takeSample |> weightedPrice
+    member x.TradelogAllPrice() = tradelogs |> weightedPrice
 
-    member x.TradeLogHqPrice() = tradelogs |> takeHq |> takeSample |> weightedPrice
+    member x.TradeLogHqPrice() = tradelogs |> takeHq |> weightedPrice
 
     /// 按照订单价格->交易价格->NaN进行排序
     member x.AllPrice() =
@@ -220,5 +221,4 @@ type MarketInfoCollection private () =
 
     member x.GetMarketInfo(world: World, item: XivItem) =
         let info = { World = world; Item = item }
-        x.GetItem(info.ToString())
-        |> UniversalisAnalyzer
+        x.GetItem(info.ToString()) |> UniversalisAnalyzer

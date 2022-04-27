@@ -136,10 +136,10 @@ text 以文本格式输出结果
 
                       let updated = uni.LastUpdated
 
-                      let lstAll = uni.ListingAllSampledPrice()
-                      let lstHq = uni.ListingHqSampledPrice()
-                      let logAll = uni.TradelogAllPrice()
-                      let logHq = uni.TradeLogHqPrice()
+                      let lstAll = uni.ListingAllSampledPrice() * mr.Quantity
+                      let lstHq = uni.ListingHqSampledPrice() * mr.Quantity
+                      let logAll = uni.TradelogAllPrice() * mr.Quantity
+                      let logHq = uni.TradeLogHqPrice() * mr.Quantity
 
                       sumListingAll <- sumListingAll + lstAll
                       sumListingHq <- sumListingHq + lstHq
