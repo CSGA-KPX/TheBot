@@ -192,8 +192,9 @@ type XivRecipeModule() =
 
             [ CellBuilder() { literal "物品" }
               CellBuilder() { literal "数量" }
+              CellBuilder() { literal "税前" }
               CellBuilder() {
-                  literal "买入"
+                  literal "小计"
                   rightAlign
               }
 
@@ -211,6 +212,7 @@ type XivRecipeModule() =
                       * m.Quantity
 
                   let sellPrice = func mr
+                  let unitPrice = sellPrice / mr.Quantity
                   let mutable preferSell = true
 
                   let craftPrice =
@@ -235,6 +237,7 @@ type XivRecipeModule() =
 
                   [ CellBuilder() { literal (tryLookupNpcPrice (mr.Item, world)) }
                     CellBuilder() { quantity mr.Quantity }
+                    CellBuilder() { integer unitPrice }
                     CellBuilder(FakeBold = preferSell) { integer sellPrice }
                     if craftPrice.IsNone then
                         CellBuilder() { rightPad }
