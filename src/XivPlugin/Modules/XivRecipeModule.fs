@@ -10,7 +10,6 @@ open KPX.TheBot.Host.Utils.RecipeRPN
 open KPX.XivPlugin.Data
 open KPX.XivPlugin.Data.Shop
 open KPX.XivPlugin.Modules.Utils
-open KPX.XivPlugin.Modules.Utils.MarketUtils
 
 
 type XivRecipeModule() =
@@ -32,17 +31,7 @@ type XivRecipeModule() =
 
     [<CommandHandlerMethod("#r", "FF14:根据表达式汇总多个物品的材料，不查询价格", "可以使用text:选项返回文本。如#r 白钢锭 text:")>]
     [<CommandHandlerMethod("#rr", "FF14:根据表达式汇总多个物品的基础材料，不查询价格", "可以使用text:选项返回文本。如#rr 白钢锭 text:")>]
-    [<CommandHandlerMethod("#rc",
-                           "FF14:计算物品基础材料成本",
-                           "可以使用text:选项返回文本。
-可以设置查询服务器，已有服务器见#ff14help")>]
-    [<CommandHandlerMethod("#rrc",
-                           "FF14:计算物品基础材料成本",
-                           "可以使用text:选项返回文本。
-可以设置查询服务器，已有服务器见#ff14help")>]
-    member _.GeneralRecipeCalculator(cmdArg: CommandEventArgs) =
-        let doCalculateCost = cmdArg.CommandName = "#rrc" || cmdArg.CommandName = "#rc"
-
+    member _.RecipeMaterialCalculator(cmdArg: CommandEventArgs) =
         let opt = CommandUtils.XivOption()
         opt.Parse(cmdArg.HeaderArgs)
 
@@ -52,7 +41,7 @@ type XivRecipeModule() =
         let getMaterialFunc region =
             let rm = getRm region
 
-            if cmdArg.CommandName = "#rr" || cmdArg.CommandName = "#rrc" then
+            if cmdArg.CommandName = "#rr" then
                 fun (item: XivItem) -> rm.TryGetRecipeRec(item, ByItem 1.0)
             else
                 fun (item: XivItem) -> rm.TryGetRecipe(item, ByItem 1.0)
@@ -87,34 +76,8 @@ type XivRecipeModule() =
             cmdArg.Abort(InputError, "缺少表达式")
 
         TextTable(opt.ResponseType) {
-            if doCalculateCost then
-                $"土豆：%s{world.WorldName}"
-
-                if world.VersionRegion <> region then
-                    $"警告：服务器版本[{world.VersionRegion}]和物品版本[{region}]不符"
-                    $"如非预期结果，请写明想要查询的服务器"
-
             // 表头
-            [ CellBuilder() { literal "物品" }
-              CellBuilder() { literal "数量" }
-              if doCalculateCost then
-                  CellBuilder() {
-                      literal "税前价"
-                      rightAlign
-                  }
-
-                  CellBuilder() {
-                      literal "小计"
-                      rightAlign
-                  }
-
-                  CellBuilder() {
-                      literal "更新"
-                      rightAlign
-                  } ]
-
-            // 单项列
-            let mutable sum = 0.0
+            [ CellBuilder() { literal "物品" }; CellBuilder() { literal "数量" } ]
 
             CellBuilder() {
                 literal "材料："
@@ -122,63 +85,192 @@ type XivRecipeModule() =
             }
 
             [ for mr in acc |> Seq.sortBy (fun kv -> kv.Item.ItemId) do
-                  let uni = lazy (universalis.GetMarketInfo(world, mr.Item))
-
                   [ CellBuilder() { literal (tryLookupNpcPrice (mr.Item, world)) }
-                    CellBuilder() { quantity mr.Quantity }
-                    if doCalculateCost then
-                        let stdPrice = uni.Value.AllPrice()
-                        CellBuilder() { integer stdPrice }
-                        let subtotal = stdPrice * mr.Quantity
-                        sum <- sum + subtotal
-                        CellBuilder() { integer subtotal }
-                        CellBuilder() { toTimeSpan uni.Value.LastUpdated } ] ]
+                    CellBuilder() { quantity mr.Quantity } ] ]
 
             CellBuilder() {
                 literal "产出："
                 setBold
             }
 
+            [ for mr in product do
+                  [ CellBuilder() { literal mr.Item.DisplayName }; CellBuilder() { quantity mr.Quantity } ] ]
+        }
+
+    [<CommandHandlerMethod("#rc", "FF14:根据表达式汇总多个物品的材料，不查询价格", "可以使用text:选项返回文本。如#r 白钢锭 text:")>]
+    [<CommandHandlerMethod("#rrc", "FF14:根据表达式汇总多个物品的材料，不查询价格", "", IsHidden = true)>]
+    member _.RecipeProfitCalculator(cmdArg: CommandEventArgs) =
+        let opt = CommandUtils.XivOption()
+        opt.Parse(cmdArg.HeaderArgs)
+
+        let world = opt.World.Value
+        let mutable region = world.VersionRegion
+
+        let input = XivExpression.ItemAccumulator()
+        let output = XivExpression.ItemAccumulator()
+
+        for str in opt.NonOptionStrings do
+            match xivExpr.TryEval(str) with
+            | Error err -> raise err
+            | Ok (Number i) -> cmdArg.Abort(InputError, "计算结果为数字{0}，物品Id请加#", i)
+            | Ok (Accumulator a) ->
+                // 如果物品里面有国服名称为空（即国际服才有的物品）
+                // 则覆盖区域到世界服
+                for mr in a do
+                    if System.String.IsNullOrWhiteSpace(mr.Item.ChineseName) then
+                        region <- VersionRegion.Offical
+
+                // 需要先确定区域，不能合并到同一个循环
+                for mr in a do
+                    output.Update(mr)
+                    let directMaterial = (getRm region).TryGetRecipe(mr)
+
+                    if directMaterial.IsNone then
+                        cmdArg.Abort(InputError, $"%s{mr.Item.DisplayName} 没有生产配方")
+                    else
+                        for m in directMaterial.Value.Input do
+                            input.Update(m)
+
+        if input.Count = 0 then
+            cmdArg.Abort(InputError, "缺少表达式")
+
+        TextTable(opt.ResponseType) {
+            $"土豆：%s{world.WorldName}"
+
+            if world.VersionRegion <> region then
+                $"警告：服务器版本[{world.VersionRegion}]和物品版本[{region}]不符"
+                $"如非预期结果，请写明想要查询的服务器"
+
             let mutable totalSell = 0.0
 
-            [ for mr in product do
+            CellBuilder() {
+                literal "产出："
+                setBold
+            }
+
+            [ CellBuilder() { literal "物品" }
+              CellBuilder() { literal "数量" }
+              CellBuilder() {
+                  literal "税前"
+                  rightAlign
+              }
+
+              CellBuilder() {
+                  literal "小计"
+                  rightAlign
+              }
+
+              CellBuilder() {
+                  literal "更新"
+                  rightAlign
+              } ]
+
+            [ for mr in output do
                   [ CellBuilder() { literal mr.Item.DisplayName }
                     CellBuilder() { quantity mr.Quantity }
 
-                    if doCalculateCost then
-                        let uni = universalis.GetMarketInfo(world, mr.Item)
+                    let uni = universalis.GetMarketInfo(world, mr.Item)
+                    let unitPrice = uni.AllPrice()
+                    let subTotal = unitPrice * mr.Quantity
+                    totalSell <- totalSell + subTotal
 
-                        let unitPrice = uni.AllPrice()
-                        let subTotal = unitPrice * mr.Quantity
-                        totalSell <- totalSell + subTotal
-                        CellBuilder() { integer unitPrice }
-                        CellBuilder() { integer subTotal }
-                        CellBuilder() { toTimeSpan uni.LastUpdated } ] ]
+                    CellBuilder() { integer unitPrice }
+                    CellBuilder() { integer subTotal }
+                    CellBuilder() { toTimeSpan uni.LastUpdated } ] ]
 
-            if doCalculateCost then
-                [ CellBuilder() {
-                      literal "产出/税后"
-                      setBold
-                  }
-                  CellBuilder() { rightPad }
-                  CellBuilder() { integer totalSell }
-                  CellBuilder() { integer (totalSell * 0.95) } ]
 
-                [ CellBuilder() {
-                      literal "成本/税后"
-                      setBold
-                  }
-                  CellBuilder() { rightPad }
-                  CellBuilder() { integer sum }
-                  CellBuilder() { integer (sum * 1.05) } ]
+            // 材料
 
-                [ CellBuilder() {
-                      literal "总税/利润"
-                      setBold
-                  }
-                  CellBuilder() { rightPad }
-                  CellBuilder() { integer ((totalSell + sum) * 0.05) }
-                  CellBuilder() { integer (totalSell * 0.95 - sum * 1.05) } ]
+            let mutable inputBuySum = 0.0
+            let mutable inputCraftSum = 0.0
+            let mutable inputOptSum = 0.0
+
+            CellBuilder() {
+                literal "材料："
+                setBold
+            }
+
+            [ CellBuilder() { literal "物品" }
+              CellBuilder() { literal "数量" }
+              CellBuilder() {
+                  literal "买入"
+                  rightAlign
+              }
+
+              CellBuilder() {
+                  literal "制作"
+                  rightAlign
+              } ]
+
+            [ for mr in input do
+
+                  let inline func (m: RecipeMaterial<_>) =
+                      universalis
+                          .GetMarketInfo(world, m.Item)
+                          .AllPrice()
+                      * m.Quantity
+
+                  let sellPrice = func mr
+                  let mutable preferSell = true
+
+                  let craftPrice =
+                      (getRm region).TryGetRecipeRec(mr)
+                      |> Option.map (fun proc -> proc.Input |> Array.Parallel.map func |> Array.sum)
+
+                  if craftPrice.IsNone then
+                      inputBuySum <- inputBuySum + sellPrice
+                      inputCraftSum <- inputCraftSum + sellPrice
+                      inputOptSum <- inputOptSum + sellPrice
+                      preferSell <- true
+                  else if sellPrice <= craftPrice.Value then
+                      inputBuySum <- inputBuySum + sellPrice
+                      inputCraftSum <- inputCraftSum + craftPrice.Value
+                      inputOptSum <- inputOptSum + sellPrice
+                      preferSell <- true
+                  else
+                      inputBuySum <- inputBuySum + sellPrice
+                      inputCraftSum <- inputCraftSum + craftPrice.Value
+                      inputOptSum <- inputOptSum + craftPrice.Value
+                      preferSell <- false
+
+                  [ CellBuilder() { literal (tryLookupNpcPrice (mr.Item, world)) }
+                    CellBuilder() { quantity mr.Quantity }
+                    CellBuilder(FakeBold = preferSell) { integer sellPrice }
+                    if craftPrice.IsNone then
+                        CellBuilder() { rightPad }
+                    else
+                        CellBuilder(FakeBold = not preferSell) { integer craftPrice.Value } ]
+
+                  () ]
+
+            let taxBuyRate = 1.05
+            let taxSellRate = 0.95
+
+            // 材料小计
+            [ CellBuilder() {
+                  literal "税后卖出"
+                  setBold
+              }
+              CellBuilder() { rightPad }
+              CellBuilder() { integer (totalSell * taxSellRate) } ]
+
+            // 材料小计
+            [ CellBuilder() {
+                  literal "税后材料"
+                  setBold
+              }
+              CellBuilder() { rightPad }
+              CellBuilder() { integer (inputBuySum * taxBuyRate) }
+              CellBuilder() { integer (inputCraftSum * taxBuyRate) } ]
+
+            // 最佳
+            [ CellBuilder() {
+                  literal "最优成本/利润"
+                  setBold
+              }
+              CellBuilder() { rightPad }
+              CellBuilder() { integer (inputOptSum * taxBuyRate) }
+              CellBuilder() { integer ((totalSell * taxSellRate) - (inputOptSum * taxBuyRate)) } ]
         }
 
     [<TestFixture>]
@@ -189,21 +281,12 @@ type XivRecipeModule() =
         // 空值
         tc.ShouldThrow("#r")
         tc.ShouldThrow("#rr")
-        tc.ShouldThrow("#rc")
-        tc.ShouldThrow("#rrc")
-
         // 不存在值
         tc.ShouldThrow("#r 不存在物品")
         tc.ShouldThrow("#rr 不存在物品")
-        tc.ShouldThrow("#rc 不存在物品")
-        tc.ShouldThrow("#rrc 不存在物品")
-
         // 纯数字计算
         tc.ShouldThrow("#r 5*5")
         tc.ShouldThrow("#rr 5*5")
-        tc.ShouldThrow("#rc 5*5")
-        tc.ShouldThrow("#rrc 5*5")
-
         // 常规道具计算
         tc.ShouldNotThrow("#r 亚拉戈高位合成兽革")
         tc.ShouldNotThrow("#r 亚拉戈高位合成兽革*555")
@@ -211,11 +294,6 @@ type XivRecipeModule() =
         tc.ShouldNotThrow("#rr 亚拉戈高位合成兽革")
         tc.ShouldNotThrow("#rr 亚拉戈高位合成兽革*555")
         tc.ShouldNotThrow("#rr 亚拉戈高位合成兽革*(5+10)")
-        tc.ShouldNotThrow("#rc 亚拉戈高位合成兽革")
-        tc.ShouldNotThrow("#rrc 亚拉戈高位合成兽革")
-        tc.ShouldNotThrow("#rc 亚拉戈高位合成兽革 拉诺西亚")
-        tc.ShouldNotThrow("#rrc 亚拉戈高位合成兽革 拉诺西亚")
-
         // 部队工坊
         tc.ShouldNotThrow("#r 野马级船体")
         tc.ShouldNotThrow("#r 野马级船体*555")
@@ -223,7 +301,3 @@ type XivRecipeModule() =
         tc.ShouldNotThrow("#rr 野马级船体")
         tc.ShouldNotThrow("#rr 野马级船体*555")
         tc.ShouldNotThrow("#rr 野马级船体*(5+10)")
-        tc.ShouldNotThrow("#rc 野马级船体")
-        tc.ShouldNotThrow("#rrc 野马级船体")
-        tc.ShouldNotThrow("#rc 野马级船体 拉诺西亚")
-        tc.ShouldNotThrow("#rrc 野马级船体 拉诺西亚")

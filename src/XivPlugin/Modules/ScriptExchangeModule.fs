@@ -10,7 +10,6 @@ open KPX.XivPlugin.Data
 open KPX.XivPlugin.Data.Shop
 
 open KPX.XivPlugin.Modules.Utils
-open KPX.XivPlugin.Modules.Utils.MarketUtils
 
 
 type ScriptExchangeModule() =
@@ -100,7 +99,7 @@ type ScriptExchangeModule() =
               } ]
 
             ia
-            |> Array.map (fun info ->
+            |> Array.Parallel.map (fun info ->
                 let receive = itemCol.GetByItemId(info.ReceiveItem)
                 let market = universalis.GetMarketInfo(world, receive)
                 let updated = market.LastUpdated
