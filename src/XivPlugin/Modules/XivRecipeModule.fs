@@ -192,7 +192,10 @@ type XivRecipeModule() =
 
             [ CellBuilder() { literal "物品" }
               CellBuilder() { literal "数量" }
-              CellBuilder() { literal "税前" }
+              CellBuilder() {
+                  literal "税前"
+                  rightAlign
+              }
               CellBuilder() {
                   literal "小计"
                   rightAlign
