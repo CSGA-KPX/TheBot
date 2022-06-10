@@ -68,10 +68,10 @@
 
   <ItemGroup>
 	  <PackageReference Include="HtmlAgilityPack" Version="1.11.38" />
+	  <PackageReference Include="KPX.LibFFXIV.GameData" Version="1.1.2" />
   </ItemGroup>
 
   <ItemGroup>
-	<ProjectReference Include="..\..\..\LibFFXIV\LibFFXIV.GameData\LibFFXIV.GameData.fsproj" />
     <ProjectReference Include="..\FsCqHttp\FsCqHttp.fsproj">
         <Private>False</Private>
 		<IncludeAssets>compile</IncludeAssets>
