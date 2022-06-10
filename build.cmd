@@ -1,5 +1,10 @@
 @echo off
 
+ECHO ÇëÎðÊ¹ÓÃ 
+pause
+
+GOTO :EOF
+
 dotnet tool restore
 dotnet restore
 
@@ -25,6 +30,7 @@ dotnet test /p:AltCover=true "/p:AltCoverTypeFilter=?KPX|ProviderImplementation.
 
 dotnet reportgenerator "-reports:./tmp/coverage_report/*.xml" "-targetdir:./tmp/coverage_html/" "-sourcedirs:./src/;../LibFFXIV/" -reporttypes:Html
 
+rem dotnet fsdocs build
 rem git clone -b "gh-pages" . tmp/gh-pages
 rem xcopy /Y /E output\ tmp\gh-pages\
 rem pushd tmp\gh-pages
