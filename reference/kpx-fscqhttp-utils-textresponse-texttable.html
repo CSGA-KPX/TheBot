@@ -1,0 +1,1481 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>TextTable (TheBot)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="author" content="KPX">
+
+    <link rel="stylesheet" id="theme_link" href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/4.6.0/materia/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns" crossorigin="anonymous"></script>
+
+    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+    <link rel="shortcut icon" type="image/x-icon" href="img/favicon.ico">
+    <link type="text/css" rel="stylesheet" href="https://CSGA-KPX.github.io/TheBot/content/navbar-fixed-left.css" />
+    <link type="text/css" rel="stylesheet" href="https://CSGA-KPX.github.io/TheBot/content/fsdocs-default.css" />
+    <link type="text/css" rel="stylesheet" href="https://CSGA-KPX.github.io/TheBot/content/fsdocs-custom.css" />
+    <script type="text/javascript" src="https://CSGA-KPX.github.io/TheBot/content/fsdocs-tips.js"></script>
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
+    <!-- END SEARCH BOX: this adds support for the search box -->
+    
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-md navbar-light bg-secondary navbar-nav-scroll fixed-left" id="fsdocs-nav">
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarsExampleDefault">
+            <a href="https://CSGA-KPX.github.io/TheBot/"><img id="fsdocs-logo" src="https://CSGA-KPX.github.io/TheBot/img/logo.png" /></a>
+            <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+            <div id="header">
+                <div class="searchbox" id="fsdocs-searchbox">
+                    <label for="search-by">
+                        <i class="fas fa-search"></i>
+                    </label>
+                    <input data-search-input="" id="search-by" type="search" placeholder="Search..." />
+                    <span data-search-clear="">
+                        <i class="fas fa-times"></i>
+                    </span>
+                </div>
+            </div>
+
+            <!-- END SEARCH BOX: this adds support for the search box -->
+            <ul class="navbar-nav">
+                <li class="nav-header">Links</li>
+                <li class="nav-item" id="fsdocs-license-link"><a class="nav-link" href="https://github.com/CSGA-KPX/TheBot/blob/master/LICENSE">License</a></li>
+                <li class="nav-item" id="fsdocs-release-notes-link"><a class="nav-link" href="https://github.com/CSGA-KPX/TheBot/blob/master/CHANGELOG.md">Release Notes</a></li>
+                <li class="nav-item" id="fsdocs-repository-link"><a class="nav-link" href="https://github.com/CSGA-KPX/TheBot/">Source Repository</a></li>
+                <li class="nav-header">
+  TheBot
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://CSGA-KPX.github.io/TheBot/1_TheBot/1_简介.html">
+    简介
+  </a>
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://CSGA-KPX.github.io/TheBot/1_TheBot/2_安装.html">
+    安装
+  </a>
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://CSGA-KPX.github.io/TheBot/1_TheBot/3_FAQ.html">
+    常见问题
+  </a>
+</li>             
+<li class="nav-header">
+  用户文档
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://CSGA-KPX.github.io/TheBot/2_用户文档/1_常用名词.html">
+    常用术语
+  </a>
+</li>             
+<li class="nav-header">
+  开发文档
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://CSGA-KPX.github.io/TheBot/3_开发文档/1_FsCqHttp概述.html">
+    FsCqHttp概述
+  </a>
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://CSGA-KPX.github.io/TheBot/3_开发文档/2_模块开发.html">
+    模块开发
+  </a>
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://CSGA-KPX.github.io/TheBot/3_开发文档/3_工具.html">
+    工具
+  </a>
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://CSGA-KPX.github.io/TheBot/3_开发文档/4_常见问题.html">
+    常见问题
+  </a>
+</li>
+                <li class="nav-header">
+  API Reference
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://CSGA-KPX.github.io/TheBot/reference/index.html">
+    All Namespaces
+  </a>
+</li>
+            </ul>
+        </div>
+    </nav>
+    <div class="container">
+        <div class="masthead">
+            <h3 class="muted"><a href="https://CSGA-KPX.github.io/TheBot/">TheBot</a></h3>
+        </div>
+        <hr />
+        <div class="container" id="fsdocs-content">
+            <div>
+  <h2>
+    TextTable Type
+  </h2>
+  <dl class="fsdocs-metadata">
+    <dt>
+      Namespace: 
+      <a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-utils-textresponse.html">
+        KPX.FsCqHttp.Utils.TextResponse
+      </a>
+    </dt>
+    <dt>
+      Assembly: FsCqHttp.dll
+    </dt>
+    <dt>
+      Base Type: 
+      <code>obj</code>
+    </dt>
+    <dt>
+      All Interfaces: 
+      <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-handler-icommandresponse.html">ICommandResponse</a></code>
+    </dt>
+  </dl>
+  <div class="fsdocs-xmldoc">
+    <div>
+      <p class="fsdocs-summary">
+        
+      </p>
+    </div>
+  </div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div>
+    <h3>
+      Constructors
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Constructor
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '623', 623)" onmouseover="showTip(event, '623', 623)">
+                <p>
+                  <a id="( .ctor )">
+                    <a href="#( .ctor )">
+                      <code><span>TextTable<span><span>(<span>?retType</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="623">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>TextTable<span><span>(<span>?retType</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        ?retType
+                      </b>
+                      :
+                      <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-utils-textresponse-responsetype.html">ResponseType</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-utils-textresponse-texttable.html">TextTable</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" onclick="Clipboard_CopyTo('`cref:M:KPX.FsCqHttp.Utils.TextResponse.TextTable.#ctor`')">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-md.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-md-blue.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" onclick="Clipboard_CopyTo('<see cref=\'M:KPX.FsCqHttp.Utils.TextResponse.TextTable.#ctor\'/>')">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-blue.png" class="hover"/>
+              </div>
+              <a href="https://github.com/CSGA-KPX/TheBot/tree/master/src/FsCqHttp/Utils/TextTable/TextTable.fs#L11-11" class="fsdocs-source-link">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github-blue.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  ?retType
+                </span>
+                :
+                <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-utils-textresponse-responsetype.html">ResponseType</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-utils-textresponse-texttable.html">TextTable</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div>
+    <h3>
+      Instance members
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Instance member
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '624', 624)" onmouseover="showTip(event, '624', 624)">
+                <p>
+                  <a id="Clear">
+                    <a href="#Clear">
+                      <code><span>this.Clear<span>()</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="624">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Clear<span>()</span></span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" onclick="Clipboard_CopyTo('`cref:M:KPX.FsCqHttp.Utils.TextResponse.TextTable.Clear`')">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-md.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-md-blue.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" onclick="Clipboard_CopyTo('<see cref=\'M:KPX.FsCqHttp.Utils.TextResponse.TextTable.Clear\'/>')">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-blue.png" class="hover"/>
+              </div>
+              <a href="https://github.com/CSGA-KPX/TheBot/tree/master/src/FsCqHttp/Utils/TextTable/TextTable.fs#L18-18" class="fsdocs-source-link">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github-blue.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '625', 625)" onmouseover="showTip(event, '625', 625)">
+                <p>
+                  <a id="Combine">
+                    <a href="#Combine">
+                      <code><span>this.Combine<span><span>(<span>arg1,&#32;arg2</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="625">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Combine<span><span>(<span>arg1,&#32;arg2</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        arg0
+                      </b>
+                      :
+                      <code>'a</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        arg1
+                      </b>
+                      :
+                      <code>'b</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-utils-textresponse-texttable.html">TextTable</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" onclick="Clipboard_CopyTo('```cref:M:KPX.FsCqHttp.Utils.TextResponse.TextTable.Combine``2```')">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-md.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-md-blue.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" onclick="Clipboard_CopyTo('<see cref=\'M:KPX.FsCqHttp.Utils.TextResponse.TextTable.Combine``2\'/>')">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-blue.png" class="hover"/>
+              </div>
+              <a href="https://github.com/CSGA-KPX/TheBot/tree/master/src/FsCqHttp/Utils/TextTable/TextTable.fs#L86-86" class="fsdocs-source-link">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github-blue.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  arg0
+                </span>
+                :
+                <code>'a</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  arg1
+                </span>
+                :
+                <code>'b</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-utils-textresponse-texttable.html">TextTable</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '626', 626)" onmouseover="showTip(event, '626', 626)">
+                <p>
+                  <a id="Count">
+                    <a href="#Count">
+                      <code><span>this.Count</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="626">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Count</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>int</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" onclick="Clipboard_CopyTo('`cref:P:KPX.FsCqHttp.Utils.TextResponse.TextTable.Count`')">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-md.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-md-blue.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" onclick="Clipboard_CopyTo('<see cref=\'P:KPX.FsCqHttp.Utils.TextResponse.TextTable.Count\'/>')">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-blue.png" class="hover"/>
+              </div>
+              <a href="https://github.com/CSGA-KPX/TheBot/tree/master/src/FsCqHttp/Utils/TextTable/TextTable.fs#L20-20" class="fsdocs-source-link">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github-blue.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>int</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '627', 627)" onmouseover="showTip(event, '627', 627)">
+                <p>
+                  <a id="Delay">
+                    <a href="#Delay">
+                      <code><span>this.Delay<span><span>(<span>func</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="627">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Delay<span><span>(<span>func</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        func
+                      </b>
+                      :
+                      <code><span>unit&#32;->&#32;'a</span></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code>'a</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" onclick="Clipboard_CopyTo('```cref:M:KPX.FsCqHttp.Utils.TextResponse.TextTable.Delay``1```')">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-md.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-md-blue.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" onclick="Clipboard_CopyTo('<see cref=\'M:KPX.FsCqHttp.Utils.TextResponse.TextTable.Delay``1\'/>')">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-blue.png" class="hover"/>
+              </div>
+              <a href="https://github.com/CSGA-KPX/TheBot/tree/master/src/FsCqHttp/Utils/TextTable/TextTable.fs#L88-88" class="fsdocs-source-link">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github-blue.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  func
+                </span>
+                :
+                <code><span>unit&#32;->&#32;'a</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code>'a</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '628', 628)" onmouseover="showTip(event, '628', 628)">
+                <p>
+                  <a id="Items">
+                    <a href="#Items">
+                      <code><span>this.Items</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="628">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Items</span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><span><a href="https://docs.microsoft.com/dotnet/api/system.collections.generic.ireadonlylist-1">IReadOnlyList</a>&lt;<a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-utils-textresponse-tableitem.html">TableItem</a>&gt;</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" onclick="Clipboard_CopyTo('`cref:P:KPX.FsCqHttp.Utils.TextResponse.TextTable.Items`')">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-md.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-md-blue.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" onclick="Clipboard_CopyTo('<see cref=\'P:KPX.FsCqHttp.Utils.TextResponse.TextTable.Items\'/>')">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-blue.png" class="hover"/>
+              </div>
+              <a href="https://github.com/CSGA-KPX/TheBot/tree/master/src/FsCqHttp/Utils/TextTable/TextTable.fs#L22-22" class="fsdocs-source-link">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github-blue.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><span><a href="https://docs.microsoft.com/dotnet/api/system.collections.generic.ireadonlylist-1">IReadOnlyList</a>&lt;<a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-utils-textresponse-tableitem.html">TableItem</a>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '629', 629)" onmouseover="showTip(event, '629', 629)">
+                <p>
+                  <a id="PreferResponseType">
+                    <a href="#PreferResponseType">
+                      <code><span>this.PreferResponseType</span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="629">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.PreferResponseType</span></code>
+                  <br/>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" onclick="Clipboard_CopyTo('`cref:P:KPX.FsCqHttp.Utils.TextResponse.TextTable.PreferResponseType`')">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-md.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-md-blue.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" onclick="Clipboard_CopyTo('<see cref=\'P:KPX.FsCqHttp.Utils.TextResponse.TextTable.PreferResponseType\'/>')">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-blue.png" class="hover"/>
+              </div>
+              <a href="https://github.com/CSGA-KPX/TheBot/tree/master/src/FsCqHttp/Utils/TextTable/TextTable.fs#L16-16" class="fsdocs-source-link">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github-blue.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '630', 630)" onmouseover="showTip(event, '630', 630)">
+                <p>
+                  <a id="Response">
+                    <a href="#Response">
+                      <code><span>this.Response<span><span>(<span>args</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="630">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Response<span><span>(<span>args</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        args
+                      </b>
+                      :
+                      <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-handler-cqmessageeventargs.html">CqMessageEventArgs</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" onclick="Clipboard_CopyTo('`cref:M:KPX.FsCqHttp.Utils.TextResponse.TextTable.Response`')">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-md.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-md-blue.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" onclick="Clipboard_CopyTo('<see cref=\'M:KPX.FsCqHttp.Utils.TextResponse.TextTable.Response\'/>')">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-blue.png" class="hover"/>
+              </div>
+              <a href="https://github.com/CSGA-KPX/TheBot/tree/master/src/FsCqHttp/Utils/TextTable/TextTable.fs#L108-108" class="fsdocs-source-link">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github-blue.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  args
+                </span>
+                :
+                <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-handler-cqmessageeventargs.html">CqMessageEventArgs</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '631', 631)" onmouseover="showTip(event, '631', 631)">
+                <p>
+                  <a id="Yield">
+                    <a href="#Yield">
+                      <code><span>this.Yield<span>()</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="631">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Yield<span>()</span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        ()
+                      </b>
+                      :
+                      <code>unit</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-utils-textresponse-texttable.html">TextTable</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" onclick="Clipboard_CopyTo('`cref:M:KPX.FsCqHttp.Utils.TextResponse.TextTable.Yield`')">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-md.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-md-blue.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" onclick="Clipboard_CopyTo('<see cref=\'M:KPX.FsCqHttp.Utils.TextResponse.TextTable.Yield\'/>')">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-blue.png" class="hover"/>
+              </div>
+              <a href="https://github.com/CSGA-KPX/TheBot/tree/master/src/FsCqHttp/Utils/TextTable/TextTable.fs#L82-82" class="fsdocs-source-link">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github-blue.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  ()
+                </span>
+                :
+                <code>unit</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-utils-textresponse-texttable.html">TextTable</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '632', 632)" onmouseover="showTip(event, '632', 632)">
+                <p>
+                  <a id="Yield">
+                    <a href="#Yield">
+                      <code><span>this.Yield<span><span>(<span>table</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="632">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Yield<span><span>(<span>table</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        table
+                      </b>
+                      :
+                      <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-utils-textresponse-texttable.html">TextTable</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-utils-textresponse-texttable.html">TextTable</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" onclick="Clipboard_CopyTo('`cref:M:KPX.FsCqHttp.Utils.TextResponse.TextTable.Yield`')">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-md.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-md-blue.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" onclick="Clipboard_CopyTo('<see cref=\'M:KPX.FsCqHttp.Utils.TextResponse.TextTable.Yield\'/>')">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-blue.png" class="hover"/>
+              </div>
+              <a href="https://github.com/CSGA-KPX/TheBot/tree/master/src/FsCqHttp/Utils/TextTable/TextTable.fs#L78-78" class="fsdocs-source-link">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github-blue.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  table
+                </span>
+                :
+                <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-utils-textresponse-texttable.html">TextTable</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-utils-textresponse-texttable.html">TextTable</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '633', 633)" onmouseover="showTip(event, '633', 633)">
+                <p>
+                  <a id="Yield">
+                    <a href="#Yield">
+                      <code><span>this.Yield<span><span>(<span>rows</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="633">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Yield<span><span>(<span>rows</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        rows
+                      </b>
+                      :
+                      <code><span>seq&lt;<span><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-utils-textresponse-cellbuilder.html">CellBuilder</a>[]</span>&gt;</span></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-utils-textresponse-texttable.html">TextTable</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" onclick="Clipboard_CopyTo('`cref:M:KPX.FsCqHttp.Utils.TextResponse.TextTable.Yield`')">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-md.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-md-blue.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" onclick="Clipboard_CopyTo('<see cref=\'M:KPX.FsCqHttp.Utils.TextResponse.TextTable.Yield\'/>')">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-blue.png" class="hover"/>
+              </div>
+              <a href="https://github.com/CSGA-KPX/TheBot/tree/master/src/FsCqHttp/Utils/TextTable/TextTable.fs#L72-72" class="fsdocs-source-link">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github-blue.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  rows
+                </span>
+                :
+                <code><span>seq&lt;<span><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-utils-textresponse-cellbuilder.html">CellBuilder</a>[]</span>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-utils-textresponse-texttable.html">TextTable</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '634', 634)" onmouseover="showTip(event, '634', 634)">
+                <p>
+                  <a id="Yield">
+                    <a href="#Yield">
+                      <code><span>this.Yield<span><span>(<span>rows</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="634">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Yield<span><span>(<span>rows</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        rows
+                      </b>
+                      :
+                      <code><span>seq&lt;<span><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-utils-textresponse-cellbuilder.html">CellBuilder</a>&#32;list</span>&gt;</span></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-utils-textresponse-texttable.html">TextTable</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" onclick="Clipboard_CopyTo('`cref:M:KPX.FsCqHttp.Utils.TextResponse.TextTable.Yield`')">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-md.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-md-blue.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" onclick="Clipboard_CopyTo('<see cref=\'M:KPX.FsCqHttp.Utils.TextResponse.TextTable.Yield\'/>')">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-blue.png" class="hover"/>
+              </div>
+              <a href="https://github.com/CSGA-KPX/TheBot/tree/master/src/FsCqHttp/Utils/TextTable/TextTable.fs#L66-66" class="fsdocs-source-link">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github-blue.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  rows
+                </span>
+                :
+                <code><span>seq&lt;<span><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-utils-textresponse-cellbuilder.html">CellBuilder</a>&#32;list</span>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-utils-textresponse-texttable.html">TextTable</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '635', 635)" onmouseover="showTip(event, '635', 635)">
+                <p>
+                  <a id="Yield">
+                    <a href="#Yield">
+                      <code><span>this.Yield<span><span>(<span>rows</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="635">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Yield<span><span>(<span>rows</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        rows
+                      </b>
+                      :
+                      <code><span>seq&lt;<span>seq&lt;<a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-utils-textresponse-cellbuilder.html">CellBuilder</a>&gt;</span>&gt;</span></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-utils-textresponse-texttable.html">TextTable</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" onclick="Clipboard_CopyTo('`cref:M:KPX.FsCqHttp.Utils.TextResponse.TextTable.Yield`')">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-md.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-md-blue.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" onclick="Clipboard_CopyTo('<see cref=\'M:KPX.FsCqHttp.Utils.TextResponse.TextTable.Yield\'/>')">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-blue.png" class="hover"/>
+              </div>
+              <a href="https://github.com/CSGA-KPX/TheBot/tree/master/src/FsCqHttp/Utils/TextTable/TextTable.fs#L60-60" class="fsdocs-source-link">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github-blue.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  rows
+                </span>
+                :
+                <code><span>seq&lt;<span>seq&lt;<a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-utils-textresponse-cellbuilder.html">CellBuilder</a>&gt;</span>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-utils-textresponse-texttable.html">TextTable</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '636', 636)" onmouseover="showTip(event, '636', 636)">
+                <p>
+                  <a id="Yield">
+                    <a href="#Yield">
+                      <code><span>this.Yield<span><span>(<span>row</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="636">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Yield<span><span>(<span>row</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        row
+                      </b>
+                      :
+                      <code><span>seq&lt;<a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-utils-textresponse-cellbuilder.html">CellBuilder</a>&gt;</span></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-utils-textresponse-texttable.html">TextTable</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" onclick="Clipboard_CopyTo('`cref:M:KPX.FsCqHttp.Utils.TextResponse.TextTable.Yield`')">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-md.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-md-blue.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" onclick="Clipboard_CopyTo('<see cref=\'M:KPX.FsCqHttp.Utils.TextResponse.TextTable.Yield\'/>')">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-blue.png" class="hover"/>
+              </div>
+              <a href="https://github.com/CSGA-KPX/TheBot/tree/master/src/FsCqHttp/Utils/TextTable/TextTable.fs#L44-44" class="fsdocs-source-link">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github-blue.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  row
+                </span>
+                :
+                <code><span>seq&lt;<a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-utils-textresponse-cellbuilder.html">CellBuilder</a>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-utils-textresponse-texttable.html">TextTable</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '637', 637)" onmouseover="showTip(event, '637', 637)">
+                <p>
+                  <a id="Yield">
+                    <a href="#Yield">
+                      <code><span>this.Yield<span><span>(<span>cell</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="637">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Yield<span><span>(<span>cell</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        cell
+                      </b>
+                      :
+                      <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-utils-textresponse-cellbuilder.html">CellBuilder</a></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-utils-textresponse-texttable.html">TextTable</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" onclick="Clipboard_CopyTo('`cref:M:KPX.FsCqHttp.Utils.TextResponse.TextTable.Yield`')">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-md.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-md-blue.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" onclick="Clipboard_CopyTo('<see cref=\'M:KPX.FsCqHttp.Utils.TextResponse.TextTable.Yield\'/>')">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-blue.png" class="hover"/>
+              </div>
+              <a href="https://github.com/CSGA-KPX/TheBot/tree/master/src/FsCqHttp/Utils/TextTable/TextTable.fs#L32-32" class="fsdocs-source-link">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github-blue.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  cell
+                </span>
+                :
+                <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-utils-textresponse-cellbuilder.html">CellBuilder</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-utils-textresponse-texttable.html">TextTable</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '638', 638)" onmouseover="showTip(event, '638', 638)">
+                <p>
+                  <a id="Yield">
+                    <a href="#Yield">
+                      <code><span>this.Yield<span><span>(<span>line</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="638">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Yield<span><span>(<span>line</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        line
+                      </b>
+                      :
+                      <code>string</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-utils-textresponse-texttable.html">TextTable</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" onclick="Clipboard_CopyTo('`cref:M:KPX.FsCqHttp.Utils.TextResponse.TextTable.Yield`')">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-md.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-md-blue.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" onclick="Clipboard_CopyTo('<see cref=\'M:KPX.FsCqHttp.Utils.TextResponse.TextTable.Yield\'/>')">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-blue.png" class="hover"/>
+              </div>
+              <a href="https://github.com/CSGA-KPX/TheBot/tree/master/src/FsCqHttp/Utils/TextTable/TextTable.fs#L24-24" class="fsdocs-source-link">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github-blue.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  line
+                </span>
+                :
+                <code>string</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-utils-textresponse-texttable.html">TextTable</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '639', 639)" onmouseover="showTip(event, '639', 639)">
+                <p>
+                  <a id="YieldFrom">
+                    <a href="#YieldFrom">
+                      <code><span>this.YieldFrom<span><span>(<span>rows</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="639">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.YieldFrom<span><span>(<span>rows</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        rows
+                      </b>
+                      :
+                      <code><span>seq&lt;<a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-utils-textresponse-cellbuilder.html">CellBuilder</a>&gt;</span></code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-utils-textresponse-texttable.html">TextTable</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" onclick="Clipboard_CopyTo('`cref:M:KPX.FsCqHttp.Utils.TextResponse.TextTable.YieldFrom`')">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-md.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-md-blue.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" onclick="Clipboard_CopyTo('<see cref=\'M:KPX.FsCqHttp.Utils.TextResponse.TextTable.YieldFrom\'/>')">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-blue.png" class="hover"/>
+              </div>
+              <a href="https://github.com/CSGA-KPX/TheBot/tree/master/src/FsCqHttp/Utils/TextTable/TextTable.fs#L38-38" class="fsdocs-source-link">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github-blue.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  rows
+                </span>
+                :
+                <code><span>seq&lt;<a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-utils-textresponse-cellbuilder.html">CellBuilder</a>&gt;</span></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-utils-textresponse-texttable.html">TextTable</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '640', 640)" onmouseover="showTip(event, '640', 640)">
+                <p>
+                  <a id="Zero">
+                    <a href="#Zero">
+                      <code><span>this.Zero<span>()</span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="640">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Zero<span>()</span></span></code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-utils-textresponse-texttable.html">TextTable</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" onclick="Clipboard_CopyTo('`cref:M:KPX.FsCqHttp.Utils.TextResponse.TextTable.Zero`')">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-md.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-md-blue.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" onclick="Clipboard_CopyTo('<see cref=\'M:KPX.FsCqHttp.Utils.TextResponse.TextTable.Zero\'/>')">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-blue.png" class="hover"/>
+              </div>
+              <a href="https://github.com/CSGA-KPX/TheBot/tree/master/src/FsCqHttp/Utils/TextTable/TextTable.fs#L84-84" class="fsdocs-source-link">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github-blue.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-utils-textresponse-texttable.html">TextTable</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div></div>
+</div>
+            
+        </div>
+
+        <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
+        <script type="text/javascript">var fsdocs_search_baseurl = 'https://CSGA-KPX.github.io/TheBot/';</script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/lunr.js/2.3.8/lunr.min.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.min.js"></script>
+        <script type="text/javascript" src="https://CSGA-KPX.github.io/TheBot/content/fsdocs-search.js"></script>
+        <!-- END SEARCH BOX: this adds support for the search box -->
+    </div>
+</body>
+
+</html>
+

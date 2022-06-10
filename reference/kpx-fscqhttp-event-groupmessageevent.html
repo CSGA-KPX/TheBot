@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>GroupMessageEvent (TheBot)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="author" content="KPX">
+
+    <link rel="stylesheet" id="theme_link" href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/4.6.0/materia/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns" crossorigin="anonymous"></script>
+
+    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+    <link rel="shortcut icon" type="image/x-icon" href="img/favicon.ico">
+    <link type="text/css" rel="stylesheet" href="https://CSGA-KPX.github.io/TheBot/content/navbar-fixed-left.css" />
+    <link type="text/css" rel="stylesheet" href="https://CSGA-KPX.github.io/TheBot/content/fsdocs-default.css" />
+    <link type="text/css" rel="stylesheet" href="https://CSGA-KPX.github.io/TheBot/content/fsdocs-custom.css" />
+    <script type="text/javascript" src="https://CSGA-KPX.github.io/TheBot/content/fsdocs-tips.js"></script>
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
+    <!-- END SEARCH BOX: this adds support for the search box -->
+    
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-md navbar-light bg-secondary navbar-nav-scroll fixed-left" id="fsdocs-nav">
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarsExampleDefault">
+            <a href="https://CSGA-KPX.github.io/TheBot/"><img id="fsdocs-logo" src="https://CSGA-KPX.github.io/TheBot/img/logo.png" /></a>
+            <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+            <div id="header">
+                <div class="searchbox" id="fsdocs-searchbox">
+                    <label for="search-by">
+                        <i class="fas fa-search"></i>
+                    </label>
+                    <input data-search-input="" id="search-by" type="search" placeholder="Search..." />
+                    <span data-search-clear="">
+                        <i class="fas fa-times"></i>
+                    </span>
+                </div>
+            </div>
+
+            <!-- END SEARCH BOX: this adds support for the search box -->
+            <ul class="navbar-nav">
+                <li class="nav-header">Links</li>
+                <li class="nav-item" id="fsdocs-license-link"><a class="nav-link" href="https://github.com/CSGA-KPX/TheBot/blob/master/LICENSE">License</a></li>
+                <li class="nav-item" id="fsdocs-release-notes-link"><a class="nav-link" href="https://github.com/CSGA-KPX/TheBot/blob/master/CHANGELOG.md">Release Notes</a></li>
+                <li class="nav-item" id="fsdocs-repository-link"><a class="nav-link" href="https://github.com/CSGA-KPX/TheBot/">Source Repository</a></li>
+                <li class="nav-header">
+  TheBot
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://CSGA-KPX.github.io/TheBot/1_TheBot/1_简介.html">
+    简介
+  </a>
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://CSGA-KPX.github.io/TheBot/1_TheBot/2_安装.html">
+    安装
+  </a>
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://CSGA-KPX.github.io/TheBot/1_TheBot/3_FAQ.html">
+    常见问题
+  </a>
+</li>             
+<li class="nav-header">
+  用户文档
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://CSGA-KPX.github.io/TheBot/2_用户文档/1_常用名词.html">
+    常用术语
+  </a>
+</li>             
+<li class="nav-header">
+  开发文档
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://CSGA-KPX.github.io/TheBot/3_开发文档/1_FsCqHttp概述.html">
+    FsCqHttp概述
+  </a>
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://CSGA-KPX.github.io/TheBot/3_开发文档/2_模块开发.html">
+    模块开发
+  </a>
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://CSGA-KPX.github.io/TheBot/3_开发文档/3_工具.html">
+    工具
+  </a>
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://CSGA-KPX.github.io/TheBot/3_开发文档/4_常见问题.html">
+    常见问题
+  </a>
+</li>
+                <li class="nav-header">
+  API Reference
+</li>             
+<li class="nav-item">
+  <a class="nav-link" href="https://CSGA-KPX.github.io/TheBot/reference/index.html">
+    All Namespaces
+  </a>
+</li>
+            </ul>
+        </div>
+    </nav>
+    <div class="container">
+        <div class="masthead">
+            <h3 class="muted"><a href="https://CSGA-KPX.github.io/TheBot/">TheBot</a></h3>
+        </div>
+        <hr />
+        <div class="container" id="fsdocs-content">
+            <div>
+  <h2>
+    GroupMessageEvent Type
+  </h2>
+  <dl class="fsdocs-metadata">
+    <dt>
+      Namespace: 
+      <a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-event.html">
+        KPX.FsCqHttp.Event
+      </a>
+    </dt>
+    <dt>
+      Assembly: FsCqHttp.dll
+    </dt>
+    <dt>
+      Base Type: 
+      <code>obj</code>
+    </dt>
+    <dt>
+      All Interfaces: 
+      <code><span><a href="https://docs.microsoft.com/dotnet/api/system.iequatable-1">IEquatable</a>&lt;<a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-event-groupmessageevent.html">GroupMessageEvent</a>&gt;</span></code>
+      , 
+      <code><a href="https://docs.microsoft.com/dotnet/api/system.collections.istructuralequatable">IStructuralEquatable</a></code>
+    </dt>
+  </dl>
+  <div class="fsdocs-xmldoc">
+    <div>
+      <p class="fsdocs-summary">
+        
+      </p>
+    </div>
+  </div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div>
+    <h3>
+      Record fields
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Record Field
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '163', 163)" onmouseover="showTip(event, '163', 163)">
+                <p>
+                  <a id="Anonymous">
+                    <a href="#Anonymous">
+                      <code>Anonymous</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="163">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>Anonymous</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><span><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-event-message-anonymoususer.html">AnonymousUser</a>&#32;option</span></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/CSGA-KPX/TheBot/tree/master/src/FsCqHttp/Event/MessageEvent.fs#L164-164" class="fsdocs-source-link">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github-blue.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><span><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-event-message-anonymoususer.html">AnonymousUser</a>&#32;option</span></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '164', 164)" onmouseover="showTip(event, '164', 164)">
+                <p>
+                  <a id="Font">
+                    <a href="#Font">
+                      <code>Font</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="164">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>Font</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code>int32</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/CSGA-KPX/TheBot/tree/master/src/FsCqHttp/Event/MessageEvent.fs#L168-168" class="fsdocs-source-link">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github-blue.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code>int32</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '165', 165)" onmouseover="showTip(event, '165', 165)">
+                <p>
+                  <a id="GroupId">
+                    <a href="#GroupId">
+                      <code>GroupId</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="165">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>GroupId</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-groupid.html">GroupId</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/CSGA-KPX/TheBot/tree/master/src/FsCqHttp/Event/MessageEvent.fs#L159-159" class="fsdocs-source-link">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github-blue.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-groupid.html">GroupId</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '166', 166)" onmouseover="showTip(event, '166', 166)">
+                <p>
+                  <a id="Message">
+                    <a href="#Message">
+                      <code>Message</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="166">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>Message</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-message-readonlymessage.html">ReadOnlyMessage</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/CSGA-KPX/TheBot/tree/master/src/FsCqHttp/Event/MessageEvent.fs#L166-166" class="fsdocs-source-link">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github-blue.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-message-readonlymessage.html">ReadOnlyMessage</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '167', 167)" onmouseover="showTip(event, '167', 167)">
+                <p>
+                  <a id="MessageId">
+                    <a href="#MessageId">
+                      <code>MessageId</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="167">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>MessageId</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-messageid.html">MessageId</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/CSGA-KPX/TheBot/tree/master/src/FsCqHttp/Event/MessageEvent.fs#L157-157" class="fsdocs-source-link">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github-blue.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-messageid.html">MessageId</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '168', 168)" onmouseover="showTip(event, '168', 168)">
+                <p>
+                  <a id="MessageType">
+                    <a href="#MessageType">
+                      <code>MessageType</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="168">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>MessageType</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-event-message-messagetype.html">MessageType</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/CSGA-KPX/TheBot/tree/master/src/FsCqHttp/Event/MessageEvent.fs#L153-153" class="fsdocs-source-link">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github-blue.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-event-message-messagetype.html">MessageType</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '169', 169)" onmouseover="showTip(event, '169', 169)">
+                <p>
+                  <a id="SelfId">
+                    <a href="#SelfId">
+                      <code>SelfId</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="169">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>SelfId</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-userid.html">UserId</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/CSGA-KPX/TheBot/tree/master/src/FsCqHttp/Event/MessageEvent.fs#L151-151" class="fsdocs-source-link">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github-blue.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-userid.html">UserId</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '170', 170)" onmouseover="showTip(event, '170', 170)">
+                <p>
+                  <a id="Sender">
+                    <a href="#Sender">
+                      <code>Sender</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="170">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>Sender</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-event-message-groupsender.html">GroupSender</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/CSGA-KPX/TheBot/tree/master/src/FsCqHttp/Event/MessageEvent.fs#L170-170" class="fsdocs-source-link">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github-blue.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-event-message-groupsender.html">GroupSender</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '171', 171)" onmouseover="showTip(event, '171', 171)">
+                <p>
+                  <a id="SubType">
+                    <a href="#SubType">
+                      <code>SubType</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="171">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>SubType</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-event-message-groupmessagesubtype.html">GroupMessageSubtype</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/CSGA-KPX/TheBot/tree/master/src/FsCqHttp/Event/MessageEvent.fs#L155-155" class="fsdocs-source-link">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github-blue.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-event-message-groupmessagesubtype.html">GroupMessageSubtype</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '172', 172)" onmouseover="showTip(event, '172', 172)">
+                <p>
+                  <a id="Time">
+                    <a href="#Time">
+                      <code>Time</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="172">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>Time</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code>int64</code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/CSGA-KPX/TheBot/tree/master/src/FsCqHttp/Event/MessageEvent.fs#L149-149" class="fsdocs-source-link">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github-blue.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code>int64</code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '173', 173)" onmouseover="showTip(event, '173', 173)">
+                <p>
+                  <a id="UserId">
+                    <a href="#UserId">
+                      <code>UserId</code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="173">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code>UserId</code>
+                  <br/>
+                  <br/>
+                  <span>
+                    Field type: 
+                    <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-userid.html">UserId</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <a href="https://github.com/CSGA-KPX/TheBot/tree/master/src/FsCqHttp/Event/MessageEvent.fs#L161-161" class="fsdocs-source-link">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github-blue.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Field type: 
+                </span>
+                <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-userid.html">UserId</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div></div>
+  <div></div>
+  <div>
+    <h3>
+      Instance members
+    </h3>
+    <table class="table outer-list fsdocs-member-list">
+      <thead>
+        <tr>
+          <td class="fsdocs-member-list-header">
+            Instance member
+          </td>
+          <td class="fsdocs-member-list-header">
+            Description
+          </td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '174', 174)" onmouseover="showTip(event, '174', 174)">
+                <p>
+                  <a id="Response">
+                    <a href="#Response">
+                      <code><span>this.Response<span><span>(<span>str,&#32;?atSender,&#32;?delete,&#32;?kick,&#32;?ban,&#32;?banDuration</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="174">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Response<span><span>(<span>str,&#32;?atSender,&#32;?delete,&#32;?kick,&#32;?ban,&#32;?banDuration</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        str
+                      </b>
+                      :
+                      <code>string</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        ?atSender
+                      </b>
+                      :
+                      <code>bool</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        ?delete
+                      </b>
+                      :
+                      <code>bool</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        ?kick
+                      </b>
+                      :
+                      <code>bool</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        ?ban
+                      </b>
+                      :
+                      <code>bool</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        ?banDuration
+                      </b>
+                      :
+                      <code>int</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-event-eventresponse.html">EventResponse</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" onclick="Clipboard_CopyTo('`cref:M:KPX.FsCqHttp.Event.GroupMessageEvent.Response`')">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-md.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-md-blue.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" onclick="Clipboard_CopyTo('<see cref=\'M:KPX.FsCqHttp.Event.GroupMessageEvent.Response\'/>')">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-blue.png" class="hover"/>
+              </div>
+              <a href="https://github.com/CSGA-KPX/TheBot/tree/master/src/FsCqHttp/Event/MessageEvent.fs#L188-188" class="fsdocs-source-link">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github-blue.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  str
+                </span>
+                :
+                <code>string</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  ?atSender
+                </span>
+                :
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  ?delete
+                </span>
+                :
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  ?kick
+                </span>
+                :
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  ?ban
+                </span>
+                :
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  ?banDuration
+                </span>
+                :
+                <code>int</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-event-eventresponse.html">EventResponse</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+        <tr>
+          <td class="fsdocs-member-usage">
+            <div>
+              <code onmouseout="hideTip(event, '175', 175)" onmouseover="showTip(event, '175', 175)">
+                <p>
+                  <a id="Response">
+                    <a href="#Response">
+                      <code><span>this.Response<span><span>(<span>msg,&#32;?atSender,&#32;?delete,&#32;?kick,&#32;?ban,&#32;?banDuration</span>)</span></span></span></code>
+                    </a>
+                  </a>
+                </p>
+              </code>
+              <div class="fsdocs-tip" id="175">
+                <div class="member-tooltip">
+                  Full Usage: 
+                  <code><span>this.Response<span><span>(<span>msg,&#32;?atSender,&#32;?delete,&#32;?kick,&#32;?ban,&#32;?banDuration</span>)</span></span></span></code>
+                  <br/>
+                  <br/>
+                  Parameters: 
+                  <ul>
+                    <span>
+                      <b>
+                        msg
+                      </b>
+                      :
+                      <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-message-readonlymessage.html">ReadOnlyMessage</a></code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        ?atSender
+                      </b>
+                      :
+                      <code>bool</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        ?delete
+                      </b>
+                      :
+                      <code>bool</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        ?kick
+                      </b>
+                      :
+                      <code>bool</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        ?ban
+                      </b>
+                      :
+                      <code>bool</code>
+                    </span>
+                    <br/>
+                    <span>
+                      <b>
+                        ?banDuration
+                      </b>
+                      :
+                      <code>int</code>
+                    </span>
+                    <br/>
+                  </ul>
+                  <br/>
+                  <span>
+                    Returns: 
+                    <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-event-eventresponse.html">EventResponse</a></code>
+                  </span>
+                  <br/>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="fsdocs-member-xmldoc">
+            <div class="fsdocs-summary">
+              <div class="fsdocs-source-link" onclick="Clipboard_CopyTo('`cref:M:KPX.FsCqHttp.Event.GroupMessageEvent.Response`')">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-md.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-md-blue.png" class="hover"/>
+              </div>
+              <div class="fsdocs-source-link" onclick="Clipboard_CopyTo('<see cref=\'M:KPX.FsCqHttp.Event.GroupMessageEvent.Response\'/>')">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/copy-blue.png" class="hover"/>
+              </div>
+              <a href="https://github.com/CSGA-KPX/TheBot/tree/master/src/FsCqHttp/Event/MessageEvent.fs#L172-172" class="fsdocs-source-link">
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github.png" class="normal"/>
+                <img src="https://CSGA-KPX.github.io/TheBot/content/img/github-blue.png" class="hover"/>
+              </a>
+              <p class="fsdocs-summary">
+                
+              </p>
+            </div>
+            <dl class="fsdocs-params">
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  msg
+                </span>
+                :
+                <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-message-readonlymessage.html">ReadOnlyMessage</a></code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  ?atSender
+                </span>
+                :
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  ?delete
+                </span>
+                :
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  ?kick
+                </span>
+                :
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  ?ban
+                </span>
+                :
+                <code>bool</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+              <dt class="fsdocs-param">
+                <span class="fsdocs-param-name">
+                  ?banDuration
+                </span>
+                :
+                <code>int</code>
+              </dt>
+              <dd class="fsdocs-param-docs"></dd>
+            </dl>
+            <dl class="fsdocs-returns">
+              <dt>
+                <span class="fsdocs-return-name">
+                  Returns: 
+                </span>
+                <code><a href="https://CSGA-KPX.github.io/TheBot/reference/kpx-fscqhttp-event-eventresponse.html">EventResponse</a></code>
+              </dt>
+              <dd class="fsdocs-return-docs"></dd>
+            </dl>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div></div>
+</div>
+            
+        </div>
+
+        <!-- BEGIN SEARCH BOX: this adds support for the search box -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.css" />
+        <script type="text/javascript">var fsdocs_search_baseurl = 'https://CSGA-KPX.github.io/TheBot/';</script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/lunr.js/2.3.8/lunr.min.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/JavaScript-autoComplete/1.0.4/auto-complete.min.js"></script>
+        <script type="text/javascript" src="https://CSGA-KPX.github.io/TheBot/content/fsdocs-search.js"></script>
+        <!-- END SEARCH BOX: this adds support for the search box -->
+    </div>
+</body>
+
+</html>
+
