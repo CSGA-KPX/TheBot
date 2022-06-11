@@ -30,6 +30,7 @@ dotnet test /p:AltCover=true "/p:AltCoverTypeFilter=?KPX|ProviderImplementation.
 
 dotnet reportgenerator "-reports:./tmp/coverage_report/*.xml" "-targetdir:./tmp/coverage_html/" "-sourcedirs:./src/;../LibFFXIV/" -reporttypes:Html
 
+rem rd /q /s tmp\gh-pages
 rem dotnet fsdocs build
 rem git clone -b "gh-pages" . tmp/gh-pages
 rem xcopy /Y /E output\ tmp\gh-pages\
