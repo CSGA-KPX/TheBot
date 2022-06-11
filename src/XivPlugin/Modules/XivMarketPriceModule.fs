@@ -40,7 +40,7 @@ type XivMarketPriceModule() =
         tc.ShouldNotThrow("#fm 风之水晶 一区")
 
     [<CommandHandlerMethod("#fm",
-                           "FF14市场查询。可以使用 采集重建/魔晶石/水晶 快捷组",
+                           "FF14市场查询。可以使用 魔晶石/水晶 快捷组",
                            "接受以下参数：
 text 以文本格式输出结果
 分区/服务器名 调整查询分区下的所有服务器。见#ff14help

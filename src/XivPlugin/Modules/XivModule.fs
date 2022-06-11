@@ -182,7 +182,7 @@ type MiscModule() =
         tc.ShouldNotThrow("#仙人彩")
 
     [<CommandHandlerMethod("#nuannuan", "FF14暖暖查询", "")>]
-    [<CommandHandlerMethod("#nrnr", "FF14暖暖查询", "")>]
+    [<CommandHandlerMethod("#nrnr", "FF14暖暖查询", "", IsHidden = true)>]
     member x.HandleNrnr(cmdArg: CommandEventArgs) =
         let handler = new Net.Http.HttpClientHandler()
         handler.AutomaticDecompression <- Net.DecompressionMethods.GZip

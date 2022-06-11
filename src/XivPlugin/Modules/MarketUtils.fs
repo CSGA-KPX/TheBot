@@ -3,7 +3,7 @@ module KPX.XivPlugin.Modules.Utils.MarketUtils
 open KPX.FsCqHttp.Utils.AliasMapper
 
 
-let MateriaGrades = [| "壹型"; "贰型"; "叁型"; "肆型"; "伍型"; "陆型"; "柒型"; "捌型" |]
+let MateriaGrades = [| "壹型"; "贰型"; "叁型"; "肆型"; "伍型"; "陆型"; "柒型"; "捌型"; "玖型"; "拾型" |]
 
 let MateriaAliasMapper =
     let mapper = AliasMapper()
