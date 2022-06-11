@@ -78,11 +78,11 @@ type EveRecipeModule() =
     [<CommandHandlerMethod("#er",
                            "EVE蓝图材料计算",
                            "可以使用表达式，多个物品需用+连接。可选参数见#evehelp。如：
-#r 帝国海军散热槽*10+机器人技术*9999")>]
+#er 帝国海军散热槽*10+机器人技术*9999")>]
     [<CommandHandlerMethod("#err",
                            "EVE蓝图基础材料计算",
                            "可以使用表达式，多个物品需用+连接。可选参数见#evehelp。如：
-#rr 帝国海军散热槽*10+机器人技术*9999")>]
+#err 帝国海军散热槽*10+机器人技术*9999")>]
     member x.HandleRRR(cmdArg: CommandEventArgs) =
         let cfg = EveConfigParser()
         // 默认值必须是不可能存在的值，比如空格

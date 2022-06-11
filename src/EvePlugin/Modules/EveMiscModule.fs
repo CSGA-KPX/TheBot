@@ -22,7 +22,7 @@ type CombatSiteInfo =
 type EveMiscModule() =
     inherit CommandHandlerBase()
 
-    [<CommandHandlerMethod("#evehelp", "EVE星系成本指数查询", "")>]
+    [<CommandHandlerMethod("#evehelp", "EVE配方计算参数文档", "")>]
     member x.HandleEvehelp(_: CommandEventArgs) =
         let cfg = EveConfigParser()
         cfg.Parse(Array.empty)

@@ -70,7 +70,7 @@ type EveMarketModule() =
         tc.ShouldThrow("#em 三铁合金")
 
     [<CommandHandlerMethod("#EVE采矿", "EVE挖矿利润，仅供参考", "")>]
-    [<CommandHandlerMethod("#EVE挖矿", "EVE挖矿利润，仅供参考", "")>]
+    [<CommandHandlerMethod("#EVE挖矿", "EVE挖矿利润，仅供参考", "", IsHidden = true)>]
     member x.HandleOreMining(_: CommandEventArgs) =
         let mineSpeed = 10.0 // m^3/s
         let refineYield = 0.70
