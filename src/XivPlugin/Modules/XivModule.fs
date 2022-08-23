@@ -65,13 +65,13 @@ type MiscModule() =
             let c = chsDfcRoulettes.Value
             let o = officalDfcRoulettes.Value
 
-            [ CellBuilder() { literal "中国时间" }
-              CellBuilder() { literal "国服" }
-              CellBuilder() { literal "世界服" } ]
+            AsCols [ Literal "中国时间"
+                     Literal "国服"
+                     Literal "世界服" ]
 
-            [ CellBuilder() { literal $"当前" }
-              CellBuilder() { literal $"%s{getString (startDate, c)}" }
-              CellBuilder() { literal $"%s{getString (startDate, o)}" } ]
+            AsCols [ Literal "当前"
+                     Literal $"%s{getString (startDate, c)}"
+                     Literal $"%s{getString (startDate, o)}" ]
 
             [ for i = 1 to listCount do
                   let date = startDate.AddDays(float i)
@@ -81,9 +81,7 @@ type MiscModule() =
                           .AddDays(Operators.float i)
                           .ToString(dateFmt)
 
-                  [ CellBuilder() { literal dateStr }
-                    CellBuilder() { literal (getString (date, c)) }
-                    CellBuilder() { literal (getString (date, o)) } ] ]
+                  [ Literal dateStr; Literal(getString (date, c)); Literal(getString (date, o)) ] ]
         }
         |> ignore
 
@@ -126,12 +124,12 @@ type MiscModule() =
         let dicer = Dicer(SeedOption.SeedByUserDay(cmdArg.MessageEvent))
 
         TextTable(ForceText) {
-            [ CellBuilder() { literal "D100" }; CellBuilder() { literal "选项" } ]
+            AsCols [ Literal "D100"; Literal "选项" ]
 
             choices
             |> Seq.map (fun str -> str, dicer.GetPositive(100u, str))
             |> Seq.sortBy snd
-            |> Seq.map (fun (str, d) -> [ CellBuilder() { integer d }; CellBuilder() { literal str } ])
+            |> Seq.map (fun (str, d) -> [ Integer(int d); Literal str ])
         }
 
     [<TestFixture>]
@@ -153,13 +151,12 @@ type MiscModule() =
     [<CommandHandlerMethod("#gate", "FF14:挖宝选门", "")>]
     member x.HandleGate(_: CommandEventArgs) =
         TextTable(ForceText) {
-            [ CellBuilder() { literal "D100" }; CellBuilder() { literal "门" } ]
+            AsCols [ Literal "D100"; Literal "门" ]
 
             [| "左"; "中"; "右" |]
             |> Array.map (fun door -> door, Dicer.RandomDicer.GetPositive(100u, door))
             |> Array.sortBy snd
-            |> Array.map (fun (door, score) ->
-                [ CellBuilder() { literal $"%03i{score}" }; CellBuilder() { literal door } ])
+            |> Array.map (fun (door, score) -> [ Literal $"%03i{score}"; Literal door ])
         }
 
     [<TestFixture>]
@@ -234,11 +231,9 @@ type MiscModule() =
         cfg.Parse(cmdArg.HeaderArgs)
 
         TextTable(cfg.ResponseType) {
-            CellBuilder() {
-                literal title
-                newLine
-                splitString n.InnerText
-            }
+            Literal title
+            LeftPad
+            SplitTextRows n.InnerText
         }
 
     [<TestFixture>]
@@ -270,19 +265,19 @@ type MiscModule() =
                     cmdArg.Abort(InputError, "那时间可太长了。")
 
                 ret.Table {
-                    [ CellBuilder() { literal "CD时间" }
-                      CellBuilder() { literal "概述" }
-                      CellBuilder() { literal "tid" }
-                      CellBuilder() { literal "rid" } ]
+                    AsCols [ Literal "CD时间"
+                             Literal "概述"
+                             Literal "tid"
+                             Literal "cid" ]
 
                     [ for i = 0 to count - 1 do
                           let cd = now.AddHours((float i) * 2.0)
                           let info = OceanFishing.CalculateCooldown(cd, VersionRegion.China)
 
-                          [ CellBuilder() { dateTime info.CooldownDate }
-                            CellBuilder() { literal info.Message.[0] }
-                            CellBuilder() { literal info.RouTableId }
-                            CellBuilder() { literal info.RouteId } ] ]
+                          [ DateTime info.CooldownDate
+                            Literal info.Message.[0]
+                            Literal info.RouTableId
+                            Literal info.RouteId ] ]
                 }
                 |> ignore
             else
@@ -306,9 +301,9 @@ type MiscModule() =
 
                 ret.WriteLine()
                 ret.WriteLine("数据源：https://bbs.nga.cn/read.php?tid=20553241")
-                ret.WriteLine("        https://bbs.nga.cn/read.php?tid=26210039")
-                ret.WriteLine("        https://bbs.nga.cn/read.php?tid=26218473")
-                ret.WriteLine("        https://bbs.nga.cn/read.php?tid=25905000")
+                ret.WriteLine("       https://bbs.nga.cn/read.php?tid=26210039")
+                ret.WriteLine("       https://bbs.nga.cn/read.php?tid=26218473")
+                ret.WriteLine("       https://bbs.nga.cn/read.php?tid=25905000")
 
                 ret.WriteLine(
                     "调试信息:IKDRouteTable:{0}, IKDRoute:{1}, isNext:{2}",

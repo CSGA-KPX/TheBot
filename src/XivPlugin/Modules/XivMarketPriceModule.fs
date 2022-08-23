@@ -95,34 +95,14 @@ text 以文本格式输出结果
 
         TextTable(opt.ResponseType) {
             // 表头
-            [ CellBuilder() { literal "物品" }
-              CellBuilder() { literal "土豆" }
-              CellBuilder() {
-                  literal "数量"
-                  rightAlign
-              }
-              CellBuilder() {
-                  literal "总体出售"
-                  rightAlign
-              }
-              if canHq then
-                  CellBuilder() {
-                      literal "HQ出售"
-                      rightAlign
-                  }
-              CellBuilder() {
-                  literal "总体交易"
-                  rightAlign
-              }
-              if canHq then
-                  CellBuilder() {
-                      literal "HQ交易"
-                      rightAlign
-                  }
-              CellBuilder() {
-                  literal "更新时间"
-                  rightAlign
-              } ]
+            AsCols [ Literal "物品"
+                     Literal "土豆"
+                     RLiteral "数量"
+                     RLiteral "总体出售"
+                     if canHq then RLiteral "HQ出售"
+                     RLiteral "总体交易"
+                     if canHq then RLiteral "HQ交易"
+                     RLiteral "更新时间" ]
 
             let mutable sumListingAll, sumListingHq = 0.0, 0.0
             let mutable sumTradeAll, sumTradeHq = 0.0, 0.0
@@ -146,27 +126,22 @@ text 以文本格式输出结果
                       sumTradeAll <- sumTradeAll + logAll
                       sumTradeHq <- sumTradeHq + logHq
 
-                      [ CellBuilder() { literal mr.Item.DisplayName }
-                        CellBuilder() { literal world.WorldName }
-                        CellBuilder() { integer mr.Quantity }
-                        CellBuilder() { integer lstAll }
-                        if canHq then
-                            CellBuilder() { integer lstHq }
-                        CellBuilder() { integer logAll }
-                        if canHq then
-                            CellBuilder() { integer logHq }
-                        CellBuilder() { toTimeSpan updated } ] ]
+                      [ Literal mr.Item.DisplayName
+                        Literal world.WorldName
+                        Integer mr.Quantity
+                        Integer lstAll
+                        if canHq then Integer lstHq
+                        Integer logAll
+                        if canHq then Integer logHq
+                        TimeSpan updated ] ]
             // 合计行
             [ if worlds.Length = 1 && acc.Count >= 2 then
-                  [ CellBuilder() { literal "合计" }
-                    CellBuilder() { leftPad }
-                    CellBuilder() { rightPad }
-                    CellBuilder() { integer sumListingAll }
-                    if canHq then
-                        CellBuilder() { integer sumListingHq }
-                    CellBuilder() { integer sumTradeAll }
-                    if canHq then
-                        CellBuilder() { integer sumTradeHq }
-                    CellBuilder() { rightPad } ] ]
-
+                  [ Literal "合计"
+                    LeftPad
+                    RightPad
+                    Integer sumListingAll
+                    if canHq then Integer sumListingHq
+                    Integer sumTradeAll
+                    if canHq then Integer sumTradeHq
+                    RightPad ] ]
         }

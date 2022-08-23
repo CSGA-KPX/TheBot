@@ -37,26 +37,20 @@ type ScriptExchangeModule() =
         TextTable(ForceImage) {
             let cols = 3
 
-            CellBuilder() {
-                literal "可交换道具："
-                setBold
-            }
-            // 表头
-            [ for _ = 1 to cols do
-                  CellBuilder() {
-                      literal "ID"
-                      rightAlign
-                  }
+            Literal "可交换道具：" { bold }
 
-                  CellBuilder() { literal "名称" } ]
+            // 表头
+            AsCols [ for _ = 1 to cols do
+                         Literal "Id"
+                         Literal "名称" ]
 
             [ for chunk in
                   sc.AllCostItems()
                   |> Array.sortBy (fun item -> item.ItemId)
                   |> Array.chunkBySize cols do
                   [ for item in chunk do
-                        CellBuilder() { literal item.ItemId }
-                        CellBuilder() { literal item.DisplayName } ] ]
+                        Literal item.ItemId
+                        Literal item.DisplayName ] ]
         }
 
     member private x.ShowExchangeableProfit(cost: XivItem, opt: CommandUtils.XivOption) =
@@ -84,19 +78,10 @@ type ScriptExchangeModule() =
         TextTable(ForceImage) {
             $"兑换道具:%s{cost.DisplayName} 土豆：%s{world.DataCenter}/%s{world.WorldName}"
 
-            [ CellBuilder() { literal "兑换物品" }
-              CellBuilder() {
-                  literal "卖出价格"
-                  rightAlign
-              }
-              CellBuilder() {
-                  literal "兑换价值"
-                  rightAlign
-              }
-              CellBuilder() {
-                  literal "更新时间"
-                  rightAlign
-              } ]
+            AsCols [ Literal "兑换物品"
+                     RLiteral "卖出价格"
+                     RLiteral "兑换价值"
+                     RLiteral "更新时间" ]
 
             ia
             |> Array.Parallel.map (fun info ->
@@ -106,13 +91,12 @@ type ScriptExchangeModule() =
                 let price = market.AllPrice()
 
                 (updated,
-                 [ CellBuilder() { literal $"{receive.DisplayName}*{info.ReceiveCount}" }
+                 [ Literal $"{receive.DisplayName}*{info.ReceiveCount}"
                    let subTotal = price * (float info.ReceiveCount)
-                   CellBuilder() { integer subTotal }
+                   HumanSig4 subTotal
                    let costItemValue = market.AllPrice() * (float info.ReceiveCount) / (float info.CostCount)
-                   CellBuilder() { integer costItemValue }
-
-                   CellBuilder() { toTimeSpan updated } ]))
+                   Integer costItemValue
+                   TimeSpan updated ]))
             |> Array.sortByDescending fst
             |> Array.map snd
         }

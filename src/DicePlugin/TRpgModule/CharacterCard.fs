@@ -1,4 +1,4 @@
-﻿namespace KPX.DicePlugin.TRpgModule.TRpgCharacterCard
+namespace KPX.DicePlugin.TRpgModule.TRpgCharacterCard
 
 open System.Collections.Generic
 
@@ -40,13 +40,9 @@ type CharacterCard =
             $"所有者:%i{x.UserId}"
             $"角色名:%s{x.ChrName}"
 
-            [ for _ = 0 to colCount - 1 do
-                  CellBuilder() { literal "属性" }
-
-                  CellBuilder() {
-                      literal "值"
-                      rightAlign
-                  } ]
+            AsCols [ for _ = 0 to colCount - 1 do
+                         Literal "属性"
+                         Literal "值" { rightAlign } ]
 
             let ordered =
                 seq {
@@ -71,12 +67,8 @@ type CharacterCard =
                             yield key, value
                 }
 
-            [ for row in Seq.chunkBySize colCount ordered do
-                  for name, value in row do
-                      CellBuilder() { literal name }
-
-                      CellBuilder() {
-                          literal value
-                          rightAlign
-                      } ]
+            AsCols [ for row in Seq.chunkBySize colCount ordered do
+                         for name, value in row do
+                             Literal name
+                             Integer value ]
         }

@@ -77,24 +77,17 @@ type XivRecipeModule() =
 
         TextTable(opt.ResponseType) {
             // 表头
-            [ CellBuilder() { literal "物品" }; CellBuilder() { literal "数量" } ]
+            AsCols [ Literal "物品"; RLiteral "数量" ]
 
-            CellBuilder() {
-                literal "材料："
-                setBold
-            }
+            Literal "材料：" { bold }
 
             [ for mr in acc |> Seq.sortBy (fun kv -> kv.Item.ItemId) do
-                  [ CellBuilder() { literal (tryLookupNpcPrice (mr.Item, world)) }
-                    CellBuilder() { quantity mr.Quantity } ] ]
+                  [ Literal(tryLookupNpcPrice (mr.Item, world)); CellUtils.Number mr.Quantity ] ]
 
-            CellBuilder() {
-                literal "产出："
-                setBold
-            }
+            Literal "产出：" { bold }
 
             [ for mr in product do
-                  [ CellBuilder() { literal mr.Item.DisplayName }; CellBuilder() { quantity mr.Quantity } ] ]
+                  [ Literal mr.Item.DisplayName; CellUtils.Number mr.Quantity ] ]
         }
 
     [<CommandHandlerMethod("#rc", "FF14:根据表达式汇总多个物品的材料，不查询价格", "可以使用text:选项返回文本。如#r 白钢锭 text:")>]
@@ -143,68 +136,37 @@ type XivRecipeModule() =
 
             let mutable totalSell = 0.0
 
-            CellBuilder() {
-                literal "产出："
-                setBold
-            }
+            Literal "产出：" { bold }
 
-            [ CellBuilder() { literal "物品" }
-              CellBuilder() { literal "数量" }
-              CellBuilder() {
-                  literal "税前"
-                  rightAlign
-              }
-
-              CellBuilder() {
-                  literal "小计"
-                  rightAlign
-              }
-
-              CellBuilder() {
-                  literal "更新"
-                  rightAlign
-              } ]
+            AsCols [ Literal "物品"
+                     Literal "数量"
+                     RLiteral "税前"
+                     RLiteral "小计"
+                     RLiteral "更新" ]
 
             [ for mr in output do
-                  [ CellBuilder() { literal mr.Item.DisplayName }
-                    CellBuilder() { quantity mr.Quantity }
-
+                  [ Literal mr.Item.DisplayName
+                    CellUtils.Number mr.Quantity
                     let uni = universalis.GetMarketInfo(world, mr.Item)
                     let unitPrice = uni.AllPrice()
                     let subTotal = unitPrice * mr.Quantity
                     totalSell <- totalSell + subTotal
 
-                    CellBuilder() { integer unitPrice }
-                    CellBuilder() { integer subTotal }
-                    CellBuilder() { toTimeSpan uni.LastUpdated } ] ]
-
-
-            // 材料
+                    HumanSig4 unitPrice
+                    HumanSig4 subTotal
+                    TimeSpan uni.LastUpdated ] ]
 
             let mutable inputBuySum = 0.0
             let mutable inputCraftSum = 0.0
             let mutable inputOptSum = 0.0
 
-            CellBuilder() {
-                literal "材料："
-                setBold
-            }
+            Literal "材料：" { bold }
 
-            [ CellBuilder() { literal "物品" }
-              CellBuilder() { literal "数量" }
-              CellBuilder() {
-                  literal "税前"
-                  rightAlign
-              }
-              CellBuilder() {
-                  literal "小计"
-                  rightAlign
-              }
-
-              CellBuilder() {
-                  literal "制作"
-                  rightAlign
-              } ]
+            AsCols [ Literal "物品"
+                     RLiteral "数量"
+                     RLiteral "税前"
+                     RLiteral "小计"
+                     RLiteral "制作" ]
 
             [ for mr in input do
 
@@ -238,45 +200,32 @@ type XivRecipeModule() =
                       inputOptSum <- inputOptSum + craftPrice.Value
                       preferSell <- false
 
-                  [ CellBuilder() { literal (tryLookupNpcPrice (mr.Item, world)) }
-                    CellBuilder() { quantity mr.Quantity }
-                    CellBuilder() { integer unitPrice }
-                    CellBuilder(FakeBold = preferSell) { integer sellPrice }
+                  [ Literal(tryLookupNpcPrice (mr.Item, world))
+                    CellUtils.Number mr.Quantity
+                    HumanSig4 unitPrice
+                    HumanSig4 sellPrice { boldIf preferSell }
                     if craftPrice.IsNone then
-                        CellBuilder() { rightPad }
+                        RightPad
                     else
-                        CellBuilder(FakeBold = not preferSell) { integer craftPrice.Value } ]
-
-                  () ]
+                        HumanSig4(craftPrice.Value) { boldIf (not preferSell) } ] ]
 
             let taxBuyRate = 1.05
             let taxSellRate = 0.95
 
             // 材料小计
-            [ CellBuilder() {
-                  literal "税后卖出"
-                  setBold
-              }
-              CellBuilder() { rightPad }
-              CellBuilder() { integer (totalSell * taxSellRate) } ]
+            AsCols [ Literal "税后卖出" { bold }
+                     RightPad
+                     HumanSig4(totalSell * taxSellRate) ]
 
-            // 材料小计
-            [ CellBuilder() {
-                  literal "税后材料"
-                  setBold
-              }
-              CellBuilder() { rightPad }
-              CellBuilder() { integer (inputBuySum * taxBuyRate) }
-              CellBuilder() { integer (inputCraftSum * taxBuyRate) } ]
+            AsCols [ Literal "税后材料" { bold }
+                     RightPad
+                     HumanSig4(inputBuySum * taxBuyRate)
+                     HumanSig4(inputCraftSum * taxBuyRate) ]
 
-            // 最佳
-            [ CellBuilder() {
-                  literal "最优成本/利润"
-                  setBold
-              }
-              CellBuilder() { rightPad }
-              CellBuilder() { integer (inputOptSum * taxBuyRate) }
-              CellBuilder() { integer ((totalSell * taxSellRate) - (inputOptSum * taxBuyRate)) } ]
+            AsCols [ Literal "最优成本/利润" { bold }
+                     RightPad
+                     HumanSig4(inputOptSum * taxBuyRate)
+                     HumanSig4((totalSell * taxSellRate) - (inputOptSum * taxBuyRate)) ]
         }
 
     [<TestFixture>]

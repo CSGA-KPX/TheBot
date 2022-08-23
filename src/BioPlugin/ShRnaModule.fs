@@ -29,16 +29,14 @@ type EveLpStoreModule() =
         use ret = cmdArg.OpenResponse(ForceText)
 
         ret.Table {
-            seq {
-                for id in trcnIds do
-                    let ret = shrna.TryFindByTRCNId(id)
+            [ for id in trcnIds do
+                  let ret = shrna.TryFindByTRCNId(id)
 
-                    if ret.IsSome then
-                        let oligo = ret.Value.GenerateOligo()
-                        [ CellBuilder() { literal $"{id}-F" }; CellBuilder() { literal oligo.Forward } ]
-                        [ CellBuilder() { literal $"{id}-R" }; CellBuilder() { literal oligo.Reverse } ]
-                    else
-                        [ CellBuilder() { literal $"未找到{id}" } ]
-            }
+                  if ret.IsSome then
+                      let oligo = ret.Value.GenerateOligo()
+                      [ Literal $"{id}-F"; Literal oligo.Forward ]
+                      [ Literal $"{id}-R"; Literal oligo.Reverse ]
+                  else
+                      [ Literal $"未找到{id}" ] ]
         }
         |> ignore

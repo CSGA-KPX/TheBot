@@ -87,17 +87,17 @@ type SudoModule() =
         let api = cmdArg.ApiCaller.CallApi<GetGroupList>()
 
         TextTable(ForceImage) {
-            [ CellBuilder() { literal "群号" }; CellBuilder() { literal "名称" } ]
+            AsCols [ Literal "群号"; Literal "名称" ]
 
             [ for g in api.Groups do
-                  [ CellBuilder() { literal g.GroupId.Value }; CellBuilder() { literal g.GroupName } ] ]
+                    [ Literal g.GroupId.Value; Literal g.GroupName ] ]
         }
 
     [<CommandHandlerMethod("##abortall", "（超管）断开所有WS连接", "", IsHidden = true)>]
     member x.HandleShowAbortAll(cmdArg: CommandEventArgs) =
         cmdArg.EnsureSenderOwner()
 
-        for ctx in KPX.FsCqHttp.Instance.CqWsContextPool.Instance do
+        for ctx in Instance.CqWsContextPool.Instance do
             ctx.Stop()
 
     [<CommandHandlerMethod("##allow", "(管理) 允许好友、加群请求", "", IsHidden = true)>]
@@ -147,9 +147,7 @@ type SudoModule() =
         let act = Action<CommandEventArgs>(fun cmdArg -> cmdArg.Reply("Bot故障：信息处理已禁用"))
 
         for kv in m.Commands do
-            m.Commands.[kv.Key] <-
-                { kv.Value with
-                      MethodAction = MethodAction.ManualAction act }
+            m.Commands.[kv.Key] <- { kv.Value with MethodAction = MethodAction.ManualAction act }
 
         x.Logger.Fatal("已完成紧急停止操作")
         cmdArg.Reply("已完成紧急停止操作")

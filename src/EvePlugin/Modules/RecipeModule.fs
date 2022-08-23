@@ -49,12 +49,10 @@ type EveRecipeModule() =
         let me0Price = recipe.Value.GetTotalMaterialPrice(PriceFetchMode.Sell, MeApplied)
 
         TextTable(cfg.ResponseType) {
-            CellBuilder() {
-                literal "直接材料总价："
-                integer me0Price
-            }
+            AsCols [ Literal "材料总价"
+                     Integer me0Price ]
 
-            [ CellBuilder() { rightLiteral "材料等级" }; CellBuilder() { rightLiteral "节省" } ]
+            AsCols [ Literal "材料等级"; RLiteral "节省" ]
 
             [ for me = 0 to 10 do
                   let cost =
@@ -62,7 +60,7 @@ type EveRecipeModule() =
                           .TryGetRecipe(item.Value, ByRun 1.0, me)
                           .Value.GetTotalMaterialPrice(PriceFetchMode.Sell, MeApplied)
 
-                  [ CellBuilder() { integer me }; CellBuilder() { integer (me0Price - cost) } ] ]
+                  [ Literal me; Integer(me0Price - cost) ] ]
         }
 
 
@@ -106,13 +104,13 @@ type EveRecipeModule() =
 
         let productTable =
             TextTable() {
-                [ CellBuilder() { literal "产出" }
-                  CellBuilder() { rightLiteral "数量" }
-                  CellBuilder() { rightLiteral "体积" }
-                  CellBuilder() { rightLiteral "ime" }
-                  CellBuilder() { rightLiteral "dme" }
-                  CellBuilder() { rightLiteral "r" }
-                  CellBuilder() { rightLiteral "p" } ]
+                AsCols [ Literal "产出"
+                         RLiteral "数量"
+                         RLiteral "体积"
+                         RLiteral "ime"
+                         RLiteral "dme"
+                         RLiteral "r"
+                         RLiteral "p" ]
             }
 
         for args in cmdArg.AllArgs do
@@ -144,13 +142,13 @@ type EveRecipeModule() =
                         totalOutputVolume <- totalOutputVolume + outputVolume
 
                         productTable {
-                            [ CellBuilder() { literal product.Item.Name }
-                              CellBuilder() { integer product.Quantity }
-                              CellBuilder() { integer outputVolume }
-                              CellBuilder() { integer cfg.InputMe }
-                              CellBuilder() { integer cfg.DerivationMe }
-                              CellBuilder() { literal cfg.ExpandReaction }
-                              CellBuilder() { literal cfg.ExpandPlanet } ]
+                            AsCols [ Literal product.Item.Name
+                                     Integer product.Quantity
+                                     Integer outputVolume
+                                     Integer cfg.InputMe
+                                     Integer cfg.DerivationMe
+                                     Literal(cfg.ExpandReaction.ToString())
+                                     Literal(cfg.ExpandPlanet.ToString()) ]
                         }
                         |> ignore
 
@@ -159,13 +157,13 @@ type EveRecipeModule() =
 
         // 生成产物信息
         productTable {
-            [ CellBuilder() { literal "总计" }
-              CellBuilder() { rightPad }
-              CellBuilder() { number totalOutputVolume }
-              CellBuilder() { rightPad }
-              CellBuilder() { rightPad }
-              CellBuilder() { rightPad }
-              CellBuilder() { rightPad } ]
+            AsCols [ Literal "总计"
+                     RightPad
+                     CellUtils.Number totalOutputVolume
+                     RightPad
+                     RightPad
+                     RightPad
+                     RightPad ]
         }
         |> ignore
 
@@ -173,10 +171,10 @@ type EveRecipeModule() =
             TextTable(respType) {
                 productTable
 
-                [ CellBuilder() { literal "名称" }
-                  CellBuilder() { rightLiteral "数量" }
-                  CellBuilder() { rightLiteral "缺少" }
-                  CellBuilder() { rightLiteral "体积" } ]
+                AsCols [ Literal "名称"
+                         RLiteral "数量"
+                         RLiteral "缺少"
+                         RLiteral "体积" ]
             }
 
         // 生成材料信息
@@ -191,15 +189,15 @@ type EveRecipeModule() =
 
             let needStr =
                 if need <= 0.0 then
-                    CellBuilder() { rightPad }
+                    RightPad
                 else
-                    CellBuilder() { integer need }
+                    Integer need
 
             mainTable {
-                [ CellBuilder() { literal mr.Item.Name }
-                  CellBuilder() { integer mr.Quantity }
-                  if useInv then needStr
-                  CellBuilder() { number sumVolume } ]
+                AsCols [ Literal mr.Item.Name
+                         Integer mr.Quantity
+                         if useInv then needStr
+                         Integer sumVolume ]
             }
             |> ignore
 
@@ -207,11 +205,10 @@ type EveRecipeModule() =
 
         // 总材料信息
         mainTable {
-            [ CellBuilder() { literal "材料体积" }
-              CellBuilder() { rightPad }
-              if useInv then
-                  CellBuilder() { rightPad }
-              CellBuilder() { number totalInputVolume } ]
+            AsCols [ Literal "材料体积"
+                     RightPad
+                     if useInv then RightPad
+                     CellUtils.Number totalInputVolume ]
         }
         |> ignore
 
@@ -296,27 +293,21 @@ type EveRecipeModule() =
 
                 $"展开行星材料：%b{cfg.ExpandPlanet} 展开反应公式：%b{cfg.ExpandReaction}"
 
-                CellBuilder() {
-                    literal "产品："
-                    setBold
-                }
+                Literal "产品：" { bold }
 
                 priceTable.Table
 
-                CellBuilder() {
-                    literal "材料："
-                    setBold
-                }
+                Literal "材料：" { bold }
 
-                [ CellBuilder() { literal "材料" }
-                  CellBuilder() { rightLiteral "数量" }
-                  CellBuilder() { rightLiteral cfg.MaterialPriceMode }
-                  CellBuilder() { rightLiteral "生产" } ]
+                AsCols [ Literal "材料"
+                         RLiteral "数量"
+                         RLiteral(cfg.MaterialPriceMode.ToString())
+                         RLiteral "生产" ]
 
-                [ CellBuilder() { literal "制造费用" }
-                  CellBuilder() { rightPad }
-                  CellBuilder() { number accInstallCost }
-                  CellBuilder() { rightPad } ]
+                AsCols [ Literal "制造费用"
+                         RightPad
+                         HumanSig4 accInstallCost
+                         RightPad ]
             }
 
         let mutable optCost = accInstallCost
@@ -348,10 +339,10 @@ type EveRecipeModule() =
                 optCost <- optCost + add
 
                 tt {
-                    [ CellBuilder() { literal mr.Item.Name }
-                      CellBuilder() { integer mr.Quantity }
-                      CellBuilder() { number price }
-                      CellBuilder() { number mrAll } ]
+                    AsCols [ Literal mr.Item.Name
+                             Integer mr.Quantity
+                             HumanSig4 price
+                             HumanSig4 mrAll ]
                 }
                 |> ignore
             else
@@ -359,10 +350,10 @@ type EveRecipeModule() =
                 allCost <- allCost + price
 
                 tt {
-                    [ CellBuilder() { literal mr.Item.Name }
-                      CellBuilder() { integer mr.Quantity }
-                      CellBuilder() { number price }
-                      CellBuilder() { rightPad } ]
+                    AsCols [ Literal mr.Item.Name
+                             Integer mr.Quantity
+                             HumanSig4 price
+                             RightPad ]
                 }
                 |> ignore
 
@@ -370,20 +361,20 @@ type EveRecipeModule() =
         let sellWithTax = priceTable.TotalSellPriceWithTax
 
         tt {
-            [ CellBuilder() { literal "卖出/税后" }
-              CellBuilder() { rightPad }
-              CellBuilder() { number sell }
-              CellBuilder() { number sellWithTax } ]
+            AsCols [ Literal "卖出/税后"
+                     RightPad
+                     HumanSig4 sell
+                     HumanSig4 sellWithTax ]
 
-            [ CellBuilder() { literal "材料/最佳" }
-              CellBuilder() { rightPad }
-              CellBuilder() { number allCost }
-              CellBuilder() { number optCost } ]
+            AsCols [ Literal "材料/最佳"
+                     RightPad
+                     HumanSig4 allCost
+                     HumanSig4 optCost ]
 
-            [ CellBuilder() { literal "税后 利润" }
-              CellBuilder() { rightPad }
-              CellBuilder() { number (sellWithTax - allCost) }
-              CellBuilder() { number (sellWithTax - optCost) } ]
+            AsCols [ Literal "税后 利润"
+                     RightPad
+                     HumanSig4(sellWithTax - allCost)
+                     HumanSig4(sellWithTax - optCost) ]
         }
         |> ignore
 
@@ -461,12 +452,12 @@ type EveRecipeModule() =
         let pm = EveProcessManager(cfg)
 
         ret.Table {
-            [ CellBuilder() { literal "方案" }
-              CellBuilder() { rightLiteral "出售价格/税前卖出" }
-              CellBuilder() { rightLiteral ("生产成本/" + pmStr) }
-              CellBuilder() { rightLiteral "含税利润" }
-              CellBuilder() { rightLiteral "交易量" }
-              CellBuilder() { rightLiteral "日均利润" } ]
+            AsCols [ Literal "方案"
+                     RLiteral "出售价格/税前卖出"
+                     RLiteral("生产成本/" + pmStr)
+                     RLiteral "含税利润"
+                     RLiteral "交易量"
+                     RLiteral "日均利润" ]
         }
         |> ignore
 
@@ -475,75 +466,69 @@ type EveRecipeModule() =
         | TooManyResults -> ret.Abort(InputError, "蓝图数量超限")
         | Result result ->
             result
-            |> Seq.map
-                (fun ps ->
-                    let product = ps.Original.GetFirstProduct()
+            |> Seq.map (fun ps ->
+                let product = ps.Original.GetFirstProduct()
 
-                    let proc =
-                        pm
-                            .TryGetRecipeRecMe(
-                                product.Item,
-                                ByRun 1.0,
-                                cfg.InputMe,
-                                cfg.DerivationMe
-                            )
-                            .Value
+                let proc =
+                    pm
+                        .TryGetRecipeRecMe(
+                            product.Item,
+                            ByRun 1.0,
+                            cfg.InputMe,
+                            cfg.DerivationMe
+                        )
+                        .Value
 
-                    // 所有基础材料的报价
-                    let materialCost = proc.FinalProcess.Input.GetPrice(cfg.MaterialPriceMode)
+                // 所有基础材料的报价
+                let materialCost = proc.FinalProcess.Input.GetPrice(cfg.MaterialPriceMode)
 
-                    let installCost =
-                        if ps.Type = ProcessType.Planet then
-                            // 构造一个临时配方去计算费用
-                            { Original = proc.FinalProcess
-                              TargetQuantity = ByRun 1.0
-                              TargetMe = 0
-                              Type = ProcessType.Planet }
-                                .GetInstallationCost(cfg)
-                        else
-                            proc.IntermediateProcess
-                            |> Array.fold (fun acc proc -> acc + proc.GetInstallationCost(cfg)) 0.0
+                let installCost =
+                    if ps.Type = ProcessType.Planet then
+                        // 构造一个临时配方去计算费用
+                        { Original = proc.FinalProcess
+                          TargetQuantity = ByRun 1.0
+                          TargetMe = 0
+                          Type = ProcessType.Planet }
+                            .GetInstallationCost(cfg)
+                    else
+                        proc.IntermediateProcess
+                        |> Array.fold (fun acc proc -> acc + proc.GetInstallationCost(cfg)) 0.0
 
-                    let cost = materialCost + installCost
+                let cost = materialCost + installCost
 
-                    let sellWithTax = proc.FinalProcess.Output.GetPrice(PriceFetchMode.SellWithTax)
+                let sellWithTax = proc.FinalProcess.Output.GetPrice(PriceFetchMode.SellWithTax)
 
-                    let volume = data.GetItemTradeVolume(product.Item)
+                let volume = data.GetItemTradeVolume(product.Item)
 
-                    let sortIdx =
-                        //(sellWithTax - cost) / cost * 100.0 |> int
-                        (sellWithTax - cost) * volume / proc.FinalProcess.Output.[0].Quantity
+                let sortIdx =
+                    //(sellWithTax - cost) / cost * 100.0 |> int
+                    (sellWithTax - cost) * volume / proc.FinalProcess.Output.[0].Quantity
 
-                    {| Name = product.Item.Name
-                       TypeGroup = product.Item.TypeGroup
-                       Cost = cost
-                       Quantity = product.Quantity
-                       Sell = proc.FinalProcess.Output.GetPrice(PriceFetchMode.Sell)
-                       Profit = sellWithTax - cost
-                       Volume = volume
-                       SortIndex = sortIdx |})
+                {| Name = product.Item.Name
+                   TypeGroup = product.Item.TypeGroup
+                   Cost = cost
+                   Quantity = product.Quantity
+                   Sell = proc.FinalProcess.Output.GetPrice(PriceFetchMode.Sell)
+                   Profit = sellWithTax - cost
+                   Volume = volume
+                   SortIndex = sortIdx |})
             |> Seq.sortByDescending (fun x -> x.SortIndex)
             |> Seq.groupBy (fun x -> x.TypeGroup)
-            |> Seq.iter
-                (fun (group, data) ->
-                    ret.Table {
-                        // 表格和表格之间空一行
-                        CellBuilder() { nullify }
+            |> Seq.iter (fun (group, data) ->
+                ret.Table {
+                    // 表格和表格之间空一行
+                    LeftPad
+                    Literal $">>{group.Name}<<" { bold }
 
-                        CellBuilder() {
-                            literal $">>{group.Name}<<"
-                            setBold
-                        }
-
-                        [ for x in data do
-                              [ CellBuilder() { literal x.Name }
-                                CellBuilder() { number x.Sell }
-                                CellBuilder() { number x.Cost }
-                                CellBuilder() { number x.Profit }
-                                CellBuilder() { integer x.Volume }
-                                CellBuilder() { number x.SortIndex } ] ]
-                    }
-                    |> ignore)
+                    [ for x in data do
+                          [ Literal x.Name
+                            HumanSig4 x.Sell
+                            HumanSig4 x.Cost
+                            HumanSig4 x.Profit
+                            Integer x.Volume
+                            HumanSig4 x.SortIndex ] ]
+                }
+                |> ignore)
 
     [<TestFixture>]
     member x.TestManufacturingOverview() =

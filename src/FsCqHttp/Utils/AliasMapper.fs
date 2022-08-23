@@ -1,4 +1,4 @@
-﻿namespace KPX.FsCqHttp.Utils.AliasMapper
+namespace KPX.FsCqHttp.Utils.AliasMapper
 
 open System
 open System.Collections.Generic
@@ -33,23 +33,16 @@ type AliasMapper() =
 
     member x.GetValueTable() =
         TextTable() {
-            [ CellBuilder() {
-                literal "名称"
-                setBold
-              }
-              CellBuilder() {
-                  literal "别名"
-                  setBold
-              } ]
+            AsCols [ Literal("名称") { bold }
+                     Literal("别名") { bold } ]
 
             dict
             |> Seq.groupBy (fun kv -> kv.Value)
-            |> Seq.map
-                (fun (key, aliases) ->
-                    let aliases =
-                        aliases
-                        |> Seq.filter (fun kv -> kv.Value <> kv.Key)
-                        |> Seq.map (fun kv -> kv.Key)
+            |> Seq.map (fun (key, aliases) ->
+                let aliases =
+                    aliases
+                    |> Seq.filter (fun kv -> kv.Value <> kv.Key)
+                    |> Seq.map (fun kv -> kv.Key)
 
-                    [ CellBuilder() { literal key }; CellBuilder() { literal (String.Join(", ", aliases)) } ])
+                [ Literal(key); Literal(String.Join(", ", aliases)) ])
         }

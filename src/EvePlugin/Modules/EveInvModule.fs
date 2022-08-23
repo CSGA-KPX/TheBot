@@ -80,14 +80,10 @@ type EveInvModule() =
         TextTable(ForceImage) {
             "数据会保留到机器人重启前"
 
-            [ CellBuilder() { literal "材料" }
-              CellBuilder() {
-                  literal "数量"
-                  rightAlign
-              } ]
+            AsCols [ Literal "材料"; RLiteral "数量" ]
 
             [ for m in materials do
-                  [ CellBuilder() { literal m.Item.Name }; CellBuilder() { integer m.Quantity } ] ]
+                  [ Literal m.Item.Name; Integer m.Quantity ] ]
 
         }
 
@@ -101,25 +97,12 @@ type EveInvModule() =
         let list = x.ReadCommandBody(cmdArg)
 
         TextTable() {
-            let positiveOrPad (f: float) =
-                if f > 0.0 then
-                    CellBuilder() { integer f }
-                else
-                    CellBuilder() { rightPad }
+            let positiveOrPad (f: float) = if f > 0.0 then Integer f else RightPad
 
-            [ CellBuilder() { literal "物品" }
-              CellBuilder() {
-                  literal "数量"
-                  rightAlign
-              }
-              CellBuilder() {
-                  literal "已有"
-                  rightAlign
-              }
-              CellBuilder() {
-                  literal "缺少"
-                  rightAlign
-              } ]
+            AsCols [ Literal "物品"
+                     RLiteral "数量"
+                     RLiteral "已有"
+                     RLiteral "缺少" ]
 
             [ for m in list do
                   let had =
@@ -128,10 +111,8 @@ type EveInvModule() =
                       else
                           0.0
 
-                  let lack = m.Quantity - had
-
-                  [ CellBuilder() { literal m.Item.Name }
-                    CellBuilder() { integer m.Quantity }
-                    CellBuilder() { literal (positiveOrPad had) }
-                    CellBuilder() { literal (positiveOrPad lack) } ] ]
+                  [ Literal m.Item.Name
+                    Integer m.Quantity
+                    (positiveOrPad had)
+                    (positiveOrPad (m.Quantity - had)) ] ]
         }

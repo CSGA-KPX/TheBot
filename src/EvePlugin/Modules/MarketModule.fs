@@ -77,27 +77,26 @@ type EveMarketModule() =
 
         let getSubTypes (names: string) =
             names.Split(',')
-            |> Array.map
-                (fun name ->
-                    let item = data.GetItem(name)
+            |> Array.map (fun name ->
+                let item = data.GetItem(name)
 
-                    let proc =
-                        RefineProcessCollection
-                            .Instance
-                            .GetProcessFor(
-                                item
-                            )
-                            .Original
+                let proc =
+                    RefineProcessCollection
+                        .Instance
+                        .GetProcessFor(
+                            item
+                        )
+                        .Original
 
-                    let input = proc.Input.[0]
+                let input = proc.Input.[0]
 
-                    let refinePerSec = mineSpeed / input.Item.Volume / input.Quantity
+                let refinePerSec = mineSpeed / input.Item.Volume / input.Quantity
 
-                    let price =
-                        proc.Output
-                        |> Array.sumBy (fun m -> m.Quantity * refinePerSec * refineYield * m.Item.GetPriceInfo().Sell)
+                let price =
+                    proc.Output
+                    |> Array.sumBy (fun m -> m.Quantity * refinePerSec * refineYield * m.Item.GetPriceInfo().Sell)
 
-                    name, price |> ceil)
+                name, price |> ceil)
             |> Array.sortByDescending snd
 
         let moon = getSubTypes MoonNames
@@ -111,55 +110,46 @@ type EveMarketModule() =
             ToolWarning
             $"采集能力：%g{mineSpeed} m3/s 精炼效率:%g{refineYield}"
 
-            [ CellBuilder() { literal "矿石" }
-              CellBuilder() {
-                  literal "秒利润"
-                  rightAlign
-              }
-              CellBuilder() { literal "冰矿" }
-              CellBuilder() {
-                  literal "秒利润"
-                  rightAlign
-              }
-              CellBuilder() { literal "月矿" }
-              CellBuilder() {
-                  literal "秒利润"
-                  rightAlign
-              }
-              CellBuilder() { literal "导管" }
-              CellBuilder() {
-                  literal "秒利润"
-                  rightAlign
-              } ]
+            AsCols [ Literal "矿石"
+                     Literal "秒利润" { rightAlign }
+
+                     Literal "冰矿"
+                     Literal "秒利润" { rightAlign }
+
+                     Literal "月矿"
+                     Literal "秒利润" { rightAlign }
+
+                     Literal "导管"
+                     Literal "秒利润" { rightAlign } ]
 
             [ for i = 0 to rowMax do
                   [ if i < ore.Length then
-                        CellBuilder() { literal (fst ore.[i]) }
-                        CellBuilder() { integer (snd ore.[i]) }
+                        Literal(fst ore.[i])
+                        Integer(snd ore.[i])
                     else
-                        CellBuilder() { leftPad }
-                        CellBuilder() { rightPad }
+                        LeftPad
+                        RightPad
 
                     if i < ice.Length then
-                        CellBuilder() { literal (fst ice.[i]) }
-                        CellBuilder() { integer (snd ice.[i]) }
+                        Literal(fst ice.[i])
+                        Integer(snd ice.[i])
                     else
-                        CellBuilder() { leftPad }
-                        CellBuilder() { rightPad }
+                        LeftPad
+                        RightPad
 
                     if i < moon.Length then
-                        CellBuilder() { literal (fst moon.[i]) }
-                        CellBuilder() { integer (snd moon.[i]) }
+                        Literal(fst moon.[i])
+                        Integer(snd moon.[i])
                     else
-                        CellBuilder() { leftPad }
-                        CellBuilder() { rightPad }
+                        LeftPad
+                        RightPad
 
                     if i < tore.Length then
-                        CellBuilder() { literal (fst tore.[i]) }
-                        CellBuilder() { integer (snd tore.[i]) }
+                        Literal(fst tore.[i])
+                        Integer(snd tore.[i])
                     else
-                        CellBuilder() { leftPad }
-                        CellBuilder() { rightPad } ] ]
+                        LeftPad
+                        RightPad ] ]
         }
 
 

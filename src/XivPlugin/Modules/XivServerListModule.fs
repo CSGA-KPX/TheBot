@@ -15,26 +15,16 @@ type ServerListModule() =
         TextTable(ForceImage) {
             let colsNum = 5 // 每行5个名字
 
-            CellBuilder() {
-                literal "陆行鸟特指Choboco服务器，查询大区请使用鸟区/陆行鸟区/鸟"
-                setBold
-            }
-
-            CellBuilder() {
-                literal "可用大区及缩写有："
-                setBold
-            }
+            Literal "陆行鸟特指Choboco服务器，查询大区请使用鸟区/陆行鸟区/鸟" { bold }
+            Literal "可用大区及缩写有：" { bold }
 
             [ for chunk in World.DataCenters |> Seq.chunkBySize colsNum do
-                  chunk |> Array.map (fun name -> CellBuilder() { literal name }) ]
+                  chunk |> Array.map Literal ]
 
-            CellBuilder() {
-                literal "可用服务器及缩写有："
-                setBold
-            }
+            Literal "可用服务器及缩写有：" { bold }
 
             [ for chunk in World.WorldNames |> Seq.chunkBySize colsNum do
-                  chunk |> Array.map (fun name -> CellBuilder() { literal name }) ]
+                  chunk |> Array.map Literal ]
 
         }
 

@@ -48,27 +48,13 @@ type EveLpStoreModule() =
             $"最低交易量比(vol)：%g{minVol} 最低LP价值(val)：%g{minVal} 结果上限(count)：%i{cfg.RecordCount}"
             "警告：请参考交易量，利润很高的不一定卖得掉"
 
-            [ CellBuilder() { literal "兑换" }
-              CellBuilder() {
-                  literal "出售价格"
-                  rightAlign
-              }
-              CellBuilder() {
-                  literal "利润"
-                  rightAlign
-              }
-              CellBuilder() {
-                  literal "利润/LP"
-                  rightAlign
-              }
-              CellBuilder() {
-                  literal "交易量比"
-                  rightAlign
-              } ]
+            AsCols [ Literal "兑换"
+                     RLiteral "出售价格"
+                     RLiteral "利润"
+                     RLiteral "利润/LP"
+                     RLiteral "交易量比" ]
         }
         |> ignore
-
-
 
         let corp =
             let cmd = cfg.GetNonOptionString()
@@ -79,58 +65,56 @@ type EveLpStoreModule() =
             data.GetNpcCorporation(cmd)
 
         data.GetLpStoreOffersByCorp(corp)
-        |> Seq.map
-            (fun lpOffer ->
-                let oProc = lpOffer.CastProcess()
-                let itemOffer = oProc.GetFirstProduct()
+        |> Seq.map (fun lpOffer ->
+            let oProc = lpOffer.CastProcess()
+            let itemOffer = oProc.GetFirstProduct()
 
-                let offerStr = $"%s{itemOffer.Item.Name}*%g{itemOffer.Quantity}"
+            let offerStr = $"%s{itemOffer.Item.Name}*%g{itemOffer.Quantity}"
 
-                let mutable totalCost = 0.0 // 所有ISK开销（如果是蓝图，还有材料开销）
-                let mutable dailyVolume = 0.0 // 日均交易量
-                let mutable sellPrice = 0.0 // 产物卖出价格
+            let mutable totalCost = 0.0 // 所有ISK开销（如果是蓝图，还有材料开销）
+            let mutable dailyVolume = 0.0 // 日均交易量
+            let mutable sellPrice = 0.0 // 产物卖出价格
 
-                // LP交换
-                totalCost <- totalCost + oProc.Input.GetPrice(cfg.MaterialPriceMode) + lpOffer.IskCost
+            // LP交换
+            totalCost <- totalCost + oProc.Input.GetPrice(cfg.MaterialPriceMode) + lpOffer.IskCost
 
-                if itemOffer.Item.IsBlueprint then
-                    let recipe = pm.GetRecipe(itemOffer)
-                    let rProc = recipe.ApplyFlags(MeApplied)
+            if itemOffer.Item.IsBlueprint then
+                let recipe = pm.GetRecipe(itemOffer)
+                let rProc = recipe.ApplyFlags(MeApplied)
 
-                    totalCost <-
-                        totalCost
-                        + rProc.Input.GetPrice(cfg.MaterialPriceMode)
-                        + recipe.GetInstallationCost(cfg)
+                totalCost <-
+                    totalCost
+                    + rProc.Input.GetPrice(cfg.MaterialPriceMode)
+                    + recipe.GetInstallationCost(cfg)
 
-                    sellPrice <- rProc.Output.GetPrice(PriceFetchMode.SellWithTax)
-                    dailyVolume <- data.GetItemTradeVolume(rProc.GetFirstProduct().Item)
-                else
-                    sellPrice <- oProc.Output.GetPrice(PriceFetchMode.SellWithTax)
-                    dailyVolume <- data.GetItemTradeVolume(oProc.GetFirstProduct().Item)
+                sellPrice <- rProc.Output.GetPrice(PriceFetchMode.SellWithTax)
+                dailyVolume <- data.GetItemTradeVolume(rProc.GetFirstProduct().Item)
+            else
+                sellPrice <- oProc.Output.GetPrice(PriceFetchMode.SellWithTax)
+                dailyVolume <- data.GetItemTradeVolume(oProc.GetFirstProduct().Item)
 
-                {| Name = offerStr
-                   OfferItem = itemOffer.Item
-                   OfferQuantity = itemOffer.Quantity
-                   TotalCost = totalCost
-                   SellPrice = sellPrice
-                   Profit = sellPrice - totalCost
-                   ProfitPerLp = (sellPrice - totalCost) / lpOffer.LpCost
-                   Volume = dailyVolume
-                   DailyOfferVolume = dailyVolume / itemOffer.Quantity
-                   LpCost = lpOffer.LpCost |})
+            {| Name = offerStr
+               OfferItem = itemOffer.Item
+               OfferQuantity = itemOffer.Quantity
+               TotalCost = totalCost
+               SellPrice = sellPrice
+               Profit = sellPrice - totalCost
+               ProfitPerLp = (sellPrice - totalCost) / lpOffer.LpCost
+               Volume = dailyVolume
+               DailyOfferVolume = dailyVolume / itemOffer.Quantity
+               LpCost = lpOffer.LpCost |})
         |> Seq.filter (fun r -> (r.ProfitPerLp >= minVal) && (r.DailyOfferVolume >= minVol))
         |> Seq.sortByDescending (fun r -> r.ProfitPerLp)
         |> Seq.truncate cfg.RecordCount
-        |> Seq.iter
-            (fun r ->
-                resp.Table {
-                    [ CellBuilder() { literal r.Name }
-                      CellBuilder() { floatSig4 r.SellPrice }
-                      CellBuilder() { floatSig4 r.Profit }
-                      CellBuilder() { integer r.ProfitPerLp }
-                      CellBuilder() { integer r.DailyOfferVolume } ]
-                }
-                |> ignore)
+        |> Seq.iter (fun r ->
+            resp.Table {
+                AsCols [ Literal r.Name
+                         HumanSig4 r.SellPrice
+                         HumanSig4 r.Profit
+                         Integer r.ProfitPerLp
+                         Integer r.DailyOfferVolume ]
+            }
+            |> ignore)
 
 
     member x.ShowSingleItem(cmdArg: CommandEventArgs, cfg: LpConfigParser) =
@@ -165,27 +149,12 @@ type EveLpStoreModule() =
 
         let profitTable =
             TextTable() {
-                [ CellBuilder() { literal "名称" }
-                  CellBuilder() {
-                      literal "数量"
-                      rightAlign
-                  }
-                  CellBuilder() {
-                      literal "税后卖出"
-                      rightAlign
-                  }
-                  CellBuilder() {
-                      literal "交易量"
-                      rightAlign
-                  }
-                  CellBuilder() {
-                      literal "利润"
-                      rightAlign
-                  }
-                  CellBuilder() {
-                      literal "单LP价值"
-                      rightAlign
-                  } ]
+                AsCols [ Literal "名称"
+                         RLiteral "数量"
+                         RLiteral "税后卖出"
+                         RLiteral "交易量"
+                         RLiteral "利润"
+                         RLiteral "单LP价值" ]
             }
 
         resp.Table {
@@ -195,20 +164,17 @@ type EveLpStoreModule() =
 
             "材料："
 
-            [ CellBuilder() { literal "物品" }
-              CellBuilder() { literal "数量" }
-              CellBuilder() {
-                  literal cfg.MaterialPriceMode
-                  rightAlign
-              } ]
+            AsCols [ Literal "物品"
+                     RLiteral "数量"
+                     RLiteral (cfg.MaterialPriceMode.ToString()) ]
 
-            [ CellBuilder() { literal "忠诚点" }
-              CellBuilder() { integer offer.Value.LpCost }
-              CellBuilder() { rightPad } ]
+            AsCols [ Literal "忠诚点"
+                     Integer offer.Value.LpCost
+                     RightPad ]
 
-            [ CellBuilder() { literal "星币" }
-              CellBuilder() { rightPad }
-              CellBuilder() { number offer.Value.IskCost } ]
+            AsCols [ Literal "星币"
+                     RightPad
+                     HumanSig4 offer.Value.IskCost ]
         }
         |> ignore
 
@@ -220,18 +186,16 @@ type EveLpStoreModule() =
             materialPriceSum <- materialPriceSum + total
 
             resp.Table {
-                [ CellBuilder() { literal mr.Item.Name }
-                  CellBuilder() { integer mr.Quantity }
-                  CellBuilder() { number total } ]
+                AsCols [ Literal mr.Item.Name
+                         Integer mr.Quantity
+                         HumanSig4 total ]
             }
             |> ignore
 
         let product = mProc.GetFirstProduct()
 
         if product.Item.IsBlueprint then
-            let proc =
-                { pm.GetRecipe(product.Item) with
-                      TargetQuantity = ByRun product.Quantity }
+            let proc = { pm.GetRecipe(product.Item) with TargetQuantity = ByRun product.Quantity }
 
             let recipe = proc.ApplyFlags(MeApplied)
 
@@ -241,9 +205,9 @@ type EveLpStoreModule() =
                 materialPriceSum <- materialPriceSum + total
 
                 resp.Table {
-                    [ CellBuilder() { literal mr.Item.Name }
-                      CellBuilder() { integer mr.Quantity }
-                      CellBuilder() { number total } ]
+                    AsCols [ Literal mr.Item.Name
+                             Integer mr.Quantity
+                             HumanSig4 total ]
                 }
                 |> ignore
 
@@ -255,12 +219,12 @@ type EveLpStoreModule() =
             let bpProduct = recipe.GetFirstProduct()
 
             profitTable {
-                [ CellBuilder() { literal bpProduct.Item.Name }
-                  CellBuilder() { integer bpProduct.Quantity }
-                  CellBuilder() { number sellPrice }
-                  CellBuilder() { number (bpProduct.Item.GetTradeVolume()) }
-                  CellBuilder() { number profit }
-                  CellBuilder() { number (profit / offer.Value.LpCost) } ]
+                AsCols [ Literal bpProduct.Item.Name
+                         Integer bpProduct.Quantity
+                         HumanSig4 sellPrice
+                         HumanSig4(bpProduct.Item.GetTradeVolume())
+                         HumanSig4 profit
+                         HumanSig4(profit / offer.Value.LpCost) ]
             }
             |> ignore
         else
@@ -269,19 +233,19 @@ type EveLpStoreModule() =
             let profit = sellPrice - materialPriceSum
 
             profitTable {
-                [ CellBuilder() { literal product.Item.Name }
-                  CellBuilder() { integer product.Quantity }
-                  CellBuilder() { number sellPrice }
-                  CellBuilder() { number (product.Item.GetTradeVolume()) }
-                  CellBuilder() { number profit }
-                  CellBuilder() { number (profit / offer.Value.LpCost) } ]
+                AsCols [ Literal product.Item.Name
+                         Integer product.Quantity
+                         HumanSig4 sellPrice
+                         HumanSig4(product.Item.GetTradeVolume())
+                         HumanSig4 profit
+                         HumanSig4(profit / offer.Value.LpCost) ]
             }
             |> ignore
 
         resp.Table {
-            [ CellBuilder() { literal "合计" }
-              CellBuilder() { rightPad }
-              CellBuilder() { number materialPriceSum } ]
+            AsCols [ Literal "合计"
+                     RightPad
+                     HumanSig4 materialPriceSum ]
         }
         |> ignore // 因为OpenResponse()
 

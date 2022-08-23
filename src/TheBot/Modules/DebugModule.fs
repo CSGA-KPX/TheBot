@@ -15,23 +15,24 @@ type DebugModule() =
     inherit CommandHandlerBase()
 
     //TODO: null检查
-    static let nlogMemoryTarget = NLog.LogManager.Configuration.FindTargetByName("memory") :?> NLog.Targets.MemoryTarget
+    static let nlogMemoryTarget =
+        NLog.LogManager.Configuration.FindTargetByName("memory") :?> NLog.Targets.MemoryTarget
 
     [<CommandHandlerMethod("##showconfig", "(超管) 返回配置信息", "", IsHidden = true)>]
     member x.HandleShowConfig(cmdArg: CommandEventArgs) =
         cmdArg.EnsureSenderOwner()
 
         TextTable(ForceText) {
-            [ CellBuilder() { literal "名称" }; CellBuilder() { literal "指" } ]
+            AsCols [ Literal "名称"; Literal "值" ]
 
             [ for p in Config.GetType().GetProperties() do
-                  [ CellBuilder() { literal p.Name }
+                  [ Literal p.Name
                     let v = p.GetValue(Config)
 
                     if v.GetType().IsPrimitive || (v :? String) then
-                        CellBuilder() { literal $"%A{v}" }
+                        Literal $"%A{v}"
                     else
-                        CellBuilder() { literal "复杂类型" } ] ]
+                        Literal $"复杂类型" ] ]
         }
 
     [<CommandHandlerMethod("##setlog", "(超管) 设置日志设置", "event, api, command", IsHidden = true)>]

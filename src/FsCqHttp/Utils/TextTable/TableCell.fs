@@ -23,22 +23,30 @@ type RenderMode =
     /// 在图片模式下使用透明色绘制，文本按无字符处理
     | IgnoreAll
 
-type TableCell private (content: string) =
+module private TableCellUtils =
+    let emptyCellContent = "--"
+    let emptyCellColor = SKColor.Parse("00FFFFFF")
 
-    static let emptyCellContent = "--"
+type TableCell = 
+    val Text: string
+    val mutable Align: TextAlignment
+    val mutable Bold: bool
+    val mutable TextColor: SKColor
+    val mutable RenderMode: RenderMode
 
-    static let emptyCellColor = SKColor.Parse("00FFFFFF")
+    new(content: string) =
+        if content.Contains('\n') then
+            invalidOp "TableCell不允许包含多行文本"
 
-    member val Align = TextAlignment.Left with get, set
-
-    member val FakeBold = false with get, set
-
-    member val TextColor = SKColors.Black with get, set
-
-    member val RenderMode = RenderMode.Normal with get, set
-
-    member x.Text = content
-
+        { Text = if String.IsNullOrEmpty(content) then TableCellUtils.emptyCellContent else content
+          Align = TextAlignment.Left
+          Bold = false
+          TextColor = SKColors.Black
+          RenderMode =
+            if String.IsNullOrEmpty(content) then
+                RenderMode.IgnoreIfImage
+            else
+                RenderMode.Normal }
     /// <summary>
     /// 将当前TableCell的设定反映到给定SKPaint上
     /// </summary>
@@ -48,21 +56,96 @@ type TableCell private (content: string) =
         | TextAlignment.Left -> skp.TextAlign <- SKTextAlign.Left
         | TextAlignment.Right -> skp.TextAlign <- SKTextAlign.Right
 
-        skp.FakeBoldText <- x.FakeBold
+        skp.FakeBoldText <- x.Bold
 
         match x.RenderMode with
         | RenderMode.Normal -> skp.Color <- x.TextColor
         | RenderMode.IgnoreIfImage
-        | RenderMode.IgnoreAll -> skp.Color <- emptyCellColor
+        | RenderMode.IgnoreAll -> skp.Color <- TableCellUtils.emptyCellColor
 
-    /// <summary>
-    /// 根据内容创建TableCell
-    ///
-    /// 如果内容为空，返回TableCell.EmptyTableCell
-    /// </summary>
-    /// <param name="content"></param>
-    static member Create(content: string) =
-        if String.IsNullOrWhiteSpace(content) then
-            TableCell(emptyCellContent)
-        else
-            TableCell(content)
+    // if/else/for内不能使用自定义操作符
+    // 所以不实现if/for等指令
+
+    member x.Yield _ = x
+
+    member x.Zero() = x
+
+    [<CustomOperation("leftAlign")>]
+    member x.LeftAlign(_: TableCell) =
+        x.Align <- TextAlignment.Left
+        x
+
+    [<CustomOperation("rightAlign")>]
+    member x.RightAlign(_: TableCell) =
+        x.Align <- TextAlignment.Right
+        x
+
+    [<CustomOperation("bold")>]
+    member x.SetBold(_: TableCell) =
+        x.Bold <- true
+        x
+
+    [<CustomOperation("hide")>]
+    member x.Hide(_: TableCell) =
+        x.RenderMode <- RenderMode.IgnoreIfImage
+        x
+
+    [<CustomOperation("leftAlignIf")>]
+    member x.LeftAlign(_: TableCell, cond: bool) =
+        if cond then
+            x.Align <- TextAlignment.Left
+
+        x
+
+    [<CustomOperation("rightAlignIf")>]
+    member x.RightAlign(_: TableCell, cond: bool) =
+        if cond then
+            x.Align <- TextAlignment.Right
+
+        x
+
+    [<CustomOperation("boldIf")>]
+    member x.SetBold(_: TableCell, cond: bool) =
+        if cond then x.Bold <- true
+        x
+
+    [<CustomOperation("hideIf")>]
+    member x.Hide(_: TableCell, cond: bool) =
+        if cond then
+            x.RenderMode <- RenderMode.IgnoreIfImage
+
+        x
+
+    [<CustomOperation("textWhite")>]
+    member x.SetTextWhite(_: TableCell) =
+        x.TextColor <- SKColors.White
+        x
+
+    [<CustomOperation("textBlack")>]
+    member x.SetTextBlack(_: TableCell) =
+        x.TextColor <- SKColors.Black
+        x
+
+    [<CustomOperation("textRed")>]
+    member x.SetTextRed(_: TableCell) =
+        x.TextColor <- SKColors.Red
+        x
+
+    [<CustomOperation("textWhiteIf")>]
+    member x.SetTextWhite(_: TableCell, cond: bool) =
+        if cond then
+            x.TextColor <- SKColors.White
+
+        x
+
+    [<CustomOperation("textBlackIf")>]
+    member x.SetTextBlack(_: TableCell, cond: bool) =
+        if cond then
+            x.TextColor <- SKColors.Black
+
+        x
+
+    [<CustomOperation("textRedIf")>]
+    member x.SetTextRed(_: TableCell, cond: bool) =
+        if cond then x.TextColor <- SKColors.Red
+        x

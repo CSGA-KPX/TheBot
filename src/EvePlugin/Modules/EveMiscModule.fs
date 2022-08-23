@@ -28,41 +28,41 @@ type EveMiscModule() =
         cfg.Parse(Array.empty)
 
         TextTable() {
-            [ CellBuilder() { literal "名称" }; CellBuilder() { literal "意义" }; CellBuilder() { literal "默认" } ]
+            AsCols [ Literal "名称"
+                     Literal "意义"
+                     Literal "默认" ]
 
-            [ CellBuilder() { literal "ime" }
-              CellBuilder() { literal "输入蓝图材料效率" }
-              CellBuilder() { literal cfg.InputMe } ]
+            AsCols [ Literal "ime"
+                     Literal "输入蓝图材料效率"
+                     Literal cfg.InputMe ]
 
-            [ CellBuilder() { literal "dme" }
-              CellBuilder() { literal "衍生蓝图材料效率" }
-              CellBuilder() { literal cfg.DerivationMe } ]
+            AsCols [ Literal "dme"
+                     Literal "衍生蓝图材料效率"
+                     Literal cfg.DerivationMe ]
 
-            [ CellBuilder() { literal "sci" }
-              CellBuilder() { literal "星系成本指数" }
-              CellBuilder() { literal cfg.SystemCostIndex } ]
+            AsCols [ Literal "sci"
+                     Literal "星系成本指数"
+                     Literal cfg.SystemCostIndex ]
 
-            [ CellBuilder() { literal "tax" }
-              CellBuilder() { literal "设施税率" }
-              CellBuilder() { literal cfg.StructureTax } ]
+            AsCols [ Literal "tax"
+                     Literal "设施税率"
+                     Literal cfg.StructureTax ]
 
-            [ CellBuilder() { literal "p" }
-              CellBuilder() { literal "设置后展开行星材料" }
-              CellBuilder() { literal cfg.ExpandPlanet } ]
+            AsCols [ Literal "p"
+                     Literal "设置后展开行星材料"
+                     Literal(cfg.ExpandPlanet.ToString()) ]
 
-            [ CellBuilder() { literal "r" }
-              CellBuilder() { literal "设置后展开反应材料" }
-              CellBuilder() { literal cfg.ExpandReaction } ]
+            AsCols [ Literal "r"
+                     Literal "设置后展开反应材料"
+                     Literal(cfg.ExpandReaction.ToString()) ]
 
-            [ CellBuilder() { literal "buy" }
-              CellBuilder() { literal "设置后使用求购价格" }
-              CellBuilder() { literal cfg.MaterialPriceMode } ]
+            AsCols [ Literal "buy"
+                     Literal "设置后使用求购价格"
+                     Literal(cfg.MaterialPriceMode.ToString()) ]
 
-            [ CellBuilder() { literal "text" }
-              CellBuilder() { literal "设置后使用文本输出（部分指令不支持）" }
-              CellBuilder() { literal (cfg.IsDefined("text")) } ]
-
-
+            AsCols [ Literal "text"
+                     Literal "设置后使用文本输出（部分指令不支持）"
+                     Literal(cfg.IsDefined("text").ToString()) ]
         }
 
     [<TestFixture>]
@@ -81,13 +81,13 @@ type EveMiscModule() =
 
 
         TextTable() {
-            [ CellBuilder() { literal "星系" }
-              CellBuilder() { literal "制造" }
-              CellBuilder() { literal "材料" }
-              CellBuilder() { literal "事件" }
-              CellBuilder() { literal "拷贝" }
-              CellBuilder() { literal "发明" }
-              CellBuilder() { literal "反应" } ]
+            AsCols [ Literal "星系"
+                     Literal "制造"
+                     Literal "材料"
+                     Literal "时间"
+                     Literal "拷贝"
+                     Literal "发明"
+                     Literal "反应" ]
 
             [ for arg in cfg.NonOptionStrings do
                   let sys = sc.TryGetBySolarSystem(arg)
@@ -97,13 +97,13 @@ type EveMiscModule() =
 
                   let sci = scc.GetBySystem(sys.Value)
 
-                  [ CellBuilder() { literal arg }
-                    CellBuilder() { percent sci.Manufacturing }
-                    CellBuilder() { percent sci.ResearchMaterial }
-                    CellBuilder() { percent sci.ResearchTime }
-                    CellBuilder() { percent sci.Copying }
-                    CellBuilder() { percent sci.Invention }
-                    CellBuilder() { percent sci.Reaction } ] ]
+                  [ Literal arg
+                    Percent sci.Manufacturing
+                    Percent sci.ResearchMaterial
+                    Percent sci.ResearchTime
+                    Percent sci.Copying
+                    Percent sci.Invention
+                    Percent sci.Reaction ] ]
         }
 
     [<TestFixture>]
@@ -143,7 +143,7 @@ type EveMiscModule() =
 
             ret.Table {
                 [ for line in mgr do
-                      line |> Array.map (fun str -> CellBuilder() { literal str }) ]
+                      line |> Array.map Literal ]
             }
             |> ignore
         else

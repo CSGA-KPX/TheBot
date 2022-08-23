@@ -21,60 +21,56 @@ type TextTable(?retType: ResponseType) =
 
     member x.Items = items :> IReadOnlyList<_>
 
+    // yield  string          一行单列
+    // yield  TableCell       一行单列
+
+    // yield seq<seq<TableCell>> 多行多列
+    // yield seq<TableCell []>   多行多列
+    // yield seq<TableCell list> 多行多列
+
+    member x.Yield(tableItem: TableItem) =
+        items.Add(tableItem)
+        x
+
+    member x.Yield(tableItems: TableItem list) =
+        items.AddRange(tableItems)
+        x
+
+    /// 添加单行单列
     member x.Yield(line: string) =
-        // Line
         if line.Contains('\n') then
             invalidOp "TableCell不允许包含多行文本，请使用相关指令拆分"
 
-        items.Add(TableItem.Line <| TableCell.Create(line))
+        items.Add(TableItem.Line <| TableCell(line))
         x
 
-    member x.Yield(cell: CellBuilder) =
-        // Line
-        cell.ToTableCells() |> Seq.map TableItem.Line |> items.AddRange
-
+    /// 添加单行单列
+    member x.Yield(cell: TableCell) =
+        items.Add(TableItem.Line cell)
         x
 
-    member x.YieldFrom(rows: seq<CellBuilder>) =
+    /// 多行多列
+    member x.Yield(rows: seq<seq<TableCell>>) =
         for row in rows do
-            row.ToTableCells() |> Array.map TableItem.Line |> items.AddRange
+            items.Add(row |> Seq.toArray |> TableItem.Row)
 
         x
 
-    member x.Yield(row: seq<CellBuilder>) =
-        row
-        |> Seq.map
-            (fun c ->
-                let cell = c.ToTableCells()
-
-                if cell.Length <> 1 then
-                    invalidOp $"row模式下Cell必须有且只有一段内容，当前有%A{c.Content}"
-
-                cell |> Array.head)
-        |> Seq.toArray
-        |> TableItem.Row
-        |> items.Add
-
-        x
-
-    member x.Yield(rows: seq<seq<CellBuilder>>) =
+    /// 多行多列
+    member x.Yield(rows: seq<TableCell list>) =
         for row in rows do
-            x.Yield(row) |> ignore
+            items.Add(row |> Seq.toArray |> TableItem.Row)
 
         x
 
-    member x.Yield(rows: seq<CellBuilder list>) =
+    /// 多行多列
+    member x.Yield(rows: seq<TableCell []>) =
         for row in rows do
-            x.Yield(row) |> ignore
+            items.Add(row |> Seq.toArray |> TableItem.Row)
 
         x
 
-    member x.Yield(rows: seq<CellBuilder []>) =
-        for row in rows do
-            x.Yield(row) |> ignore
-
-        x
-
+    /// 添加子表格
     member x.Yield(table: TextTable) =
         items.Add(TableItem.Table(table.Items))
         x

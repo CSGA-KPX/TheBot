@@ -74,7 +74,7 @@
     <Compile Include="Utils\TextTable\Common.fs" />
     <Compile Include="Utils\TextTable\TableCell.fs" />
     <Compile Include="Utils\TextTable\TableCellHelper.fs" />
-    <Compile Include="Utils\TextTable\CellBuilder.fs" />
+    <Compile Include="Utils\TextTable\Cell.fs" />
     <Compile Include="Utils\TextTable\DrawParameters.fs" />
     <Compile Include="Utils\TextTable\TableImageRender.fs" />
     <Compile Include="Utils\TextTable\TableTextRender.fs" />

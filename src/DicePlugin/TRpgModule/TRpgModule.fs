@@ -1,4 +1,4 @@
-﻿namespace KPX.DicePlugin.TRpgModule.TRpgModule
+namespace KPX.DicePlugin.TRpgModule.TRpgModule
 
 open System
 
@@ -35,17 +35,16 @@ type TRpgModule() =
         TextTable(ForceText) {
             $"%s{cmdArg.MessageEvent.DisplayName}的人物作成:"
 
-            [ CellBuilder() { literal "属性" }; CellBuilder() { literal "值" } ]
+            AsCols [ Literal "属性"; Literal "值" ]
 
             [ let mutable sum = 0
 
               for name, expr in Coc7AttrExpr do
                   let d = de.Eval(expr).Sum |> int
                   sum <- sum + d
+                  [ Literal name; Integer d ]
 
-                  [ CellBuilder() { literal name }; CellBuilder() { integer d } ]
-
-              [ CellBuilder() { literal "总计" }; CellBuilder() { integer sum } ] ]
+              [ Literal "总计"; Integer sum ] ]
 
             let job = de.Dicer.GetArrayItem(StringData.ChrJobs)
 

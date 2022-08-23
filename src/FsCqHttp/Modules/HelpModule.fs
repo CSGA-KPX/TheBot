@@ -1,4 +1,4 @@
-﻿namespace KPX.FsCqHttp.Utils.HelpModule
+namespace KPX.FsCqHttp.Utils.HelpModule
 
 open System
 
@@ -34,25 +34,24 @@ type HelpModuleBase() =
                 .AllModules
 
         resp.Table {
-            [ CellBuilder() { literal "命令" }; CellBuilder() { literal "说明" } ]
+            AsCols [ Literal "命令"; Literal "说明" ]
 
             let nonCommandModules = ResizeArray<string>()
 
             [ for item in modules do
-                  match item with
-                  | :? CommandHandlerBase as cmdModule ->
-                      for cmd in cmdModule.Commands do
-                          if not cmd.CommandAttribute.IsHidden || cfg.IsDefined("hidden") then
-                              [ CellBuilder() { literal cmd.CommandAttribute.Command }
-                                CellBuilder() { literal cmd.CommandAttribute.HelpDesc } ]
-                  | _ -> nonCommandModules.Add(item.GetType().Name) ]
+                    match item with
+                    | :? CommandHandlerBase as cmdModule ->
+                        for cmd in cmdModule.Commands do
+                            if not cmd.CommandAttribute.IsHidden || cfg.IsDefined("hidden") then
+                                [ Literal cmd.CommandAttribute.Command; Literal cmd.CommandAttribute.HelpDesc ]
+                    | _ -> nonCommandModules.Add(item.GetType().Name) ]
 
-            yield!
+            AsRows
                 [ if nonCommandModules.Count <> 0 then
-                      CellBuilder() { literal "已启用非指令模块：" }
+                      Literal "已启用非指令模块："
 
                       for item in nonCommandModules do
-                          CellBuilder() { literal item } ]
+                          Literal item ]
 
         }
         |> ignore

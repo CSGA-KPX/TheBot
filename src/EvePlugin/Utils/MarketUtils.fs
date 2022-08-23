@@ -20,35 +20,14 @@ type EveMarketPriceTable() =
 
     do
         tt {
-            [ CellBuilder() { literal "名称" }
-              CellBuilder() {
-                  literal "数量"
-                  rightAlign
-              }
-              CellBuilder() {
-                  literal PriceFetchMode.Sell
-                  rightAlign
-              }
-              CellBuilder() {
-                  literal "变动"
-                  rightAlign
-              }
-              CellBuilder() {
-                  literal PriceFetchMode.Buy
-                  rightAlign
-              }
-              CellBuilder() {
-                  literal "变动"
-                  rightAlign
-              }
-              CellBuilder() {
-                  literal "日均交易"
-                  rightAlign
-              }
-              CellBuilder() {
-                  literal "更新时间"
-                  rightAlign
-              } ]
+            AsCols [ Literal "名称"
+                     Literal "数量" { rightAlign }
+                     Literal(PriceFetchMode.Sell.ToString()) { rightAlign }
+                     Literal "变动" { rightAlign }
+                     Literal(PriceFetchMode.Buy.ToString()) { rightAlign }
+                     Literal "变动" { rightAlign }
+                     Literal "日均交易" { rightAlign }
+                     Literal "更新时间" { rightAlign } ]
         }
         |> ignore
 
@@ -66,23 +45,23 @@ type EveMarketPriceTable() =
 
     member x.AddObject(t: EveType, q: float) =
         tt {
-            [ CellBuilder() { literal t.Name }
-              CellBuilder() { float q }
-              let adjPrice = t.GetPrice(PriceFetchMode.AveragePrice) * q
+            AsCols [ Literal t.Name
+                     Number q
+                     let adjPrice = t.GetPrice(PriceFetchMode.AveragePrice) * q
 
-              tAdj <- tAdj + adjPrice
-              let sell = t.GetPrice(PriceFetchMode.Sell) * q
-              tSell <- tSell + sell
-              let ntPct = (sell - adjPrice) / adjPrice
-              CellBuilder() { number sell }
-              CellBuilder() { percent ntPct }
-              let buy = t.GetPrice(PriceFetchMode.Buy) * q
-              tBuy <- tBuy + buy
-              let ntPct = (buy - adjPrice) / adjPrice
-              CellBuilder() { number buy }
-              CellBuilder() { percent ntPct }
-              CellBuilder() { number (t.GetTradeVolume()) }
-              CellBuilder() { toTimeSpan (t.GetPriceInfo().Updated) } ]
+                     tAdj <- tAdj + adjPrice
+                     let sell = t.GetPrice(PriceFetchMode.Sell) * q
+                     tSell <- tSell + sell
+                     let ntPct = (sell - adjPrice) / adjPrice
+                     HumanSig4 sell
+                     Percent ntPct
+                     let buy = t.GetPrice(PriceFetchMode.Buy) * q
+                     tBuy <- tBuy + buy
+                     let ntPct = (buy - adjPrice) / adjPrice
+                     HumanSig4 buy
+                     Percent ntPct
+                     HumanSig4(t.GetTradeVolume())
+                     TimeSpan(t.GetPriceInfo().Updated) ]
         }
         |> ignore
 

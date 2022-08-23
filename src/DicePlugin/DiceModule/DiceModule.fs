@@ -59,13 +59,13 @@ type DiceModule() =
             let dicer = Dicer(seed)
             do dicer.Freeze()
 
-            [ CellBuilder() { literal "D100" }; CellBuilder() { literal "选项" } ]
+            AsCols [ Literal "D100"; Literal "选项" ]
 
             cmdArg.HeaderArgs
             |> Array.collect ChoiceHelper.expandYesOrNo
             |> Array.map (fun c -> (c, dicer.GetPositive(100u, c)))
             |> Array.sortBy snd
-            |> Array.map (fun (c, n) -> [ CellBuilder() { literal $"%03i{n}" }; CellBuilder() { literal c } ])
+            |> Array.map (fun (c, n) -> [ Literal $"%03i{n}"; Literal c ])
         }
         |> ignore
 
