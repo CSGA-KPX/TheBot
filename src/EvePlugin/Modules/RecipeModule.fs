@@ -173,7 +173,7 @@ type EveRecipeModule() =
 
                 AsCols [ Literal "名称"
                          RLiteral "数量"
-                         RLiteral "缺少"
+                         if useInv then RLiteral "缺少"
                          RLiteral "体积" ]
             }
 
