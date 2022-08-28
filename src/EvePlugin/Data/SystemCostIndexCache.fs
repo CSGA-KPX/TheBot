@@ -2,6 +2,7 @@ namespace KPX.EvePlugin.Data.SystemCostIndexCache
 
 open System
 
+open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 
 open KPX.TheBot.Host
@@ -42,19 +43,13 @@ type SystemCostIndexCollection private () =
 
     override x.InitializeCollection() =
         let url = "https://esi.evepc.163.com/latest/industry/systems/?datasource=serenity"
-
-        x.Logger.Info $"Fetching %s{url}"
-
-        let json =
-            Network
-                .HttpClient
-                .GetStringAsync(url)
-                .ConfigureAwait(false)
-                .GetAwaiter()
-                .GetResult()
+        let resp = TheBotWebFetcher.fetch url
+        use stream = resp.Content.ReadAsStream()
+        use reader = new IO.StreamReader(stream)
+        use jsonReader = new JsonTextReader(reader)
 
         seq {
-            for item in JArray.Parse(json) do
+            for item in JArray.Load(jsonReader) do
                 let item = item :?> JObject
 
                 let sid = item.GetValue("solar_system_id").ToObject<int>()

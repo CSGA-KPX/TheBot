@@ -14,12 +14,8 @@ type IEveCalculatorConfig =
 
 /// 制造、反应和行星材料
 /// 未加Me的方法均返回原始过程
-type EveProcessManager(cfg: IEveCalculatorConfig) as x =
-    inherit RecipeManager<EveType, EveProcess>()
-
-    do
-        x.AddProvider(BlueprintCollection.Instance)
-        x.AddProvider(PlanetProcessCollection.Instance)
+type EveProcessManager(cfg: IEveCalculatorConfig) =
+    inherit RecipeManager<EveType, EveProcess>([ BlueprintCollection.Instance; PlanetProcessCollection.Instance ])
 
     static let instance =
         EveProcessManager(
@@ -36,11 +32,10 @@ type EveProcessManager(cfg: IEveCalculatorConfig) as x =
     member x.TryGetRecipe(item, quantity: ProcessQuantity, me: int) =
         x.SearchRecipes(item)
         |> Seq.tryHead
-        |> Option.map
-            (fun proc ->
-                { proc with
-                      TargetMe = me
-                      TargetQuantity = quantity })
+        |> Option.map (fun proc ->
+            { proc with
+                TargetMe = me
+                TargetQuantity = quantity })
 
     /// 获取指定数量的ime效率配方
     override x.TryGetRecipe(item, quantity) =
@@ -62,31 +57,52 @@ type EveProcessManager(cfg: IEveCalculatorConfig) as x =
         let dme = defaultArg dme cfg.DerivationMe
 
         x.TryGetRecipe(item)
-        |> Option.map
-            (fun r ->
-                let intermediate = ResizeArray<EveProcess>()
-                let acc = RecipeProcessAccumulator<EveType>()
+        |> Option.map (fun r ->
+            let intermediate = ResizeArray<EveProcess>()
+            let acc = RecipeProcessAccumulator<EveType>()
 
-                let rec Calc i (q: float) me =
-                    let recipe = x.TryGetRecipe(i, ByItem q, me)
+            let rec Calc i (q: float) me =
+                let recipe = x.TryGetRecipe(i, ByItem q, me)
 
-                    if recipe.IsNone then
-                        acc.Input.Update(i, q)
-                    else if x.CanExpand(recipe.Value) then
-                        intermediate.Add(recipe.Value)
-                        let proc = recipe.Value.ApplyFlags(MeApplied)
+                if recipe.IsNone then
+                    acc.Input.Update(i, q)
+                else if x.CanExpand(recipe.Value) then
+                    intermediate.Add(recipe.Value)
+                    let proc = recipe.Value.ApplyFlags(MeApplied)
 
-                        for m in proc.Input do
-                            Calc m.Item m.Quantity dme
-                    else
-                        acc.Input.Update(i, q)
+                    for m in proc.Input do
+                        Calc m.Item m.Quantity dme
+                else
+                    acc.Input.Update(i, q)
 
-                let itemQuantity = quantity.ToItems(r.Original)
+            let itemQuantity = quantity.ToItems(r.Original)
 
-                acc.Output.Update(r.Original.GetFirstProduct().Item, itemQuantity)
-                Calc item itemQuantity ime
+            acc.Output.Update(r.Original.GetFirstProduct().Item, itemQuantity)
+            Calc item itemQuantity ime
 
-                {| InputProcess = r
-                   InputRuns = quantity.ToRuns(r.Original)
-                   FinalProcess = acc.AsRecipeProcess()
-                   IntermediateProcess = intermediate.ToArray() |})
+            {| InputProcess = r
+               InputRuns = quantity.ToRuns(r.Original)
+               FinalProcess = acc.AsRecipeProcess()
+               IntermediateProcess = intermediate.ToArray() |})
+
+/// 制造、反应和行星材料
+/// 未加Me的方法均返回原始过程
+type EveProcessManager2(cfg: IEveCalculatorConfig) =
+    inherit RecipeManager2<EveType, EveProcess>([ BlueprintCollection.Instance; PlanetProcessCollection.Instance ])
+
+    static let instance =
+        EveProcessManager2(
+            { new IEveCalculatorConfig with
+                member x.InputMe = 0
+                member x.DerivationMe = 0
+                member x.ExpandPlanet = false
+                member x.ExpandReaction = false }
+        )
+
+    /// 0材料，不展开行星和反应衍生
+    static member Default = instance
+
+    override x.CanExpandRecipe(proc) =
+        (proc.Type = ProcessType.Manufacturing)
+        || (proc.Type = ProcessType.Planet && cfg.ExpandPlanet)
+        || (proc.Type = ProcessType.Reaction && cfg.ExpandReaction)

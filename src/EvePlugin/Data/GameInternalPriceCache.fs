@@ -36,19 +36,13 @@ type GameInternalPriceCollection private () =
 
     override x.InitializeCollection() =
         let url = "https://esi.evepc.163.com/latest/markets/prices/?datasource=serenity"
-
-        x.Logger.Info $"Fetching %s{url}"
-
-        let json =
-            Network
-                .HttpClient
-                .GetStringAsync(url)
-                .ConfigureAwait(false)
-                .GetAwaiter()
-                .GetResult()
+        let resp = TheBotWebFetcher.fetch url
+        use stream = resp.Content.ReadAsStream()
+        use reader = new IO.StreamReader(stream)
+        use jsonReader = new JsonTextReader(reader)
 
         JArray
-            .Parse(json)
+            .Load(jsonReader)
             .ToObject<GameInternalPrice []>()
         |> x.DbCollection.InsertBulk
         |> ignore

@@ -51,19 +51,17 @@ type PriceCacheCollection private () =
     override x.Depends = [| typeof<EveTypeCollection> |]
 
     override x.DoFetchItem(itemId) =
-        let url = $@"https://www.ceve-market.org/api/market/region/10000002/system/30000142/type/%i{itemId}.json"
+        let url =
+            $@"https://www.ceve-market.org/api/market/region/10000002/system/30000142/type/%i{itemId}.json"
 
-        x.Logger.Info $"Fetching %s{url}"
+        let resp = TheBotWebFetcher.fetch url
+        use stream = resp.Content.ReadAsStream()
+        use reader = new IO.StreamReader(stream)
+        use jsonReader = new JsonTextReader(reader)
 
-        let json =
-            Network
-                .HttpClient
-                .GetStringAsync(url)
-                .ConfigureAwait(false)
-                .GetAwaiter()
-                .GetResult()
-
-        let info = JsonConvert.DeserializeObject<MarketInfo>(json)
+        let info =
+            JsonSerializer()
+                .Deserialize<MarketInfo>(jsonReader)
 
         let sellMin =
             if info.Sell.Volume = 0UL then

@@ -53,6 +53,9 @@ type EveProcess =
             let runs = x.TargetQuantity.ToRuns(x.Original)
             x.Original * runs
 
+    interface IRecipeProcess<EveType> with
+        member x.Process = x.Original
+
 [<CLIMutable>]
 type EveDbProcess =
     { [<BsonId(false)>]

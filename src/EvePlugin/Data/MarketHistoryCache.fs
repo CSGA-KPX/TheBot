@@ -1,6 +1,7 @@
 namespace KPX.EvePlugin.Data.MarketHistoryCache
 
 open System
+open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 
 open KPX.TheBot.Host
@@ -40,21 +41,17 @@ type MarketTradeHistoryCollection private () =
     override x.Depends = [| typeof<EveTypeCollection> |]
 
     override x.DoFetchItem(itemId) =
-        let url = $"https://esi.evepc.163.com/latest/markets/10000002/history/?datasource=serenity&type_id=%i{itemId}"
+        let url =
+            $"https://esi.evepc.163.com/latest/markets/10000002/history/?datasource=serenity&type_id=%i{itemId}"
 
-        x.Logger.Info $"Fetching %s{url}"
-
-        let json =
-            Network
-                .HttpClient
-                .GetStringAsync(url)
-                .ConfigureAwait(false)
-                .GetAwaiter()
-                .GetResult()
+        let resp = TheBotWebFetcher.fetch url
+        use stream = resp.Content.ReadAsStream()
+        use reader = new IO.StreamReader(stream)
+        use jsonReader = new JsonTextReader(reader)
 
         let history =
             JArray
-                .Parse(json)
+                .Load(jsonReader)
                 .ToObject<MarketHistoryRecord []>()
 
         { Id = itemId

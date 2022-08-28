@@ -1,4 +1,4 @@
-namespace KPX.XivPlugin.Data
+namespace rec KPX.XivPlugin.Data
 
 open KPX.TheBot.Host.DataCache
 
@@ -8,32 +8,23 @@ open KPX.XivPlugin.Data
 open KPX.XivPlugin.Data.Recipe
 
 
-[<Sealed>]
-type XivRecipeManager private () =
-    inherit RecipeManager<XivItem, RecipeProcess<XivItem>>()
+type XivRecipeManager internal (providers) =
+    inherit RecipeManager<XivItem, RecipeProcess<XivItem>>(providers)
 
     /// <summary>
     /// 获取国服配方集
     /// </summary>
-    static member val China =
-        let i = XivRecipeManager()
-        i.AddProvider(CraftRecipeProviderChina.Instance)
-        i.AddProvider(CompanyCraftRecipeProviderChina.Instance)
-        i
+    static member val China = XivRecipeManagerChina() :> XivRecipeManager
 
     /// <summary>
     /// 获取世界服配方集
     /// </summary>
-    static member val Offical =
-        let i = XivRecipeManager()
-        i.AddProvider(CraftRecipeProviderOffical.Instance)
-        i.AddProvider(CompanyCraftRecipeProviderOffical.Instance)
-        i
+    static member val Offical = XivRecipeManagerOffical() :> XivRecipeManager
 
     /// <summary>
     /// 根据给定的VersionRegion，获取合适的配方集
     /// </summary>
-    static member GetInstance(region : VersionRegion) =
+    static member GetInstance(region: VersionRegion) =
         match region with
         | VersionRegion.China -> XivRecipeManager.China
         | VersionRegion.Offical -> XivRecipeManager.Offical
@@ -41,7 +32,7 @@ type XivRecipeManager private () =
     /// <summary>
     /// 根据给定的World，获取合适的配方集
     /// </summary>
-    static member GetInstance(world : World) =
+    static member GetInstance(world: World) =
         match world.VersionRegion with
         | VersionRegion.China -> XivRecipeManager.China
         | VersionRegion.Offical -> XivRecipeManager.Offical
@@ -63,12 +54,11 @@ type XivRecipeManager private () =
     /// <param name="quantity">制作数量 ProcessQuantity.ByItem</param>
     override x.TryGetRecipe(item, quantity) =
         x.TryGetRecipe(item)
-        |> Option.map
-            (fun p ->
-                let runs = quantity.ToRuns(p)
+        |> Option.map (fun p ->
+            let runs = quantity.ToRuns(p)
 
-                { Input = p.Input |> Array.map (fun m -> { m with Quantity = m.Quantity * runs })
-                  Output = p.Output |> Array.map (fun m -> { m with Quantity = m.Quantity * runs }) })
+            { Input = p.Input |> Array.map (fun m -> { m with Quantity = m.Quantity * runs })
+              Output = p.Output |> Array.map (fun m -> { m with Quantity = m.Quantity * runs }) })
 
     /// <summary>
     /// 递归获取指定道具的指定数量的制作配方
@@ -88,23 +78,29 @@ type XivRecipeManager private () =
     /// <param name="quantity">制作数量 ProcessQuantity.ByItem</param>
     member x.TryGetRecipeRec(item, quantity: ProcessQuantity) =
         x.TryGetRecipe(item)
-        |> Option.map
-            (fun r ->
-                let acc = RecipeProcessAccumulator<XivItem>()
+        |> Option.map (fun r ->
+            let acc = RecipeProcessAccumulator<XivItem>()
 
-                let rec Calc i (q: float) =
-                    let recipe = x.TryGetRecipe(i, ByItem q)
+            let rec Calc i (q: float) =
+                let recipe = x.TryGetRecipe(i, ByItem q)
 
-                    if recipe.IsNone then
-                        acc.Input.Update(i, q)
-                    else
-                        for m in recipe.Value.Input do
-                            Calc m.Item m.Quantity
+                if recipe.IsNone then
+                    acc.Input.Update(i, q)
+                else
+                    for m in recipe.Value.Input do
+                        Calc m.Item m.Quantity
 
-                acc.Output.Update(item, quantity.ToItems(r))
-                Calc item (quantity.ToItems(r))
+            acc.Output.Update(item, quantity.ToItems(r))
+            Calc item (quantity.ToItems(r))
 
-                acc.AsRecipeProcess())
+            acc.AsRecipeProcess())
+
+type private XivRecipeManagerChina() =
+    inherit XivRecipeManager([ CraftRecipeProviderChina.Instance; CompanyCraftRecipeProviderChina.Instance ])
+
+type private XivRecipeManagerOffical() =
+    inherit XivRecipeManager([ CraftRecipeProviderOffical.Instance; CompanyCraftRecipeProviderOffical.Instance ])
+
 
 [<Sealed>]
 type ChinaRecipeTest() =

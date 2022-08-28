@@ -1,4 +1,4 @@
-﻿namespace KPX.TheBot.Host.DataModel.Recipe
+namespace KPX.TheBot.Host.DataModel.Recipe
 
 open System
 open System.Collections.Generic

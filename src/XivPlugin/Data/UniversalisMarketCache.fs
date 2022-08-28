@@ -161,33 +161,25 @@ type UniversalisAnalyzer internal (record: UniversalisRecord) =
 
     member x.LastUpdated = record.LastUploadTime
 
-[<RequireQualifiedAccess>]
-module private MarketDataFetcher =
-    open System.Collections.Generic
+type MarketInfoCollection private () =
+    inherit CachedItemCollection<string, UniversalisRecord>()
 
-    // 最大并发数
-    // 参见https://universalis.app/docs/index.html
-    let private maxParallel = 10
+    static let threshold = TimeSpan.FromHours(2.0)
 
-    let private logger = NLog.LogManager.GetLogger("MarketDataFetcher")
+    static member val Instance = MarketInfoCollection()
 
-    type private TaskSchedulerMessage =
-        | Fetch of MarketInfo * AsyncReplyChannel<UniversalisRecord>
-        | Finished
+    override x.IsExpired(item) =
+        (DateTimeOffset.Now - item.LastFetchTime) >= threshold
 
-    let private fetchInfo (info: MarketInfo) =
+    override x.Depends = Array.empty
+
+    override x.DoFetchItem(info) =
+        let info = MarketInfo.FromString(info)
         let url = $"https://universalis.app/api/%i{info.World.WorldId}/%i{info.Item.ItemId}"
-        logger.Info $"正在访问 :  %s{url}"
-
-        let resp =
-            HttpClient
-                .GetAsync(url)
-                .ConfigureAwait(false)
-                .GetAwaiter()
-                .GetResult()
+        let resp = TheBotWebFetcher.fetch url
 
         if not resp.IsSuccessStatusCode then
-            logger.Warn $"Universalis返回错误%s{resp.ReasonPhrase}:%A{info.World}/%A{info.Item}"
+            x.Logger.Warn $"Universalis返回错误%s{resp.ReasonPhrase}:%A{info.World}/%A{info.Item}"
 
             let time =
                 if resp.StatusCode = Net.HttpStatusCode.NotFound then
@@ -222,54 +214,6 @@ module private MarketDataFetcher =
               LastUploadTime = updated
               Listings = listings
               TradeLogs = tradelogs }
-
-    let private agent =
-        MailboxProcessor.Start (fun inbox ->
-            async {
-                let queue = Queue<_>()
-                let mutable count = 0
-
-                while true do
-                    let! msg = inbox.Receive()
-
-                    match msg with
-                    | Fetch (info, reply) -> queue.Enqueue(info, reply)
-                    | Finished -> count <- count - 1
-
-                    if count < maxParallel && queue.Count > 0 then
-                        count <- count + 1
-                        let (info, reply) = queue.Dequeue()
-
-                        async {
-                            let resp = fetchInfo info
-                            reply.Reply(resp)
-                            inbox.Post(Finished)
-                        }
-                        |> Async.Start
-
-                    if count >= maxParallel && queue.Count > 0 then
-                        logger.Warn("队列已满，当前并发：{0}，队列数：{1}。", count, queue.Count)
-            })
-
-    /// 获取市场数据并等待结果
-    let fetch (info: MarketInfo) =
-        agent.PostAndReply(fun reply -> Fetch(info, reply))
-
-type MarketInfoCollection private () =
-    inherit CachedItemCollection<string, UniversalisRecord>()
-
-    static let threshold = TimeSpan.FromHours(2.0)
-
-    static member val Instance = MarketInfoCollection()
-
-    override x.IsExpired(item) =
-        (DateTimeOffset.Now - item.LastFetchTime) >= threshold
-
-    override x.Depends = Array.empty
-
-    override x.DoFetchItem(info) =
-        let info = MarketInfo.FromString(info)
-        MarketDataFetcher.fetch info
 
     member x.GetMarketInfo(world: World, item: XivItem) =
         let info = { World = world; Item = item }

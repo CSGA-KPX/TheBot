@@ -51,6 +51,7 @@
     <Compile Include="Modules\RecipeModule.fs" />
     <Compile Include="Modules\EveInvModule.fs" />
     <Compile Include="Modules\EveMiscModule.fs" />
+    <Compile Include="Modules\EveTestModule.fs" />
   </ItemGroup>
 
   <ItemGroup>
