@@ -1,6 +1,8 @@
 namespace KPX.EvePlugin.Modules
 
 open System
+open System.Collections.Generic
+
 open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Testing
 open KPX.FsCqHttp.Utils.TextResponse
@@ -12,6 +14,7 @@ open KPX.TheBot.Host.Utils.RecipeRPN
 open KPX.EvePlugin.Data.Utils
 open KPX.EvePlugin.Data.EveType
 open KPX.EvePlugin.Data.Process
+open KPX.EvePlugin.Data.MarketPriceCache
 
 open KPX.EvePlugin.Utils
 open KPX.EvePlugin.Utils.Helpers
@@ -25,10 +28,11 @@ type EveRecipeModule() =
     inherit CommandHandlerBase()
 
     let data = DataBundle.Instance
+
     let pm = EveProcessManager.Default
+    let pm2 = EveProcessManager2.Default
 
     let er = EveExpression.EveExpression()
-
     let ic = InventoryCollection.Instance
 
     [<CommandHandlerMethod("#eme", "EVE蓝图材料效率计算", "")>]
@@ -41,12 +45,9 @@ type EveRecipeModule() =
         if item.IsNone then
             cmdArg.Abort(InputError, "找不到物品：{0}", cfg.GetNonOptionString())
 
-        let recipe = pm.TryGetRecipe(item.Value, ByRun 1.0, 0)
+        let recipe = pm2.GetRecipe(item.Value).Set(ByRun 1.0, 0)
 
-        if recipe.IsNone then
-            cmdArg.Abort(InputError, "找不到蓝图：{0}", cfg.GetNonOptionString())
-
-        let me0Price = recipe.Value.GetTotalMaterialPrice(PriceFetchMode.Sell, MeApplied)
+        let me0Price = recipe.GetTotalMaterialPrice(PriceFetchMode.Sell, MeApplied ProcessRunRounding.AsIs)
 
         TextTable(cfg.ResponseType) {
             AsCols [ Literal "材料总价"
@@ -56,9 +57,9 @@ type EveRecipeModule() =
 
             [ for me = 0 to 10 do
                   let cost =
-                      pm
-                          .TryGetRecipe(item.Value, ByRun 1.0, me)
-                          .Value.GetTotalMaterialPrice(PriceFetchMode.Sell, MeApplied)
+                      recipe
+                          .Set(ByRun 1.0, me)
+                          .GetTotalMaterialPrice(PriceFetchMode.Sell, MeApplied ProcessRunRounding.AsIs)
 
                   [ Literal me; Integer(me0Price - cost) ] ]
         }
@@ -127,7 +128,7 @@ type EveRecipeModule() =
                         let proc =
                             if isR then
                                 pm.TryGetRecipe(mr.Item, ByRun mr.Quantity)
-                                |> Option.map (fun ret -> ret.ApplyFlags(MeApplied))
+                                |> Option.map (fun ret -> ret.ApplyFlags(MeApplied ProcessRunRounding.AsIs))
                             else
                                 pm.TryGetRecipeRecMe(mr.Item, ByRun mr.Quantity)
                                 |> Option.map (fun ret -> ret.FinalProcess)
@@ -235,161 +236,6 @@ type EveRecipeModule() =
 
         tc.ShouldNotThrow("#err 恶狼级")
         tc.ShouldNotThrow("#err 恶狼级蓝图 ime:10")
-
-    [<CommandHandlerMethod("#errc",
-                           "EVE蓝图成本计算",
-                           "不支持表达式，但仅限一个物品。可选参数见#evehelp。如：
-#errc 帝国海军散热槽*10")>]
-    member x.HandleERRCV3(cmdArg: CommandEventArgs) =
-        let cfg = EveConfigParser()
-        cfg.Parse(cmdArg.HeaderArgs)
-
-        let accIn = ItemAccumulator<EveType>()
-        let accOut = ItemAccumulator<EveType>()
-        let mutable accInstallCost = 0.0
-
-        let pm = EveProcessManager(cfg)
-
-        match er.Eval(cfg.GetNonOptionString()) with
-        | Number n -> cmdArg.Abort(InputError, "结算结果为数字: {0}", n)
-        | Accumulator a when a.Count = 0 -> cmdArg.Abort(InputError, "没有可供计算的物品")
-        | Accumulator a ->
-            for mr in a do
-                let ime = cfg.GetImeAuto(mr.Item)
-
-                let recipe = pm.TryGetRecipe(mr.Item, ByRun mr.Quantity, ime)
-
-                if recipe.IsNone then
-                    cmdArg.Abort(InputError, "找不到配方:{0}", mr.Item.Name)
-
-                let proc = recipe.Value.ApplyFlags(MeApplied)
-
-                accInstallCost <- accInstallCost + recipe.Value.GetInstallationCost(cfg)
-
-                for mr in proc.Input do
-                    accIn.Update(mr)
-
-                for mr in proc.Output do
-                    accOut.Update(mr)
-
-        let priceTable =
-            let table = MarketUtils.EveMarketPriceTable()
-
-            for mr in accOut do
-                table.AddObject(mr)
-
-            table
-
-        let tt =
-            TextTable(cfg.ResponseType) {
-                ToolWarning
-
-                sprintf
-                    "输入效率：%i%% 默认效率：%i%% 成本指数：%i%% 设施税率%i%%"
-                    cfg.InputMe
-                    cfg.DerivationMe
-                    cfg.SystemCostIndex
-                    cfg.StructureTax
-
-                $"展开行星材料：%b{cfg.ExpandPlanet} 展开反应公式：%b{cfg.ExpandReaction}"
-
-                Literal "产品：" { bold }
-
-                priceTable.Table
-
-                Literal "材料：" { bold }
-
-                AsCols [ Literal "材料"
-                         RLiteral "数量"
-                         RLiteral(cfg.MaterialPriceMode.ToString())
-                         RLiteral "生产" ]
-
-                AsCols [ Literal "制造费用"
-                         RightPad
-                         HumanSig4 accInstallCost
-                         RightPad ]
-            }
-
-        let mutable optCost = accInstallCost
-        let mutable allCost = accInstallCost
-
-        for mr in accIn |> Seq.sortBy (fun x -> x.Item.MarketGroupId) do
-            let price = // 市场价格
-                mr.Item.GetPrice(cfg.MaterialPriceMode) * mr.Quantity
-
-            let mrProc = pm.TryGetRecipeRecMe(mr.Item, ByItem mr.Quantity, cfg.DerivationMe, cfg.DerivationMe)
-
-            if mrProc.IsSome && pm.CanExpand(mrProc.Value.InputProcess) then
-                let mrInstall =
-                    mrProc.Value.IntermediateProcess
-                    |> Array.fold (fun acc proc -> acc + proc.GetInstallationCost(cfg)) 0.0
-
-                let mrCost = mrProc.Value.FinalProcess.Input.GetPrice(cfg.MaterialPriceMode)
-
-                let mrAll = mrInstall + mrCost
-                allCost <- allCost + mrAll
-
-                let add =
-                    match Double.IsNormal(price), price, Double.IsNormal(mrAll), mrAll with
-                    | false, _, false, _ -> 0.0
-                    | true, add, false, _ -> add
-                    | false, _, true, add -> add
-                    | true, a, true, b -> min a b
-
-                optCost <- optCost + add
-
-                tt {
-                    AsCols [ Literal mr.Item.Name
-                             Integer mr.Quantity
-                             HumanSig4 price
-                             HumanSig4 mrAll ]
-                }
-                |> ignore
-            else
-                optCost <- optCost + price
-                allCost <- allCost + price
-
-                tt {
-                    AsCols [ Literal mr.Item.Name
-                             Integer mr.Quantity
-                             HumanSig4 price
-                             RightPad ]
-                }
-                |> ignore
-
-        let sell = priceTable.TotalSellPrice
-        let sellWithTax = priceTable.TotalSellPriceWithTax
-
-        tt {
-            AsCols [ Literal "卖出/税后"
-                     RightPad
-                     HumanSig4 sell
-                     HumanSig4 sellWithTax ]
-
-            AsCols [ Literal "材料/最佳"
-                     RightPad
-                     HumanSig4 allCost
-                     HumanSig4 optCost ]
-
-            AsCols [ Literal "税后 利润"
-                     RightPad
-                     HumanSig4(sellWithTax - allCost)
-                     HumanSig4(sellWithTax - optCost) ]
-        }
-        |> ignore
-
-        tt
-
-    [<TestFixture>]
-    member x.TestERRC() =
-        let tc = TestContext(x)
-        tc.ShouldThrow("#errc")
-        tc.ShouldThrow("#errc 5*5")
-        tc.ShouldThrow("#errc 军用馒头 ime:10")
-        tc.ShouldThrow("#errc 军用馒头蓝图")
-
-        tc.ShouldNotThrow("#errc 恶狼级")
-        tc.ShouldNotThrow("#errc 恶狼级蓝图 ime:10")
 
     [<CommandHandlerMethod("#EVE舰船II", "T2舰船制造总览", "可选参数见#evehelp。")>]
     [<CommandHandlerMethod("#EVE舰船", "T1舰船制造总览", "可选参数见#evehelp。")>]

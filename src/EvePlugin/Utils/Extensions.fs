@@ -63,7 +63,7 @@ type EveProcess with
 
     /// 获取最终制造价格，配方包含数量和材料效率
     member x.GetPriceInfo(pm: PriceFetchMode) =
-        let proc = x.ApplyFlags(MeApplied)
+        let proc = x.ApplyFlags(MeApplied ProcessRunRounding.AsIs)
 
         {| TotalProductPrice = proc.Output.GetPrice(pm)
            TotalMaterialPrice = proc.Input.GetPrice(pm) |}
@@ -88,7 +88,7 @@ type EveProcess with
                 | 1041 -> 1_200_000.0 // 高级资源物品 - 第四等级
                 | _ -> invalidArg "EveType" "输入物品不是行星产物"
 
-            let proc = x.ApplyFlags(QuantityApplied)
+            let proc = x.ApplyFlags(QuantityApplied ProcessRunRounding.AsIs)
 
 
             let importFee =
@@ -104,7 +104,7 @@ type EveProcess with
         | ProcessType.Refine -> raise <| System.NotImplementedException("不支持计算精炼费用")
         | _ ->
             x
-                .ApplyFlags(QuantityApplied)
+                .ApplyFlags(QuantityApplied ProcessRunRounding.AsIs)
                 .Input.GetPrice(PriceFetchMode.AdjustedPrice)
             * (pct cfg.SystemCostIndex)
             * (100 + cfg.StructureTax |> pct)

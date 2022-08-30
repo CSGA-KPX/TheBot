@@ -36,7 +36,7 @@ type EveLpStoreModule() =
     inherit CommandHandlerBase()
 
     let data = DataBundle.Instance
-    let pm = EveProcessManager.Default
+    let pm = EveProcessManager2.Default
 
     member x.ShowOverview(cmdArg: CommandEventArgs, cfg: LpConfigParser) =
         let minVol = cfg.MinimalVolume
@@ -79,8 +79,12 @@ type EveLpStoreModule() =
             totalCost <- totalCost + oProc.Input.GetPrice(cfg.MaterialPriceMode) + lpOffer.IskCost
 
             if itemOffer.Item.IsBlueprint then
-                let recipe = pm.GetRecipe(itemOffer)
-                let rProc = recipe.ApplyFlags(MeApplied)
+                let recipe =
+                    pm
+                        .GetRecipe(itemOffer.Item)
+                        .SetQuantity(ByItem itemOffer.Quantity)
+
+                let rProc = recipe.ApplyFlags(MeApplied ProcessRunRounding.AsIs)
 
                 totalCost <-
                     totalCost
@@ -166,7 +170,7 @@ type EveLpStoreModule() =
 
             AsCols [ Literal "物品"
                      RLiteral "数量"
-                     RLiteral (cfg.MaterialPriceMode.ToString()) ]
+                     RLiteral(cfg.MaterialPriceMode.ToString()) ]
 
             AsCols [ Literal "忠诚点"
                      Integer offer.Value.LpCost
@@ -197,7 +201,7 @@ type EveLpStoreModule() =
         if product.Item.IsBlueprint then
             let proc = { pm.GetRecipe(product.Item) with TargetQuantity = ByRun product.Quantity }
 
-            let recipe = proc.ApplyFlags(MeApplied)
+            let recipe = proc.ApplyFlags(MeApplied ProcessRunRounding.AsIs)
 
             for mr in recipe.Input do
                 let price = mr.Item.GetPrice(cfg.MaterialPriceMode)

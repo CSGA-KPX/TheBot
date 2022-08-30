@@ -12,8 +12,10 @@ type IEveCalculatorConfig =
     abstract ExpandPlanet: bool
     abstract ExpandReaction: bool
 
+
 /// 制造、反应和行星材料
 /// 未加Me的方法均返回原始过程
+[<System.ObsoleteAttribute>]
 type EveProcessManager(cfg: IEveCalculatorConfig) =
     inherit RecipeManager<EveType, EveProcess>([ BlueprintCollection.Instance; PlanetProcessCollection.Instance ])
 
@@ -68,7 +70,7 @@ type EveProcessManager(cfg: IEveCalculatorConfig) =
                     acc.Input.Update(i, q)
                 else if x.CanExpand(recipe.Value) then
                     intermediate.Add(recipe.Value)
-                    let proc = recipe.Value.ApplyFlags(MeApplied)
+                    let proc = recipe.Value.ApplyFlags(MeApplied ProcessRunRounding.AsIs)
 
                     for m in proc.Input do
                         Calc m.Item m.Quantity dme

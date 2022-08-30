@@ -88,7 +88,9 @@ type RecipeCalculationContext<'Item, 'Recipe when 'Item: equality and 'Recipe :>
                 for o in recipe.Process.Output do
                     ret.Add(o.Item) |> ignore
 
-        ret :> IReadOnlyCollection<_>
+        let arr = Array.zeroCreate ret.Count
+        ret.CopyTo(arr)
+        arr
 
     member x.AddRecipe(recipes: 'Recipe list) =
         if recipes.Length = 0 then
@@ -105,11 +107,35 @@ type RecipeCalculationContext<'Item, 'Recipe when 'Item: equality and 'Recipe :>
 
         recipeBook.Add(product, recipes)
 
-    member x.GetRecipe(item) = recipeBook.[item]
+    member x.GetRecipes(item) = recipeBook.[item]
 
-    member x.AddInventory(item: 'Item, quantity: float) = input.Update(item, -quantity)
+    member x.TryGetRecipes(item) =
+        if recipeBook.ContainsKey(item) then
+            Some recipeBook.[item]
+        else
+            None
 
-    member x.AddInventory(mr: RecipeMaterial<'Item>) = input.Update(mr.Item, -mr.Quantity)
+    member x.GetRecipe(item) = recipeBook.[item].Head
+
+    member x.TryGetRecipe(item) =
+        if recipeBook.ContainsKey(item) then
+            Some recipeBook.[item].Head
+        else
+            None
+
+    member x.ContainsRecipe(item) = recipeBook.ContainsKey(item)
+
+    member x.AddInventory(item: 'Item, quantity: float) =
+        if quantity < 0 then
+            invalidArg "quantity" "已有材料数量错误"
+
+        input.Update(item, -quantity)
+
+    member x.AddInventory(mr: RecipeMaterial<'Item>) =
+        if mr.Quantity < 0 then
+            invalidArg "quantity" "已有材料数量错误"
+
+        input.Update(mr.Item, -mr.Quantity)
 
     member x.Materials = input
 
@@ -134,26 +160,40 @@ type RecipeManager2<'Item, 'Recipe when 'Item: equality and 'Recipe :> IRecipePr
 
     /// 从Provider查找所有配方
     member x.GetRecipe(item: 'Item) =
-        providers |> Seq.choose (fun p -> p.TryGetRecipe(item)) |> Seq.head
+        let ret = x.GetRecipes(item)
+
+        if ret.Length = 0 then
+            invalidOp $"找不到{item}的制作配方"
+
+        ret |> List.head
 
     abstract CanExpandRecipe: 'Recipe -> bool
 
     member x.GetRecipeContext(items: seq<'Item>) =
-        let ctx = Dictionary<'Item, 'Recipe list>()
+        let ctx = RecipeCalculationContext<_, _>()
 
-        let rec build items =
+        let depthLimit = System.Int32.MaxValue
+
+        let rec build items depth =
             for item in items do
-                if not <| ctx.ContainsKey(item) then
+                if not <| ctx.ContainsRecipe(item) then
                     let ret = x.GetRecipes(item) |> List.filter x.CanExpandRecipe
 
                     if ret.Length <> 0 then
-                        ctx.Add(item, ret |> List.filter x.CanExpandRecipe)
+                        ctx.AddRecipe(ret |> List.filter x.CanExpandRecipe)
 
                         for recipe in ret do
-                            recipe.Process.Input |> Seq.map (fun mr -> mr.Item) |> build
+                            let items = recipe.Process.Input |> Seq.map (fun mr -> mr.Item)
+                            let nextDepth = depth + 1
 
-        build items
+                            if nextDepth < depthLimit then
+                                build items nextDepth
 
-        ctx :> IReadOnlyDictionary<_, _>
+        build items 0
+
+        ctx
 
     member x.GetRecipeContext(item: 'Item) = x.GetRecipeContext(Seq.singleton item)
+
+    member x.GetRecipeContext(mrs: seq<RecipeMaterial<'Item>>) =
+        x.GetRecipeContext(mrs |> Seq.map (fun mr -> mr.Item))

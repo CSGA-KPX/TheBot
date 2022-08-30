@@ -49,6 +49,7 @@
     <Compile Include="Modules\MarketModule.fs" />
     <Compile Include="Modules\LpStoreModule.fs" />
     <Compile Include="Modules\RecipeModule.fs" />
+    <Compile Include="Modules\ERRCModule.fs" />
     <Compile Include="Modules\EveInvModule.fs" />
     <Compile Include="Modules\EveMiscModule.fs" />
     <Compile Include="Modules\EveTestModule.fs" />

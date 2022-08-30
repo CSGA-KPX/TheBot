@@ -6,7 +6,7 @@ open KPX.TheBot.Host.DataModel.Recipe
 open KPX.EvePlugin.Data.EveType
 open KPX.EvePlugin.Data.Process
 
-
+(*
 type ProcessTest() =
     inherit DataTest()
 
@@ -127,3 +127,4 @@ type ProcessTest() =
         x.TestInputItemRec()
         x.RefineOre()
         x.RefineIce()
+        *)

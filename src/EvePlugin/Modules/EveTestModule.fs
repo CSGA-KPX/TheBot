@@ -25,21 +25,6 @@ open KPX.EvePlugin.Utils.UserInventory
 type EveRecipeTestModule() =
     inherit CommandHandlerBase()
 
-    let data = DataBundle.Instance
-
     [<CommandHandlerMethod("#evetest", "", "", IsHidden = true)>]
     member x.HandleME(cmdArg: CommandEventArgs) =
         cmdArg.EnsureSenderOwner()
-
-        let cfg = EveConfigParser()
-        cfg.Parse(cmdArg.HeaderArgs)
-
-        let item = data.TryGetItem(cfg.GetNonOptionString())
-
-
-        let pm2 = EveProcessManager2(cfg)
-
-        let ret = pm2.GetRecipeContext(item.Value)
-
-        for kv in ret do
-            printfn $"%A{kv.Key.Name}"
