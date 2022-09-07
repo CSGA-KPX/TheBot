@@ -44,7 +44,7 @@ type EveLpStoreModule() =
                 member x.DerivationMe = 0
                 member x.ExpandPlanet = false
                 member x.ExpandReaction = false
-                member x.RunRounding = ProcessRunRounding.AsIs }
+                member x.RunRounding = ProcessRunRounding.RoundUp }
         )
 
     member x.ShowOverview(cmdArg: CommandEventArgs, cfg: LpConfigParser) =
@@ -93,7 +93,7 @@ type EveLpStoreModule() =
                         .GetRecipe(itemOffer.Item)
                         .SetQuantity(ByItems itemOffer.Quantity)
 
-                let rProc = recipe.ApplyFlags(MeApplied ProcessRunRounding.AsIs)
+                let rProc = recipe.ApplyFlags(MeApplied ProcessRunRounding.RoundUp)
 
                 totalCost <-
                     totalCost
@@ -210,7 +210,7 @@ type EveLpStoreModule() =
         if product.Item.IsBlueprint then
             let proc = { pm.GetRecipe(product.Item) with TargetQuantity = ByRuns product.Quantity }
 
-            let recipe = proc.ApplyFlags(MeApplied ProcessRunRounding.AsIs)
+            let recipe = proc.ApplyFlags(MeApplied ProcessRunRounding.RoundUp)
 
             for mr in recipe.Materials do
                 let price = mr.Item.GetPrice(cfg.MaterialPriceMode)

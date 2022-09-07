@@ -57,7 +57,7 @@ type ProcessQuantity =
         match x with
         | ByRuns value -> value
         | ByItems value ->
-            let rounding = defaultArg rounding ProcessRunRounding.AsIs
+            let rounding = defaultArg rounding ProcessRunRounding.RoundUp
             rounding.GetRuns(value, proc.Product.Quantity)
 
 type IRecipeProcess<'Item when 'Item: equality> =

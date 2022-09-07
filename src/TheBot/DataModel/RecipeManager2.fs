@@ -14,7 +14,7 @@ type IRecipeConfig<'Item, 'Recipe when 'Item: equality and 'Recipe :> IRecipePro
 
 [<AbstractClass>]
 type RecipeConfig<'Item, 'Recipe when 'Item: equality and 'Recipe :> IRecipeProcess<'Item>>() =
-    member val RunRounding = ProcessRunRounding.AsIs with get, set
+    member val RunRounding = ProcessRunRounding.RoundUp with get, set
 
     abstract CanExpandRecipe: 'Recipe -> bool
 

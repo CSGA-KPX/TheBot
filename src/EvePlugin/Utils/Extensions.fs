@@ -68,7 +68,7 @@ type EveProcess with
 
     /// 获取最终制造价格，配方包含数量和材料效率
     member x.GetPriceInfo(pm: PriceFetchMode) =
-        let proc = x.ApplyFlags(MeApplied ProcessRunRounding.AsIs)
+        let proc = x.ApplyFlags(MeApplied ProcessRunRounding.RoundUp)
 
         {| TotalProductPrice = proc.Product.GetPrice(pm)
            TotalMaterialPrice = proc.Materials.GetPrice(pm) |}
