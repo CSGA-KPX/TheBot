@@ -88,12 +88,11 @@ type EveMarketModule() =
                         )
                         .Original
 
-                let input = proc.Input.[0]
-
-                let refinePerSec = mineSpeed / input.Item.Volume / input.Quantity
+                // 因为精炼是单对多的过程，所以实际是反着的
+                let refinePerSec = mineSpeed / proc.Product.Item.Volume / proc.Product.Quantity
 
                 let price =
-                    proc.Output
+                    proc.Materials
                     |> Array.sumBy (fun m -> m.Quantity * refinePerSec * refineYield * m.Item.GetPriceInfo().Sell)
 
                 name, price |> ceil)

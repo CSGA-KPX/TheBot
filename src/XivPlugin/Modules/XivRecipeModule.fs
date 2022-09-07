@@ -38,16 +38,13 @@ type XivRecipeModule() =
         let world = opt.World.Value
         let mutable region = world.VersionRegion
 
-        let getMaterialFunc region =
-            let rm = getRm region
-
+        let depthLimit =
             if cmdArg.CommandName = "#rr" then
-                fun (item: XivItem) -> rm.TryGetRecipeRec(item, ByItem 1.0)
+                System.Int32.MaxValue
             else
-                fun (item: XivItem) -> rm.TryGetRecipe(item, ByItem 1.0)
+                1
 
-        let product = XivExpression.ItemAccumulator()
-        let acc = XivExpression.ItemAccumulator()
+        let builder = RecipeProcessBuilder<XivItem>()
 
         for str in opt.NonOptionStrings do
             match xivExpr.TryEval(str) with
@@ -60,19 +57,11 @@ type XivRecipeModule() =
                     if System.String.IsNullOrWhiteSpace(mr.Item.ChineseName) then
                         region <- VersionRegion.Offical
 
-                let materialFunc = getMaterialFunc (region)
+                let rm = XivRecipeManager.GetInstance(region)
+                let tt = rm.GetMaterialsRec(a, depthLimit = depthLimit)
+                builder.UpdateFrom(tt.FinalProcess)
 
-                for mr in a do
-                    product.Update(mr)
-                    let recipe = materialFunc mr.Item // 一个物品的材料
-
-                    if recipe.IsNone then
-                        cmdArg.Abort(InputError, $"%s{mr.Item.DisplayName} 没有生产配方")
-                    else
-                        for m in recipe.Value.Input do
-                            acc.Update(m.Item, m.Quantity * mr.Quantity)
-
-        if acc.Count = 0 then
+        if builder.Materials.Count = 0 then
             cmdArg.Abort(InputError, "缺少表达式")
 
         TextTable(opt.ResponseType) {
@@ -81,12 +70,12 @@ type XivRecipeModule() =
 
             Literal "材料：" { bold }
 
-            [ for mr in acc |> Seq.sortBy (fun kv -> kv.Item.ItemId) do
+            [ for mr in builder.Materials |> Seq.sortBy (fun kv -> kv.Item.ItemId) do
                   [ Literal(tryLookupNpcPrice (mr.Item, world)); CellUtils.Number mr.Quantity ] ]
 
             Literal "产出：" { bold }
 
-            [ for mr in product do
+            [ for mr in builder.Products do
                   [ Literal mr.Item.DisplayName; CellUtils.Number mr.Quantity ] ]
         }
 
@@ -98,9 +87,7 @@ type XivRecipeModule() =
 
         let world = opt.World.Value
         let mutable region = world.VersionRegion
-
-        let input = XivExpression.ItemAccumulator()
-        let output = XivExpression.ItemAccumulator()
+        let builder = RecipeProcessBuilder<XivItem>()
 
         for str in opt.NonOptionStrings do
             match xivExpr.TryEval(str) with
@@ -115,16 +102,11 @@ type XivRecipeModule() =
 
                 // 需要先确定区域，不能合并到同一个循环
                 for mr in a do
-                    output.Update(mr)
-                    let directMaterial = (getRm region).TryGetRecipe(mr)
+                    match (getRm region).TryGetMaterials(mr) with
+                    | None -> cmdArg.Abort(InputError, $"%s{mr.Item.DisplayName} 没有生产配方")
+                    | Some proc -> builder.UpdateFrom(proc)
 
-                    if directMaterial.IsNone then
-                        cmdArg.Abort(InputError, $"%s{mr.Item.DisplayName} 没有生产配方")
-                    else
-                        for m in directMaterial.Value.Input do
-                            input.Update(m)
-
-        if input.Count = 0 then
+        if builder.Materials.Count = 0 then
             cmdArg.Abort(InputError, "缺少表达式")
 
         TextTable(opt.ResponseType) {
@@ -144,7 +126,7 @@ type XivRecipeModule() =
                      RLiteral "小计"
                      RLiteral "更新" ]
 
-            [ for mr in output do
+            [ for mr in builder.Products do
                   [ Literal mr.Item.DisplayName
                     CellUtils.Number mr.Quantity
                     let uni = universalis.GetMarketInfo(world, mr.Item)
@@ -168,7 +150,7 @@ type XivRecipeModule() =
                      RLiteral "小计"
                      RLiteral "制作" ]
 
-            [ for mr in input do
+            [ for mr in builder.Materials do
 
                   let inline func (m: RecipeMaterial<_>) =
                       universalis
@@ -181,8 +163,12 @@ type XivRecipeModule() =
                   let mutable preferSell = true
 
                   let craftPrice =
-                      (getRm region).TryGetRecipeRec(mr)
-                      |> Option.map (fun proc -> proc.Input |> Array.Parallel.map func |> Array.sum)
+                      (getRm region).TryGetMaterialsRec(mr)
+                      |> Option.map (fun proc ->
+                          proc.FinalProcess.Materials
+                          |> Seq.toArray
+                          |> Array.Parallel.map func
+                          |> Array.sum)
 
                   if craftPrice.IsNone then
                       inputBuySum <- inputBuySum + sellPrice

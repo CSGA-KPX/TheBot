@@ -47,7 +47,7 @@ type EveInvModule() =
         for line in cmdArg.BodyLines do
             match line.Split("	", 2, StringSplitOptions.RemoveEmptyEntries) with
             | [||] -> () // 忽略空行
-            | [| name |] -> acc.Update(EveTypeCollection.Instance.GetByName(name))
+            | [| name |] -> acc.Update(EveTypeCollection.Instance.GetByName(name), 1.0)
             | [| name; q |] ->
                 let succ, quantity = Int32.TryParse(q, ns, ic)
 
@@ -72,7 +72,7 @@ type EveInvModule() =
         acc.Clear()
 
         let materials =
-            x.ReadCommandBody(cmdArg, acc).AsMaterials()
+            x.ReadCommandBody(cmdArg, acc).ToArray()
             |> Array.sortBy (fun i -> i.Item.MarketGroupId)
 
         cmdArg.Reply $"录入到： id:%s{guid}"
@@ -107,12 +107,9 @@ type EveInvModule() =
             [ for m in list do
                   let had =
                       if inv.Contains(m.Item) then
-                          inv.Get(m.Item)
+                          inv.[m.Item]
                       else
                           0.0
 
-                  [ Literal m.Item.Name
-                    Integer m.Quantity
-                    (positiveOrPad had)
-                    (positiveOrPad (m.Quantity - had)) ] ]
+                  [ Literal m.Item.Name; Integer m.Quantity; (positiveOrPad had); (positiveOrPad (m.Quantity - had)) ] ]
         }

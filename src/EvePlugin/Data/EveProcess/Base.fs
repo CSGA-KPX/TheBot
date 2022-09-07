@@ -39,8 +39,8 @@ type EveProcess =
 
             let meApplied =
                 { x.Original with
-                    Input =
-                        x.Original.Input
+                    Materials =
+                        x.Original.Materials
                         |> Array.map (fun rm -> { rm with Quantity = rm.Quantity * meFactor |> ceil }) }
 
             meApplied * runs
@@ -62,7 +62,9 @@ type EveProcess =
             TargetMe = me }
 
     interface IRecipeProcess<EveType> with
-        member x.Process = x.Original
+        member x.Materials = x.Original.Materials
+
+        member x.Products = Seq.singleton x.Original.Product
 
 [<CLIMutable>]
 type EveDbProcess =
@@ -72,17 +74,17 @@ type EveDbProcess =
       Type: ProcessType }
 
     member x.AsEveProcess() =
-        let convertMaterial (m: RecipeMaterial<int>) =
+        let inline convertMaterial (m: RecipeMaterial<int>) =
             { Item = EveTypeCollection.Instance.GetById(m.Item)
               Quantity = m.Quantity }
 
         let proc =
-            { Input = x.Process.Input |> Array.map convertMaterial
-              Output = x.Process.Output |> Array.map convertMaterial }
+            { Materials = x.Process.Materials |> Array.map convertMaterial
+              Product = convertMaterial x.Process.Product }
 
         { Original = proc
           Type = x.Type
-          TargetQuantity = ByRun 1.0
+          TargetQuantity = ByRuns 1.0
           TargetMe = 0 }
 
 [<AbstractClass>]

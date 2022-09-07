@@ -44,8 +44,8 @@ type CraftRecipeProviderChina private () =
                     { LiteDbId = 0
                       Region = VersionRegion.China
                       Process =
-                          { Output = [| { Item = retItem; Quantity = retAmount } |]
-                            Input = materials } }
+                        { Product = { Item = retItem; Quantity = retAmount }
+                          Materials = materials } }
         }
         |> db.InsertBulk
         |> ignore
@@ -89,8 +89,8 @@ type CraftRecipeProviderOffical private () =
                     { LiteDbId = 0
                       Region = VersionRegion.Offical
                       Process =
-                          { Output = [| { Item = retItem; Quantity = retAmount } |]
-                            Input = materials } }
+                        { Product = { Item = retItem; Quantity = retAmount }
+                          Materials = materials } }
         }
         |> db.InsertBulk
         |> ignore

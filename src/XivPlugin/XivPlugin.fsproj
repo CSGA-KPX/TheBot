@@ -26,6 +26,7 @@
     <Compile Include="Data\Common\ClassJob.fs" />
     <Compile Include="Data\PatchDifference.fs" />
     <Compile Include="Data\Item.fs" />
+    <Compile Include="Data\UniversalisMarketCache.fs" />
     <Compile Include="Data\Recipe\XivRecipe.fs" />
     <Compile Include="Data\Recipe\CraftRecipeProvider.fs" />
     <Compile Include="Data\Recipe\CompanyCraftRecipeProvider.fs" />
@@ -36,7 +37,6 @@
     <Compile Include="Data\Shops\SpecialShop.fs" />
     <Compile Include="Data\CraftGearSet.fs" />
     <Compile Include="Data\OceanFishing.fs" />
-    <Compile Include="Data\UniversalisMarketCache.fs" />
     <Compile Include="Data\ContentFinderCondition.fs" />
     <Compile Include="Data\CraftLeve.fs" />
     <Compile Include="Data\Race.fs" />

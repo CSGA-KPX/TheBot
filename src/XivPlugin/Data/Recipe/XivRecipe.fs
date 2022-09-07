@@ -11,8 +11,8 @@ module private Utils =
           Quantity = i.Quantity }
 
     let inline convertInternalProcess (i: RecipeProcess<int>) =
-        { Input = i.Input |> Array.map (fun i -> convertInternalMaterial (i))
-          Output = i.Output |> Array.map (fun o -> convertInternalMaterial (o)) }
+        { Materials = i.Materials |> Array.map (fun i -> convertInternalMaterial (i))
+          Product = i.Product |> convertInternalMaterial }
 
 [<CLIMutable>]
 type XivDbRecipe =

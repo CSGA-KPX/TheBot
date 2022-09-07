@@ -1,5 +1,7 @@
 module KPX.EvePlugin.Utils.EveExpression
 
+open KPX.TheBot.Host.DataModel.Recipe
+
 open KPX.TheBot.Host.Utils.RecipeRPN
 
 open KPX.EvePlugin.Data.EveType

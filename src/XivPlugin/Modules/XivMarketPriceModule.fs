@@ -70,7 +70,7 @@ text 以文本格式输出结果
 
             for itemId = 2 to 19 do
                 let item = itemCol.GetByItemId(itemId)
-                acc.Update(item)
+                acc.Update(item, 1.0)
         | Some Materia ->
             let ret =
                 opt.NonOptionStrings
@@ -86,7 +86,7 @@ text 以文本格式输出结果
                 let key = ret.Value
 
                 for grade in MateriaGrades do
-                    acc.Update(itemCol.TryGetByName($"%s{key}魔晶石%s{grade}").Value)
+                    acc.Update(itemCol.TryGetByName($"%s{key}魔晶石%s{grade}").Value, 1.0)
 
         if acc.Count * worlds.Length >= 50 then
             cmdArg.Abort(InputError, "查询数量超过上线")

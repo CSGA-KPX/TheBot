@@ -4,6 +4,9 @@ open KPX.FsCqHttp.Utils.UserOption
 
 open KPX.EvePlugin.Data.EveType
 open KPX.EvePlugin.Data.Utils
+open KPX.EvePlugin.Data.Process
+
+open KPX.TheBot.Host.DataModel.Recipe
 
 
 type EveConfigParser() as x =
@@ -11,7 +14,7 @@ type EveConfigParser() as x =
 
     let ime = OptionCellSimple(x, "ime", 2)
     let dme = OptionCellSimple(x, "dme", 10)
-    let sci = OptionCellSimple(x, "sci", 4)
+    let sci = OptionCellSimple(x, "sci", 5)
     let tax = OptionCellSimple(x, "tax", 10)
 
     let p = OptionCell(x, "p")
@@ -53,8 +56,20 @@ type EveConfigParser() as x =
             | 53 -> 2 // T2/T3装备 建筑默认2
             | _ -> 0 // 其他默认0
 
-    interface KPX.EvePlugin.Data.Process.IEveCalculatorConfig with
+    member val RunRounding = ProcessRunRounding.RoundUp with get, set
+
+    /// 用dme覆写ime
+    member cfg.GetShiftedConfig() =
+        { new IEveCalculatorConfig with
+            member x.InputMe = cfg.DerivationMe
+            member x.DerivationMe = cfg.DerivationMe
+            member x.ExpandPlanet = cfg.ExpandPlanet
+            member x.ExpandReaction = cfg.ExpandReaction
+            member x.RunRounding = cfg.RunRounding }
+
+    interface IEveCalculatorConfig with
         member x.InputMe = x.InputMe
         member x.DerivationMe = x.DerivationMe
         member x.ExpandPlanet = x.ExpandPlanet
         member x.ExpandReaction = x.ExpandReaction
+        member x.RunRounding = x.RunRounding

@@ -4,6 +4,7 @@ open System
 
 open KPX.XivPlugin.Data
 
+open KPX.TheBot.Host.DataModel.Recipe
 open KPX.TheBot.Host.Utils.GenericRPN
 open KPX.TheBot.Host.Utils.RecipeRPN
 
@@ -19,7 +20,7 @@ type XivExpression() as x =
             | Number f ->
                 let item = ItemCollection.Instance.GetByItemId(int f)
 
-                let acu = ItemAccumulator.SingleItemOf item
+                let acu = ItemAccumulator(item)
                 Accumulator acu
             | Accumulator _ -> failwithf "#符号仅对数字使用"
 
@@ -70,7 +71,7 @@ type XivExpression() as x =
 
                     for (g, q) in gears do
                         let item = ItemCollection.Instance.GetByItemId(g.ItemId)
-                        acu.Set(item, q)
+                        acu.[item] <- q
 
                 Operand(Accumulator(acu))
             else
@@ -79,4 +80,4 @@ type XivExpression() as x =
                 if item.IsNone then
                     failwithf $"找不到物品 %s{token}"
 
-                Operand(Accumulator(ItemAccumulator.SingleItemOf(item.Value)))
+                Operand(Accumulator(ItemAccumulator(item.Value)))

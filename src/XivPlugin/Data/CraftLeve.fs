@@ -69,7 +69,7 @@ type CraftLeveInfoCollection private () =
                           LeveId = row.Key.Main
                           LeveLevel = leveLevel
                           Repeats = repeats
-                          Items = acc.AsMaterials()
+                          Items = acc.ToArray()
                           ClassJob = job
                           GilReward = gil }
         }
@@ -107,7 +107,7 @@ type CraftLeveInfoCollection private () =
                           LeveId = row.Key.Main
                           LeveLevel = leveLevel
                           Repeats = repeats
-                          Items = acc.AsMaterials()
+                          Items = acc.ToArray()
                           ClassJob = job
                           GilReward = gil }
         }

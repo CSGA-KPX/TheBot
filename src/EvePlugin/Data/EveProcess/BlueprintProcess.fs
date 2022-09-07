@@ -59,14 +59,17 @@ type BlueprintCollection private () =
 
             let ec = EveTypeCollection.Instance
 
+            if output.Count > 1 then
+                invalidOp $"配方产物 <> 1 ：{input} -> {output}"
+
             if output.Count = 1
                && ec.TryGetById(bpid).IsSome
                && ec.TryGetById(output.[0].Item).IsSome then
                 Some
                     { Id = bpid
                       Process =
-                          { Input = input.ToArray()
-                            Output = output.ToArray() }
+                        { Materials = input.ToArray()
+                          Product = output.[0] }
                       Type = procType }
             else
                 None
@@ -75,7 +78,7 @@ type BlueprintCollection private () =
 
 
     override x.InitializeCollection() =
-        let expr = LiteDB.BsonExpression.Create("Process.Output[0].Item")
+        let expr = LiteDB.BsonExpression.Create("Process.Product.Item")
 
         x.DbCollection.EnsureIndex("ProductId", expr) |> ignore
 
@@ -111,7 +114,7 @@ type BlueprintCollection private () =
                 else
                     let id = LiteDB.BsonValue(item.Id)
 
-                    let ret = x.DbCollection.FindOne(LiteDB.Query.EQ("Process.Output[0].Item", id))
+                    let ret = x.DbCollection.FindOne(LiteDB.Query.EQ("Process.Product.Item", id))
 
                     if isNull (box ret) then
                         None

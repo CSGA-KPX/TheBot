@@ -2,7 +2,7 @@
 @echo off
 pushd bin
 cls
-dotnet fsi --use:..\Run_REPL.fsx
+dotnet fsi --use:"%~f0"
 goto :EOF
 *)
 
@@ -25,7 +25,7 @@ open KPX.FsCqHttp.Instance
 open KPX.TheBot.Host
 open KPX.TheBot.Host.Data
 
-open KPX.XivPlugin
+open KPX.XivPlugin.Data
 
 Environment.CurrentDirectory <- Path.Join(__SOURCE_DIRECTORY__, "../build/bin/")
 let discover = HostedModuleDiscover()

@@ -27,8 +27,8 @@
     <Compile Include="DataCache\CachedTableCollection.fs" />
     <Compile Include="DataCache\HostedModuleDiscover.fs" />
     <Compile Include="DataCache\CacheBuilder.fs" />
-    <Compile Include="DataModel\RecipeProvider.fs" />
-    <Compile Include="DataModel\RecipeManager.fs" />
+    <Compile Include="DataModel\RecipeModel2.fs" />
+    <Compile Include="DataModel\RecipeManager2.fs" />
     <Compile Include="Utils\Dicer.fs" />
     <Compile Include="Utils\Config.fs" />
     <Compile Include="Utils\GenericRPN.fs" />

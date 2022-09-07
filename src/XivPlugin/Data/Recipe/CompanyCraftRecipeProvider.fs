@@ -36,8 +36,8 @@ type CompanyCraftRecipeProviderChina private () =
                 ia.Clear()
 
                 let output =
-                    [| { Item = ccs.ResultItem.AsInt()
-                         Quantity = 1.0 } |]
+                    { Item = ccs.ResultItem.AsInt()
+                      Quantity = 1.0 }
 
                 for part in ccs.CompanyCraftPart.AsRows() do
                     for proc in part.CompanyCraftProcess.AsRows() do
@@ -54,8 +54,8 @@ type CompanyCraftRecipeProviderChina private () =
                     { LiteDbId = 0
                       Region = VersionRegion.China
                       Process =
-                          { Output = output
-                            Input = ia.AsMaterials() } }
+                        { Product = output
+                          Materials = ia.ToArray() } }
 
         }
         |> db.InsertBulk
@@ -92,8 +92,8 @@ type CompanyCraftRecipeProviderOffical private () =
                 ia.Clear()
 
                 let output =
-                    [| { Item = ccs.ResultItem.AsInt()
-                         Quantity = 1.0 } |]
+                    { Item = ccs.ResultItem.AsInt()
+                      Quantity = 1.0 }
 
                 for part in ccs.CompanyCraftPart.AsRows() do
                     for proc in part.CompanyCraftProcess.AsRows() do
@@ -110,8 +110,8 @@ type CompanyCraftRecipeProviderOffical private () =
                     { LiteDbId = 0
                       Region = VersionRegion.China
                       Process =
-                          { Output = output
-                            Input = ia.AsMaterials() } }
+                        { Product = output
+                          Materials = ia.ToArray() } }
 
         }
         |> db.InsertBulk

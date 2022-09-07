@@ -36,7 +36,16 @@ type EveLpStoreModule() =
     inherit CommandHandlerBase()
 
     let data = DataBundle.Instance
-    let pm = EveProcessManager2.Default
+
+    let pm =
+        EveProcessManager(
+            { new IEveCalculatorConfig with
+                member x.InputMe = 0
+                member x.DerivationMe = 0
+                member x.ExpandPlanet = false
+                member x.ExpandReaction = false
+                member x.RunRounding = ProcessRunRounding.AsIs }
+        )
 
     member x.ShowOverview(cmdArg: CommandEventArgs, cfg: LpConfigParser) =
         let minVol = cfg.MinimalVolume
@@ -67,7 +76,7 @@ type EveLpStoreModule() =
         data.GetLpStoreOffersByCorp(corp)
         |> Seq.map (fun lpOffer ->
             let oProc = lpOffer.CastProcess()
-            let itemOffer = oProc.GetFirstProduct()
+            let itemOffer = oProc.Product
 
             let offerStr = $"%s{itemOffer.Item.Name}*%g{itemOffer.Quantity}"
 
@@ -76,26 +85,26 @@ type EveLpStoreModule() =
             let mutable sellPrice = 0.0 // 产物卖出价格
 
             // LP交换
-            totalCost <- totalCost + oProc.Input.GetPrice(cfg.MaterialPriceMode) + lpOffer.IskCost
+            totalCost <- totalCost + oProc.Materials.GetPrice(cfg.MaterialPriceMode) + lpOffer.IskCost
 
             if itemOffer.Item.IsBlueprint then
                 let recipe =
                     pm
                         .GetRecipe(itemOffer.Item)
-                        .SetQuantity(ByItem itemOffer.Quantity)
+                        .SetQuantity(ByItems itemOffer.Quantity)
 
                 let rProc = recipe.ApplyFlags(MeApplied ProcessRunRounding.AsIs)
 
                 totalCost <-
                     totalCost
-                    + rProc.Input.GetPrice(cfg.MaterialPriceMode)
+                    + rProc.Materials.GetPrice(cfg.MaterialPriceMode)
                     + recipe.GetInstallationCost(cfg)
 
-                sellPrice <- rProc.Output.GetPrice(PriceFetchMode.SellWithTax)
-                dailyVolume <- data.GetItemTradeVolume(rProc.GetFirstProduct().Item)
+                sellPrice <- rProc.Product.GetPrice(PriceFetchMode.SellWithTax)
+                dailyVolume <- data.GetItemTradeVolume(rProc.Product.Item)
             else
-                sellPrice <- oProc.Output.GetPrice(PriceFetchMode.SellWithTax)
-                dailyVolume <- data.GetItemTradeVolume(oProc.GetFirstProduct().Item)
+                sellPrice <- oProc.Product.GetPrice(PriceFetchMode.SellWithTax)
+                dailyVolume <- data.GetItemTradeVolume(oProc.Product.Item)
 
             {| Name = offerStr
                OfferItem = itemOffer.Item
@@ -142,7 +151,7 @@ type EveLpStoreModule() =
 
         let offer =
             data.GetLpStoreOffersByCorp(corp)
-            |> Array.tryFind (fun offer -> offer.Process.GetFirstProduct().Item = item.Id)
+            |> Array.tryFind (fun offer -> offer.Process.Product.Item = item.Id)
 
         if offer.IsNone then
             cmdArg.Abort(InputError, "不能在{0}的中找到兑换{1}的交易", corp.CorporationName, item.Name)
@@ -184,7 +193,7 @@ type EveLpStoreModule() =
 
         let mProc = offer.Value.CastProcess()
 
-        for mr in mProc.Input do
+        for mr in mProc.Materials do
             let price = mr.Item.GetPrice(cfg.MaterialPriceMode)
             let total = price * mr.Quantity
             materialPriceSum <- materialPriceSum + total
@@ -196,14 +205,14 @@ type EveLpStoreModule() =
             }
             |> ignore
 
-        let product = mProc.GetFirstProduct()
+        let product = mProc.Product
 
         if product.Item.IsBlueprint then
-            let proc = { pm.GetRecipe(product.Item) with TargetQuantity = ByRun product.Quantity }
+            let proc = { pm.GetRecipe(product.Item) with TargetQuantity = ByRuns product.Quantity }
 
             let recipe = proc.ApplyFlags(MeApplied ProcessRunRounding.AsIs)
 
-            for mr in recipe.Input do
+            for mr in recipe.Materials do
                 let price = mr.Item.GetPrice(cfg.MaterialPriceMode)
                 let total = price * mr.Quantity
                 materialPriceSum <- materialPriceSum + total
@@ -217,10 +226,10 @@ type EveLpStoreModule() =
 
             materialPriceSum <- materialPriceSum + proc.GetInstallationCost(cfg)
 
-            let sellPrice = recipe.Output.GetPrice(PriceFetchMode.SellWithTax)
+            let sellPrice = recipe.Product.GetPrice(PriceFetchMode.SellWithTax)
 
             let profit = sellPrice - materialPriceSum
-            let bpProduct = recipe.GetFirstProduct()
+            let bpProduct = recipe.Product
 
             profitTable {
                 AsCols [ Literal bpProduct.Item.Name
@@ -232,7 +241,7 @@ type EveLpStoreModule() =
             }
             |> ignore
         else
-            let sellPrice = mProc.Output.GetPrice(PriceFetchMode.SellWithTax)
+            let sellPrice = mProc.Product.GetPrice(PriceFetchMode.SellWithTax)
 
             let profit = sellPrice - materialPriceSum
 

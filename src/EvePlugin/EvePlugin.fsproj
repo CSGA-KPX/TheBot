@@ -23,6 +23,7 @@
     <Compile Include="Data\EveGroup.fs" />
     <Compile Include="Data\EveMarketGroup.fs" />
     <Compile Include="Data\EveType.fs" />
+    <Compile Include="Data\NpcCorporation.fs" />
     <Compile Include="Data\EveProcess\Base.fs" />
     <Compile Include="Data\EveProcess\BlueprintProcess.fs" />
     <Compile Include="Data\EveProcess\PlanetProcess.fs" />
@@ -30,7 +31,6 @@
     <Compile Include="Data\EveProcess\ProcessManager.fs" />
     <Compile Include="Data\EveProcess\ProcessSearchCache.fs" />
     <Compile Include="Data\EveProcess\ProcessTest.fs" />
-    <Compile Include="Data\NpcCorporation.fs" />
     <Compile Include="Data\LoyaltyStoreOffer.fs" />
     <Compile Include="Data\MarketPriceCache.fs" />
     <Compile Include="Data\MarketHistoryCache.fs" />
@@ -48,8 +48,9 @@
     
     <Compile Include="Modules\MarketModule.fs" />
     <Compile Include="Modules\LpStoreModule.fs" />
-    <Compile Include="Modules\RecipeModule.fs" />
-    <Compile Include="Modules\ERRCModule.fs" />
+    <Compile Include="Modules\RecipeModule\ERRCModule.fs" />
+    <Compile Include="Modules\RecipeModule\RecipeModule.fs" />
+    <Compile Include="Modules\RecipeModule\ErrModule.fs" />
     <Compile Include="Modules\EveInvModule.fs" />
     <Compile Include="Modules\EveMiscModule.fs" />
     <Compile Include="Modules\EveTestModule.fs" />

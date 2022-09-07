@@ -15,14 +15,14 @@ open KPX.EvePlugin.Data.EveType
 // 暂不保存到数据库，并且暂时只有管理员能用，所以暂不引入System.Runtime.Caching缓存
 
 type InventoryCollection private () =
-    let col = ConcurrentDictionary<string, ItemAccumulator<EveType>>(StringComparer.OrdinalIgnoreCase)
+    let col = ConcurrentDictionary<string, MaterialInventory<EveType>>(StringComparer.OrdinalIgnoreCase)
 
     static member val Instance = InventoryCollection()
 
     member x.Contains(key) = col.ContainsKey(key)
 
     member x.Create(key) =
-        let acc = ItemAccumulator<EveType>()
+        let acc = MaterialInventory<EveType>()
 
         if not <| col.TryAdd(key, acc) then
             raise <| ModuleException(ModuleError, "添加数据失败")

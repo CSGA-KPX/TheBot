@@ -21,7 +21,7 @@ type PlanetProcessCollection private () =
     static member Instance = instance
 
     override x.InitializeCollection() =
-        let expr = LiteDB.BsonExpression.Create("Process.Output[0].Item")
+        let expr = LiteDB.BsonExpression.Create("Process.Product.Item")
 
         x.DbCollection.EnsureIndex("ProductId", expr) |> ignore
 
@@ -63,11 +63,13 @@ type PlanetProcessCollection private () =
                     let notP0ToP1 = gid <> 1042
 
                     if notP0ToP1 then
+                        if output.Count <> 1 then
+                            invalidOp $"配方产物 <> 1 ：{input} -> {output}"
                         yield
                             { Id = sid
                               Process =
-                                  { Input = input.ToArray()
-                                    Output = output.ToArray() }
+                                { Materials = input.ToArray()
+                                  Product = output.[0] }
                               Type = ProcessType.Planet }
         }
         |> x.DbCollection.InsertBulk
@@ -77,7 +79,7 @@ type PlanetProcessCollection private () =
         override x.TryGetRecipe(item) =
             let id = LiteDB.BsonValue(item.Id)
 
-            let ret = x.DbCollection.FindOne(LiteDB.Query.EQ("Process.Output[0].Item", id))
+            let ret = x.DbCollection.FindOne(LiteDB.Query.EQ("Process.Product.Item", id))
 
             if isNull (box ret) then
                 None

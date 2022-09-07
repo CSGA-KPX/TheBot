@@ -8,8 +8,18 @@ open KPX.XivPlugin.Data
 open KPX.XivPlugin.Data.Recipe
 
 
+type XivRecipeConfig() =
+    inherit RecipeConfig<XivItem, RecipeProcess<XivItem>>()
+
+    override x.CanExpandRecipe(_) = true
+
+    override x.SolveSameProduct(recipes) =
+        // TODO :
+        recipes |> Seq.head
+
+
 type XivRecipeManager internal (providers) =
-    inherit RecipeManager<XivItem, RecipeProcess<XivItem>>(providers)
+    inherit RecipeManager<XivItem, RecipeProcess<XivItem>>(providers, XivRecipeConfig())
 
     /// <summary>
     /// 获取国服配方集
@@ -37,6 +47,9 @@ type XivRecipeManager internal (providers) =
         | VersionRegion.China -> XivRecipeManager.China
         | VersionRegion.Offical -> XivRecipeManager.Offical
 
+    override x.ApplyProcessQuantity(recipe, q, _) =
+        recipe * (q.ToRuns(recipe, x.Config.RunRounding)) :> IRecipeProcess<_>
+(*
     /// <summary>
     /// 获取指定道具的1流程的制作配方 ProcessQuantity.ByRun
     ///
@@ -93,7 +106,7 @@ type XivRecipeManager internal (providers) =
             acc.Output.Update(item, quantity.ToItems(r))
             Calc item (quantity.ToItems(r))
 
-            acc.AsRecipeProcess())
+            acc.AsRecipeProcess()) *)
 
 type private XivRecipeManagerChina() =
     inherit XivRecipeManager([ CraftRecipeProviderChina.Instance; CompanyCraftRecipeProviderChina.Instance ])
@@ -117,7 +130,7 @@ type ChinaRecipeTest() =
         Expect.isSome recipe
 
         let input =
-            recipe.Value.Input
+            recipe.Value.Materials
             |> Array.map (fun m -> m.Item.ChineseName, m.Quantity)
             |> readOnlyDict
 
@@ -135,7 +148,7 @@ type ChinaRecipeTest() =
         Expect.isSome recipe
 
         let input =
-            recipe.Value.Input
+            recipe.Value.Materials
             |> Array.map (fun m -> m.Item.ChineseName, m.Quantity)
             |> readOnlyDict
 
@@ -157,7 +170,7 @@ type OfficalRecipeTest() =
         Expect.isSome recipe
 
         let input =
-            recipe.Value.Input
+            recipe.Value.Materials
             |> Array.map (fun m -> m.Item.OfficalName, m.Quantity)
             |> readOnlyDict
 
@@ -175,7 +188,7 @@ type OfficalRecipeTest() =
         Expect.isSome recipe
 
         let input =
-            recipe.Value.Input
+            recipe.Value.Materials
             |> Array.map (fun m -> m.Item.OfficalName, m.Quantity)
             |> readOnlyDict
 

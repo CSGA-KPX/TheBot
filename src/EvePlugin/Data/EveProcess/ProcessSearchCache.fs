@@ -106,7 +106,6 @@ type EveProcessSearch private () =
         | ProcessType.Reaction
         | ProcessType.Manufacturing -> BlueprintCollection.Instance :> EveProcessCollection
         | ProcessType.Planet -> PlanetProcessCollection.Instance :> EveProcessCollection
-        | ProcessType.Refine -> RefineProcessCollection.Instance :> EveProcessCollection
         | _ -> invalidArg "ProcessType" $"无法为%A{t}获取合适的数据表"
 
     member x.Search(cond: ProcessSearchCond) =
@@ -147,7 +146,7 @@ type EveProcessSearch private () =
                     let proc = proc.AsEveProcess()
                     let mutable ret = true
 
-                    let product = proc.Original.GetFirstProduct()
+                    let product = proc.Original.Product
 
                     if not gids.IsEmpty then
                         ret <- ret && gids.Contains(product.Item.GroupId)

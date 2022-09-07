@@ -12,13 +12,11 @@ open KPX.TheBot.Host.DataModel.Recipe
 open KPX.EvePlugin.Data.EveType
 
 
-/// 精炼
+/// 精炼。和其他过程相反，Materials是精炼产物
 type RefineProcessCollection private () =
     inherit EveProcessCollection()
 
-    static let instance = RefineProcessCollection()
-
-    static member Instance = instance
+    static member val Instance = RefineProcessCollection()
 
     override x.InitializeCollection() =
         seq {
@@ -47,16 +45,11 @@ type RefineProcessCollection private () =
                     let t = EveTypeCollection.Instance.TryGetById(inputTypeId)
 
                     if t.IsSome then
-                        let t = t.Value
-
                         yield
                             { Id = inputTypeId
                               Process =
-                                  { Input =
-                                        Array.singleton
-                                            { Item = t.Id
-                                              Quantity = t.PortionSize |> float }
-                                    Output = yields }
+                                { Materials = yields
+                                  Product = RecipeMaterial<_>.Create (t.Value.Id, t.Value.PortionSize) }
                               Type = ProcessType.Refine }
         }
         |> x.DbCollection.InsertBulk

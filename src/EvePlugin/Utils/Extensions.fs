@@ -49,15 +49,20 @@ type EveType with
     member x.TypeGroup = DataBundle.Instance.GetGroup(x.GroupId)
 
     /// 不是所有物品都有市场分类
-    member x.MarketGroup = KPX.EvePlugin.Data.EveMarketGroup.MarketGroupCollection.Instance.TryGetById(x.MarketGroupId)
+    member x.MarketGroup =
+        KPX.EvePlugin.Data.EveMarketGroup.MarketGroupCollection.Instance.TryGetById(x.MarketGroupId)
 
     member x.IsBlueprint = x.CategoryId = 9
 
 [<Extension>]
 type RecipeMaterialExtensions =
     [<Extension>]
-    static member inline GetPrice(this: RecipeMaterial<EveType> [], pm: PriceFetchMode) =
-        this |> Array.sumBy (fun mr -> mr.Item.GetPrice(pm) * mr.Quantity)
+    static member inline GetPrice(this: seq<RecipeMaterial<EveType>>, pm: PriceFetchMode) =
+        this |> Seq.sumBy (fun mr -> mr.Item.GetPrice(pm) * mr.Quantity)
+
+    [<Extension>]
+    static member inline GetPrice(this: RecipeMaterial<EveType>, pm: PriceFetchMode) =
+        this.Item.GetPrice(pm) * this.Quantity
 
 type EveProcess with
 
@@ -65,13 +70,14 @@ type EveProcess with
     member x.GetPriceInfo(pm: PriceFetchMode) =
         let proc = x.ApplyFlags(MeApplied ProcessRunRounding.AsIs)
 
-        {| TotalProductPrice = proc.Output.GetPrice(pm)
-           TotalMaterialPrice = proc.Input.GetPrice(pm) |}
+        {| TotalProductPrice = proc.Product.GetPrice(pm)
+           TotalMaterialPrice = proc.Materials.GetPrice(pm) |}
 
-    member x.GetTotalProductPrice(pm: PriceFetchMode, flag: ProcessFlag) = x.ApplyFlags(flag).Output.GetPrice(pm)
+    member x.GetTotalProductPrice(pm: PriceFetchMode, flag: ProcessFlag) = x.ApplyFlags(flag).Product.GetPrice(pm)
 
     /// 获取输入材料价格，可能为0
-    member x.GetTotalMaterialPrice(pm: PriceFetchMode, flag: ProcessFlag) = x.ApplyFlags(flag).Input.GetPrice(pm)
+    member x.GetTotalMaterialPrice(pm: PriceFetchMode, flag: ProcessFlag) =
+        x.ApplyFlags(flag).Materials.GetPrice(pm)
 
     /// 获取生产费用
     ///
@@ -90,14 +96,11 @@ type EveProcess with
 
             let proc = x.ApplyFlags(QuantityApplied ProcessRunRounding.AsIs)
 
-
             let importFee =
-                proc.Input
+                proc.Materials
                 |> Array.fold (fun acc mr -> acc + mr.Quantity * (getBaseCost mr.Item * 0.5)) 0.0
 
-            let exportFee =
-                proc.Output
-                |> Array.fold (fun acc mr -> acc + mr.Quantity * (getBaseCost mr.Item)) 0.0
+            let exportFee = (getBaseCost proc.Product.Item) * proc.Product.Quantity
 
             (importFee + exportFee) * 0.1 // NPC税率10%
         | ProcessType.Invalid -> raise <| System.NotImplementedException("非法过程")
@@ -105,6 +108,6 @@ type EveProcess with
         | _ ->
             x
                 .ApplyFlags(QuantityApplied ProcessRunRounding.AsIs)
-                .Input.GetPrice(PriceFetchMode.AdjustedPrice)
+                .Materials.GetPrice(PriceFetchMode.AdjustedPrice)
             * (pct cfg.SystemCostIndex)
             * (100 + cfg.StructureTax |> pct)

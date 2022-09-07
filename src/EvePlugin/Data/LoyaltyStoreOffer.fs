@@ -22,16 +22,14 @@ type LoyaltyStoreOffer =
     member x.CastProcess() =
         let ec = KPX.EvePlugin.Data.EveType.EveTypeCollection.Instance
 
-        { Input =
-            x.Process.Input
+        { Materials =
+            x.Process.Materials
             |> Array.map (fun mr ->
                 { Item = ec.GetById(mr.Item)
                   Quantity = mr.Quantity })
-          Output =
-            x.Process.Output
-            |> Array.map (fun mr ->
-                { Item = ec.GetById(mr.Item)
-                  Quantity = mr.Quantity }) }
+          Product =
+            { Item = ec.GetById(x.Process.Product.Item)
+              Quantity = x.Process.Product.Quantity } }
 
 [<CLIMutable>]
 type LpStore =
@@ -95,5 +93,5 @@ type LoyaltyStoreCollection private () =
                              LpCost = lp
                              OfferId = id
                              Process =
-                               { Input = requires
-                                 Output = Array.singleton offers } } |] }
+                               { Materials = requires
+                                 Product = offers } } |] }
