@@ -11,12 +11,15 @@ open KPX.XivPlugin.Data.Recipe
 type XivRecipeConfig() =
     inherit RecipeConfig<XivItem, RecipeProcess<XivItem>>()
 
-    override x.CanExpandRecipe(_) = true
+    override x.CanExpandRecipe(_) =
+        // 14本身问题不大
+        true
 
     override x.SolveSameProduct(recipes) =
-        // TODO :
+        // 原则上应该使用成本来选择最优配方
+        // 但Universalis本身不太稳定
+        // 最后还是放弃了
         recipes |> Seq.head
-
 
 type XivRecipeManager internal (providers) =
     inherit RecipeManager<XivItem, RecipeProcess<XivItem>>(providers, XivRecipeConfig())
@@ -49,71 +52,12 @@ type XivRecipeManager internal (providers) =
 
     override x.ApplyProcessQuantity(recipe, q, _) =
         recipe * (q.ToRuns(recipe, x.Config.RunRounding)) :> IRecipeProcess<_>
-(*
-    /// <summary>
-    /// 获取指定道具的1流程的制作配方 ProcessQuantity.ByRun
-    ///
-    /// 如果该道具不存在制作配方，返回None
-    /// </summary>
-    /// <param name="item">查找的道具</param>
-    override x.TryGetRecipe(item) = x.SearchRecipes(item) |> Seq.tryHead
-
-    /// <summary>
-    /// 获取指定道具的指定数量的制作配方
-    ///
-    /// 如果该道具不存在制作配方，返回None
-    /// </summary>
-    /// <param name="item">查找的道具</param>
-    /// <param name="quantity">制作数量 ProcessQuantity.ByItem</param>
-    override x.TryGetRecipe(item, quantity) =
-        x.TryGetRecipe(item)
-        |> Option.map (fun p ->
-            let runs = quantity.ToRuns(p)
-
-            { Input = p.Input |> Array.map (fun m -> { m with Quantity = m.Quantity * runs })
-              Output = p.Output |> Array.map (fun m -> { m with Quantity = m.Quantity * runs }) })
-
-    /// <summary>
-    /// 递归获取指定道具的指定数量的制作配方
-    ///
-    /// 如果该道具不存在制作配方，返回None
-    /// </summary>
-    /// <param name="material">物品和数量</param>
-    member x.TryGetRecipeRec(material: RecipeMaterial<XivItem>) =
-        x.TryGetRecipeRec(material.Item, ByItem material.Quantity)
-
-    /// <summary>
-    /// 递归获取指定道具的指定数量的制作配方
-    ///
-    /// 如果该道具不存在制作配方，返回None
-    /// </summary>
-    /// <param name="item">查找的道具</param>
-    /// <param name="quantity">制作数量 ProcessQuantity.ByItem</param>
-    member x.TryGetRecipeRec(item, quantity: ProcessQuantity) =
-        x.TryGetRecipe(item)
-        |> Option.map (fun r ->
-            let acc = RecipeProcessAccumulator<XivItem>()
-
-            let rec Calc i (q: float) =
-                let recipe = x.TryGetRecipe(i, ByItem q)
-
-                if recipe.IsNone then
-                    acc.Input.Update(i, q)
-                else
-                    for m in recipe.Value.Input do
-                        Calc m.Item m.Quantity
-
-            acc.Output.Update(item, quantity.ToItems(r))
-            Calc item (quantity.ToItems(r))
-
-            acc.AsRecipeProcess()) *)
 
 type private XivRecipeManagerChina() =
     inherit XivRecipeManager([ CraftRecipeProviderChina.Instance; CompanyCraftRecipeProviderChina.Instance ])
 
 type private XivRecipeManagerOffical() =
     inherit XivRecipeManager([ CraftRecipeProviderOffical.Instance; CompanyCraftRecipeProviderOffical.Instance ])
-
 
 [<Sealed>]
 type ChinaRecipeTest() =

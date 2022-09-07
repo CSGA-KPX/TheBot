@@ -26,7 +26,7 @@ type CompanyCraftRecipeProviderChina private () =
 
         db.EnsureIndex(LiteDB.BsonExpression.Create("_id"), true) |> ignore
 
-        db.EnsureIndex(LiteDB.BsonExpression.Create("Process.Output[0].Item")) |> ignore
+        db.EnsureIndex(LiteDB.BsonExpression.Create("Process.Product.Item")) |> ignore
 
         seq {
             let col = ChinaDistroData.GetCollection()
@@ -63,7 +63,7 @@ type CompanyCraftRecipeProviderChina private () =
 
     interface IRecipeProvider<XivItem, RecipeProcess<XivItem>> with
         override x.TryGetRecipe(item) =
-            LiteDB.Query.EQ("Process.Output[0].Item", item.ItemId)
+            LiteDB.Query.EQ("Process.Product.Item", item.ItemId)
             |> x.DbCollection.TryFindOne
             |> Option.map (fun r -> r.CastProcess())
 
@@ -82,7 +82,7 @@ type CompanyCraftRecipeProviderOffical private () =
 
         db.EnsureIndex(LiteDB.BsonExpression.Create("_id"), true) |> ignore
 
-        db.EnsureIndex(LiteDB.BsonExpression.Create("Process.Output[0].Item")) |> ignore
+        db.EnsureIndex(LiteDB.BsonExpression.Create("Process.Product.Item")) |> ignore
 
         seq {
             let col = OfficalDistroData.GetCollection()
@@ -119,6 +119,6 @@ type CompanyCraftRecipeProviderOffical private () =
 
     interface IRecipeProvider<XivItem, RecipeProcess<XivItem>> with
         override x.TryGetRecipe(item) =
-            LiteDB.Query.EQ("Process.Output[0].Item", item.ItemId)
+            LiteDB.Query.EQ("Process.Product.Item", item.ItemId)
             |> x.DbCollection.TryFindOne
             |> Option.map (fun r -> r.CastProcess())

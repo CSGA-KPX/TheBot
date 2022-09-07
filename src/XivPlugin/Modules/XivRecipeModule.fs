@@ -134,8 +134,8 @@ type XivRecipeModule() =
                     let subTotal = unitPrice * mr.Quantity
                     totalSell <- totalSell + subTotal
 
-                    HumanSig4 unitPrice
-                    HumanSig4 subTotal
+                    Integer unitPrice
+                    Integer subTotal
                     TimeSpan uni.LastUpdated ] ]
 
             let mutable inputBuySum = 0.0
@@ -188,8 +188,8 @@ type XivRecipeModule() =
 
                   [ Literal(tryLookupNpcPrice (mr.Item, world))
                     CellUtils.Number mr.Quantity
-                    HumanSig4 unitPrice
-                    HumanSig4 sellPrice { boldIf preferSell }
+                    Integer unitPrice
+                    Integer sellPrice { boldIf preferSell }
                     if craftPrice.IsNone then
                         RightPad
                     else
@@ -201,17 +201,17 @@ type XivRecipeModule() =
             // 材料小计
             AsCols [ Literal "税后卖出" { bold }
                      RightPad
-                     HumanSig4(totalSell * taxSellRate) ]
+                     Integer(totalSell * taxSellRate) ]
 
             AsCols [ Literal "税后材料" { bold }
                      RightPad
-                     HumanSig4(inputBuySum * taxBuyRate)
-                     HumanSig4(inputCraftSum * taxBuyRate) ]
+                     Integer(inputBuySum * taxBuyRate)
+                     Integer(inputCraftSum * taxBuyRate) ]
 
             AsCols [ Literal "最优成本/利润" { bold }
                      RightPad
-                     HumanSig4(inputOptSum * taxBuyRate)
-                     HumanSig4((totalSell * taxSellRate) - (inputOptSum * taxBuyRate)) ]
+                     Integer(inputOptSum * taxBuyRate)
+                     Integer((totalSell * taxSellRate) - (inputOptSum * taxBuyRate)) ]
         }
 
     [<TestFixture>]
