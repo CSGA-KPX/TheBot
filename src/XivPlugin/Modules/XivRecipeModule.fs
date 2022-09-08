@@ -134,8 +134,8 @@ type XivRecipeModule() =
                     let subTotal = unitPrice * mr.Quantity
                     totalSell <- totalSell + subTotal
 
-                    Integer unitPrice
-                    Integer subTotal
+                    HumanSig4I unitPrice
+                    HumanSig4I subTotal
                     TimeSpan uni.LastUpdated ] ]
 
             let mutable inputBuySum = 0.0
@@ -188,12 +188,12 @@ type XivRecipeModule() =
 
                   [ Literal(tryLookupNpcPrice (mr.Item, world))
                     CellUtils.Number mr.Quantity
-                    Integer unitPrice
-                    Integer sellPrice { boldIf preferSell }
+                    HumanSig4I unitPrice
+                    HumanSig4I sellPrice { boldIf preferSell }
                     if craftPrice.IsNone then
                         RightPad
                     else
-                        HumanSig4(craftPrice.Value) { boldIf (not preferSell) } ] ]
+                        HumanSig4I(craftPrice.Value) { boldIf (not preferSell) } ] ]
 
             let taxBuyRate = 1.05
             let taxSellRate = 0.95
@@ -201,17 +201,17 @@ type XivRecipeModule() =
             // 材料小计
             AsCols [ Literal "税后卖出" { bold }
                      RightPad
-                     Integer(totalSell * taxSellRate) ]
+                     HumanSig4I(totalSell * taxSellRate) ]
 
             AsCols [ Literal "税后材料" { bold }
                      RightPad
-                     Integer(inputBuySum * taxBuyRate)
-                     Integer(inputCraftSum * taxBuyRate) ]
+                     HumanSig4I(inputBuySum * taxBuyRate)
+                     HumanSig4I(inputCraftSum * taxBuyRate) ]
 
             AsCols [ Literal "最优成本/利润" { bold }
                      RightPad
-                     Integer(inputOptSum * taxBuyRate)
-                     Integer((totalSell * taxSellRate) - (inputOptSum * taxBuyRate)) ]
+                     HumanSig4I(inputOptSum * taxBuyRate)
+                     HumanSig4I((totalSell * taxSellRate) - (inputOptSum * taxBuyRate)) ]
         }
 
     [<TestFixture>]

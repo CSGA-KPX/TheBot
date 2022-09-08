@@ -138,6 +138,15 @@ type CellUtils private () =
     /// 右对齐，千分位，保留4位有效数字，超过一亿按亿，不为零则保留2位小数
     static member HumanSig4(value: int64) = CellBuildImpl.humanReadbleImpl (value)
 
+    /// 右对齐，千分位，保留4位有效数字，超过一亿按亿计，忽略原始数值的小数点
+    static member HumanSig4I(value: float) = CellBuildImpl.humanReadbleImpl (round value)
+
+    /// 右对齐，千分位，保留4位有效数字，超过一亿按亿计，忽略原始数值的小数点
+    static member HumanSig4I(value: int32) = CellBuildImpl.humanReadbleImpl (value)
+
+    /// 右对齐，千分位，保留4位有效数字，超过一亿按亿计，忽略原始数值的小数点
+    static member HumanSig4I(value: int64) = CellBuildImpl.humanReadbleImpl (value)
+
     /// 2位小数百分比
     static member Percent(value: float) =
         TableCell(String.Format("{0:P2}", value), Align = TextAlignment.Right)
