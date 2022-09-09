@@ -194,8 +194,6 @@ type RecipeManager<'Item, 'Recipe when 'Item: equality and 'Recipe :> IRecipePro
 
         let materials = x.TryGetMaterials(mr)
 
-        acc.Products.Update(mr)
-
         if materials.IsSome then
             // 已经展开过一次了，所以加一层
             build (Seq.singleton mr) 0
