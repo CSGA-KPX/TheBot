@@ -27,7 +27,7 @@ type private AtExpression private () as x =
     let submarineDict = Dictionary<string, XivItem>()
 
     let submarineRegex =
-        let pattern = "(?<part>[一-九1-9]改?){4}"
+        let pattern = "(?<part>[一-九0-9]改?){4}"
         Regex(pattern, RegexOptions.Compiled)
 
     do
@@ -124,8 +124,9 @@ type private AtExpression private () as x =
 
                 group.Captures
                 |> Seq.iteri (fun slotId capture ->
-                    let item = submarineDict.[$"潜水艇:{capture.Value}:{slotId}"]
-                    acu.Update(item, 1.0))
+                    if not <| capture.Value.Contains('0') then
+                        let item = submarineDict.[$"潜水艇:{capture.Value}:{slotId}"]
+                        acu.Update(item, 1.0))
 
                 Some acu
             else
