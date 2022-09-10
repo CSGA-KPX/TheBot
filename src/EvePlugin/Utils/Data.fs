@@ -25,9 +25,6 @@ type DataBundle private () =
 
     member x.GetItem(id: int) = itemCol.GetById(id)
 
-    member x.GetItemPrice(t: EveType) = priceCache.FetchItem(t.Id)
-    member x.GetItemPrice(id: int) = priceCache.FetchItem(id)
-
     member x.GetItemPriceCached(t: EveType) = priceCache.GetItem(t.Id)
     member x.GetItemPriceCached(id: int) = priceCache.GetItem(id)
 

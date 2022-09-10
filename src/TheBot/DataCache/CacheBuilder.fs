@@ -74,16 +74,16 @@ module BotDataInitializer =
     let buildAllCache (discover: HostedModuleDiscover) =
         let cols =
             discover.CacheCollections
-            |> Seq.map
-                (fun t ->
-                    let p = t.GetProperty("Instance", BindingFlags.Public ||| BindingFlags.Static)
+            |> Seq.map (fun t ->
+                let p = t.GetProperty("Instance", BindingFlags.Public ||| BindingFlags.Static)
 
-                    if isNull p then
-                        failwithf $"{t}.Instance is Null!"
+                if isNull p then
+                    failwithf $"{t}.Instance is Null!"
 
-                    p.GetValue(null) :?> IInitializationInfo)
+                p.GetValue(null) :?> IInitializationInfo)
             |> Seq.toArray
-            |> Utils.solveDependency
+            |> Array.groupBy (fun iii -> iii.GetType().Assembly.FullName)
+            |> Array.collect (fun (_, infos) -> infos |> Utils.solveDependency)
 
         let gt = typeof<CachedTableCollection<_>>
 
