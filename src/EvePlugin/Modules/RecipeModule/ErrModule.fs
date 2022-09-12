@@ -39,6 +39,7 @@ type ERRModule() =
         cfg.Parse(cmdArg.HeaderArgs)
         // 下面for循环中会被覆写
         let respType = cfg.ResponseType
+
         let useInv, inv =
             match idOpt.IsDefined with
             | false -> false, MaterialInventory<EveType>()
@@ -48,6 +49,9 @@ type ERRModule() =
         let inputAcc = ItemAccumulator<EveType>()
         let outputAcc = ItemAccumulator<EveType>()
 
+        let intAcc = ItemAccumulator<EveType>()
+        let intProc = Collections.Generic.Dictionary<EveType, EveProcess>()
+
         for args in cmdArg.AllArgs do
             cfg.Parse(args)
             let str = cfg.GetNonOptionString()
@@ -56,9 +60,13 @@ type ERRModule() =
                 match er.Eval(cfg.GetNonOptionString()) with
                 | Number n -> cmdArg.Abort(InputError, "结算结果为数字: {0}", n)
                 | Accumulator a ->
+                    for mr in a.NegativeQuantityItems do
+                        inv.Update(mr.Item, -mr.Quantity)
+
                     let proc =
                         let pm = EveProcessManager(cfg)
                         let expandProc = cmdArg.CommandAttrib.Command = "#err"
+                        let a = a.PositiveQuantityItems
 
                         if expandProc then
                             pm.GetMaterialsRec(a, inv)
@@ -69,10 +77,18 @@ type ERRModule() =
                     for mr in proc.FinalProcess.Materials do
                         inputAcc.Update(mr)
 
+                    // 更新中间产物
+                    for (quantity, proc, _) in proc.IntermediateProcess do
+                        intProc.TryAdd(proc.Original.Product.Item, proc) |> ignore
+                        let items = quantity.ToItems(proc.Original)
+                        intAcc.Update(proc.Original.Product.Item, items)
+
                     // 生成产物表
                     for mr in proc.FinalProcess.Products do
                         outputAcc.Update(mr)
 
+        // 表格会很长，省略产物表了
+        (*
         let productTable =
             let mutable totalOutputVolume = 0.0
 
@@ -85,7 +101,7 @@ type ERRModule() =
                          RLiteral "r"
                          RLiteral "p" ]
 
-                [ for mr in outputAcc do
+                [ for mr in outputAcc.NonZeroItems do
                       let outputVolume = mr.Item.Volume * mr.Quantity
                       totalOutputVolume <- totalOutputVolume + outputVolume
 
@@ -105,11 +121,30 @@ type ERRModule() =
                          RightPad
                          RightPad ]
 
+            }*)
+
+        let intermediateTable =
+            TextTable() {
+                AsCols [ Literal "名称"
+                         RLiteral "数量"
+                         RLiteral "流程" ]
+
+                [ for mr in intAcc.NonZeroItems do
+                      [ Literal mr.Item.Name
+                        Integer mr.Quantity
+                        Integer(
+                            (ByItems mr.Quantity)
+                                .ToRuns(intProc.[mr.Item].Original)
+                        ) ] ]
+
             }
+
 
         let mainTable =
             TextTable(respType) {
-                productTable
+                //productTable
+
+                intermediateTable
 
                 AsCols [ Literal "名称"
                          if useInv then
@@ -122,7 +157,7 @@ type ERRModule() =
         // 生成材料信息
         let mutable totalInputVolume = 0.0
 
-        for mr in inputAcc |> Seq.sortBy (fun x -> x.Item.MarketGroupId) do
+        for mr in inputAcc.NonZeroItems |> Seq.sortBy (fun x -> x.Item.MarketGroupId) do
             let sumVolume = mr.Item.Volume * mr.Quantity
 
             mainTable {
