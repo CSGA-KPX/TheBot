@@ -5,15 +5,18 @@ open System.Collections.Generic
 
 
 module private CellBuildImpl =
-    let inline numberImpl (value: ^Number) =
-        let str = String.Format("{0:N2}", value)
 
+    let inline trimDigits (str : string) =
         if str.EndsWith(".00") then
             TableCell(str.Remove(str.Length - 3), Align = TextAlignment.Right)
         else
             TableCell(str, Align = TextAlignment.Right)
 
-    let inline humanReadbleImpl (value: ^Number) =
+    let inline numberImpl (value: ^Number)=
+        String.Format("{0:N2}", value)
+        |> trimDigits
+
+    let inline humanReadbleImpl (value: ^Number) (ignoreDigits : bool)=
         let sigDigits = 4
 
         let mutable value = TableCellHelper.RoundSigDigits(Convert.ToDouble(value), sigDigits)
@@ -31,7 +34,7 @@ module private CellBuildImpl =
 
                 let hasEnoughDigits = (pow10 - (int scale) + 1) >= sigDigits
 
-                if hasEnoughDigits then
+                if hasEnoughDigits || ignoreDigits then
                     String.Format("{0:N0}{1}", value / 10.0 ** scale, postfix)
                 else
                     String.Format("{0:N2}{1}", value / 10.0 ** scale, postfix)
@@ -130,22 +133,22 @@ type CellUtils private () =
         TableCellHelper.RoundSigDigits(value, 4) |> Number
 
     /// 右对齐，千分位，保留4位有效数字，超过一亿按亿计，不为零则保留2位小数
-    static member HumanSig4(value: float) = CellBuildImpl.humanReadbleImpl (value)
+    static member HumanSig4(value: float) = CellBuildImpl.humanReadbleImpl (value) (false)
 
     /// 右对齐，千分位，保留4位有效数字，超过一亿按亿，不为零则保留2位小数
-    static member HumanSig4(value: int32) = CellBuildImpl.humanReadbleImpl (value)
+    static member HumanSig4(value: int32) = CellBuildImpl.humanReadbleImpl (value)  (false)
 
     /// 右对齐，千分位，保留4位有效数字，超过一亿按亿，不为零则保留2位小数
-    static member HumanSig4(value: int64) = CellBuildImpl.humanReadbleImpl (value)
+    static member HumanSig4(value: int64) = CellBuildImpl.humanReadbleImpl (value)  (false)
 
     /// 右对齐，千分位，保留4位有效数字，超过一亿按亿计，忽略原始数值的小数点
-    static member HumanSig4I(value: float) = CellBuildImpl.humanReadbleImpl (round value)
+    static member HumanSig4I(value: float) = CellBuildImpl.humanReadbleImpl (round value)  (true)
 
     /// 右对齐，千分位，保留4位有效数字，超过一亿按亿计，忽略原始数值的小数点
-    static member HumanSig4I(value: int32) = CellBuildImpl.humanReadbleImpl (value)
+    static member HumanSig4I(value: int32) = CellBuildImpl.humanReadbleImpl (value) (true)
 
     /// 右对齐，千分位，保留4位有效数字，超过一亿按亿计，忽略原始数值的小数点
-    static member HumanSig4I(value: int64) = CellBuildImpl.humanReadbleImpl (value)
+    static member HumanSig4I(value: int64) = CellBuildImpl.humanReadbleImpl (value) (true)
 
     /// 2位小数百分比
     static member Percent(value: float) =
