@@ -5,6 +5,8 @@ open KPX.TheBot.Host.DataCache.LiteDb
 
 open KPX.XivPlugin.Data
 
+open LibFFXIV.GameData.Raw
+
 open LiteDB
 
 
@@ -32,28 +34,80 @@ type XivContentCollection private () =
         seq {
             let col = ChinaDistroData.GetCollection()
 
-            for row in col.ContentFinderCondition do
-                yield
-                    { LiteDbId = 0
-                      Region = VersionRegion.China
-                      ContentId = row.Key.Main
-                      Name = row.Name.AsString()
-                      IsDailyFrontlineChallengeRoulette = row.DailyFrontlineChallenge.AsBool() }
+            let c =
+                col.ContentFinderCondition
+                |> Seq.filter (fun row -> row.PvP.AsBool())
+                |> Seq.cache
 
-            let col = OfficalDistroData.GetCollection()
+            let colRange =
+                let row = (Seq.head c)
+                let colMid = row.DailyFrontlineChallenge.Index.ToHdrIndex
+                [ colMid - 2 .. colMid + 2 ]
 
-            for row in col.ContentFinderCondition do
-                yield
-                    { LiteDbId = 0
-                      Region = VersionRegion.Offical
-                      ContentId = row.Key.Main
-                      Name = row.Name.AsString()
-                      IsDailyFrontlineChallengeRoulette = row.DailyFrontlineChallenge.AsBool() }
+            let dfcCol =
+                colRange
+                |> List.choose (fun idx ->
+                    let idx = HeaderIndex idx
+
+                    if c |> Seq.exists (fun row -> row.As<bool>(idx)) then
+                        Some idx
+                    else
+                        None)
+                |> List.head
+
+            for row in c do
+                if row.As<bool>(dfcCol) = true then
+                    printfn $"{row.Name.AsString()}"
+                    yield
+                        { LiteDbId = 0
+                          Region = VersionRegion.China
+                          ContentId = row.Key.Main
+                          Name = row.Name.AsString()
+                          IsDailyFrontlineChallengeRoulette = true }
         }
         |> x.DbCollection.InsertBulk
         |> ignore
 
-    member x.GetDailyFrontline(region : VersionRegion) =
+        seq {
+            let col = OfficalDistroData.GetCollection()
+
+            let c =
+                col.ContentFinderCondition
+                |> Seq.filter (fun row -> row.PvP.AsBool())
+                |> Seq.cache
+
+            let colRange =
+                let row = (Seq.head c)
+                let colMid = row.DailyFrontlineChallenge.Index.ToHdrIndex
+                [ colMid - 2 .. colMid + 2 ]
+
+            let dfcCol =
+                colRange
+                |> List.choose (fun idx ->
+                    let idx = HeaderIndex idx
+
+                    if c |> Seq.exists (fun row -> row.As<bool>(idx)) then
+                        Some idx
+                    else
+                        None)
+                |> List.head
+
+            for row in c do
+                if row.As<bool>(dfcCol) = true then
+                    printfn $"{row.Name.AsString()}"
+                    yield
+                        { LiteDbId = 0
+                          Region = VersionRegion.Offical
+                          ContentId = row.Key.Main
+                          Name = row.Name.AsString()
+                          IsDailyFrontlineChallengeRoulette = true }
+        }
+        |> x.DbCollection.InsertBulk
+        |> ignore
+
+        (x :> IDataTest).RunTest()
+
+    member x.GetDailyFrontline(region: VersionRegion) =
         Query.And(Query.EQ("Region", region.BsonValue), Query.EQ("IsDailyFrontlineChallengeRoulette", true))
         |> x.DbCollection.Find
         |> Seq.toArray
