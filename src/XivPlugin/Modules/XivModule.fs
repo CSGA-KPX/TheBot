@@ -32,9 +32,6 @@ type SeaFishingOption() as x =
 type MiscModule() =
     inherit CommandHandlerBase()
 
-    let chsDfcRoulettes = lazy (XivContentCollection.Instance.GetDailyFrontline(VersionRegion.China))
-    let officalDfcRoulettes = lazy (XivContentCollection.Instance.GetDailyFrontline(VersionRegion.Offical))
-
     [<CommandHandlerMethod("#纷争前线", "FF14:今日轮转查询", "")>]
     member x.HandleDailyFrontlineChallenge(cmdArg: CommandEventArgs) =
         let opt = DfcOption()
@@ -62,8 +59,8 @@ type MiscModule() =
         use resp = cmdArg.OpenResponse(ForceImage)
 
         resp.Table {
-            let c = chsDfcRoulettes.Value
-            let o = officalDfcRoulettes.Value
+            let c = XivContentCollection.Instance.GetDailyFrontline(VersionRegion.China)
+            let o = XivContentCollection.Instance.GetDailyFrontline(VersionRegion.Offical)
 
             AsCols [ Literal "中国时间"
                      Literal "国服"
