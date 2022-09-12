@@ -37,7 +37,8 @@ type ERRModule() =
         // 默认值必须是不可能存在的值，比如空格
         let idOpt = cfg.RegisterOption<string>("id", "\r\n")
         cfg.Parse(cmdArg.HeaderArgs)
-
+        // 下面for循环中会被覆写
+        let respType = cfg.ResponseType
         let useInv, inv =
             match idOpt.IsDefined with
             | false -> false, MaterialInventory<EveType>()
@@ -107,7 +108,7 @@ type ERRModule() =
             }
 
         let mainTable =
-            TextTable(cfg.ResponseType) {
+            TextTable(respType) {
                 productTable
 
                 AsCols [ Literal "名称"
@@ -137,7 +138,6 @@ type ERRModule() =
         mainTable {
             AsCols [ Literal "材料体积"
                      RightPad
-                     if useInv then RightPad
                      CellUtils.Number totalInputVolume ]
         }
         |> ignore
