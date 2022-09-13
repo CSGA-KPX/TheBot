@@ -36,7 +36,6 @@
     <Compile Include="Data\Shops\GilShop.fs" />
     <Compile Include="Data\Shops\SpecialShop.fs" />
     <Compile Include="Data\CraftGearSet.fs" />
-    <Compile Include="Data\OceanFishing.fs" />
     <Compile Include="Data\ContentFinderCondition.fs" />
     <Compile Include="Data\CraftLeve.fs" />
     <Compile Include="Data\Race.fs" />
