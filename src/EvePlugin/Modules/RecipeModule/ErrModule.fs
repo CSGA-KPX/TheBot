@@ -78,10 +78,12 @@ type ERRModule() =
                         inputAcc.Update(mr)
 
                     // 更新中间产物
-                    for (quantity, proc, _) in proc.IntermediateProcess do
-                        intProc.TryAdd(proc.Original.Product.Item, proc) |> ignore
-                        let items = quantity.ToItems(proc.Original)
-                        intAcc.Update(proc.Original.Product.Item, items)
+                    for info in proc.IntermediateProcess do
+                        intProc.TryAdd(info.OriginProcess.Original.Product.Item, info.OriginProcess)
+                        |> ignore
+
+                        let items = info.Quantity.ToItems(info.OriginProcess.Original)
+                        intAcc.Update(info.OriginProcess.Original.Product.Item, items)
 
                     // 生成产物表
                     for mr in proc.FinalProcess.Products do

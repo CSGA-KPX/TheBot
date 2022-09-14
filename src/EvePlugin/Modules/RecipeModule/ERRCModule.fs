@@ -130,7 +130,14 @@ type EveRecipeModule() =
             if mrProc.IsSome then
                 let mrInstall =
                     mrProc.Value.IntermediateProcess
-                    |> Array.fold (fun acc (q, proc, _) -> acc + proc.SetQuantity(q).GetInstallationCost(cfg)) 0.0
+                    |> Array.fold
+                        (fun acc info ->
+                            acc
+                            + info
+                                .OriginProcess
+                                .SetQuantity(info.Quantity)
+                                .GetInstallationCost(cfg))
+                        0.0
 
                 let mrCost = mrProc.Value.FinalProcess.Materials.GetPrice(cfg.MaterialPriceMode)
                 let mrAll = mrInstall + mrCost
