@@ -87,42 +87,7 @@ type ERRModule() =
                     for mr in proc.FinalProcess.Products do
                         outputAcc.Update(mr)
 
-        // 表格会很长，省略产物表了
-        (*
-        let productTable =
-            let mutable totalOutputVolume = 0.0
-
-            TextTable() {
-                AsCols [ Literal "产出"
-                         RLiteral "数量"
-                         RLiteral "体积"
-                         RLiteral "ime"
-                         RLiteral "dme"
-                         RLiteral "r"
-                         RLiteral "p" ]
-
-                [ for mr in outputAcc.NonZeroItems do
-                      let outputVolume = mr.Item.Volume * mr.Quantity
-                      totalOutputVolume <- totalOutputVolume + outputVolume
-
-                      [ Literal mr.Item.Name
-                        Integer mr.Quantity
-                        Integer outputVolume
-                        Integer cfg.InputMe
-                        Integer cfg.DerivationMe
-                        Literal(cfg.ExpandReaction.ToString())
-                        Literal(cfg.ExpandPlanet.ToString()) ] ]
-
-                AsCols [ Literal "总计"
-                         RightPad
-                         CellUtils.Number totalOutputVolume
-                         RightPad
-                         RightPad
-                         RightPad
-                         RightPad ]
-
-            }*)
-
+        // 产物也会出现在中间产物里，不再重复
         let intermediateTable =
             TextTable() {
                 AsCols [ Literal "名称"
@@ -139,11 +104,8 @@ type ERRModule() =
 
             }
 
-
         let mainTable =
             TextTable(respType) {
-                //productTable
-
                 intermediateTable
 
                 AsCols [ Literal "名称"
