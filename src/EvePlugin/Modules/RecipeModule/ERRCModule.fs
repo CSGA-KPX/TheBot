@@ -76,33 +76,33 @@ type EveRecipeModule() =
         let cfg = EveConfigParser()
         cfg.Parse(cmdArg.HeaderArgs)
         let helper = ErrcTableUtils(cfg)
+        let respType = cfg.ResponseType
 
         let lv1, inv =
-            match er.Eval(cfg.GetNonOptionString()) with
-            | Number n -> cmdArg.Abort(InputError, "结算结果为数字: {0}", n)
-            | Accumulator a when a.Count = 0 -> cmdArg.Abort(InputError, "没有可供计算的项目")
-            | Accumulator a ->
-                let inv, todo = a.ToArray() |> Array.partition (fun mr -> mr.Quantity < 0)
-                let inv = MaterialInventory(inv)
-                let acc = ItemAccumulator<EveType>()
+            let inv = MaterialInventory()
+            let acc = ItemAccumulator<EveType>()
 
-                for mr in todo do
-                    helper.AddProduct(mr, acc)
+            for args in cmdArg.AllArgs do
+                cfg.Parse(args)
+                let str = cfg.GetNonOptionString()
 
-                inv.RentTo(acc)
-                acc.ToArray() |> Array.sortBy (fun mr -> mr.Item.MarketGroupId), inv
+                if not <| String.IsNullOrWhiteSpace(str) then
+                    match er.Eval(str) with
+                    | Number n -> cmdArg.Abort(InputError, "结算结果为数字: {0}", n)
+                    | Accumulator a when a.Count = 0 -> cmdArg.Abort(InputError, "没有可供计算的项目")
+                    | Accumulator a ->
+
+                        for mr in a.NegativeQuantityItems do
+                            inv.Update(mr.Item, -mr.Quantity)
+
+                        for mr in a.PositiveQuantityItems do
+                            helper.AddProduct(mr, acc)
+
+            inv.RentTo(acc)
+            acc.ToArray() |> Array.sortBy (fun mr -> mr.Item.MarketGroupId), inv
 
         let tt =
-            TextTable(cfg.ResponseType) {
-                ToolWarning
-
-                sprintf
-                    "输入效率：%i%% 默认效率：%i%% 成本指数：%i%% 设施税率%i%%"
-                    cfg.InputMe
-                    cfg.DerivationMe
-                    cfg.SystemCostIndex
-                    cfg.StructureTax
-
+            TextTable(respType) {
                 $"展开行星材料：%b{cfg.ExpandPlanet} 展开反应公式：%b{cfg.ExpandReaction}"
 
                 Literal "产品：" { bold }

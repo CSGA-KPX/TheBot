@@ -13,6 +13,7 @@ open KPX.EvePlugin.Data.EveType
 open KPX.EvePlugin.Data.Process
 
 open KPX.EvePlugin.Utils
+open KPX.EvePlugin.Utils.Extensions
 open KPX.EvePlugin.Utils.Config
 open KPX.EvePlugin.Utils.UserInventory
 
@@ -51,6 +52,7 @@ type ERRModule() =
 
         let intAcc = ItemAccumulator<EveType>()
         let intProc = Collections.Generic.Dictionary<EveType, EveProcess>()
+        let intManuPrice = ItemAccumulator<EveType>()
 
         for args in cmdArg.AllArgs do
             cfg.Parse(args)
@@ -60,8 +62,12 @@ type ERRModule() =
                 match er.Eval(cfg.GetNonOptionString()) with
                 | Number n -> cmdArg.Abort(InputError, "结算结果为数字: {0}", n)
                 | Accumulator a ->
+                    // BUG很大
+                    // 需要全部求完以后再算
                     for mr in a.NegativeQuantityItems do
                         inv.Update(mr.Item, -mr.Quantity)
+
+                    let intInv = MaterialInventory<_>(inv)
 
                     let proc =
                         let pm = EveProcessManager(cfg)
@@ -77,13 +83,50 @@ type ERRModule() =
                     for mr in proc.FinalProcess.Materials do
                         inputAcc.Update(mr)
 
+                    let pm2 = EveProcessManager(cfg.GetShiftedConfig())
+
                     // 更新中间产物
                     for info in proc.IntermediateProcess do
-                        intProc.TryAdd(info.OriginProcess.Original.Product.Item, info.OriginProcess)
-                        |> ignore
+                        let intInv = MaterialInventory<_>(intInv)
+                        let item = info.OriginProcess.Original.Product.Item
+                        intProc.TryAdd(item, info.OriginProcess) |> ignore
 
                         let items = info.Quantity.ToItems(info.OriginProcess.Original)
-                        intAcc.Update(info.OriginProcess.Original.Product.Item, items)
+                        let mr = RecipeMaterial<_>.Create (item, items)
+
+                        // 计算直接材料，会用到的
+                        let me =
+                            if info.Depth = RecipeManager.DEPTH_PRODUCT then
+                                cfg.InputMe
+                            else
+                                cfg.DerivationMe
+
+                        let proc =
+                            info
+                                .OriginProcess
+                                .Set(info.Quantity, me)
+                                .ApplyFlags(MeApplied ProcessRunRounding.RoundUp)
+
+                        for mr in proc.Materials do
+                            intAcc.Update(mr)
+
+                        // 因为每行配置可能不一行，只能单独计算再合并
+                        // Rec模式下一次就会扣完的！
+                        let intProc = pm2.GetMaterialsRec(Array.singleton mr, intInv)
+                        let intMaterialPrice = intProc.FinalProcess.Materials.GetPrice(cfg.MaterialPriceMode)
+
+                        let intInstallCost =
+                            intProc.IntermediateProcess
+                            |> Array.fold
+                                (fun acc info ->
+                                    acc
+                                    + info
+                                        .OriginProcess
+                                        .SetQuantity(info.Quantity)
+                                        .GetInstallationCost(cfg))
+                                0.0
+
+                        intManuPrice.Update(item, intMaterialPrice + intInstallCost)
 
                     // 生成产物表
                     for mr in proc.FinalProcess.Products do
@@ -94,16 +137,30 @@ type ERRModule() =
             TextTable() {
                 AsCols [ Literal "名称"
                          RLiteral "数量"
-                         RLiteral "流程" ]
+                         RLiteral "流程"
+                         RLiteral(cfg.MaterialPriceMode.ToString())
+                         RLiteral "制造" ]
 
-                [ for mr in intAcc.NonZeroItems do
+                [ // intAcc含所有材料
+                  // 和intManuPrice区交集
+                  let mrs =
+                      let intItems = intAcc.NonZeroItems |> Seq.map (fun x -> x.Item)
+                      let manuItems = intManuPrice.NonZeroItems |> Seq.map (fun x -> x.Item)
+                      let items = Set.intersect (Set.ofSeq intItems) (Set.ofSeq manuItems)
+                      intAcc |> Seq.filter (fun mr -> items.Contains(mr.Item))
+
+                  for mr in mrs do
+                      let sellPrice = mr.GetPrice(cfg.MaterialPriceMode)
+                      let manuCost = intManuPrice.[mr.Item]
+
                       [ Literal mr.Item.Name
                         Integer mr.Quantity
                         Integer(
                             (ByItems mr.Quantity)
                                 .ToRuns(intProc.[mr.Item].Original)
-                        ) ] ]
-
+                        )
+                        HumanSig4(sellPrice) { boldIf (sellPrice <= manuCost) }
+                        HumanSig4(manuCost) { boldIf (sellPrice > manuCost) } ] ]
             }
 
         let mainTable =
