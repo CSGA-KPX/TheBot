@@ -187,10 +187,10 @@ type EveRecipeModule() =
     [<TestFixture>]
     member x.TestERRC() =
         let tc = TestContext(x)
-        tc.ShouldThrow("#errc")
         tc.ShouldThrow("#errc 5*5")
         tc.ShouldThrow("#errc 军用馒头 ime:10")
         tc.ShouldThrow("#errc 军用馒头蓝图")
 
+        tc.ShouldNotThrow("#errc")
         tc.ShouldNotThrow("#errc 恶狼级")
         tc.ShouldNotThrow("#errc 恶狼级蓝图 ime:10")

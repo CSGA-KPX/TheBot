@@ -367,7 +367,6 @@ coverage.xml
 /build/cache
 /datafiles/trc_public.05Apr11.zip
 /datafiles/ffxiv-datamining-master.zip
-/build/Run_WSL.cmd
 /build/UploadToServer.cmd
 /datafiles/ffxiv-datamining-ja-master.zip
 /datafiles/ffxiv-datamining-patchdiff.zip

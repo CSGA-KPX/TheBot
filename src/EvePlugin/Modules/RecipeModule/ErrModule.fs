@@ -206,7 +206,7 @@ type ERRModule() =
     [<TestFixture>]
     member x.TestRRR() =
         let tc = TestContext(x)
-        tc.ShouldThrow("#er")
+        tc.ShouldNotThrow("#er")
         tc.ShouldThrow("#er 5*5")
         tc.ShouldThrow("#er 军用馒头 ime:10")
         tc.ShouldThrow("#er 军用馒头蓝图")
@@ -214,7 +214,7 @@ type ERRModule() =
         tc.ShouldNotThrow("#er 恶狼级")
         tc.ShouldNotThrow("#er 恶狼级蓝图 ime:10")
 
-        tc.ShouldThrow("#err")
+        tc.ShouldNotThrow("#err")
         tc.ShouldThrow("#err 5*5")
         tc.ShouldThrow("#err 军用馒头 ime:10")
         tc.ShouldThrow("#err 军用馒头蓝图")

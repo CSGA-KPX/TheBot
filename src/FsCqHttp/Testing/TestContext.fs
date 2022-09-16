@@ -1,4 +1,4 @@
-﻿namespace rec KPX.FsCqHttp.Testing
+namespace rec KPX.FsCqHttp.Testing
 
 open System
 open System.Collections.Generic
@@ -40,17 +40,15 @@ module private Strings =
 
 exception AssertFailedException of string
 
-type TestContext(m: HandlerModuleBase, ?parent: CqWsContextBase) as x =
+
+type TestContext(md: ModuleDiscover, botUserId, botUserName, ?parent: CqWsContextBase) as x =
     inherit CqWsContextBase()
 
     static let logger = NLog.LogManager.GetCurrentClassLogger()
 
-    let botUserId = UserId 10000UL
-    let botUserName = "测试用户"
-
     let apiResponse = Dictionary<string, obj>()
 
-    let mutable response = None
+    let mutable response: ReadOnlyMessage = Message()
 
     let mutable localRestart = None
 
@@ -59,8 +57,17 @@ type TestContext(m: HandlerModuleBase, ?parent: CqWsContextBase) as x =
         x.AddApiResponse("no_such_command", obj ())
         x.AddApiResponse("can_send_image", {| yes = true |})
 
-        x.Modules.RegisterModule(m)
+        ContextModuleLoader(md.AllDefinedModules)
+            .RegisterModuleFor(botUserId, x.Modules)
 
+    /// 模块测试用的简略构造函数
+    new(m: HandlerModuleBase, ?parent: CqWsContextBase) =
+        let d =
+            { new ModuleDiscover() with
+                member x.ProcessType(_) = invalidOp "" }
+
+        d.AddModule(m)
+        TestContext(d, UserId 10000UL, "测试机", ?parent = parent)
 
     member x.AddApiResponse<'T when 'T :> CqHttpApiBase>(obj: obj) =
         let api = Activator.CreateInstance(typeof<'T>) :?> CqHttpApiBase
@@ -87,8 +94,8 @@ type TestContext(m: HandlerModuleBase, ?parent: CqWsContextBase) as x =
         let cmdArgs = CommandEventArgs(msgEvent, attr)
 
         match cmd.Value.MethodAction with
-        | MethodAction.ManualAction action -> action.Invoke(cmdArgs)
-        | MethodAction.AutoAction func -> func.Invoke(cmdArgs).Response(cmdArgs)
+        | ManualAction action -> action.Invoke(cmdArgs)
+        | AutoAction func -> func.Invoke(cmdArgs).Response(cmdArgs)
 
         response
 
@@ -116,16 +123,16 @@ type TestContext(m: HandlerModuleBase, ?parent: CqWsContextBase) as x =
             with
             | _ -> reraise ()
 
-        ret.IsSome
+        ret.Count <> 0
 
     member x.ReturnContains (cmdLine: string) (value: string) =
-        let ret: string option =
+        let ret =
             try
                 x.InvokeCommand(cmdLine)
             with
             | _ -> reraise ()
 
-        ret.Value.Contains(value)
+        ret.ToString().Contains(value)
 
     member private x.MakeEvent(msg: ReadOnlyMessage) =
         let raw = JObject.Parse(Strings.msgEvent)
@@ -196,7 +203,7 @@ type TestContext(m: HandlerModuleBase, ?parent: CqWsContextBase) as x =
         match req :> ApiBase with
         | :? System.QuickOperation as q ->
             match q.Reply with
-            | EventResponse.PrivateMessageResponse msg -> response <- Some <| msg.ToString()
+            | EventResponse.PrivateMessageResponse msg -> response <- msg
             | _ -> invalidOp "不能处理私聊以外回复"
 
             req.IsExecuted <- true
