@@ -57,7 +57,6 @@ type XivContentCollection private () =
 
             for row in c do
                 if row.As<bool>(dfcCol) = true then
-                    printfn $"{row.Name.AsString()}"
                     yield
                         { LiteDbId = 0
                           Region = VersionRegion.China
@@ -94,7 +93,6 @@ type XivContentCollection private () =
 
             for row in c do
                 if row.As<bool>(dfcCol) = true then
-                    printfn $"{row.Name.AsString()}"
                     yield
                         { LiteDbId = 0
                           Region = VersionRegion.Offical
