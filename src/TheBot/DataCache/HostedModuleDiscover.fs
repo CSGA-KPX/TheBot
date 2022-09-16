@@ -37,11 +37,9 @@ type HostedModuleDiscover() =
 
     member x.CacheCollectionTests = dataTests :> IReadOnlyList<_>
 
-    member x.ScanPlugins() =
+    member x.ScanPlugins(pluginsDir : string) =
         if loaders.Count <> 0 || cacheCols.Count <> 0 then
             invalidOp "不能重复扫描"
-
-        let pluginsDir = Path.Combine(AppContext.BaseDirectory, "plugins")
 
         for dir in Directory.GetDirectories(pluginsDir) do
             let dirName = Path.GetFileName(dir)

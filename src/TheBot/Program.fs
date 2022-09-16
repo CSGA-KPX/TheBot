@@ -13,7 +13,7 @@ let logger = NLog.LogManager.GetLogger("KPX.TheBot.Program")
 [<EntryPoint>]
 let main argv =
     let discover = HostedModuleDiscover()
-    discover.ScanPlugins()
+    discover.ScanPlugins(IO.Path.Combine(AppContext.BaseDirectory, "plugins"))
     discover.ScanAssembly(Assembly.GetExecutingAssembly())
     discover.AddModule(KPX.TheBot.Module.DataCacheModule.DataCacheModule(discover))
 
