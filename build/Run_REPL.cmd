@@ -59,34 +59,34 @@ let discover =
 
     discover
 
-let ctx = 
-    let userId = 
+let ctx =
+    let userId =
         Environment.GetEnvironmentVariable("REPL_UserId")
         |> Option.ofObj<string>
         |> Option.map uint64
         |> Option.defaultValue 10000UL
         |> UserId
-        
-    let userName = 
+
+    let userName =
         Environment.GetEnvironmentVariable("REPL_UserName")
         |> Option.ofObj<string>
-        |> Option.defaultValue "²âÊÔ»ú"
-        
+        |> Option.defaultValue "æµ‹è¯•æœº"
+
     TestContext(discover, userId, userName)
 
 let logger = NLog.LogManager.GetLogger("REPL")
 
 while true do
     printf "Command> "
-    let text = Console.ReadLine()
-    let msg = ctx.InvokeCommand(text)
+
+    let msg = ctx.InvokeCommand(Console.In.ReadToEnd())
 
     for seg in msg do
         if seg.TypeName = "text" then
             Console.Out.Write(seg.Values.["text"])
         else
             Console.Out.Write($"[{seg.TypeName}]")
-            
+
     Console.WriteLine()
 
     let imgs = msg.GetSections<Message.Sections.ImageSection>()
