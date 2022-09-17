@@ -89,7 +89,7 @@ type ERRModule() =
 
                     // 更新中间产物
                     for info in proc.IntermediateProcess do
-                        
+
                         let intInv = MaterialInventory<_>(intInv)
                         let item = info.OriginProcess.Original.Product.Item
                         intProc.TryAdd(item, info.OriginProcess) |> ignore
@@ -123,19 +123,21 @@ type ERRModule() =
         // 产物也会出现在中间产物里，不再重复
         let intermediateTable =
             TextTable() {
-                AsCols [ Literal "名称"
-                         RLiteral "数量"
-                         RLiteral "流程"
-                         RLiteral(cfg.MaterialPriceMode.ToString())
-                         RLiteral "制造" ]
-
                 [ // intAcc含所有材料
                   // 和intManuPrice区交集
                   let mrs =
                       let intItems = intAcc.NonZeroItems |> Seq.map (fun x -> x.Item)
                       let manuItems = intManuPrice.NonZeroItems |> Seq.map (fun x -> x.Item)
                       let items = Set.intersect (Set.ofSeq intItems) (Set.ofSeq manuItems)
-                      intAcc |> Seq.filter (fun mr -> items.Contains(mr.Item))
+                      intAcc |> Seq.filter (fun mr -> items.Contains(mr.Item)) |> Seq.toArray
+
+                  // 不然会出空表
+                  if mrs.Length <> 0 then
+                      [ Literal "名称"
+                        RLiteral "数量"
+                        RLiteral "流程"
+                        RLiteral(cfg.MaterialPriceMode.ToString())
+                        RLiteral "制造" ]
 
                   for mr in mrs do
                       let sellPrice = mr.GetPrice(cfg.MaterialPriceMode)
