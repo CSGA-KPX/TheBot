@@ -162,66 +162,10 @@ type RecipeManager<'Item, 'Recipe when 'Item: equality and 'Recipe :> IRecipePro
           RelatedItems = items |> Seq.toArray }
 
     member x.TryGetMaterialsRec(mr: RecipeMaterial<'Item>, ?inv: MaterialInventory<'Item>, ?depthLimit: int) =
-        let depthLimit = defaultArg depthLimit System.Int32.MaxValue
-        let inv = defaultArg inv (MaterialInventory<'Item>(Seq.empty))
-        let acc = RecipeProcessBuilder<'Item>()
-        let intermediate = ResizeArray<IntermediateProcessInfo<'Item, 'Recipe>>()
-
-        let rec build (mrs: seq<RecipeMaterial<'Item>>) depth =
-            for mr in mrs do
-                if mr.Quantity < 0.0 then
-                    invalidArg $"{mr}" "参数错误：需要数量为负数"
-
-                let required =
-                    if depth = RecipeManager.DEPTH_PRODUCT then
-                        mr.Quantity
-                    else
-                        inv.Rent(mr)
-
-                if depth >= depthLimit then
-                    acc.Materials.Update(mr.Item, required)
-                else
-                    match x.TryGetRecipe(mr.Item) with
-                    | None ->
-                        if depth = RecipeManager.DEPTH_PRODUCT then
-                            invalidOp $"输入物品%A{mr.Item} 没有生产配方"
-
-                        acc.Materials.Update(mr.Item, required)
-                    | Some recipe ->
-                        let quantity = ByItems required
-
-                        intermediate.Add(
-                            { Quantity = quantity
-                              OriginProcess = recipe
-                              Depth = depth }
-                        )
-
-                        let proc = x.ApplyProcessQuantity(recipe, ByItems required, depth)
-
-                        if depth = RecipeManager.DEPTH_PRODUCT then
-                            for p in proc.Products do
-                                acc.Products.Update(p)
-
-                        build proc.Materials (depth + 1)
-
         let materials = x.TryGetMaterials(mr)
 
         if materials.IsSome then
-            build (Seq.singleton mr) RecipeManager.DEPTH_PRODUCT
-
-            let items = System.Collections.Generic.HashSet<'Item>()
-
-            for info in intermediate do
-                for material in info.OriginProcess.Materials do
-                    items.Add(material.Item) |> ignore
-
-                for product in info.OriginProcess.Products do
-                    items.Add(product.Item) |> ignore
-
-            Some
-                { FinalProcess = acc :> IRecipeProcess<'Item>
-                  IntermediateProcess = intermediate.ToArray()
-                  RelatedItems = items |> Seq.toArray }
+            Some(x.GetMaterialsRec(Seq.singleton mr, ?inv = inv, ?depthLimit = depthLimit))
         else
             None
 
