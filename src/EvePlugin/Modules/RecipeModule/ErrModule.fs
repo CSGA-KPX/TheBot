@@ -89,8 +89,6 @@ type ERRModule() =
 
                     // 更新中间产物
                     for info in proc.IntermediateProcess do
-
-                        let intInv = MaterialInventory<_>(intInv)
                         let item = info.OriginProcess.Original.Product.Item
                         intProc.TryAdd(item, info.OriginProcess) |> ignore
 
