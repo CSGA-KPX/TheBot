@@ -44,7 +44,10 @@ type ERRModule() =
         let useInv, inv =
             match idOpt.IsDefined with
             | false -> false, MaterialInventory<EveType>()
-            | true when ic.Contains(idOpt.Value) -> true, snd (ic.TryGet(idOpt.Value).Value)
+            | true when ic.Contains(idOpt.Value) ->
+                // 不修改已有材料
+                let invClone = MaterialInventory(snd (ic.TryGet(idOpt.Value).Value))
+                true, invClone
             | true -> cmdArg.Abort(InputError, "没有和id关联的材料表")
 
         let inputAcc = ItemAccumulator<EveType>()
@@ -62,7 +65,6 @@ type ERRModule() =
                 match er.Eval(cfg.GetNonOptionString()) with
                 | Number n -> cmdArg.Abort(InputError, "结算结果为数字: {0}", n)
                 | Accumulator a ->
-                    // BUG很大
                     // 需要全部求完以后再算
                     for mr in a.NegativeQuantityItems do
                         inv.Update(mr.Item, -mr.Quantity)
@@ -87,28 +89,14 @@ type ERRModule() =
 
                     // 更新中间产物
                     for info in proc.IntermediateProcess do
+                        
                         let intInv = MaterialInventory<_>(intInv)
                         let item = info.OriginProcess.Original.Product.Item
                         intProc.TryAdd(item, info.OriginProcess) |> ignore
 
                         let items = info.Quantity.ToItems(info.OriginProcess.Original)
                         let mr = RecipeMaterial<_>.Create (item, items)
-
-                        // 计算直接材料，会用到的
-                        let me =
-                            if info.Depth = RecipeManager.DEPTH_PRODUCT then
-                                cfg.InputMe
-                            else
-                                cfg.DerivationMe
-
-                        let proc =
-                            info
-                                .OriginProcess
-                                .Set(info.Quantity, me)
-                                .ApplyFlags(MeApplied ProcessRunRounding.RoundUp)
-
-                        for mr in proc.Materials do
-                            intAcc.Update(mr)
+                        intAcc.Update(mr)
 
                         // 因为每行配置可能不一行，只能单独计算再合并
                         // Rec模式下一次就会扣完的！
