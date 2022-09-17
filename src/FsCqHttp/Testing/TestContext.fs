@@ -82,7 +82,6 @@ type TestContext(md: ModuleDiscover, botUserId, botUserName, ?parent: CqWsContex
         x.InvokeCommand(msg)
 
     member x.InvokeCommand(msg: ReadOnlyMessage) =
-        logger.Info("正在测试 : {0}", msg.ToCqString())
         let msgEvent = x.MakeEvent(msg)
 
         let cmd = x.Modules.TryCommand(msgEvent)
@@ -93,9 +92,14 @@ type TestContext(md: ModuleDiscover, botUserId, botUserName, ?parent: CqWsContex
         let attr = cmd.Value.CommandAttribute
         let cmdArgs = CommandEventArgs(msgEvent, attr)
 
-        match cmd.Value.MethodAction with
-        | ManualAction action -> action.Invoke(cmdArgs)
-        | AutoAction func -> func.Invoke(cmdArgs).Response(cmdArgs)
+        try
+            match cmd.Value.MethodAction with
+            | ManualAction action -> action.Invoke(cmdArgs)
+            | AutoAction func -> func.Invoke(cmdArgs).Response(cmdArgs)
+        with
+        | e ->
+            logger.Info("测试错误 : {0}", msg.ToCqString())
+            reraise ()
 
         response
 
