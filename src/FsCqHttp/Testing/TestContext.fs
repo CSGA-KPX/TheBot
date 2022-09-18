@@ -101,7 +101,9 @@ type TestContext(md: ModuleDiscover, botUserId, botUserName, ?parent: CqWsContex
             logger.Info("测试错误 : {0}", msg.ToCqString())
             reraise ()
 
-        response.ToArray()
+        let arr = response.ToArray()
+        response.Clear()
+        arr
 
     member x.ShouldThrow(cmdLine: string) =
         let ret =
