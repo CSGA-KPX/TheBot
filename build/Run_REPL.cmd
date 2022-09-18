@@ -79,17 +79,20 @@ let logger = NLog.LogManager.GetLogger("REPL")
 while true do
     printf "Command> "
 
-    let msg = ctx.InvokeCommand(Console.In.ReadToEnd())
+    let imgs = ResizeArray<Message.Sections.ImageSection>()
 
-    for seg in msg do
-        if seg.TypeName = "text" then
-            Console.Out.Write(seg.Values.["text"])
-        else
-            Console.Out.Write($"[{seg.TypeName}]")
+    for msg in ctx.InvokeCommand(Console.In.ReadToEnd()) do
+        imgs.AddRange(msg.GetSections<Message.Sections.ImageSection>())
 
-    Console.WriteLine()
+        for seg in msg do
+            Console.Out.Write("msg>>")
 
-    let imgs = msg.GetSections<Message.Sections.ImageSection>()
+            if seg.TypeName = "text" then
+                Console.Out.Write(seg.Values.["text"])
+            else
+                Console.Out.Write($"[{seg.TypeName}]")
+                
+            Console.WriteLine()
 
     for img in imgs do
         if img.File.StartsWith("base64") then

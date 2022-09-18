@@ -48,7 +48,7 @@ type TestContext(md: ModuleDiscover, botUserId, botUserName, ?parent: CqWsContex
 
     let apiResponse = Dictionary<string, obj>()
 
-    let mutable response: ReadOnlyMessage = Message()
+    let response = Collections.Concurrent.ConcurrentQueue<ReadOnlyMessage>()
 
     let mutable localRestart = None
 
@@ -101,7 +101,7 @@ type TestContext(md: ModuleDiscover, botUserId, botUserName, ?parent: CqWsContex
             logger.Info("测试错误 : {0}", msg.ToCqString())
             reraise ()
 
-        response
+        response.ToArray()
 
     member x.ShouldThrow(cmdLine: string) =
         let ret =
@@ -127,7 +127,7 @@ type TestContext(md: ModuleDiscover, botUserId, botUserName, ?parent: CqWsContex
             with
             | _ -> reraise ()
 
-        ret.Count <> 0
+        ret.Length <> 0
 
     member x.ReturnContains (cmdLine: string) (value: string) =
         let ret =
@@ -207,7 +207,7 @@ type TestContext(md: ModuleDiscover, botUserId, botUserName, ?parent: CqWsContex
         match req :> ApiBase with
         | :? System.QuickOperation as q ->
             match q.Reply with
-            | EventResponse.PrivateMessageResponse msg -> response <- msg
+            | PrivateMessageResponse msg -> response.Enqueue(msg)
             | _ -> invalidOp "不能处理私聊以外回复"
 
             req.IsExecuted <- true
