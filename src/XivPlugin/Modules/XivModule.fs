@@ -184,10 +184,10 @@ type MiscModule() =
         use hc = new Net.Http.HttpClient(handler)
 
         hc.DefaultRequestHeaders.UserAgent.ParseAdd(
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:78.0) Gecko/20100101 Firefox/78.0"
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:104.0) Gecko/20100101 Firefox/104.0"
         )
 
-        hc.DefaultRequestHeaders.Referrer <- Uri("https://space.bilibili.com/15503317/channel/detail?cid=55877")
+        hc.DefaultRequestHeaders.Referrer <- Uri("https://www.bilibili.com/video/BV1LV4y1j7xn/")
 
         let json =
             hc
