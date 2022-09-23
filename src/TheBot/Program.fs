@@ -18,10 +18,10 @@ let main argv =
     discover.AddModule(KPX.TheBot.Module.DataCacheModule.DataCacheModule(discover))
 
     let cfg = FsCqHttpConfigParser()
-
     let cfgFile = DataAgent.GetPersistFile("thebot.txt")
 
     let runTest = cfg.RegisterOption("runCmdTest")
+    let repl = cfg.RegisterOption("REPL")
 
     if argv.Length <> 0 then
         cfg.Parse(argv)
@@ -32,8 +32,6 @@ let main argv =
 
     for arg in cfg.DumpDefinedOptions() do
         logger.Info("启动参数：{0}", arg)
-
-    
 
     if runTest.IsDefined then
         try
@@ -50,21 +48,28 @@ let main argv =
             logger.Fatal(e)
             1
     else
-        cfg.Start(ContextModuleLoader(discover.AllDefinedModules))
+        if not repl.IsDefined then
+            cfg.Start(ContextModuleLoader(discover.AllDefinedModules))
 
-        use mtx = new Threading.ManualResetEvent(false)
-        AppDomain.CurrentDomain.ProcessExit.Add(fun _ -> mtx.Set() |> ignore)
+        let ctx = Testing.TestContext(discover, UserId UInt64.MaxValue, "REPL")
 
-        mtx.WaitOne() |> ignore
+        while true do
+            printf "Command> "
+            let cmd = Console.In.ReadToEnd()
 
-        logger.Info("TheBot已结束。正在关闭WS连接")
+            if not <| String.IsNullOrWhiteSpace(cmd) then
+                try
+                    for msg in ctx.InvokeCommand(cmd) do
+                        for seg in msg do
+                            Console.Out.Write("msg>>\r\n")
 
-        for ws in CqWsContextPool.Instance do
-            if ws.IsOnline then
-                logger.Info $"向%s{ws.BotIdString}发送停止信号"
-                ws.Stop()
-            else
-                logger.Error $"%s{ws.BotIdString}已经停止"
+                            if seg.TypeName = "text" then
+                                Console.Out.Write(seg.Values.["text"])
+                            else
+                                Console.Out.Write($"[{seg.TypeName}]")
 
-        Console.ReadLine() |> ignore
+                            Console.WriteLine()
+                with
+                | e -> printfn $"{e.ToString()}"
+
         0

@@ -156,7 +156,7 @@ type TestContext(md: ModuleDiscover, botUserId, botUserName, ?parent: CqWsContex
         raw.["sender"].["user_id"] <- uid
 
         // 更新消息Id
-        raw.["message_id"] <- uid
+        raw.["message_id"] <- (Random.Shared.Next())
 
         // 更新消息内容
         raw.["message"] <- JToken.FromObject(msg) :?> JArray

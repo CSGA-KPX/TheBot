@@ -91,7 +91,6 @@
     <Compile Include="Instance\ContextApi.fs" />
     <Compile Include="Instance\ActiveWebsocket.fs" />
     <Compile Include="Instance\ReverseWebSocket.fs" />
-    <Compile Include="Testing\DummyReverseClient.fs" />
     <Compile Include="Testing\TestContext.fs" />
     <Compile Include="Modules\HelpModule.fs" />
     <Compile Include="FsCqHttpConfigParser.fs" />
