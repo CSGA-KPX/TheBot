@@ -1,9 +1,10 @@
-﻿namespace rec KPX.FsCqHttp.Utils.UserOption
+namespace rec KPX.FsCqHttp.Utils.UserOption
 
 open System
 open System.Collections.Generic
 open System.Collections.Concurrent
 
+open KPX.FsCqHttp.Handler
 open KPX.FsCqHttp.Utils.TextResponse
 
 
@@ -45,24 +46,21 @@ type OptionCell<'T>(cb: OptionBase, key: string, defValue: 'T) =
     member private x.ValueSequence =
         // 首先从K:V里读值
         x.TryGetRealKey()
-        |> Option.map
-            (fun kn ->
-                cb.GetDefined(kn)
-                |> Seq.map
-                    (fun item ->
-                        if String.IsNullOrWhiteSpace(item) then
-                            x.Default
-                        else
-                            x.ConvertValue(item)))
+        |> Option.map (fun kn ->
+            cb.GetDefined(kn)
+            |> Seq.map (fun item ->
+                if String.IsNullOrWhiteSpace(item) then
+                    x.Default
+                else
+                    x.ConvertValue(item)))
         // 如果K:V不存在，尝试从ArgIndex读值
         // 如果还是不行，返回默认值
-        |> Option.defaultWith
-            (fun () ->
-                x.ArgIndex
-                |> Option.map (fun idx -> cb.TryIndexed(idx) |> Option.map x.ConvertValue)
-                |> Option.flatten
-                |> Option.defaultValue x.Default
-                |> Seq.singleton)
+        |> Option.defaultWith (fun () ->
+            x.ArgIndex
+            |> Option.map (fun idx -> cb.TryIndexed(idx) |> Option.map x.ConvertValue)
+            |> Option.flatten
+            |> Option.defaultValue x.Default
+            |> Seq.singleton)
 
     /// 获取第一个设定值，如果没有则返回默认值
     member x.Value = x.ValueSequence |> Seq.head
@@ -77,7 +75,6 @@ type OptionCellSimple<'T when 'T :> IConvertible>(cb: OptionBase, key: string, d
         Convert.ChangeType(value, typeof<'T>) :?> 'T
 
 [<RequireQualifiedAccess>]
-/// 设置OptionImpl未定义选项标记的行为
 type UndefinedOptionHandling =
     /// 抛出InvalidArg异常
     | Raise
@@ -139,6 +136,9 @@ type OptionBase() =
     /// 解析前的前处理操作
     abstract PreParse: seq<string> -> seq<string>
     default x.PreParse(args) = args
+
+    member x.Parse(str: string) =
+        CommandEventArgs.SplitArguments(str) |> x.Parse
 
     member x.Parse(input: seq<string>) =
         data.Clear()

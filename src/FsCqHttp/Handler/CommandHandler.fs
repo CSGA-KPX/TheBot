@@ -35,9 +35,6 @@ type CommandHandlerMethodAttribute(command: string, desc, lh) =
 type CommandEventArgs internal (args: CqMessageEventArgs, attr: CommandHandlerMethodAttribute) =
     inherit CqMessageEventArgs(args.ApiCaller, args.RawEvent, args.Event)
 
-    let splitString (str: string) =
-        str.Split([| ' '; Config.FullWidthSpace |], StringSplitOptions.RemoveEmptyEntries)
-
     let lines =
         [| let rawMsg = args.Event.Message.ToString()
            use sr = new IO.StringReader(rawMsg)
@@ -68,13 +65,13 @@ type CommandEventArgs internal (args: CqMessageEventArgs, attr: CommandHandlerMe
     member x.AllLines = lines
 
     /// 第一行按参数拆分
-    member x.HeaderArgs = x.HeaderLine |> splitString
+    member x.HeaderArgs = x.HeaderLine |> CommandEventArgs.SplitArguments
 
     /// 后续行按参数拆分
-    member x.BodyArgs = x.BodyLines |> Seq.map splitString
+    member x.BodyArgs = x.BodyLines |> Seq.map CommandEventArgs.SplitArguments
 
     /// 所有行按参数拆分
-    member x.AllArgs = lines |> Seq.map splitString
+    member x.AllArgs = lines |> Seq.map CommandEventArgs.SplitArguments
 
     /// 原始消息对象
     member x.MessageEvent = args.Event
@@ -92,6 +89,9 @@ type CommandEventArgs internal (args: CqMessageEventArgs, attr: CommandHandlerMe
             str
         else
             str.[0..idx - 1]
+
+    static member SplitArguments(str : string) =
+        str.Split([| ' '; Config.FullWidthSpace |], StringSplitOptions.RemoveEmptyEntries)
 
 type ICommandResponse =
     abstract Response: CqMessageEventArgs -> unit
