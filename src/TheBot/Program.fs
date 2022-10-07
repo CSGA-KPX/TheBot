@@ -53,23 +53,33 @@ let main argv =
 
         let ctx = Testing.TestContext(discover, UserId UInt64.MaxValue, "REPL")
 
+        let cmdQueue = ResizeArray<string>()
+
         while true do
-            printf "Command> "
-            let cmd = Console.In.ReadToEnd()
+            if cmdQueue.Count = 0 then
+                printf "Command> "
 
-            if not <| String.IsNullOrWhiteSpace(cmd) then
-                try
-                    for msg in ctx.InvokeCommand(cmd) do
-                        for seg in msg do
-                            Console.Out.Write("msg>>\r\n")
+            let line = Console.In.ReadLine()
 
-                            if seg.TypeName = "text" then
-                                Console.Out.Write(seg.Values.["text"])
-                            else
-                                Console.Out.Write($"[{seg.TypeName}]")
+            if String.IsNullOrWhiteSpace(line) then
+                let cmd = String.Join("\r\n", cmdQueue)
+                cmdQueue.Clear()
 
-                            Console.WriteLine()
-                with
-                | e -> printfn $"{e.ToString()}"
+                if not <| String.IsNullOrWhiteSpace(cmd) then
+                    try
+                        for msg in ctx.InvokeCommand(cmd) do
+                            for seg in msg do
+                                Console.Out.Write("msg>>")
+
+                                if seg.TypeName = "text" then
+                                    Console.Out.Write(seg.Values.["text"])
+                                else
+                                    Console.Out.Write($"[{seg.TypeName}]")
+
+                                Console.WriteLine()
+                    with
+                    | e -> printfn $"{e.ToString()}"
+            else
+                cmdQueue.Add(line)
 
         0

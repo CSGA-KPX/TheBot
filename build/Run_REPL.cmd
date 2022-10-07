@@ -75,35 +75,48 @@ let ctx =
     TestContext(discover, userId, userName)
 
 let logger = NLog.LogManager.GetLogger("REPL")
+let cmdQueue = ResizeArray<string>()
 
 while true do
-    printf "Command> "
+    if cmdQueue.Count = 0 then
+        printf "Command> "
 
+    let line = Console.In.ReadLine()
     let imgs = ResizeArray<Message.Sections.ImageSection>()
 
-    for msg in ctx.InvokeCommand(Console.In.ReadToEnd()) do
-        imgs.AddRange(msg.GetSections<Message.Sections.ImageSection>())
+    if String.IsNullOrWhiteSpace(line) then
+        let cmd = String.Join("\r\n", cmdQueue)
+        cmdQueue.Clear()
 
-        for seg in msg do
-            Console.Out.Write("msg>>")
+        if not <| String.IsNullOrWhiteSpace(cmd) then
+            try
+                for msg in ctx.InvokeCommand(cmd) do
+                    imgs.AddRange(msg.GetSections<Message.Sections.ImageSection>())
 
-            if seg.TypeName = "text" then
-                Console.Out.Write(seg.Values.["text"])
-            else
-                Console.Out.Write($"[{seg.TypeName}]")
-                
-            Console.WriteLine()
+                    for seg in msg do
+                        Console.Out.WriteLine("msg>>")
 
-    for img in imgs do
-        if img.File.StartsWith("base64") then
-            let bin = Convert.FromBase64String(img.File.[img.File.IndexOf("//") + 2 ..])
-            let tmp = Path.GetTempFileName()
-            File.WriteAllBytes(tmp, bin)
+                        if seg.TypeName = "text" then
+                            Console.Out.Write(seg.Values.["text"])
+                        else
+                            Console.Out.Write($"[{seg.TypeName}]")
 
-            let psi = ProcessStartInfo("snipaste")
-            psi.ArgumentList.Add("paste")
-            psi.ArgumentList.Add("--files")
-            psi.ArgumentList.Add(tmp)
-            Process.Start(psi) |> ignore
-        else
-            logger.Fatal($"Invalid image:{img.File}")
+                        Console.WriteLine()
+
+                for img in imgs do
+                    if img.File.StartsWith("base64") then
+                        let bin = Convert.FromBase64String(img.File.[img.File.IndexOf("//") + 2 ..])
+                        let tmp = Path.GetTempFileName()
+                        File.WriteAllBytes(tmp, bin)
+
+                        let psi = ProcessStartInfo("snipaste")
+                        psi.ArgumentList.Add("paste")
+                        psi.ArgumentList.Add("--files")
+                        psi.ArgumentList.Add(tmp)
+                        Process.Start(psi) |> ignore
+                    else
+                        logger.Fatal($"Invalid image:{img.File}")
+            with
+            | e -> printfn $"{e.ToString()}"
+    else
+        cmdQueue.Add(line)
