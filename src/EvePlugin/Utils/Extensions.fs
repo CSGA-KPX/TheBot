@@ -111,3 +111,35 @@ type EveProcess with
                 .Materials.GetPrice(PriceFetchMode.AdjustedPrice)
             * (pct cfg.SystemCostIndex)
             * (100 + cfg.StructureTax |> pct)
+
+[<Extension>]
+type RecRecipeExtensions =
+    [<Extension>]
+    static member inline GetInstallationCost(proc: MaterialsRecContext<EveType, EveProcess>, cfg: EveConfigParser) =
+        let baseProc = proc.IntermediateProcess |> Array.minBy (fun i -> i.IsProduct)
+
+        if baseProc.OriginProcess.Type = ProcessType.Planet then
+            // 构造一个临时配方去计算费用
+            { Original =
+                { Materials = proc.FinalProcess.Materials |> Seq.toArray
+                  Product = proc.FinalProcess.Products |> Seq.head }
+              TargetQuantity = ByRuns 1.0
+              TargetMe = 0
+              Type = ProcessType.Planet }
+                .GetInstallationCost(cfg)
+        else
+            proc.IntermediateProcess
+            |> Array.fold
+                (fun acc info ->
+                    acc
+                    + info
+                        .OriginProcess
+                        .SetQuantity(info.Quantity)
+                        .GetInstallationCost(cfg))
+                0.0
+
+    [<Extension>]
+    static member inline GetTotalCost(proc: MaterialsRecContext<EveType, EveProcess>, cfg: EveConfigParser) =
+        let materialCost = proc.FinalProcess.Materials.GetPrice(cfg.MaterialPriceMode)
+        let installCost = proc.GetInstallationCost(cfg)
+        materialCost + installCost

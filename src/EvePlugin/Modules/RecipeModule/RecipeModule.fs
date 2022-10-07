@@ -5,6 +5,7 @@ open KPX.FsCqHttp.Testing
 open KPX.FsCqHttp.Utils.TextResponse
 open KPX.FsCqHttp.Utils.UserOption
 
+open KPX.TheBot.Host.Utils.HandlerUtils
 open KPX.TheBot.Host.DataModel.Recipe
 
 open KPX.EvePlugin.Data.Utils
@@ -139,35 +140,8 @@ type EveRecipeModule() =
             |> Seq.map (fun ps ->
                 let product = ps.Original.Product
                 let proc = epm.TryGetMaterialsRec(product).Value
-
-                // 所有基础材料的报价
-                let materialCost = proc.FinalProcess.Materials.GetPrice(cfg.MaterialPriceMode)
-
-                let installCost =
-                    if ps.Type = ProcessType.Planet then
-                        // 构造一个临时配方去计算费用
-                        { Original =
-                            { Materials = proc.FinalProcess.Materials |> Seq.toArray
-                              Product = proc.FinalProcess.Products |> Seq.head }
-                          TargetQuantity = ByRuns 1.0
-                          TargetMe = 0
-                          Type = ProcessType.Planet }
-                            .GetInstallationCost(cfg)
-                    else
-                        proc.IntermediateProcess
-                        |> Array.fold
-                            (fun acc info ->
-                                acc
-                                + info
-                                    .OriginProcess
-                                    .SetQuantity(info.Quantity)
-                                    .GetInstallationCost(cfg))
-                            0.0
-
-                let cost = materialCost + installCost
-
+                let cost = proc.GetTotalCost(cfg)
                 let sellWithTax = proc.FinalProcess.Products.GetPrice(PriceFetchMode.SellWithTax)
-
                 let volume = data.GetItemTradeVolume(product.Item)
 
                 let sortIdx =
@@ -200,6 +174,87 @@ type EveRecipeModule() =
                             HumanSig4 x.SortIndex ] ]
                 }
                 |> ignore)
+
+    [<CommandHandlerMethod("#EVE蓝图", "蓝图制造总览（暂未开放）", "可选参数见#evehelp。", IsHidden = true)>]
+    member x.HandleBlueprintOverview(cmdArg: CommandEventArgs) =
+        cmdArg.EnsureSenderOwner()
+
+        let cfg = EveConfigParser()
+        cfg.Parse(cmdArg.HeaderLine)
+
+        use ret = cmdArg.OpenResponse(ResponseType.ForceImage)
+        ret.WriteLine(ToolWarning)
+        ret.WriteLine(sprintf "默认效率：%i%% 成本指数：%i%% 设施税率%i%%" cfg.DerivationMe cfg.SystemCostIndex cfg.StructureTax)
+        ret.WriteLine $"展开行星材料：%b{cfg.ExpandPlanet} 展开反应公式：%b{cfg.ExpandReaction}"
+
+        ret.Table {
+            AsCols [ Literal "方案"
+                     RLiteral "ime"
+                     RLiteral("生产成本/" + cfg.MaterialPriceMode.ToString())
+                     RLiteral "含税利润"
+                     RLiteral "交易量"
+                     RLiteral "日均利润" ]
+        }
+        |> ignore
+
+        let data =
+            let acc = ItemAccumulator<EveType * int>()
+
+            for line in cmdArg.AllLines do
+                let t = line.Split('\t')
+
+                if t.Length > 4 then
+                    let item = t.[0] |> EveTypeCollection.Instance.GetByName
+                    let ime = t.[1] |> int
+                    //let te = t.[2]
+
+                    let key = item, ime
+                    let runs = t.[3] |> float
+                    acc.Update(key, runs)
+
+            acc
+
+        let result =
+            [ for t in data do
+                  let (item, ime) = t.Item
+                  //let runs = t.Quantity
+                  let cfg = EveConfigParser()
+                  cfg.SetDefaultInputMe(ime)
+                  cfg.Parse(System.String.Empty)
+
+                  let epm = EveProcessManager(cfg)
+
+                  let mr =
+                      let proc = epm.GetRecipe(item)
+                      proc.Original.Product
+
+                  let proc = epm.TryGetMaterialsRec(mr).Value
+                  let cost = proc.GetTotalCost(cfg)
+                  let sell = proc.FinalProcess.Products.GetPrice(PriceFetchMode.SellWithTax)
+                  let profit = sell - cost
+                  let volume = mr.Item.GetTradeVolume()
+
+                  yield
+                      {| Name = item.Name
+                         IMe = ime
+                         QuantityPerRun = mr.Quantity
+                         Quantity = t.Quantity * mr.Quantity
+                         Volume = volume
+                         Sell = sell
+                         Cost = cost
+                         Profit = profit |} ]
+            |> List.sortByDescending (fun x -> x.Volume * x.Profit / x.QuantityPerRun)
+
+        ret.Table {
+            [ for r in result do
+                  [ Literal r.Name
+                    RLiteral r.IMe
+                    HumanSig4 r.Cost
+                    HumanSig4 r.Profit
+                    HumanSig4I r.Volume
+                    HumanSig4(r.Volume * r.Profit / r.QuantityPerRun) ] ]
+        }
+        |> ignore
 
     [<TestFixture>]
     member x.TestManufacturingOverview() =
