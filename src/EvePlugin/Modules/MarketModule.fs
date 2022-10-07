@@ -33,10 +33,12 @@ type EveMarketModule() =
                            "可以使用表达式，多个物品需要用+连接。
 #em 帝国海军散热槽*5+帝国海军多频晶体 L*1000")>]
     member x.HandleEveMarket(cmdArg: CommandEventArgs) =
+        let mutable sumItemPrices = true
         let mutable argOverride = None
 
         if cmdArg.CommandName = "#eve矿物" then
             argOverride <- Some(MineralNames.Replace(',', '+'))
+            sumItemPrices <- false
 
         let t =
             let str =
@@ -55,8 +57,7 @@ type EveMarketModule() =
                 att.AddObject(mr.Item, mr.Quantity)
         | _ -> cmdArg.Abort(InputError, $"求值失败，结果是%A{t}")
 
-        let cfg = EveConfigParser()
-        cfg.Parse(cmdArg.HeaderArgs)
+        if sumItemPrices then att.EmitTotalRow()
 
         att.Table
 

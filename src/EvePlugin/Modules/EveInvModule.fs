@@ -45,10 +45,14 @@ type EveInvModule() =
         let acc = defaultArg acc (ItemAccumulator<EveType>())
 
         for line in cmdArg.BodyLines do
-            match line.Split("	", 2, StringSplitOptions.RemoveEmptyEntries) with
-            | [||] -> () // 忽略空行
-            | [| name |] -> acc.Update(EveTypeCollection.Instance.GetByName(name), 1.0)
-            | [| name; q |] ->
+            let cols = line.Split("\t", StringSplitOptions.RemoveEmptyEntries)
+
+            match cols.Length with
+            | 0 -> ()
+            | 1 -> acc.Update(EveTypeCollection.Instance.GetByName(cols.[0]), 1.0)
+            | _ ->
+                let name = cols.[0]
+                let q = cols.[1]
                 let succ, quantity = Int32.TryParse(q, ns, ic)
 
                 if not succ then
@@ -57,7 +61,6 @@ type EveInvModule() =
                 let item = EveTypeCollection.Instance.GetByName(name)
 
                 acc.Update(item, quantity |> float)
-            | _ -> cmdArg.Abort(InputError, "格式非法，应为'道具名	数量'")
 
         acc
 

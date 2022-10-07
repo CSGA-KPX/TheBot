@@ -66,3 +66,16 @@ type EveMarketPriceTable() =
         |> ignore
 
     member x.AddObject(m: RecipeMaterial<EveType>) = x.AddObject(m.Item, m.Quantity)
+
+    member x.EmitTotalRow() =
+        tt {
+            AsCols [ Literal "总计"
+                     RLiteral "--"
+                     HumanSig4 x.TotalSellPrice
+                     RLiteral "--"
+                     HumanSig4 x.TotalBuyPrice
+                     RLiteral "--"
+                     RLiteral "--"
+                     RLiteral "--" ]
+        }
+        |> ignore
