@@ -31,12 +31,9 @@ type DataBundle private () =
     member x.GetNpcCorporation(name: string) = npcCorpNames.GetByName(name)
 
     member x.GetItemTradeVolume(t: EveType) =
-        let data = volumeCache.GetItem(t.Id).History
-
-        if data.Length <> 0 then
-            data |> Array.averageBy (fun x -> x.Volume |> float)
-        else
-            0.0
+        volumeCache
+            .GetItem(t.Id)
+            .CalculateRealTradeVolume()
 
     member x.GetLpStoreOffersByCorp(c: NpcCorporation) = lpStoreCache.GetItem(c.Id).Offers
 

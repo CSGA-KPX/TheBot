@@ -26,6 +26,18 @@ type MarketTradeHistory =
       History: MarketHistoryRecord []
       Updated: DateTimeOffset }
 
+    // 因为ESI只返回有交易记录的数据
+    // 所以需要人工把没有交易记录的日子补上
+    member x.CalculateRealTradeVolume() =
+        if x.History.Length = 0 then
+            0.0
+        else
+            let earliest = x.History |> Array.minBy (fun x -> x.Date)
+            let daysElapsed = floor (DateTimeOffset.Now - earliest.Date).TotalDays
+            let volume = x.History |> Array.sumBy (fun x -> x.Volume) |> float
+
+            volume / daysElapsed
+
 type MarketTradeHistoryCollection private () =
     inherit CachedItemCollection<int, MarketTradeHistory>()
 
