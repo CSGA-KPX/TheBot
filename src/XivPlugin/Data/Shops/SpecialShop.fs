@@ -160,7 +160,7 @@ type SpecialShopCollection private () =
                                     | 8 -> ()
                                     // 神典石
                                     | 4 -> cItem <- tomestones.[cItem]
-                                    | _ -> invalidArg "UseCurrencyType" "非法值"
+                                    | v -> invalidArg "UseCurrencyType" $"非法值{v}"
 
                                 cItem
 

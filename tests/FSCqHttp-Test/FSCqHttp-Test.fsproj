@@ -12,7 +12,7 @@
     <PackageReference Include="altcover" Version="8.2.821" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.9.1" />
     <PackageReference Include="YoloDev.Expecto.TestSdk" Version="0.11.1" />
-    <PackageReference Update="FSharp.Core" Version="6.0.1" />
+    <PackageReference Update="FSharp.Core" Version="7.0.0" />
   </ItemGroup>
 
   <ItemGroup>
