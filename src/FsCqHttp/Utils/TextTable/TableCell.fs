@@ -71,81 +71,81 @@ type TableCell =
     member x.Zero() = x
 
     [<CustomOperation("leftAlign")>]
-    member x.LeftAlign(_: TableCell) =
+    member inline x.LeftAlign(_: TableCell) =
         x.Align <- TextAlignment.Left
         x
 
     [<CustomOperation("rightAlign")>]
-    member x.RightAlign(_: TableCell) =
+    member inline x.RightAlign(_: TableCell) =
         x.Align <- TextAlignment.Right
         x
 
     [<CustomOperation("bold")>]
-    member x.SetBold(_: TableCell) =
+    member inline x.SetBold(_: TableCell) =
         x.Bold <- true
         x
 
     [<CustomOperation("hide")>]
-    member x.Hide(_: TableCell) =
+    member inline x.Hide(_: TableCell) =
         x.RenderMode <- RenderMode.IgnoreIfImage
         x
 
     [<CustomOperation("leftAlignIf")>]
-    member x.LeftAlign(_: TableCell, cond: bool) =
+    member inline x.LeftAlign(_: TableCell, cond: bool) =
         if cond then
             x.Align <- TextAlignment.Left
 
         x
 
     [<CustomOperation("rightAlignIf")>]
-    member x.RightAlign(_: TableCell, cond: bool) =
+    member inline x.RightAlign(_: TableCell, cond: bool) =
         if cond then
             x.Align <- TextAlignment.Right
 
         x
 
     [<CustomOperation("boldIf")>]
-    member x.SetBold(_: TableCell, cond: bool) =
+    member inline x.SetBold(_: TableCell, cond: bool) =
         if cond then x.Bold <- true
         x
 
     [<CustomOperation("hideIf")>]
-    member x.Hide(_: TableCell, cond: bool) =
+    member inline x.Hide(_: TableCell, cond: bool) =
         if cond then
             x.RenderMode <- RenderMode.IgnoreIfImage
 
         x
 
     [<CustomOperation("textWhite")>]
-    member x.SetTextWhite(_: TableCell) =
+    member inline x.SetTextWhite(_: TableCell) =
         x.TextColor <- SKColors.White
         x
 
     [<CustomOperation("textBlack")>]
-    member x.SetTextBlack(_: TableCell) =
+    member inline x.SetTextBlack(_: TableCell) =
         x.TextColor <- SKColors.Black
         x
 
     [<CustomOperation("textRed")>]
-    member x.SetTextRed(_: TableCell) =
+    member inline x.SetTextRed(_: TableCell) =
         x.TextColor <- SKColors.Red
         x
 
     [<CustomOperation("textWhiteIf")>]
-    member x.SetTextWhite(_: TableCell, cond: bool) =
+    member inline x.SetTextWhite(_: TableCell, cond: bool) =
         if cond then
             x.TextColor <- SKColors.White
 
         x
 
     [<CustomOperation("textBlackIf")>]
-    member x.SetTextBlack(_: TableCell, cond: bool) =
+    member inline x.SetTextBlack(_: TableCell, cond: bool) =
         if cond then
             x.TextColor <- SKColors.Black
 
         x
 
     [<CustomOperation("textRedIf")>]
-    member x.SetTextRed(_: TableCell, cond: bool) =
+    member inline x.SetTextRed(_: TableCell, cond: bool) =
         if cond then x.TextColor <- SKColors.Red
         x

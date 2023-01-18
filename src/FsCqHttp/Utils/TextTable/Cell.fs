@@ -48,77 +48,77 @@ module private CellBuildImpl =
 type CellUtils private () =
 
     /// 使用ToString()的字符串表示
-    static member Literal(item: int32) = TableCell(item.ToString())
+    static member inline Literal(item: int32) = TableCell(item.ToString())
 
     /// 使用ToString()的字符串表示
-    static member Literal(item: uint32) = TableCell(item.ToString())
+    static member inline Literal(item: uint32) = TableCell(item.ToString())
 
     /// 使用ToString()的字符串表示
-    static member Literal(item: int64) = TableCell(item.ToString())
+    static member inline Literal(item: int64) = TableCell(item.ToString())
 
     /// 使用ToString()的字符串表示
-    static member Literal(item: uint64) = TableCell(item.ToString())
+    static member inline Literal(item: uint64) = TableCell(item.ToString())
 
     /// 使用ToString()的字符串表示
-    static member Literal(item: float) = TableCell(item.ToString())
+    static member inline Literal(item: float) = TableCell(item.ToString())
 
-    static member Literal(str: string) = TableCell(str)
+    static member inline Literal(str: string) = TableCell(str)
 
     /// 使用ToString()的字符串表示
-    static member RLiteral(item: int32) =
+    static member inline RLiteral(item: int32) =
         TableCell(item.ToString(), Align = TextAlignment.Right)
 
     /// 使用ToString()的字符串表示
-    static member RLiteral(item: uint32) =
+    static member inline RLiteral(item: uint32) =
         TableCell(item.ToString(), Align = TextAlignment.Right)
 
     /// 使用ToString()的字符串表示
-    static member RLiteral(item: int64) =
+    static member inline RLiteral(item: int64) =
         TableCell(item.ToString(), Align = TextAlignment.Right)
 
     /// 使用ToString()的字符串表示
-    static member RLiteral(item: uint64) =
+    static member inline RLiteral(item: uint64) =
         TableCell(item.ToString(), Align = TextAlignment.Right)
 
     /// 使用ToString()的字符串表示
-    static member RLiteral(item: float) =
+    static member inline RLiteral(item: float) =
         TableCell(item.ToString(), Align = TextAlignment.Right)
 
-    static member RLiteral(str: string) =
+    static member inline RLiteral(str: string) =
         TableCell(str, Align = TextAlignment.Right)
 
     /// 右对齐，千分位
-    static member Integer(value: int32) =
+    static member inline Integer(value: int32) =
         TableCell(String.Format("{0:N0}", value), Align = TextAlignment.Right)
 
     /// 右对齐，千分位
-    static member Integer(value: int64) =
+    static member inline Integer(value: int64) =
         TableCell(String.Format("{0:N0}", value), Align = TextAlignment.Right)
 
     /// 右对齐，千分位
-    static member Integer(value: float) =
+    static member inline Integer(value: float) =
         TableCell(String.Format("{0:N0}", value), Align = TextAlignment.Right)
 
     /// 右对齐，千分位，2位小数
-    static member Float(value: int32) =
+    static member inline Float(value: int32) =
         TableCell(String.Format("{0:N2}", value), Align = TextAlignment.Right)
 
     /// 右对齐，千分位，2位小数
-    static member Float(value: int64) =
+    static member inline Float(value: int64) =
         TableCell(String.Format("{0:N2}", value), Align = TextAlignment.Right)
 
     /// 右对齐，千分位，2位小数
-    static member Float(value: float) =
+    static member inline Float(value: float) =
         TableCell(String.Format("{0:N2}", value), Align = TextAlignment.Right)
 
     /// 右对齐，千分位，不为零则保留2位小数
-    static member Number(value: float) = CellBuildImpl.numberImpl value
+    static member inline Number(value: float) = CellBuildImpl.numberImpl value
 
     /// 右对齐，千分位，不为零则保留2位小数
-    static member Number(value: int32) = CellBuildImpl.numberImpl value
+    static member inline Number(value: int32) = CellBuildImpl.numberImpl value
 
     /// 右对齐，千分位，不为零则保留2位小数
-    static member Number(value: int64) = CellBuildImpl.numberImpl value
+    static member inline Number(value: int64) = CellBuildImpl.numberImpl value
 
     /// 右对齐，千分位，保留4位有效数字，不为零则保留2位小数
     static member Sig4(value: float) =
@@ -151,7 +151,7 @@ type CellUtils private () =
     static member HumanSig4I(value: int64) = CellBuildImpl.humanReadbleImpl (value) (true)
 
     /// 2位小数百分比
-    static member Percent(value: float) =
+    static member inline Percent(value: float) =
         TableCell(String.Format("{0:P2}", value), Align = TextAlignment.Right)
 
     /// 转换为时间跨度，无效值记为"--"
@@ -171,7 +171,7 @@ type CellUtils private () =
         TableCell(TableCellHelper.FormatTimeSpan(value), Align = TextAlignment.Right)
 
     /// 转换为日期格式yyyy/MM/dd HH:mm
-    static member DateTime(value: DateTimeOffset) =
+    static member inline DateTime(value: DateTimeOffset) =
         TableCell(value.ToLocalTime().ToString("yyyy/MM/dd HH:mm"), Align = TextAlignment.Right)
 
     /// 隐蔽右对齐单元格。在图片中透明，在文本中为空格
@@ -182,18 +182,18 @@ type CellUtils private () =
     static member LeftPad = TableCell(String.Empty, RenderMode = RenderMode.IgnoreIfImage, Align = TextAlignment.Left)
 
     /// 拆分多行文本，默认格式
-    static member SplitTextRows(str: string) =
+    static member inline SplitTextRows(str: string) =
         [ for line in str.Split([| "\r\n"; "\r"; "\n" |], StringSplitOptions.None) do
               TableItem.Line(TableCell(line)) ]
 
     /// 将seq<TableCell>视为多行单列
-    static member AsRows(items: seq<TableCell>) = items |> Seq.map TableItem.Line
+    static member inline AsRows(items: seq<TableCell>) = items |> Seq.map TableItem.Line
 
     /// 将seq<TableCell>视为单行多列
-    static member AsCols(items: seq<TableCell>) = items |> Seq.toArray |> TableItem.Row
+    static member inline AsCols(items: seq<TableCell>) = items |> Seq.toArray |> TableItem.Row
 
     /// 将seq<TableCell>视为多行单列
-    static member AsRows(items: TableCell list) = items |> List.map TableItem.Line
+    static member inline AsRows(items: TableCell list) = items |> List.map TableItem.Line
 
     /// 将seq<TableCell>视为单行多列
-    static member AsCols(items: TableCell list) = items |> List.toArray |> TableItem.Row
+    static member inline AsCols(items: TableCell list) = items |> List.toArray |> TableItem.Row

@@ -75,13 +75,13 @@ type TextTable(?retType: ResponseType) =
         items.Add(TableItem.Table(table.Items))
         x
 
-    member x.Yield(_: unit) = x
+    member inline x.Yield(_: unit) = x
 
-    member x.Zero() = x
+    member inline x.Zero() = x
 
-    member x.Combine(_, _) = x
+    member inline x.Combine(_, _) = x
 
-    member x.Delay(func) = func ()
+    member inline x.Delay(func) = func ()
 
     (*
     // 原因不明用不了
