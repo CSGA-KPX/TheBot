@@ -20,9 +20,9 @@
   <PropertyGroup>
     <Authors>KPX</Authors>
     <Company>KPX</Company>
-    <Copyright>Copyright © KPX 2019-2022</Copyright>
-    <AssemblyVersion>2.4.0</AssemblyVersion>
-    <FileVersion>2.4.0</FileVersion>
-    <Version>2.4.0</Version>
+    <Copyright>Copyright © KPX 2019-2023</Copyright>
+    <AssemblyVersion>2.5.0</AssemblyVersion>
+    <FileVersion>2.5.0</FileVersion>
+    <Version>2.5.0</Version>
   </PropertyGroup>
 </Project>
