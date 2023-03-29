@@ -51,6 +51,13 @@ type PatchNumber(numCode: int) =
         else
             invalidArg (nameof level) $"指定等级{level}不在许可范围内"
 
+    // 从2.0a, 6.3 5.35转换
+    static member FromString(str: string) =
+        //System.Char.IsAsciiDigit
+        let v = str |> String.filter (fun c -> c = '.' || System.Char.IsAsciiDigit(c)) |> float
+
+        PatchNumber(v * 100.0 |> int)
+
 type PatchNumberInstructions() =
     inherit KPX.TheBot.Host.PluginPrerunInstruction()
 
