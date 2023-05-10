@@ -191,18 +191,16 @@ type MiscModule() =
 
         let json =
             hc
-                .GetStreamAsync(
-                    "https://api.bilibili.com/x/space/arc/search?mid=15503317&ps=30&tid=0&pn=1&keyword=&order=pubdate&jsonp=jsonp"
+                .GetStringAsync(
+                    "https://api.bilibili.com/x/series/archives?mid=15503317&series_id=237700&only_normal=true&sort=desc&pn=1&ps=30"
                 )
                 .ConfigureAwait(false)
                 .GetAwaiter()
                 .GetResult()
 
-        use reader = new Newtonsoft.Json.JsonTextReader(new IO.StreamReader(json))
+        let json = Newtonsoft.Json.Linq.JObject.Parse(json)
 
-        let json = Newtonsoft.Json.Linq.JObject.Load(reader)
-
-        let data = json.SelectToken("data.list.vlist") :?> Newtonsoft.Json.Linq.JArray
+        let data = json.SelectToken("data.archives") :?> Newtonsoft.Json.Linq.JArray
 
         let item = data |> Seq.find (fun x -> x.Value<string>("title").Contains("满分攻略"))
 
