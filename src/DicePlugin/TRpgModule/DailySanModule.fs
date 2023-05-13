@@ -1,4 +1,4 @@
-﻿namespace KPX.DicePlugin.TRpgModule.DailySanModule
+namespace KPX.DicePlugin.TRpgModule.DailySanModule
 
 open System.Collections.Concurrent
 
@@ -51,7 +51,7 @@ type private DailySanCacheCollection private () =
 type DailySanModule() =
     inherit CommandHandlerBase()
 
-    [<CommandHandlerMethod("#sc", "#coc7联动每日理智鉴定 #sc 成功/失败", "", IsHidden = true)>]
+    [<CommandHandlerMethod("#sc", "#coc7联动每日理智鉴定 #sc 成功/失败", "", Disabled = true)>]
     member x.HandleSanCheck(cmdArg: CommandEventArgs) =
         let args = cmdArg.HeaderArgs // 参数检查
 
