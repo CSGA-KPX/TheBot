@@ -11,6 +11,33 @@ open KPX.XivPlugin.Data
 open KPX.XivPlugin.Data.Shop
 open KPX.XivPlugin.Modules.Utils
 
+[<CustomComparison>]
+[<StructuralEquality>]
+type PriceSource =
+    | Sell of float
+    | Craft of float
+    | NPC of float
+
+    member x.Value =
+        match x with
+        | Sell x -> x
+        | Craft x -> x
+        | NPC x -> x
+
+    static member GetBestPrice(sell, craft: float option, npc: float option) =
+        [ Sell sell
+          NPC(npc |> Option.defaultValue System.Double.NegativeInfinity)
+          Craft(craft |> Option.defaultValue System.Double.NegativeInfinity) ]
+        |> List.sortBy (fun x ->
+            match x with
+            | Sell x -> x
+            | Craft x -> x
+            | NPC x -> x)
+        |> List.tryFind (fun x -> x.Value > 0.0)
+        |> Option.defaultValue (Craft 0.0)
+
+    interface System.IComparable<PriceSource> with
+        member x.CompareTo(b) = x.Value.CompareTo(b.Value)
 
 type XivRecipeModule() =
     inherit CommandHandlerBase()
@@ -21,6 +48,7 @@ type XivRecipeModule() =
     let universalis = MarketInfoCollection.Instance
 
     /// 给物品名备注上NPC价格
+    [<System.ObsoleteAttribute>]
     let tryLookupNpcPrice (item: XivItem, world: World) =
         let ret = gilShop.TryLookupByItem(item, world.VersionRegion)
 
@@ -49,8 +77,8 @@ type XivRecipeModule() =
         for str in opt.NonOptionStrings do
             match xivExpr.TryEval(str) with
             | Error err -> raise err
-            | Ok (Number i) -> cmdArg.Abort(InputError, "计算结果为数字{0}，物品Id请加#", i)
-            | Ok (Accumulator a) ->
+            | Ok(Number i) -> cmdArg.Abort(InputError, "计算结果为数字{0}，物品Id请加#", i)
+            | Ok(Accumulator a) ->
                 // 如果物品里面有国服名称为空（即国际服才有的物品）
                 // 则覆盖区域到世界服
                 for mr in a do
@@ -71,7 +99,7 @@ type XivRecipeModule() =
             Literal "材料：" { bold }
 
             [ for mr in builder.Materials |> Seq.sortBy (fun kv -> kv.Item.ItemId) do
-                  [ Literal(tryLookupNpcPrice (mr.Item, world)); CellUtils.Number mr.Quantity ] ]
+                  [ Literal mr.Item.DisplayName; CellUtils.Number mr.Quantity ] ]
 
             Literal "产出：" { bold }
 
@@ -92,8 +120,8 @@ type XivRecipeModule() =
         for str in opt.NonOptionStrings do
             match xivExpr.TryEval(str) with
             | Error err -> raise err
-            | Ok (Number i) -> cmdArg.Abort(InputError, "计算结果为数字{0}，物品Id请加#", i)
-            | Ok (Accumulator a) ->
+            | Ok(Number i) -> cmdArg.Abort(InputError, "计算结果为数字{0}，物品Id请加#", i)
+            | Ok(Accumulator a) ->
                 // 如果物品里面有国服名称为空（即国际服才有的物品）
                 // 则覆盖区域到世界服
                 for mr in a do
@@ -120,11 +148,7 @@ type XivRecipeModule() =
 
             Literal "产出：" { bold }
 
-            AsCols [ Literal "物品"
-                     Literal "数量"
-                     RLiteral "税前"
-                     RLiteral "小计"
-                     RLiteral "更新" ]
+            AsCols [ Literal "物品"; Literal "数量"; RLiteral "税前"; RLiteral "小计"; RLiteral "更新" ]
 
             [ for mr in builder.Products do
                   [ Literal mr.Item.DisplayName
@@ -144,23 +168,16 @@ type XivRecipeModule() =
 
             Literal "材料：" { bold }
 
-            AsCols [ Literal "物品"
-                     RLiteral "数量"
-                     RLiteral "税前"
-                     RLiteral "小计"
-                     RLiteral "制作" ]
+            AsCols [ Literal "物品"; RLiteral "数量"; RLiteral "税前"; RLiteral "小计"; RLiteral "制作" ]
 
             [ for mr in builder.Materials do
 
                   let inline func (m: RecipeMaterial<_>) =
-                      universalis
-                          .GetMarketInfo(world, m.Item)
-                          .AllPrice()
-                      * m.Quantity
+                      universalis.GetMarketInfo(world, m.Item).AllPrice() * m.Quantity
 
-                  let sellPrice = func mr
-                  let unitPrice = sellPrice / mr.Quantity
-                  let mutable preferSell = true
+                  let npcPrice =
+                      gilShop.TryLookupByItem(mr.Item, world.VersionRegion)
+                      |> Option.map (fun shopInfo -> float shopInfo.AskPrice * mr.Quantity)
 
                   let craftPrice =
                       (getRm region).TryGetMaterialsRec(mr)
@@ -170,26 +187,31 @@ type XivRecipeModule() =
                           |> Array.Parallel.map func
                           |> Array.sum)
 
-                  if craftPrice.IsNone then
-                      inputBuySum <- inputBuySum + sellPrice
-                      inputCraftSum <- inputCraftSum + sellPrice
-                      inputOptSum <- inputOptSum + sellPrice
-                      preferSell <- true
-                  else if sellPrice <= craftPrice.Value && sellPrice <> 0.0 then
-                      inputBuySum <- inputBuySum + sellPrice
-                      inputCraftSum <- inputCraftSum + craftPrice.Value
-                      inputOptSum <- inputOptSum + sellPrice
-                      preferSell <- true
-                  else
-                      inputBuySum <- inputBuySum + sellPrice
-                      inputCraftSum <- inputCraftSum + craftPrice.Value
-                      inputOptSum <- inputOptSum + craftPrice.Value
-                      preferSell <- false
+                  let mutable sellPrice = func mr
+                  let bestPrice = PriceSource.GetBestPrice(sellPrice, craftPrice, npcPrice)
 
-                  [ Literal(tryLookupNpcPrice (mr.Item, world))
+                  let npc, preferSell =
+                      match bestPrice with
+                      | Sell _ -> false, true
+                      | NPC npcSell ->
+                          sellPrice <- npcSell
+                          true, true
+                      | _ -> false, false
+
+                  inputBuySum <- inputBuySum + sellPrice
+                  inputCraftSum <- inputCraftSum + (craftPrice |> Option.defaultValue sellPrice)
+                  inputOptSum <- inputOptSum + bestPrice.Value
+                  let unitPrice = sellPrice / mr.Quantity
+
+                  [ if npc then
+                        Literal $"{mr.Item.DisplayName}(NPC)"
+                    else
+                        Literal mr.Item.DisplayName
+
                     CellUtils.Number mr.Quantity
                     HumanSig4I unitPrice
                     HumanSig4I sellPrice { boldIf preferSell }
+
                     if craftPrice.IsNone then
                         RightPad
                     else
@@ -199,19 +221,19 @@ type XivRecipeModule() =
             let taxSellRate = 0.95
 
             // 材料小计
-            AsCols [ Literal "税后卖出" { bold }
-                     RightPad
-                     HumanSig4I(totalSell * taxSellRate) ]
+            AsCols [ Literal "税后卖出" { bold }; RightPad; HumanSig4I(totalSell * taxSellRate) ]
 
-            AsCols [ Literal "税后材料" { bold }
-                     RightPad
-                     HumanSig4I(inputBuySum * taxBuyRate)
-                     HumanSig4I(inputCraftSum * taxBuyRate) ]
+            AsCols
+                [ Literal "税后材料" { bold }
+                  RightPad
+                  HumanSig4I(inputBuySum * taxBuyRate)
+                  HumanSig4I(inputCraftSum * taxBuyRate) ]
 
-            AsCols [ Literal "最优成本/利润" { bold }
-                     RightPad
-                     HumanSig4I(inputOptSum * taxBuyRate)
-                     HumanSig4I((totalSell * taxSellRate) - (inputOptSum * taxBuyRate)) ]
+            AsCols
+                [ Literal "最优成本/利润" { bold }
+                  RightPad
+                  HumanSig4I(inputOptSum * taxBuyRate)
+                  HumanSig4I((totalSell * taxSellRate) - (inputOptSum * taxBuyRate)) ]
         }
 
     [<TestFixture>]
