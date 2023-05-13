@@ -64,7 +64,7 @@ type DataAgent private () =
         let location = Assembly.GetExecutingAssembly().Location
         Path.GetDirectoryName(location)
 
-    static let cacheDir = Path.Combine(hostPath, "../cache/")
+    static let cacheDir = Path.Combine(hostPath, "./cache/")
 
     static let persistDir = Path.Combine(hostPath, "../persist/")
 
