@@ -175,7 +175,7 @@ type XivRecipeModule() =
                       inputCraftSum <- inputCraftSum + sellPrice
                       inputOptSum <- inputOptSum + sellPrice
                       preferSell <- true
-                  else if sellPrice <= craftPrice.Value then
+                  else if sellPrice <= craftPrice.Value && sellPrice <> 0.0 then
                       inputBuySum <- inputBuySum + sellPrice
                       inputCraftSum <- inputCraftSum + craftPrice.Value
                       inputOptSum <- inputOptSum + sellPrice
