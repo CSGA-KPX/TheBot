@@ -72,7 +72,7 @@ let blueprints =
             let proc = epm.GetRecipe(item)
             proc.Original.Product.Quantity * runs
 
-        ret.AppendLine($"{item.Name}*{quantity} ime:{ime}") |> ignore
+        ret.AppendLine($"{item.Name}*{quantity} ime:{ime} dme:8") |> ignore
 
     ret.ToString()
 
