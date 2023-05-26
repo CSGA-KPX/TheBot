@@ -67,9 +67,6 @@ type ScriptExchangeModule() =
         if ia.Length = 0 then
             raise <| ModuleException(InputError, $"%s{cost.DisplayName}不能兑换道具")
 
-        if opt.PatchNumber.IsNone && ia.Length >= 20 then
-            raise <| ModuleException(InputError, $"兑换列表长度达到上限，请指定版本号")
-
         if opt.PatchNumber.IsSome then
             ia <-
                 ia
