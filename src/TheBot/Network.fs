@@ -3,12 +3,16 @@ module KPX.TheBot.Host.Network
 
 open System.Net.Http
 
+open KPX.FsCqHttp.Handler
+
 
 [<RequireQualifiedAccess>]
 module TheBotWebFetcher =
     open System.Collections.Generic
 
     let private maxParallel = 10
+
+    let private maxQueueItem = maxParallel * 5
 
     let private logger = NLog.LogManager.GetLogger("BatchWebFetcher")
 
@@ -37,21 +41,21 @@ module TheBotWebFetcher =
             .GetAwaiter()
             .GetResult()
 
+    let queue = Queue<_>()
+    let mutable private concurrentCount = 0
+
     let private agent =
         MailboxProcessor.Start (fun inbox ->
             async {
-                let queue = Queue<_>()
-                let mutable count = 0
-
                 while true do
                     let! msg = inbox.Receive()
 
                     match msg with
                     | Fetch (info, reply) -> queue.Enqueue(info, reply)
-                    | Finished -> count <- count - 1
+                    | Finished -> concurrentCount <- concurrentCount - 1
 
-                    if count < maxParallel && queue.Count > 0 then
-                        count <- count + 1
+                    if concurrentCount < maxParallel && queue.Count > 0 then
+                        concurrentCount <- concurrentCount + 1
                         let (info, reply) = queue.Dequeue()
 
                         async {
@@ -61,10 +65,16 @@ module TheBotWebFetcher =
                         }
                         |> Async.Start
 
-                    if count >= maxParallel && queue.Count > 0 then
-                        logger.Warn("队列已满，当前并发：{0}，队列数：{1}。", count, queue.Count)
+                    if concurrentCount >= maxParallel && queue.Count > 0 then
+                        logger.Warn("队列已满，当前并发：{0}，队列数：{1}。", concurrentCount, queue.Count)
             })
 
     /// 发送请求并等待结果
     let fetch (url: string) =
+        if queue.Count >= maxQueueItem then
+            logger.Error("达到网络队列上限 当前并发：{0}，队列数：{1}。", concurrentCount, queue.Count)
+            let ex = ModuleException(SystemError, "网络访问队列超上限")
+            raise ex
+
         agent.PostAndReply(fun reply -> Fetch(url, reply))
+        
