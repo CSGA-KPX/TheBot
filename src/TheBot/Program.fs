@@ -20,6 +20,7 @@ let main argv =
     let cfg = FsCqHttpConfigParser()
     let cfgFile = DataAgent.GetPersistFile("thebot.txt")
 
+    let runCommand = cfg.RegisterOption<string>("runCommand", "")
     let runTest = cfg.RegisterOption("runCmdTest")
     let repl = cfg.RegisterOption("REPL")
 
@@ -43,19 +44,46 @@ let main argv =
                 action.Invoke()
 
             0
-        with
-        | e ->
+        with e ->
             logger.Fatal(e)
             1
     else
         if not repl.IsDefined then
             cfg.Start(ContextModuleLoader(discover.AllDefinedModules))
 
-        let ctx = Testing.TestContext(discover, UserId UInt64.MaxValue, "REPL")
+        let ctx =
+            let userId =
+                Environment.GetEnvironmentVariable("REPL_UserId")
+                |> Option.ofObj<string>
+                |> Option.map uint64
+                |> Option.defaultValue 10000UL
+                |> UserId
+
+            let userName =
+                Environment.GetEnvironmentVariable("REPL_UserName")
+                |> Option.ofObj<string>
+                |> Option.defaultValue "测试机"
+
+            Testing.TestContext(discover, userId, userName)
+
+        let runCmd (cmd: string) =
+            for msg in ctx.InvokeCommand(cmd) do
+                for seg in msg do
+                    Console.Out.Write("msg>>")
+
+                    if seg.TypeName = "text" then
+                        Console.Out.Write(seg.Values.["text"])
+                    else
+                        Console.Out.Write($"[{seg.TypeName}]")
+
+                    Console.WriteLine()
+
+        if runCommand.IsDefined then
+            runCmd runCommand.Value
 
         let cmdQueue = ResizeArray<string>()
 
-        while true do
+        while not runCommand.IsDefined do
             if cmdQueue.Count = 0 then
                 printf "Command> "
 
@@ -67,18 +95,9 @@ let main argv =
 
                 if not <| String.IsNullOrWhiteSpace(cmd) then
                     try
-                        for msg in ctx.InvokeCommand(cmd) do
-                            for seg in msg do
-                                Console.Out.Write("msg>>")
-
-                                if seg.TypeName = "text" then
-                                    Console.Out.Write(seg.Values.["text"])
-                                else
-                                    Console.Out.Write($"[{seg.TypeName}]")
-
-                                Console.WriteLine()
-                    with
-                    | e -> printfn $"{e.ToString()}"
+                        runCmd cmd
+                    with e ->
+                        printfn $"{e.ToString()}"
             else
                 cmdQueue.Add(line)
 

@@ -50,11 +50,11 @@ type DiceModule() =
         ret.Table {
             let seed =
                 if cmdArg.CommandAttrib.Command = ".c" then
-                    Array.singleton SeedOption.SeedRandom
+                    DiceSeed.SeedByRandom()
                 else if atUser.IsSome then
-                    SeedOption.SeedByAtUserDay(cmdArg.MessageEvent)
+                    DiceSeed.SeedByAtUserDay(cmdArg.MessageEvent)
                 else
-                    SeedOption.SeedByUserDay(cmdArg.MessageEvent)
+                    DiceSeed.SeedByUserDay(cmdArg.MessageEvent)
 
             let dicer = Dicer(seed)
             do dicer.Freeze()
@@ -72,7 +72,7 @@ type DiceModule() =
     [<CommandHandlerMethod(".jrrp", "（兼容）今日人品值", "")>]
     [<CommandHandlerMethod("#jrrp", "今日人品值", "")>]
     member x.HandleJrrp(cmdArg: CommandEventArgs) =
-        let dicer = Dicer(SeedOption.SeedByUserDay(cmdArg.MessageEvent))
+        let dicer = Dicer(DiceSeed.SeedByUserDay(cmdArg.MessageEvent))
 
         let jrrp = dicer.GetPositive(100u)
         cmdArg.Reply $"%s{cmdArg.MessageEvent.DisplayName}今日人品值是：%i{jrrp}"

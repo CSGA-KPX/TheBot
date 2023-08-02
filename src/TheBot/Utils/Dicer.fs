@@ -1,4 +1,4 @@
-﻿namespace KPX.TheBot.Host.Utils.Dicer
+namespace KPX.TheBot.Host.Utils.Dicer
 
 open System
 open System.Collections.Generic
@@ -8,35 +8,48 @@ open KPX.FsCqHttp.Event
 open KPX.FsCqHttp.Message
 
 
-type SeedOption =
-    | SeedDate of DateTimeOffset
-    | SeedRandom
-    | SeedCustom of string
-    | SeedUserId of UserId
+type DiceSeed =
+    { Date: DateTimeOffset
+      UserId: UserId
+      Strings: ResizeArray<string> }
 
-    override x.ToString() =
-        match x with
-        | SeedDate date ->
-            date
-                .ToOffset(TimeSpan.FromHours(8.0))
-                .ToString("yyyyMMdd")
-        | SeedRandom -> Guid.NewGuid().ToString()
-        | SeedCustom s -> s
-        | SeedUserId uid -> uid.Value.ToString()
+    member internal x.GetBytes() =
+        use ms = new IO.MemoryStream()
+        use sw = new IO.StreamWriter(ms, AutoFlush = true)
 
-    static member GetSeedString(seeds: seq<SeedOption>) = String.Join("|", seeds)
+        sw.Write(x.Date.ToOffset(TimeSpan.FromHours(8.0)).ToString("yyyyMMdd"))
+        sw.Write(x.UserId.Value)
+
+        for item in x.Strings do
+            sw.Write(item)
+
+        ms.ToArray()
 
     static member SeedByUserDay(msg: MessageEvent) =
-        [| SeedDate DateTimeOffset.Now; SeedUserId msg.UserId |]
+        { Date = DateTimeOffset.Now
+          UserId = msg.UserId
+          Strings = ResizeArray<_>() }
 
     static member SeedByAtUserDay(msg: MessageEvent) =
-        [| yield SeedDate DateTimeOffset.Now
-           match msg.Message.TryGetAt() with
-           | None -> raise <| InvalidOperationException("没有用户被At！")
-           | Some AtUserType.All -> raise <| InvalidOperationException("At全员无效！")
-           | Some (AtUserType.User uid) -> yield SeedUserId uid |]
+        let user =
+            match msg.Message.TryGetAt() with
+            | None -> raise <| InvalidOperationException("没有用户被At！")
+            | Some AtUserType.All -> raise <| InvalidOperationException("At全员无效！")
+            | Some(AtUserType.User uid) -> uid
 
-type private DRng(seeds: seq<SeedOption>) =
+        { Date = DateTimeOffset.Now
+          UserId = user
+          Strings = ResizeArray<_>() }
+
+    static member SeedByRandom() =
+        let strs = ResizeArray<string>()
+        strs.Add(Guid.NewGuid().ToString())
+
+        { Date = DateTimeOffset.Now
+          UserId = UserId.Zero
+          Strings = strs }
+
+type private DRng(seed: DiceSeed) =
     static let utf8 = Text.Encoding.UTF8
 
     // 因为数据量很小，Md5和xxHash速度都差不多
@@ -46,7 +59,7 @@ type private DRng(seeds: seq<SeedOption>) =
 
     let mutable frozen = false
 
-    let mutable seed = SeedOption.GetSeedString(seeds) |> utf8.GetBytes |> hash.ComputeHash
+    let mutable seed = seed.GetBytes() |> hash.ComputeHash
 
     let iterate () =
         if not frozen then
@@ -89,13 +102,11 @@ type private DRng(seeds: seq<SeedOption>) =
 
             Array.append seed (utf8.GetBytes(str)) |> hash.ComputeHash
 
-type Dicer(seeds: seq<SeedOption>) =
-    let drng = DRng(seeds)
-
-    new(opt: SeedOption) = Dicer(Seq.singleton opt)
+type Dicer(seed: DiceSeed) =
+    let drng = DRng(seed)
 
     /// 通用的随机骰子
-    static member RandomDicer = Dicer(SeedOption.SeedRandom)
+    static member RandomDicer = Dicer(DiceSeed.SeedByRandom())
 
     member x.Freeze() = drng.Freeze()
 
@@ -188,10 +199,10 @@ type Dicer(seeds: seq<SeedOption>) =
     member x.GetPositiveArray(upper: int, count: int, ?unique: bool) =
         x.GetIntegerArray(1, upper, count, defaultArg unique false)
 
-    member x.GetArrayItem(items: 'T []) =
+    member x.GetArrayItem(items: 'T[]) =
         let idx = x.GetNatural(items.Length - 1)
         items.[idx]
 
-    member x.GetArrayItem(items: 'T [], count, ?unique: bool) =
+    member x.GetArrayItem(items: 'T[], count, ?unique: bool) =
         x.GetNaturalArray(items.Length - 1, count, defaultArg unique false)
         |> Array.map (fun idx -> items.[idx])

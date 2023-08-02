@@ -125,7 +125,9 @@ type RecipeManager<'Item, 'Recipe when 'Item: equality and 'Recipe :> IRecipePro
                 if depth >= depthLimit then
                     acc.Materials.Update(mr.Item, required)
                 else
-                    match x.TryGetRecipe(mr.Item) with ////////////////
+                    let checkExpand = if depth = RecipeManager.DEPTH_PRODUCT then false else true
+
+                    match x.TryGetRecipe(mr.Item, checkExpand) with
                     | None ->
                         if depth = RecipeManager.DEPTH_PRODUCT then
                             invalidOp $"输入物品%A{mr.Item} 没有生产配方"
@@ -164,7 +166,7 @@ type RecipeManager<'Item, 'Recipe when 'Item: equality and 'Recipe :> IRecipePro
           RelatedItems = items |> Seq.toArray }
 
     member x.TryGetMaterialsRec(mr: RecipeMaterial<'Item>, ?inv: MaterialInventory<'Item>, ?depthLimit: int) =
-        let materials = x.TryGetMaterials(mr) ////////////////
+        let materials = x.TryGetMaterials(mr)
 
         if materials.IsSome then
             Some(x.GetMaterialsRec(Seq.singleton mr, ?inv = inv, ?depthLimit = depthLimit))

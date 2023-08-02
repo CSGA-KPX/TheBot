@@ -7,6 +7,7 @@ open KPX.FsCqHttp.Event
 open KPX.FsCqHttp.Message
 open KPX.FsCqHttp.Handler
 
+open KPX.FsCqHttp.Utils.UserOption
 open KPX.FsCqHttp.Utils.Subcommands
 open KPX.FsCqHttp.Utils.TextResponse
 
@@ -53,14 +54,14 @@ type EatModule() =
             newSet.Add(opt) |> ignore
 
     member private _.GetDicer(cmdArg: CommandEventArgs, ret: TextResponse) =
-        let mutable seed = SeedOption.SeedByUserDay(cmdArg.MessageEvent)
+        let mutable seed = DiceSeed.SeedByUserDay(cmdArg.MessageEvent)
 
         let at = cmdArg.MessageEvent.Message.TryGetAt()
 
         match at with
         | Some AtUserType.All //TryGetAt不接受@all，不会匹配
         | None -> ()
-        | Some (AtUserType.User uid) when uid = cmdArg.BotUserId || uid = cmdArg.MessageEvent.UserId ->
+        | Some(AtUserType.User uid) when uid = cmdArg.BotUserId || uid = cmdArg.MessageEvent.UserId ->
             // @自己 @Bot 迷惑行为
             use s = EmbeddedResource.GetResFileStream("DicePlugin.Resources.Funny.jpg")
 
@@ -71,8 +72,8 @@ type EatModule() =
             cmdArg.Reply(msg)
             cmdArg.Abort(IgnoreError, "")
 
-        | Some (AtUserType.User uid) ->
-            seed <- SeedOption.SeedByAtUserDay(cmdArg.MessageEvent)
+        | Some(AtUserType.User uid) ->
+            seed <- DiceSeed.SeedByAtUserDay(cmdArg.MessageEvent)
             // 私聊不会有at，所以肯定是群聊消息
             let gEvent = cmdArg.MessageEvent.AsGroup()
 

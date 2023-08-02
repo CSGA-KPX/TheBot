@@ -118,7 +118,7 @@ type MiscModule() =
             | AtUserType.User i when i = cmdArg.BotUserId -> cmdArg.Abort(InputError, "非法操作")
             | AtUserType.User _ -> cmdArg.Abort(ModuleError, "暂不支持")
 
-        let dicer = Dicer(SeedOption.SeedByUserDay(cmdArg.MessageEvent))
+        let dicer = Dicer(DiceSeed.SeedByUserDay(cmdArg.MessageEvent))
 
         TextTable(ForceText) {
             AsCols [ Literal "D100"; Literal "选项" ]

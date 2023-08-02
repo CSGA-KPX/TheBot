@@ -30,7 +30,6 @@
     <Compile Include="TRpgModule\StCommand\PcSubcommands.fs" />
     <Compile Include="TRpgModule\StCommand\TRpgStModule.fs" />
     <Compile Include="TRpgModule\TRpgModule.fs" />
-    <Compile Include="TRpgModule\DailySanModule.fs" />
   </ItemGroup>
 
   <ItemGroup>
