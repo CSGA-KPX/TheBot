@@ -1,8 +1,8 @@
 @echo off
 
-echo æœ¬è„šæœ¬ç”¨äºŽä¸‹è½½SaintCoinachçš„jsonå®šä¹‰æ–‡ä»¶
-echo é™¤éžé¡¹ç›®ç¼–è¯‘å¤±è´¥å¦åˆ™ä¸éœ€è¦ä¸‹è½½ç›¸å…³æ–‡ä»¶
-echo ä¸‹è½½åŽéœ€è¦æŠŠå¯¹åº”æ–‡ä»¶å¤¹æ·»åŠ åˆ°å¯¹åº”çš„zipæ–‡ä»¶ä¸­
+echo ±¾½Å±¾ÓÃÓÚÏÂÔØSaintCoinachµÄjson¶¨ÒåÎÄ¼þ
+echo ³ý·ÇÏîÄ¿±àÒëÊ§°Ü·ñÔò²»ÐèÒªÏÂÔØÏà¹ØÎÄ¼þ
+echo ÏÂÔØºóÐèÒª°Ñ¶ÔÓ¦ÎÄ¼þ¼ÐÌí¼Óµ½¶ÔÓ¦µÄzipÎÄ¼þÖÐ
 
 pause
 

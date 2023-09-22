@@ -46,7 +46,7 @@ type MiscModule() =
 
             let utc = DateTimeOffset.UnixEpoch.ToOffset(JSTOffset)
 
-            let index = ((dt - utc).Days + 2) % dfcRoulettes.Length
+            let index = ((dt - utc).Days + 1) % dfcRoulettes.Length
 
             dfcRoulettes.[index].Name
 
