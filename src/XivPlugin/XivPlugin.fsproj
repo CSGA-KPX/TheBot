@@ -66,7 +66,7 @@
   </ItemGroup>
 
   <ItemGroup>
-	  <PackageReference Include="HtmlAgilityPack" Version="1.11.38" />
+	  <PackageReference Include="HtmlAgilityPack" Version="1.11.53" />
 	  <PackageReference Include="KPX.LibFFXIV.GameData" Version="1.2.2" />
   </ItemGroup>
 
@@ -79,7 +79,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Update="FSharp.Core">
+    <PackageReference Update="FSharp.Core" Version="7.0.400">
       <IncludeAssets>compile</IncludeAssets>
     </PackageReference>
 	<PackageReference Update="FastCsvParser">

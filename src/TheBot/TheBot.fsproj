@@ -46,12 +46,16 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="LiteDB" Version="5.0.13" />
+    <PackageReference Include="LiteDB" Version="5.0.17" />
     <PackageReference Include="McMaster.NETCore.Plugins" Version="1.4.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\FsCqHttp\FsCqHttp.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="FSharp.Core" Version="7.0.400" />
   </ItemGroup>
 
 </Project>
