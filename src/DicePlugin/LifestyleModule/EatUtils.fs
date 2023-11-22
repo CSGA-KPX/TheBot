@@ -25,6 +25,33 @@ module Data =
 
     let dinnerTypes = [| "早餐"; "午餐"; "晚餐"; "加餐" |]
 
+    let binomial =
+        let binomial =
+            [| 0, 0.0156, 0.0156, "好主意"
+               1, 0.0938, 0.1094, "还好"
+               2, 0.2344, 0.3438, "也不是不行"
+               3, 0.3125, 0.6563, "不推荐"
+               4, 0.2344, 0.8906, "算了吧"
+               5, 0.0938, 0.9844, "上称看看"
+               6, 0.0156, 1.0000, "黄连素备好" |]
+
+        let data = Array.create 101 "" // 0 保留
+
+        data.[0] <- "？"
+
+        let mutable prev = 1
+
+        for (_, _, acc, str) in binomial do
+            let upper = acc * 100.0 |> int
+
+            for idx = prev to upper do
+                data.[idx] <- str
+
+            prev <- upper + 1
+            ()
+
+        data
+
 [<Struct>]
 type MappedOption =
     { Original: string
@@ -32,17 +59,26 @@ type MappedOption =
       Value: int }
 
     member x.DescribeValue() =
-        let d = x.Value
+        let linear = true
 
-        match d with
-        | _ when d = 100 -> "黄连素备好"
-        | _ when d >= 96 -> "上秤看看"
-        | _ when d >= 76 -> "算了吧"
-        | _ when d >= 51 -> "不推荐"
-        | _ when d >= 26 -> "也不是不行"
-        | _ when d >= 6 -> "还好"
-        | _ when d >= 1 -> "好主意"
-        | _ -> raise <| ArgumentOutOfRangeException("value")
+        if linear then
+            let d = x.Value
+
+            match d with
+            | _ when d = 100 -> "黄连素备好"
+            | _ when d >= 96 -> "上秤看看"
+            | _ when d >= 76 -> "算了吧"
+            | _ when d >= 51 -> "不推荐"
+            | _ when d >= 26 -> "也不是不行"
+            | _ when d >= 6 -> "还好"
+            | _ when d >= 1 -> "好主意"
+            | _ -> raise <| ArgumentOutOfRangeException("value")
+
+        else
+            if x.Value > 100 || x.Value <= 0 then
+                raise <| ArgumentOutOfRangeException($"value:{x.Value}")
+
+            binomial.[x.Value]
 
     /// 转换为带有值的字符串形式
     override x.ToString() = $"%s{x.Original}(%i{x.Value})"
@@ -88,7 +124,7 @@ type EatChoices(options: seq<string>, dicer: Dicer, ?prefix: string) =
 /// 根据早中晚加分别打分
 ///
 /// 如果只有一个选项就给评价，多个选项只有打分
-let scoreByMeals (dicer: Dicer) (options: string []) (ret: IO.TextWriter) =
+let scoreByMeals (dicer: Dicer) (options: string[]) (ret: IO.TextWriter) =
     if not dicer.IsFrozen then
         invalidArg (nameof dicer) "Dicer没有固定"
 
@@ -129,21 +165,11 @@ let hotpotFunc (dicer: Dicer) (ret: IO.TextWriter) =
     let prefix = "火锅吃"
 
     let soup =
-        EatChoices(
-            hotpot_soup,
-            dicer,
-            prefix
-        )
-            .MappedOptions
+        EatChoices(hotpot_soup, dicer, prefix).MappedOptions
         |> Seq.map (fun x -> x.ToString())
 
     let sauce =
-        EatChoices(
-            hotpot_sauce,
-            dicer,
-            prefix
-        )
-            .MappedOptions
+        EatChoices(hotpot_sauce, dicer, prefix).MappedOptions
         |> Seq.map (fun x -> x.ToString())
 
     let dish = EatChoices(hotpot_dish, dicer, prefix)

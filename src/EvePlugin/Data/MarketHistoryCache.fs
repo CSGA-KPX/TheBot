@@ -23,7 +23,7 @@ type MarketHistoryRecord =
 type MarketTradeHistory =
     { [<LiteDB.BsonId(false)>]
       Id: int
-      History: MarketHistoryRecord []
+      History: MarketHistoryRecord[]
       Updated: DateTimeOffset }
 
     // 因为ESI只返回有交易记录的数据
@@ -53,19 +53,25 @@ type MarketTradeHistoryCollection private () =
     override x.Depends = [| typeof<EveTypeCollection> |]
 
     override x.DoFetchItem(itemId) =
-        let url =
-            $"https://esi.evepc.163.com/latest/markets/10000002/history/?datasource=serenity&type_id=%i{itemId}"
+        let item = EveTypeCollection.Instance.GetById(itemId)
 
-        let resp = TheBotWebFetcher.fetch url
-        use stream = resp.Content.ReadAsStream()
-        use reader = new IO.StreamReader(stream)
-        use jsonReader = new JsonTextReader(reader)
+        if item.MarketGroupId = 0 then
 
-        let history =
-            JArray
-                .Load(jsonReader)
-                .ToObject<MarketHistoryRecord []>()
+            { Id = itemId
+              History = Array.empty<_>
+              Updated = DateTimeOffset.Now }
+        else
 
-        { Id = itemId
-          History = history
-          Updated = DateTimeOffset.Now }
+            let url =
+                $"https://esi.evepc.163.com/latest/markets/10000002/history/?datasource=serenity&type_id=%i{itemId}"
+
+            let resp = TheBotWebFetcher.fetch url
+            use stream = resp.Content.ReadAsStream()
+            use reader = new IO.StreamReader(stream)
+            use jsonReader = new JsonTextReader(reader)
+
+            let history = JArray.Load(jsonReader).ToObject<MarketHistoryRecord[]>()
+
+            { Id = itemId
+              History = history
+              Updated = DateTimeOffset.Now }

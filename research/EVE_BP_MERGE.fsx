@@ -1,9 +1,3 @@
-(*
-
-此脚本导出理符任务到excel表格
-
-*)
-
 #I "../build/bin/"
 #I "../build/bin/plugins/EvePlugin/"
 
