@@ -56,11 +56,16 @@ type CqEventArgs internal (api, ctx) =
             raise IgnoreException
 
     member x.Reply(r: EventResponse) =
-        if r <> EmptyResponse then
-            let rep = QuickOperation(ctx)
-
-            rep.Reply <- r
-            api.CallApi(rep) |> ignore
+        match r with
+        | EmptyResponse -> ()
+        | PrivateMessageResponse (uid, reply) ->
+            let req = Private.SendPrivateMsg(uid, reply)
+            api.CallApi(req) |> ignore
+        | GroupMessageResponse (gid, reply) ->
+            let req = Group.SendGroupMsg(gid, reply)
+            api.CallApi(req) |> ignore
+        | FriendAddResponse (_, _)-> raise <| NotImplementedException("TODO")
+        | GroupAddResponse (_, _)-> raise <| NotImplementedException("TODO")
 
     /// <summary>
     /// 根据信息创建对应的CqEventArgs

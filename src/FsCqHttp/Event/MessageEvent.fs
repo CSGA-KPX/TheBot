@@ -95,8 +95,8 @@ type MessageEvent =
     /// 使用QuickOperation API应答事件
     member x.Response(msg: ReadOnlyMessage) =
         match x with
-        | MessageEvent.Private _ -> PrivateMessageResponse(msg)
-        | MessageEvent.Group _ -> GroupMessageResponse(msg, false, false, false, false, 0)
+        | MessageEvent.Private privMsg -> PrivateMessageResponse(privMsg.UserId, msg)
+        | MessageEvent.Group grpMsg -> GroupMessageResponse(grpMsg.GroupId, msg)
 
     /// 使用QuickOperation API应答事件
     member x.Response(str: string) =
@@ -171,26 +171,11 @@ type GroupMessageEvent =
 
     member x.Response
         (
-            msg: ReadOnlyMessage,
-            ?atSender: bool,
-            ?delete: bool,
-            ?kick: bool,
-            ?ban: bool,
-            ?banDuration: int
+            msg: ReadOnlyMessage
         ) =
-        let atSender = defaultArg atSender false
-        let delete = defaultArg delete false
-        let kick = defaultArg kick false
-        let ban = defaultArg ban false
-        let banDuration = defaultArg banDuration 0
-        GroupMessageResponse(msg, atSender, delete, kick, ban, banDuration)
+        GroupMessageResponse(x.GroupId, msg)
 
-    member x.Response(str: string, ?atSender: bool, ?delete: bool, ?kick: bool, ?ban: bool, ?banDuration: int) =
-        let atSender = defaultArg atSender false
-        let delete = defaultArg delete false
-        let kick = defaultArg kick false
-        let ban = defaultArg ban false
-        let banDuration = defaultArg banDuration 0
+    member x.Response(str: string) =
         let msg = Message()
         msg.Add(str)
-        GroupMessageResponse(msg, atSender, delete, kick, ban, banDuration)
+        GroupMessageResponse(x.GroupId, msg)

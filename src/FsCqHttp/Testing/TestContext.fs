@@ -96,8 +96,7 @@ type TestContext(md: ModuleDiscover, botUserId, botUserName, ?parent: CqWsContex
             match cmd.Value.MethodAction with
             | ManualAction action -> action.Invoke(cmdArgs)
             | AutoAction func -> func.Invoke(cmdArgs).Response(cmdArgs)
-        with
-        | e ->
+        with e ->
             logger.Info("测试错误 : {0}", msg.ToCqString())
             reraise ()
 
@@ -110,8 +109,8 @@ type TestContext(md: ModuleDiscover, botUserId, botUserName, ?parent: CqWsContex
             try
                 x.InvokeCommand(cmdLine) |> ignore
                 false
-            with
-            | _ -> true
+            with _ ->
+                true
 
         if not ret then
             raise <| AssertFailedException "失败：预期捕获异常"
@@ -119,15 +118,15 @@ type TestContext(md: ModuleDiscover, botUserId, botUserName, ?parent: CqWsContex
     member x.ShouldNotThrow(cmdLine: string) =
         try
             x.InvokeCommand(cmdLine) |> ignore
-        with
-        | _ -> reraise ()
+        with _ ->
+            reraise ()
 
     member x.ShouldReturn(cmdLine: string) =
         let ret =
             try
                 x.InvokeCommand(cmdLine)
-            with
-            | _ -> reraise ()
+            with _ ->
+                reraise ()
 
         ret.Length <> 0
 
@@ -135,8 +134,8 @@ type TestContext(md: ModuleDiscover, botUserId, botUserName, ?parent: CqWsContex
         let ret =
             try
                 x.InvokeCommand(cmdLine)
-            with
-            | _ -> reraise ()
+            with _ ->
+                reraise ()
 
         ret.ToString().Contains(value)
 
@@ -176,11 +175,7 @@ type TestContext(md: ModuleDiscover, botUserId, botUserName, ?parent: CqWsContex
             else
                 localRestart <- v
 
-    override x.IsOnline =
-        if parent.IsSome then
-            parent.Value.IsOnline
-        else
-            true
+    override x.IsOnline = if parent.IsSome then parent.Value.IsOnline else true
 
     override x.BotNickname =
         if parent.IsSome then
@@ -188,11 +183,7 @@ type TestContext(md: ModuleDiscover, botUserId, botUserName, ?parent: CqWsContex
         else
             botUserName
 
-    override x.BotUserId =
-        if parent.IsSome then
-            parent.Value.BotUserId
-        else
-            botUserId
+    override x.BotUserId = if parent.IsSome then parent.Value.BotUserId else botUserId
 
     override x.BotIdString =
         if parent.IsSome then
@@ -207,12 +198,12 @@ type TestContext(md: ModuleDiscover, botUserId, botUserName, ?parent: CqWsContex
     override x.CallApi(req: #ApiBase) =
         // 拦截所有回复调用
         match req :> ApiBase with
-        | :? System.QuickOperation as q ->
-            match q.Reply with
-            | PrivateMessageResponse msg -> response.Enqueue(msg)
-            | _ -> invalidOp "不能处理私聊以外回复"
+        | :? Private.SendPrivateMsg as msg ->
+            response.Enqueue(msg.Message)
 
             req.IsExecuted <- true
+
+        | :? Group.SendGroupMsg -> invalidOp "不能处理私聊以外回复"
 
         | :? CqHttpApiBase as cqhttp ->
             if apiResponse.ContainsKey(cqhttp.ActionName) then
