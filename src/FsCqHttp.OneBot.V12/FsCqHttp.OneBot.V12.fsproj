@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <AssemblyName>KPX.$(MSBuildProjectName)</AssemblyName>
+    <RootNamespace>KPX.$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Common.fs" />
+    <Compile Include="DomainTypes.fs" />
+    <Compile Include="Meta\MetaEvent.fs" />
+    <Compile Include="Meta\MetaAction.fs" />
+    <Compile Include="File\File.fs" />
+    <Compile Include="File\FileActions.fs" />
+    <Compile Include="Message\MessageSection.fs" />
+    <Compile Include="Message\MessageType.fs" />
+    <Compile Include="Library.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Group\" />
+    <Folder Include="Direct\" />
+    <Folder Include="Guild\" />
+  </ItemGroup>
+
+</Project>
