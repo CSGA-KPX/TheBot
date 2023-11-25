@@ -50,7 +50,7 @@ type LoyaltyStoreCollection private () =
     override x.Depends = [| typeof<NpcCorporationCollection> |]
 
     override x.DoFetchItem(corpId) =
-        let url = $"https://esi.evepc.163.com/latest/loyalty/stores/%i{corpId}/offers/?datasource=serenity"
+        let url = $"https://ali-esi.evepc.163.com/latest/loyalty/stores/%i{corpId}/offers/?datasource=serenity"
         let resp = TheBotWebFetcher.fetch url
         use stream = resp.Content.ReadAsStream()
         use reader = new System.IO.StreamReader(stream)

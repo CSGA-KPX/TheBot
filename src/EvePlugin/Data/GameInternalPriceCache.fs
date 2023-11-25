@@ -35,7 +35,7 @@ type GameInternalPriceCollection private () =
     override x.Depends = [| typeof<EveTypeCollection> |]
 
     override x.InitializeCollection() =
-        let url = "https://esi.evepc.163.com/latest/markets/prices/?datasource=serenity"
+        let url = "https://ali-esi.evepc.163.com/latest/markets/prices/?datasource=serenity"
         let resp = TheBotWebFetcher.fetch url
         use stream = resp.Content.ReadAsStream()
         use reader = new IO.StreamReader(stream)

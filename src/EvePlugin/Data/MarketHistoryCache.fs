@@ -63,7 +63,7 @@ type MarketTradeHistoryCollection private () =
         else
 
             let url =
-                $"https://esi.evepc.163.com/latest/markets/10000002/history/?datasource=serenity&type_id=%i{itemId}"
+                $"https://ali-esi.evepc.163.com/latest/markets/10000002/history/?datasource=serenity&type_id=%i{itemId}"
 
             let resp = TheBotWebFetcher.fetch url
             use stream = resp.Content.ReadAsStream()

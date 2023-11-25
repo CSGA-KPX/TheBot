@@ -69,10 +69,15 @@ type CqWsContextPool private () =
     let pool = ConcurrentDictionary<UserId, CqWsContextBase>()
 
     member x.AddContext(context: CqWsContextBase) =
-        pool.TryAdd(context.BotUserId, context) |> ignore
-        logger.Info $"已接受连接:%s{context.BotIdString}"
+        if pool.ContainsKey(context.BotUserId) then
+            let error = $"连接已存在：%s{context.BotIdString}"
+            logger.Error error
+            invalidOp error
+        else
+            pool.TryAdd(context.BotUserId, context) |> ignore
+            logger.Info $"已接受连接:%s{context.BotIdString}"
 
-        CqWsContextPool.ContextModuleLoader.RegisterModuleFor(context.BotUserId, context.Modules)
+            CqWsContextPool.ContextModuleLoader.RegisterModuleFor(context.BotUserId, context.Modules)
 
     member x.RemoveContext(context: CqWsContextBase) =
         pool.TryRemove(context.BotUserId) |> ignore
@@ -143,8 +148,8 @@ type CqWsContext(ws: WebSocket) =
                 let ret = (x :> IApiCallProvider).CallApi<GetLoginInfo>()
 
                 not <| isNull ret.Nickname
-            with
-            | _ -> false
+            with _ ->
+                false
 
     override x.CallApi(req) =
         started.WaitOne() |> ignore
@@ -234,8 +239,8 @@ type CqWsContext(ws: WebSocket) =
                     logger.Trace $"%s{x.BotIdString}收到API调用结果： {ctx}"
 
                 x.HandleApiResponse(ctx.RawEventPost.ToObject<ApiResponse>())
-        with
-        | e -> logger.Warn $"%s{x.BotIdString}WS处理消息异常：\r\n%A{e}"
+        with e ->
+            logger.Warn $"%s{x.BotIdString}WS处理消息异常：\r\n%A{e}"
 
     member private x.StartMessageLoop() =
         let rec readMessage (ms: MemoryStream) (seg: ArraySegment<_>) (cts: CancellationTokenSource) =
@@ -263,8 +268,7 @@ type CqWsContext(ws: WebSocket) =
                     ms.SetLength(0L)
                     let json = readMessage ms seg cts
                     x.HandleMessage(json)
-            with
-            | e ->
+            with e ->
                 logger.Fatal $"%s{x.BotIdString}WS读取捕获异常：\r\n%A{e}"
                 CqWsContextPool.Instance.RemoveContext(x)
                 x.Stop()

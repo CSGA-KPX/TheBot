@@ -42,7 +42,7 @@ type SystemCostIndexCollection private () =
     override x.Depends = [| typeof<KPX.EvePlugin.Data.SolarSystems.SolarSystemCollection> |]
 
     override x.InitializeCollection() =
-        let url = "https://esi.evepc.163.com/latest/industry/systems/?datasource=serenity"
+        let url = "https://ali-esi.evepc.163.com/latest/industry/systems/?datasource=serenity"
         let resp = TheBotWebFetcher.fetch url
         use stream = resp.Content.ReadAsStream()
         use reader = new IO.StreamReader(stream)
