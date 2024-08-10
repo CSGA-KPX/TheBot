@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <RootNamespace>LibFFXIV.GameData-test</RootNamespace>
+
+    <IsPackable>false</IsPackable>
+    <GenerateProgramFile>false</GenerateProgramFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FsUnit" Version="4.0.1" />
+    <PackageReference Include="nunit" Version="3.12.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="3.15.1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="testData.zip">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <Compile Include="TestResource.fs" />
+    <Compile Include="RawTest.fs" />
+    <Compile Include="TypeProviderTest.fs" />
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\LibFFXIV.GameData\LibFFXIV.GameData.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="FSharp.Core" Version="5.0.1" />
+  </ItemGroup>
+
+</Project>

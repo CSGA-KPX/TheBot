@@ -43,6 +43,7 @@ open KPX.FsCqHttp.Testing
 open KPX.TheBot.Host
 open KPX.TheBot.Host.Data
 
+
 let discover =
     let binPath = __SOURCE_DIRECTORY__ + "/bin/"
 

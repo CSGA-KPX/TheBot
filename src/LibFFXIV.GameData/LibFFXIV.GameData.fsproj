@@ -1,0 +1,61 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>KPX.LibFFXIV.GameData</PackageId>
+    <Authors>KPX</Authors>
+    <Version>1.2.2</Version>
+    <PackageTags>FFXIV; SaintCoinach; FF14</PackageTags>
+    <Description>
+      This library includes typeprovider for accessing SaintCoinach's raw datadump.
+    </Description>
+    <PackageTags>F# fsharp data typeprovider ffxiv ff14 saintcoinach</PackageTags>
+    <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/CSGA-KPX/LibFFXIV</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/CSGA-KPX/LibFFXIV</RepositoryUrl>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+	<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="Common.fs" />
+    <Compile Include="Raw\XivHeader.fs" />
+    <Compile Include="Raw\SaintCoinach.fs" />
+    <Compile Include="Raw\Base.fs" />
+    <Compile Include="Raw\Zipped.fs" />
+    <Compile Include="Provided\FSharp.TypeProviders.SDK\ProvidedTypes.fsi" />
+    <Compile Include="Provided\FSharp.TypeProviders.SDK\ProvidedTypes.fs" />
+    <Compile Include="Provided\TypedCell.fs" />
+    <Compile Include="Provided\TypedArrayCell.fs" />
+    <Compile Include="Provided\TypedHeaderItem.fs" />
+    <Compile Include="Provided\XivHeaderCache.fs" />
+    <Compile Include="Provided\ProviderContext.fs" />
+    <Compile Include="Provided\XivCollectionProvider.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FastCsvParser" Version="1.1.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="FSharp.Core" Version="5.0.1" />
+  </ItemGroup>
+
+  <Target Name="IncludeCsvParserTargetDir" AfterTargets="Build">
+    <ItemGroup>
+      <None Include="$(TargetDir)\CsvParser.dll">
+        <Pack>true</Pack>
+        <PackagePath>lib\$(TargetFramework)\</PackagePath>
+      </None>
+      <None Include="$(TargetDir)\Newtonsoft.Json.dll">
+        <Pack>true</Pack>
+        <PackagePath>lib\$(TargetFramework)\</PackagePath>
+      </None>
+    </ItemGroup>
+  </Target>
+
+</Project>

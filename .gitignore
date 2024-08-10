@@ -372,3 +372,6 @@ coverage.xml
 /datafiles/ffxiv-datamining-patchdiff.zip
 /build/ZConfig.cmd
 /datafiles/Definitions
+/datafiles/ffxiv-datamining-ja-master
+/tests/LibFFXIV.GameData-test/ffxiv-datamining-cn-master.zip
+/tests/LibFFXIV.GameData-test/ffxiv-datamining-ja-master.zip

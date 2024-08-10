@@ -67,7 +67,6 @@
 
   <ItemGroup>
 	  <PackageReference Include="HtmlAgilityPack" Version="1.11.53" />
-	  <PackageReference Include="KPX.LibFFXIV.GameData" Version="1.2.2" />
   </ItemGroup>
 
   <ItemGroup>
@@ -75,6 +74,7 @@
         <Private>False</Private>
 		<IncludeAssets>compile</IncludeAssets>
     </ProjectReference>
+    <ProjectReference Include="..\LibFFXIV.GameData\LibFFXIV.GameData.fsproj" />
     <ProjectReference Include="..\TheBot\TheBot.fsproj" />
   </ItemGroup>
 

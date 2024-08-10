@@ -10,7 +10,6 @@ open KPX.TheBot.Host.Data
 
 [<RequireQualifiedAccess>]
 module ChinaDistroData =
-    //from https://github.com/thewakingsands/ffxiv-datamining-cn
 
     [<Literal>]
     let private SampleFile = __SOURCE_DIRECTORY__ + "/../../../datafiles/ffxiv-datamining-cn-master.zip"
@@ -18,7 +17,7 @@ module ChinaDistroData =
     [<Literal>]
     let private Prefix = "ffxiv-datamining-cn-master/"
 
-    type TypedXivCollection = XivCollectionProvider<SampleFile, "none", Prefix>
+    type TypedXivCollection = XivCollectionProvider<SampleFile, "none", Prefix, "", "cn">
 
     let private instance: WeakReference<TypedXivCollection> =
         WeakReference<_>(Unchecked.defaultof<TypedXivCollection>)
@@ -36,15 +35,14 @@ module ChinaDistroData =
 
 [<RequireQualifiedAccess>]
 module OfficalDistroData =
-    //from https://github.com/MansonGit/ffxiv-datamining-jp
 
     [<Literal>]
     let SampleFile = __SOURCE_DIRECTORY__ + "/../../../datafiles/ffxiv-datamining-ja-master.zip"
 
     [<Literal>]
-    let private Prefix = "ffxiv-datamining-jp-main/"
+    let private Prefix = "ffxiv-datamining-hexcode-ja-main/"
 
-    type TypedXivCollection = XivCollectionProvider<SampleFile, "none", Prefix>
+    type TypedXivCollection = XivCollectionProvider<SampleFile, "none", Prefix, "", "ja">
 
     let private instance: WeakReference<TypedXivCollection> =
         WeakReference<_>(Unchecked.defaultof<TypedXivCollection>)

@@ -76,6 +76,8 @@ type SpecialShopCollection private () =
                            && patch <> PatchNumber.Patch_Invalid then
                             existed.Add(key) |> ignore
 
+                            let mutable add = true
+
                             // fix from
                             // https://github.com/xivapi/SaintCoinach/
                             // blob/fabeedb29921358fe3025c65e72a3de14a3c3070/
@@ -91,19 +93,23 @@ type SpecialShopCollection private () =
                                     | 8 -> ()
                                     // 神典石
                                     | 4 -> cItem <- tomestones.[cItem]
-                                    | _ -> invalidArg "UseCurrencyType" "非法值"
+                                    | v ->
+                                        add <- false
+                                        let rItem = rItem.[i, j]
+                                        printfn $"SpecialShop.[{row.Key.Main}] : exchange for {rItem.Name} requires of unknown UseCurrencyType={v}"
 
                                 cItem
 
-                            yield
-                                { LiteDbId = 0
-                                  Region = version
-                                  PatchNumber = patch
-                                  ReceiveItem = rItem.[i, j].Key.Main
-                                  ReceiveCount = rCount.[i, j]
-                                  ReceiveHQ = rHq.[i, j]
-                                  CostItem = costItem
-                                  CostCount = cCount.[i, j] }
+                            if add then
+                                yield
+                                    { LiteDbId = 0
+                                      Region = version
+                                      PatchNumber = patch
+                                      ReceiveItem = rItem.[i, j].Key.Main
+                                      ReceiveCount = rCount.[i, j]
+                                      ReceiveHQ = rHq.[i, j]
+                                      CostItem = costItem
+                                      CostCount = cCount.[i, j] }
         }
         |> x.DbCollection.InsertBulk
         |> ignore
@@ -145,6 +151,8 @@ type SpecialShopCollection private () =
                            && patch <> PatchNumber.Patch_Invalid then
                             existed.Add(key) |> ignore
 
+                            let mutable add = true
+
                             // fix from
                             // https://github.com/xivapi/SaintCoinach/
                             // blob/fabeedb29921358fe3025c65e72a3de14a3c3070/
@@ -161,20 +169,22 @@ type SpecialShopCollection private () =
                                     // 神典石
                                     | 4 -> cItem <- tomestones.[cItem]
                                     | v ->
-                                        printfn $"%A{row.Key}"
-                                        invalidArg "UseCurrencyType" $"非法值{v}"
+                                        add <- false
+                                        let rItem = rItem.[i, j]
+                                        printfn $"SpecialShop.[{row.Key.Main}] : exchange for {rItem.Name} requires of unknown UseCurrencyType={v}"
 
                                 cItem
 
-                            yield
-                                { LiteDbId = 0
-                                  Region = version
-                                  PatchNumber = patch
-                                  ReceiveItem = rItem.[i, j].Key.Main
-                                  ReceiveCount = rCount.[i, j]
-                                  ReceiveHQ = rHq.[i, j]
-                                  CostItem = costItem
-                                  CostCount = cCount.[i, j] }
+                            if add then
+                                yield
+                                    { LiteDbId = 0
+                                      Region = version
+                                      PatchNumber = patch
+                                      ReceiveItem = rItem.[i, j].Key.Main
+                                      ReceiveCount = rCount.[i, j]
+                                      ReceiveHQ = rHq.[i, j]
+                                      CostItem = costItem
+                                      CostCount = cCount.[i, j] }
         }
         |> x.DbCollection.InsertBulk
         |> ignore
