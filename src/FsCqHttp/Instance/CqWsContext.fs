@@ -2,6 +2,7 @@ namespace rec KPX.FsCqHttp.Instance
 
 open System
 open System.IO
+open System.Collections.Generic
 open System.Collections.Concurrent
 open System.Threading
 open System.Net.WebSockets
@@ -66,29 +67,50 @@ type WsContextApiBase() =
 type CqWsContextPool private () =
     let logger = NLog.LogManager.GetCurrentClassLogger()
 
-    let pool = ConcurrentDictionary<UserId, CqWsContextBase>()
+    let sync = obj ()
+
+    let pool = Dictionary<UserId, CqWsContextBase>()
 
     member x.AddContext(context: CqWsContextBase) =
-        if pool.ContainsKey(context.BotUserId) then
-            let error = $"连接已存在：%s{context.BotIdString}"
-            logger.Error error
-            invalidOp error
-        else
-            pool.TryAdd(context.BotUserId, context) |> ignore
-            logger.Info $"已接受连接:%s{context.BotIdString}"
+        lock sync (fun () ->
+            if pool.ContainsKey(context.BotUserId) then
+                let error = $"已存在连接：%s{context.BotIdString}  -> 移除"
+                logger.Error error
+                let old = pool.[context.BotUserId]
+                pool.[context.BotUserId] <- context
 
-            CqWsContextPool.ContextModuleLoader.RegisterModuleFor(context.BotUserId, context.Modules)
+                Threading.Tasks.Task.Run(fun () ->
+                    logger.Info $"旧连接%s{old.BotIdString}：准备关闭"
+
+                    try
+                        old.Stop()
+                    with e ->
+                        logger.Warn $"旧连接%s{old.BotIdString}：关闭异常 %s{e.ToString()}"
+
+                    logger.Info $"旧连接%s{old.BotIdString}：关闭完成")
+                |> ignore
+            else
+                pool.Add(context.BotUserId, context) |> ignore
+                logger.Info $"已接受连接:%s{context.BotIdString}"
+
+                CqWsContextPool.ContextModuleLoader.RegisterModuleFor(context.BotUserId, context.Modules))
 
     member x.RemoveContext(context: CqWsContextBase) =
-        pool.TryRemove(context.BotUserId) |> ignore
-        logger.Info $"已移除连接:%s{context.BotIdString}"
+        lock sync (fun () ->
+            pool.Remove(context.BotUserId) |> ignore
+            logger.Info $"已移除连接:%s{context.BotIdString}")
 
     interface Collections.IEnumerable with
         member x.GetEnumerator() =
-            pool.Values.GetEnumerator() :> Collections.IEnumerator
+            lock sync (fun () ->
+                let cached = pool.Values |> Seq.cache
+                cached.GetEnumerator() :> Collections.IEnumerator)
 
     interface Collections.Generic.IEnumerable<CqWsContextBase> with
-        member x.GetEnumerator() = pool.Values.GetEnumerator()
+        member x.GetEnumerator() =
+            lock sync (fun () ->
+                let cached = pool.Values |> Seq.cache
+                cached.GetEnumerator())
 
     static member val Instance = CqWsContextPool()
 
