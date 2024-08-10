@@ -22,7 +22,14 @@ rd patchdata /s /q 1>nul 2>nul
 del ffxiv-datamining-patchdiff.zip  1>nul 2>nul
 
 echo 下载差分文件
-svn checkout --config-option servers:global:http-proxy-host=%git_proxy_host% --config-option servers:global:http-proxy-port=%git_proxy_port% https://github.com/xivapi/ffxiv-datamining-patches/trunk/patchdata
+
+git clone -n --depth=1 --filter=tree:0 https://github.com/xivapi/ffxiv-datamining-patches/
+cd ffxiv-datamining-patches
+git sparse-checkout set --no-cone patchdata
+git checkout
+move /Y patchdata ..\
+cd ..
+rd /s /q ffxiv-datamining-patches 1>nul 2>nul
 
 echo 下载版本定义
 curl https://xivapi.com/patchlist > patchdata\PatchVersion.json

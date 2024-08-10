@@ -1,6 +1,6 @@
 @echo off
-set Python27=K:\Apps\BotData\python-2.7.13.amd64\python.exe
-set Phobos=K:\Apps\BotData\Phobos-2.1.0\run.py
+set Python27=Z:\@Area\Source\BotData\python-2.7.13.amd64\python.exe
+set Phobos=Z:\@Area\Source\BotData\Phobos-2.1.0\run.py
 set EvePath=G:\EVE
 set EveServer=serenity
 set EveLang=zh

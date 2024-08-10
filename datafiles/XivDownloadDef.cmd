@@ -16,7 +16,8 @@ git clone -n --depth=1 --filter=tree:0 https://github.com/xivapi/SaintCoinach
 cd SaintCoinach
 git sparse-checkout set --no-cone SaintCoinach/Definitions
 git checkout
-move SaintCoinach/Definitions ../
+rd /s /q ..\Definitions 1>nul 2>nul
+move /Y SaintCoinach\Definitions ..\
 cd ..
 rd /s /q SaintCoinach
 
