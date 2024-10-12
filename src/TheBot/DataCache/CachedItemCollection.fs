@@ -17,17 +17,17 @@ type CachedItemCollection<'Key, 'Item>(colName) =
 
     abstract IsExpired: 'Item -> bool
 
-    /// 强制获得一个'Item，然后写入缓存
-    member x.FetchItem(key: 'Key) =
-        let item = x.DoFetchItem(key)
-        x.DbCollection.Upsert(item) |> ignore
-        item
+    /// 把相关数据载入数据库
+    member x.LoadItems(items : 'Item seq) =
+        x.DbCollection.Upsert(items) |> ignore
 
     /// 获得一个'Item，如果有缓存优先拿缓存
     member x.GetItem(key: 'Key) =
         let ret = Query.EQ("_id", BsonValue(key)) |> x.DbCollection.TryFindOne
 
         if ret.IsNone || x.IsExpired(ret.Value) then
-            x.FetchItem(key)
+            let item = x.DoFetchItem(key)
+            x.DbCollection.Upsert(item) |> ignore
+            item
         else
             ret.Value

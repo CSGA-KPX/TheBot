@@ -128,6 +128,8 @@ type ItemAccumulator<'Item when 'Item: equality>(mrs: seq<RecipeMaterial<'Item>>
 
     member x.NonZeroItems = x |> Seq.filter (fun x -> x.Quantity <> 0)
 
+    member x.GetItems() = data.Keys |> Seq.toArray
+
     interface IEnumerable<RecipeMaterial<'Item>> with
         member x.GetEnumerator() =
             data.Values.GetEnumerator() :> IEnumerator<RecipeMaterial<'Item>>
