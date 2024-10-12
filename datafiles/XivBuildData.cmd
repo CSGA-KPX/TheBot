@@ -11,9 +11,8 @@ if NOT "%download%"=="Y" GOTO :Diff
 
 echo 正在下载数据文件
 
-rem wget https://github.com/thewakingsands/ffxiv-datamining-cn/archive/refs/heads/master.zip -O ffxiv-datamining-cn-master.zip
+wget https://github.com/thewakingsands/ffxiv-datamining-cn/archive/refs/heads/master.zip -O ffxiv-datamining-cn-master.zip
 wget https://github.com/Souma-Sumire/ffxiv-datamining-hexcode-ja/archive/refs/heads/main.zip -O ffxiv-datamining-ja-master.zip
-rem wget https://github.com/MansonGit/ffxiv-datamining-jp/archive/refs/heads/main.zip -O ffxiv-datamining-ja-master.zip
 
 :Diff
 

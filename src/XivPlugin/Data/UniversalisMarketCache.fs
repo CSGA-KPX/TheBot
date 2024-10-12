@@ -1,6 +1,7 @@
 namespace KPX.XivPlugin.Data
 
 open System
+open System.Collections.Generic
 
 open KPX.TheBot.Host.Network
 open KPX.TheBot.Host.DataCache
@@ -12,6 +13,23 @@ open LiteDB
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 
+
+[<AutoOpen>]
+module private Utils =
+    let fields =
+        [ "itemID"
+          "lastUploadTime"
+          "listings.quantity"
+          "listings.hq"
+          "listings.pricePerUnit"
+          "recentHistory.hq"
+          "recentHistory.pricePerUnit"
+          "recentHistory.quantity"
+          "recentHistory.timestamp" ]
+
+    let fetchFields = String.Join(',', fields)
+
+    let fetchFieldsMulti = String.Join(',', fields |> Seq.map (fun field -> $"items.{field}"))
 
 exception UniversalisAccessException of Net.Http.HttpResponseMessage
 
@@ -30,26 +48,12 @@ type MarketInfo =
         { World = world
           Item = ItemCollection.Instance.GetByItemId(iid) }
 
-type XivCity =
-    | LimsaLominsa = 1
-    | Gridania = 2
-    | Uldah = 3
-    | Ishgard = 4
-    | Kugane = 7
-    | Crystarium = 10
-
 [<CLIMutable>]
 type MarketOrder =
-    { LastReviewTime: int64
-      PricePerUnit: int
+    { PricePerUnit: int
       Quantity: int
-      CreatorName: string
       [<JsonProperty("hq")>]
-      IsHQ: bool
-      IsCrafted: bool
-      RetainerCity: XivCity
-      RetainerName: string
-      Total: int64 }
+      IsHQ: bool }
 
 [<CLIMutable>]
 type TradeLog =
@@ -57,20 +61,20 @@ type TradeLog =
       IsHQ: bool
       PricePerUnit: int
       Quantity: int
-      TimeStamp: int64
-      BuyerName: string
-      Total: int64 }
+      TimeStamp: int64 }
 
 [<CLIMutable>]
-type UniversalisRecord =
-    { [<BsonId(false)>]
-      Id: string
-      /// 本地最后获取时间
-      LastFetchTime: DateTimeOffset
-      /// Universalis上的最后更新时间
-      LastUploadTime: DateTimeOffset
-      Listings: MarketOrder []
-      TradeLogs: TradeLog [] }
+type MarketCache =
+    {
+        [<BsonId(false)>]
+        Id: string
+        /// 本地最后获取时间
+        LastFetchTime: DateTimeOffset
+        /// Universalis上的最后更新时间
+        LastUploadTime: DateTimeOffset
+        Listings: MarketOrder[]
+        TradeLogs: TradeLog[]
+    }
 
     member x.GetInfo() = MarketInfo.FromString(x.Id)
 
@@ -95,7 +99,7 @@ type private MarketData =
         | Order x -> x.PricePerUnit
         | Trade x -> x.PricePerUnit
 
-type UniversalisAnalyzer internal (record: UniversalisRecord) =
+type UniversalisAnalyzer internal (record: MarketCache) =
 
     let info = record.GetInfo()
 
@@ -103,9 +107,9 @@ type UniversalisAnalyzer internal (record: UniversalisRecord) =
 
     let tradelogs = record.TradeLogs |> Array.map MarketData.Trade
 
-    let takeHq (data: MarketData []) = data |> Array.filter (fun x -> x.IsHq)
+    let takeHq (data: MarketData[]) = data |> Array.filter (fun x -> x.IsHq)
 
-    let takeSample (data: MarketData []) =
+    let takeSample (data: MarketData[]) =
         [| let marketSamplePercent = 25
            let samples = data |> Array.sortBy (fun x -> x.Price)
 
@@ -127,7 +131,7 @@ type UniversalisAnalyzer internal (record: UniversalisRecord) =
                        rest <- rest - takeCount
                        yield record |]
 
-    let weightedPrice (data: MarketData []) =
+    let weightedPrice (data: MarketData[]) =
         let mutable sum = 0
         let mutable quantity = 0
 
@@ -152,69 +156,148 @@ type UniversalisAnalyzer internal (record: UniversalisRecord) =
 
     /// 按照加权订单价格->交易价格->NaN进行排序
     member x.AllPrice() =
-        if listings.Length <> 0 then
-            x.ListingAllSampledPrice()
-        elif tradelogs.Length <> 0 then
-            x.TradelogAllPrice()
-        else
-            0.0
+        if listings.Length <> 0 then x.ListingAllSampledPrice()
+        elif tradelogs.Length <> 0 then x.TradelogAllPrice()
+        else 0.0
 
     member x.LastUpdated = record.LastUploadTime
 
+
+[<CLIMutable>]
+type UniversalisResultItem =
+    {
+        ItemId: int
+        /// Universalis上的最后更新时间
+        LastUploadTime: int64
+        Listings: MarketOrder[]
+        RecentHistory: TradeLog[]
+    }
+
+    member x.ConvertToMarketCache(world: World, itemSource: IReadOnlyDictionary<int, XivItem>) =
+        { Id =
+            { World = world
+              Item = itemSource.[x.ItemId] }
+                .ToString()
+          LastFetchTime = DateTimeOffset.Now
+          LastUploadTime = DateTimeOffset.FromUnixTimeMilliseconds(x.LastUploadTime)
+          Listings = x.Listings
+          TradeLogs = x.RecentHistory }
+
+[<CLIMutable>]
+type UniversalisResultMulti =
+    { Items: Dictionary<int, UniversalisResultItem> }
+
 type MarketInfoCollection private () =
-    inherit CachedItemCollection<string, UniversalisRecord>()
+    inherit CachedItemCollection<string, MarketCache>()
 
     static let threshold = TimeSpan.FromHours(2.0)
+
+    let generateUntradable (info: MarketInfo) =
+        let time = DateTimeOffset.Now
+
+        { Id = info.ToString()
+          LastFetchTime = time
+          LastUploadTime = time
+          Listings = Array.empty
+          TradeLogs = Array.empty }
 
     static member val Instance = MarketInfoCollection()
 
     override x.IsExpired(item) =
         (DateTimeOffset.Now - item.LastFetchTime) >= threshold
 
-    override x.Depends = Array.empty
-
-    override x.DoFetchItem(info) =
-        let info = MarketInfo.FromString(info)
-        let url = $"https://universalis.app/api/%i{info.World.WorldId}/%i{info.Item.ItemId}"
-        let resp = TheBotWebFetcher.fetch url
-
-        if not resp.IsSuccessStatusCode then
-            x.Logger.Warn $"Universalis返回错误%s{resp.ReasonPhrase}:%A{info.World}/%A{info.Item}"
-
-            let time =
-                if resp.StatusCode = Net.HttpStatusCode.NotFound then
-                    DateTimeOffset.Now
-                else
-                    DateTimeOffset.MinValue
-
-            { Id = info.ToString()
-              LastFetchTime = time
-              LastUploadTime = time
-              Listings = Array.empty
-              TradeLogs = Array.empty }
-        else
-            let obj =
-                use stream = resp.Content.ReadAsStream()
-                use reader = new IO.StreamReader(stream)
-                use jsonReader = new JsonTextReader(reader)
-                JObject.Load(jsonReader)
-
-            let updated = obj.["lastUploadTime"].Value<int64>() |> DateTimeOffset.FromUnixTimeMilliseconds
-
-            let listings =
-                (obj.["listings"] :?> JArray)
-                    .ToObject<MarketOrder []>()
-
-            let tradelogs =
-                (obj.["recentHistory"] :?> JArray)
-                    .ToObject<TradeLog []>()
-
-            { Id = info.ToString()
-              LastFetchTime = DateTimeOffset.Now
-              LastUploadTime = updated
-              Listings = listings
-              TradeLogs = tradelogs }
+    override x.Depends = Array.singleton typeof<ItemCollection>
 
     member x.GetMarketInfo(world: World, item: XivItem) =
         let info = { World = world; Item = item }
         x.GetItem(info.ToString()) |> UniversalisAnalyzer
+
+    /// 批量获取价格信息，按Dictionary类型返回结果
+    member x.DoFetchBatch(world: World, items: XivItem[]) =
+        let dict = Dictionary<XivItem, MarketCache>()
+
+        if items.Length > 100 then
+            for chunk in Array.chunkBySize 100 items do
+                for kv: KeyValuePair<XivItem, MarketCache> in x.DoFetchBatch(world, chunk) do
+                    dict.TryAdd(kv.Key, kv.Value) |> ignore
+
+        // 重写items，去掉不能访问的部分
+        let items =
+            [ for item in items do
+                  if item.IsUntradable then
+                      dict.Add(item, generateUntradable ({ World = world; Item = item }))
+                  else
+                      yield item.ItemId, item ]
+            |> readOnlyDict
+
+        let isMulti = items.Count > 1
+
+        let resp =
+            let fetchUrl =
+                let ids = String.Join(',', items.Values |> Seq.map (fun item -> item.ItemId))
+                let fields = if isMulti then fetchFieldsMulti else fetchFields
+                $"https://universalis.app/api/v2/%i{world.WorldId}/{ids}?listings=20&entries=20&fields={fields}"
+
+
+            let rec fetchWithRetry url retry =
+                let resp = TheBotWebFetcher.fetch url
+
+                if not resp.IsSuccessStatusCode then
+                    x.Logger.Warn $"Universalis返回错误%s{resp.ReasonPhrase}: {url}"
+
+                    if retry > 1 then
+                        fetchWithRetry url (retry - 1)
+                    else
+                        x.Logger.Error $"重试次数用尽: {url}"
+                        None
+                else
+                    let obj =
+                        use stream = resp.Content.ReadAsStream()
+                        use reader = new IO.StreamReader(stream)
+                        use jsonReader = new JsonTextReader(reader)
+                        JObject.Load(jsonReader)
+
+                    Some obj
+
+            fetchWithRetry fetchUrl 3
+
+        if resp.IsNone then
+
+            let time = DateTimeOffset.MinValue
+
+            for item in items.Values do
+                dict.Add(
+                    item,
+
+                    { Id = { World = world; Item = item }.ToString()
+                      LastFetchTime = time
+                      LastUploadTime = time
+                      Listings = Array.empty
+                      TradeLogs = Array.empty }
+                )
+        else
+            let results =
+                [ let obj = resp.Value
+
+                  if isMulti then
+                      yield! (obj.ToObject<UniversalisResultMulti>().Items.Values)
+                  else
+                      yield (obj.ToObject<UniversalisResultItem>()) ]
+
+            for result in results do
+                let xivItem = items.[result.ItemId]
+                let cache = result.ConvertToMarketCache(world, items)
+                dict.Add(xivItem, cache)
+
+        dict.AsReadOnly()
+
+    /// 批量获取到数据库
+    member x.LoadBatch(world: World, items: XivItem[]) =
+        let result = x.DoFetchBatch(world, items)
+        x.LoadItems(result.Values)
+
+    override x.DoFetchItem(info) =
+        let info = MarketInfo.FromString(info)
+
+        let ret = x.DoFetchBatch(info.World, Array.singleton info.Item)
+        ret.[info.Item]

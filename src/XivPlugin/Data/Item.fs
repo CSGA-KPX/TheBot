@@ -17,6 +17,7 @@ type XivItem =
       ChineseName: string
       OfficalName: string
       PatchNumber: PatchNumber
+      IsUntradable : bool
       CanHq: bool }
 
     /// <summary>
@@ -64,6 +65,7 @@ type ItemCollection private () =
                   ChineseName = if succ then cName else String.Empty
                   OfficalName = row.Name.AsString()
                   PatchNumber = patchNumber
+                  IsUntradable = row.IsUntradable.AsBool()
                   CanHq = row.CanBeHq.AsBool() }
         }
         |> x.DbCollection.InsertBulk

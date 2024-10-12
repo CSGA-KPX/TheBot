@@ -93,6 +93,12 @@ text 以文本格式输出结果
 
         let canHq = acc |> Seq.exists (fun mr -> mr.Item.CanHq)
 
+        // 预载信息，这样快一点
+        // 有点hack，以后再优化
+        let items = acc.GetItems()
+        worlds
+        |> Array.iter (fun world -> universalis.LoadBatch(world, items))
+
         TextTable(opt.ResponseType) {
             // 表头
             AsCols [ Literal "物品"

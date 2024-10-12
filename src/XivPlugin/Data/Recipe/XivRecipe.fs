@@ -6,11 +6,11 @@ open KPX.XivPlugin.Data
 
 
 module private Utils =
-    let inline convertInternalMaterial (i: RecipeMaterial<int32>) =
+    let convertInternalMaterial (i: RecipeMaterial<int32>) =
         { Item = ItemCollection.Instance.GetByItemId(i.Item)
           Quantity = i.Quantity }
 
-    let inline convertInternalProcess (i: RecipeProcess<int>) =
+    let convertInternalProcess (i: RecipeProcess<int>) =
         { Materials = i.Materials |> Array.map (fun i -> convertInternalMaterial (i))
           Product = i.Product |> convertInternalMaterial }
 

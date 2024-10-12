@@ -25,7 +25,7 @@ type SpecialShopInfo =
 type SpecialShopCollection private () =
     inherit CachedTableCollection<SpecialShopInfo>()
 
-    static let currencies = [ 1, 28; 2, 25519; 4, 25200; 6, 33913; 7, 33914 ] |> readOnlyDict
+    static let currencies = [ 1, 28; 2, 25199; 4, 25200; 6, 33913; 7, 33914 ] |> readOnlyDict
 
     static member val Instance = SpecialShopCollection()
 

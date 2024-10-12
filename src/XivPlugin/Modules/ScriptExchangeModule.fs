@@ -72,6 +72,17 @@ type ScriptExchangeModule() =
                 ia
                 |> Array.filter (fun x -> x.PatchNumber.MajorPatch = opt.PatchNumber.Value.MajorPatch)
 
+
+        // 预载信息，这样快一点
+        // 有点hack，以后再优化
+        let items =
+            [|
+                for info in ia do
+                    yield itemCol.GetByItemId(info.ReceiveItem)
+            |]
+        universalis.LoadBatch(world, items)
+
+
         TextTable(ForceImage) {
             $"兑换道具:%s{cost.DisplayName} 土豆：%s{world.DataCenter}/%s{world.WorldName}"
 

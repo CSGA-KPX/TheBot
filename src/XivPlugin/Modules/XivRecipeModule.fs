@@ -137,6 +137,19 @@ type XivRecipeModule() =
         if builder.Materials.Count = 0 then
             cmdArg.Abort(InputError, "缺少表达式")
 
+
+        // 预载信息，这样快一点
+        // 有点hack，以后再优化
+        let items =
+            [| let rm = (getRm region)
+               yield! rm.GetMaterialsRec(builder.Products.NonZeroItems).RelatedItems
+               yield! builder.Products.GetItems()
+               yield! builder.Materials.GetItems() |]
+            |> Array.distinctBy (fun item -> item.ItemId)
+
+        universalis.LoadBatch(world, items)
+
+
         TextTable(opt.ResponseType) {
             $"土豆：%s{world.WorldName}"
 
