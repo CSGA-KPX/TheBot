@@ -21,6 +21,7 @@ let main argv =
     let cfgFile = DataAgent.GetPersistFile("thebot.txt")
 
     let runCommand = cfg.RegisterOption<string>("runCommand", "")
+    let httpProxy = cfg.RegisterOption<string>("proxy", "")
     let runTest = cfg.RegisterOption("runCmdTest")
     let repl = cfg.RegisterOption("REPL")
 
@@ -33,6 +34,13 @@ let main argv =
 
     for arg in cfg.DumpDefinedOptions() do
         logger.Info("启动参数：{0}", arg)
+
+    if httpProxy.IsDefined then
+        let proxy = System.Net.WebProxy()
+        proxy.Address <- Uri(httpProxy.Value)
+        proxy.BypassProxyOnLocal <- true
+
+        Network.TheBotWebFetcher.initHttpClient (Some proxy)
 
     if runTest.IsDefined then
         try

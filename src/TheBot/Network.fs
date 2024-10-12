@@ -1,6 +1,7 @@
 [<AutoOpen>]
 module KPX.TheBot.Host.Network
 
+open System.Net
 open System.Net.Http
 
 open KPX.FsCqHttp.Handler
@@ -16,9 +17,23 @@ module TheBotWebFetcher =
 
     let private logger = NLog.LogManager.GetLogger("BatchWebFetcher")
 
-    let private httpClient =
-        let flags = System.Net.DecompressionMethods.GZip ||| System.Net.DecompressionMethods.Deflate
-        let hch = new HttpClientHandler(AutomaticDecompression = flags)
+    let mutable private httpClient : HttpClient option = None
+
+    let mutable private httpClientUseProxy = false
+
+    let initHttpClient (proxy : WebProxy option) =
+
+        if httpClient.IsSome then httpClient.Value.Dispose()
+
+        let hch = new HttpClientHandler()
+        hch.AutomaticDecompression <- System.Net.DecompressionMethods.GZip ||| System.Net.DecompressionMethods.Deflate
+
+        if proxy.IsSome then
+            hch.Proxy <- proxy.Value
+            httpClientUseProxy <- true
+        else
+            httpClientUseProxy <- false
+
         let hc = new HttpClient(hch)
 
         hc.DefaultRequestHeaders.Connection.Add("keep-alive")
@@ -26,16 +41,19 @@ module TheBotWebFetcher =
         hc.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "https://github.com/CSGA-KPX/TheBot")
         |> ignore
 
-        hc
+        httpClient <- Some hc
 
     type private TaskSchedulerMessage =
         | Fetch of string * AsyncReplyChannel<HttpResponseMessage>
         | Finished
 
     let private fetchInfo (url: string) =
-        logger.Info $"正在访问 :  %s{url}"
+        if httpClient.IsNone then initHttpClient(None)
+
+        logger.Info $"正在访问 {httpClientUseProxy} :  %s{url}"
 
         httpClient
+            .Value
             .GetAsync(url)
             .ConfigureAwait(false)
             .GetAwaiter()
