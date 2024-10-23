@@ -65,7 +65,7 @@ type ItemCollection private () =
                   ChineseName = if succ then cName else String.Empty
                   OfficalName = row.Name.AsString()
                   PatchNumber = patchNumber
-                  IsUntradable = row.IsUntradable.AsBool()
+                  IsUntradable = row.IsUntradable.AsBool() || row.ItemSearchCategory.AsInt() = 0
                   CanHq = row.CanBeHq.AsBool() }
         }
         |> x.DbCollection.InsertBulk
