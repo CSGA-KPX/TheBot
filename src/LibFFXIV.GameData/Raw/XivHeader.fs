@@ -2,21 +2,78 @@ namespace LibFFXIV.GameData.Raw
 
 open System
 open System.Collections.Generic
+open System.Text.RegularExpressions
 
+
+[<RequireQualifiedAccess>]
+type XivCellType =
+    | String
+    | Number
+    | Bool
+    | Unknown
+    | JsonUnknown
+
+    override x.ToString() =
+        match x with
+        | String -> "str"
+        | Number -> "int32"
+        | Bool -> "bool"
+        | Unknown -> XivCellType.JsonImportUnknownType
+        | JsonUnknown -> XivCellType.JsonImportUnknownType
+
+    static member val JsonImportUnknownType = "UNKNOWN-JSON"
+
+    static member FromString(str) =
+        let ret = 
+            match str with
+            | "bit"
+            | "bool" -> XivCellType.Bool
+            | "int64"
+            | "uint64"
+            | "int32"
+            | "uint32"
+            | "int16"
+            | "uint16"
+            | "byte"
+            | "sbyte" -> XivCellType.Number
+            | "str"
+            | "string" -> XivCellType.String
+            | _ ->
+                if str = XivCellType.JsonImportUnknownType then
+                    XivCellType.JsonUnknown
+                else
+                    XivCellType.Unknown
+
+        //printfn $"converted {str} to {ret}"
+
+        ret
+
+    static member val NumberRegex = Regex("^[0-9, ]+$", RegexOptions.Compiled)
+    static member val BoolRegex = Regex("^True|False$", RegexOptions.Compiled ||| RegexOptions.IgnoreCase)
+
+    static member GuessType (values : string []) =
+        if values |> Array.forall (fun x -> XivCellType.NumberRegex.IsMatch(x)) then
+            XivCellType.Number
+        elif values |> Array.forall (fun x -> XivCellType.BoolRegex.IsMatch(x)) then
+            XivCellType.Bool
+        else
+            XivCellType.String
 
 type XivHeaderItem =
-    { /// Raw column name
-      ///
-      /// key, 0, 1, 2, 3 ...
-      OrignalKeyName: string
-      /// Suggested column name
-      ///
-      /// as the second row in csv.
-      ColumnName: string
-      /// Suggested column type name
-      ///
-      /// as the third row in csv.
-      TypeName: string }
+    {
+        /// Raw column name
+        ///
+        /// key, 0, 1, 2, 3 ...
+        OrignalKeyName: string
+        /// Suggested column name
+        ///
+        /// as the second row in csv.
+        ColumnName: string
+        /// Suggested column type name
+        ///
+        /// as the third row in csv.
+        TypeName: string
+    }
 
 [<Struct>]
 type XivHeaderIndex =
@@ -43,8 +100,9 @@ type XivHeaderIndex =
         | RawIndex idx -> idx + 1
         | HeaderIndex idx -> idx
 
+
 [<Sealed>]
-type XivHeader(items: XivHeaderItem []) =
+type XivHeader(items: XivHeaderItem[]) =
     // #,Name,Name,Name,Name,Name
     let nameToId =
         [| for i = 0 to items.Length - 1 do
@@ -77,8 +135,7 @@ type XivHeader(items: XivHeaderItem []) =
     member internal x.GetIndex(col) =
         try
             HeaderIndex(nameToId.[col])
-        with
-        | :? KeyNotFoundException ->
+        with :? KeyNotFoundException ->
             printfn $"Unknown column name : %s{col}"
             printfn "Known names are：%s" (String.Join(" ", nameToId.Keys))
             reraise ()
@@ -94,6 +151,13 @@ type XivHeader(items: XivHeaderItem []) =
             items.[idx.ToHdrIndex].ColumnName
         else
             t
+
+    /// <summary>
+    /// Get type name of given header index.
+    /// </summary>
+    /// <param name="idx">Header index</param>
+    member x.GetTypedFieldType(idx: XivHeaderIndex) =
+        XivCellType.FromString(x.GetFieldType(idx))
 
     /// <summary>
     /// Get type name of given column name.

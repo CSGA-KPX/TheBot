@@ -30,55 +30,21 @@ type ZippedXivCollection(lang, zip: ZipArchive, ?pathPrefix: string) =
         elif entriesCache.ContainsKey(whLang) then whLang
         else failwithf $"找不到表%s{name} : %s{woLang}/%s{whLang}"
 
-    let getHeader (csv: seq<string[]>) (name: string) =
+    let getCsv name =
+        seq {
+            use fs = entriesCache.[getFileName name].Open()
 
-        let headers = csv |> Seq.take csvHeaderRows |> Seq.toArray
+            // CsvReader 会重置给出的Encoding，所以只能在这里把BOM提前读掉
+            if csvFileBOM then
+                for i = 1 to Text.Encoding.UTF8.GetPreamble().Length do
+                    fs.ReadByte() |> ignore
 
-        let mutable tempArray =
-            try
-                let origin = headers |> Array.find (fun line -> line.[0] = "key")
-                let columnName = headers |> Array.find (fun line -> line.[0] = "#")
-                let typeName = headers |> Array.find (fun line -> line.[0] = "int32")
+            use csv = new CsvParser.CsvReader(fs, Text.Encoding.UTF8)
 
-                Array.map3
-                    (fun a b c ->
-                        { XivHeaderItem.OrignalKeyName = a
-                          XivHeaderItem.ColumnName = b
-                          XivHeaderItem.TypeName = c })
-                    origin
-                    columnName
-                    typeName
-            with e ->
-                failwithf $"%A{e} csvFileBOM={csvFileBOM} csvHeaderRows={csvHeaderRows} src=%A{headers}"
+            while csv.MoveNext() do
+                yield csv.Current |> Seq.toArray
+        }
 
-        let path = $"{prefix}Definitions/{IO.Path.GetFileName(name)}.json"
-
-        if entriesCache.ContainsKey(path) then
-            // wipe all info except 'key'
-            for i = 1 to tempArray.Length - 1 do
-                tempArray.[i] <-
-                    { tempArray.[i] with
-                         // -1 to match key,0,1,2,3 offset
-                         ColumnName = $"RAW_{i - 1}"
-                         // no type info provided in json
-                         TypeName = "UNKNOWN-JSON" }
-
-            // rewrite columnName
-            use stream = entriesCache.[path].Open()
-
-            let data =
-                let defs = SaintCoinach.SaintCoinachParser.ParseJson(stream)
-                SaintCoinach.SaintCoinachParser.GenerateSheetColumns(defs.Definitions)
-
-            for (idx, name, t) in data.Cols do
-                // some definition has more than actual columns
-                if idx < tempArray.Length then
-                    tempArray.[idx] <-
-                        { tempArray.[idx] with
-                            ColumnName = name
-                            TypeName = t }
-
-        XivHeader(tempArray)
 
     do
         // 检测压缩包内csv的常见特征
@@ -115,24 +81,66 @@ type ZippedXivCollection(lang, zip: ZipArchive, ?pathPrefix: string) =
 
         csvHeaderRows <- headers.Length
 
+
+    override x.GetHeader(name, allowOverride) =
+        let csv = getCsv name
+        let headers = csv |> Seq.take csvHeaderRows |> Seq.toArray
+
+        let mutable tempArray =
+            try
+                let origin = headers |> Array.find (fun line -> line.[0] = "key")
+                let columnName = headers |> Array.find (fun line -> line.[0] = "#")
+                let typeName = headers |> Array.find (fun line -> line.[0] = "int32")
+
+                Array.map3
+                    (fun a b c ->
+                        { XivHeaderItem.OrignalKeyName = a
+                          XivHeaderItem.ColumnName = b
+                          XivHeaderItem.TypeName = c })
+                    origin
+                    columnName
+                    typeName
+            with e ->
+                failwithf $"%A{e} csvFileBOM={csvFileBOM} csvHeaderRows={csvHeaderRows} src=%A{headers}"
+
+        let path = $"{prefix}Definitions/{IO.Path.GetFileName(name)}.json"
+
+        if allowOverride && entriesCache.ContainsKey(path) then
+            // wipe all info except 'key'
+            for i = 1 to tempArray.Length - 1 do
+                let originType =
+                    match XivCellType.FromString(tempArray.[i].TypeName), tempArray.[i].TypeName with
+                    | XivCellType.Unknown, _ -> XivCellType.JsonImportUnknownType
+                    | XivCellType.JsonUnknown, _ -> XivCellType.JsonImportUnknownType
+                    | _, typeName -> typeName
+
+                tempArray.[i] <-
+                    { tempArray.[i] with
+                         // -1 to match key,0,1,2,3 offset
+                         ColumnName = $"RAW_{i - 1}"
+                         // no type info provided in json
+                         TypeName = originType}
+
+            // rewrite columnName
+            use stream = entriesCache.[path].Open()
+
+            let data =
+                let defs = SaintCoinach.SaintCoinachParser.ParseJson(stream)
+                SaintCoinach.SaintCoinachParser.GenerateSheetColumns(defs.Definitions)
+
+            for (idx, name, t) in data.Cols do
+                // some definition has more than actual columns
+                if idx < tempArray.Length then
+                    tempArray.[idx] <-
+                        { tempArray.[idx] with
+                            ColumnName = name
+                            TypeName = t }
+
+        XivHeader(tempArray)
+
     override x.GetSheetUncached name =
-        let csv =
-            seq {
-                use fs = entriesCache.[getFileName name].Open()
-
-                // CsvReader 会重置给出的Encoding，所以只能在这里把BOM提前读掉
-                if csvFileBOM then
-                    for i = 1 to Text.Encoding.UTF8.GetPreamble().Length do
-                        fs.ReadByte() |> ignore
-
-                use csv = new CsvParser.CsvReader(fs, Text.Encoding.UTF8)
-
-                while csv.MoveNext() do
-                    yield csv.Current |> Seq.toArray
-            }
-
-        let header = getHeader csv name
-        let sheet = XivSheet(name, x, header)
+        let csv = getCsv name
+        let sheet = XivSheet(name, x)
 
         csv
         |> Seq.skip csvHeaderRows

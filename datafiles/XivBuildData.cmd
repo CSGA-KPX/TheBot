@@ -26,15 +26,11 @@ echo 下载差分文件
 
 git clone -n --depth=1 --filter=tree:0 https://github.com/xivapi/ffxiv-datamining-patches/
 cd ffxiv-datamining-patches
-git sparse-checkout set --no-cone patchdata
 git checkout
+move /Y patchlist.json patchdata\PatchVersion.json
 move /Y patchdata ..\
 cd ..
 rd /s /q ffxiv-datamining-patches 1>nul 2>nul
-
-echo 下载版本定义
-curl https://xivapi.com/patchlist > patchdata\PatchVersion.json
-
 
 bandizip a -r -storeroot:no - "ffxiv-datamining-patchdiff.zip" patchdata\
 rem powershell Compress-Archive -CompressionLevel NoCompression -Force patchdata\* ffxiv-datamining-patchdiff.zip

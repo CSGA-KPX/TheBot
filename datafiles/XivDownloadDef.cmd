@@ -9,6 +9,8 @@ pause
 
 set git_proxy_host=localhost
 set git_proxy_port=1080
+set http_proxy=http://localhost:1080
+set https_proxy=http://localhost:1080
 
 REM svn checkout --config-option servers:global:http-proxy-host=%git_proxy_host%   --config-option servers:global:http-proxy-port=%git_proxy_port% https://github.com/xivapi/SaintCoinach/trunk/SaintCoinach/Definitions
 

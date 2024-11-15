@@ -11,7 +11,7 @@ open LibFFXIV.GameData
 /// </summary>
 /// <param name="sheet">The parent XivSheet</param>
 /// <param name="data">Row data</param>
-type XivRow(sheet: XivSheet, data: string []) =
+type XivRow(sheet: XivSheet, data: string[]) =
 
     /// Get parent XivSheet
     member x.Sheet = sheet
@@ -92,9 +92,9 @@ type XivRow(sheet: XivSheet, data: string []) =
 /// </summary>
 /// <param name="name">Sheet name</param>
 /// <param name="col">Parent XivCollection</param>
-/// <param name="hdr">XivHeader of the sheet</param>
-type XivSheetBase(name, col: XivCollection, hdr) =
+type XivSheetBase(name, col: XivCollection) =
     let rowCache = Dictionary<XivKey, XivRow>()
+    let mutable hdr = col.GetHeader(name, true)
     let mutable cacheInitialized = false
     let mutable rowSourceSet = false
     let mutable rowSeq: seq<XivRow> = Seq.empty
@@ -127,8 +127,7 @@ type XivSheetBase(name, col: XivCollection, hdr) =
 
     member internal x.Rows =
         if cacheInitialized then
-            (rowCache.Values |> Seq.map (fun x -> x))
-                .GetEnumerator()
+            (rowCache.Values |> Seq.map (fun x -> x)).GetEnumerator()
         else
             if not rowSourceSet then
                 invalidOp "Call SetRowSource first."
@@ -140,6 +139,30 @@ type XivSheetBase(name, col: XivCollection, hdr) =
     member x.Collection: XivCollection = col
 
     member x.Header: XivHeader = hdr
+
+    /// 重置Header到csv内指定的类型
+    member x.ResetToCsvHeader() = hdr <- col.GetHeader(name, false)
+
+    /// 根据内容推测数据类型
+    member x.InterferenceHeader() =
+        let rows =
+            let r = x.Rows
+            let rowsToProbe = 100
+            let q = Queue<XivRow>(rowsToProbe)
+
+            while r.MoveNext() && q.Count < 100 do
+                q.Enqueue(r.Current)
+
+            q.ToArray()
+
+        let items = Array.ofSeq hdr.Headers
+
+        for i = 0 to items.Length - 1 do
+            let values = rows |> Array.map (fun row -> row.RawData.[i])
+            let typeName = XivCellType.GuessType(values).ToString()
+            items.[i] <- { items.[i] with TypeName = typeName }
+
+        hdr <- XivHeader(items)
 
     member internal x.GetItem(key: XivKey) =
         x.EnsureCached()
@@ -158,8 +181,8 @@ type XivSheetBase(name, col: XivCollection, hdr) =
         x.EnsureCached()
         rowCache.ContainsKey({ Main = main; Alt = 0 })
 
-type XivSheet(name, col: XivCollection, hdr) =
-    inherit XivSheetBase(name, col, hdr)
+type XivSheet(name, col: XivCollection) =
+    inherit XivSheetBase(name, col)
 
     member x.Item(key: XivKey) = x.GetItem(key)
 
@@ -201,6 +224,8 @@ type XivCollection(lang) =
             let sht = x.GetSheetUncached(name)
             weakCache.[name] <- WeakReference<_>(sht)
             sht
+
+    abstract GetHeader: name: string * allowJsonIverride: bool -> XivHeader
 
     /// Release associated resource.
     /// Call base.Dispose() to dispose weak cache.

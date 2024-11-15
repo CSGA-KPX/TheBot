@@ -18,6 +18,10 @@ type TypedCell(row: XivRow, hdrIdx: int) =
     /// XivHeaderIndex of this cell
     member val Index = XivHeaderIndex.HeaderIndex hdrIdx
 
+    member x.Type = row.Sheet.Header.GetTypedFieldType(x.Index)
+
+    member x.RawType = row.Sheet.Header.GetFieldType(x.Index)
+
     member x.AsInt() = row.As<int>(x.Index)
     member x.AsUInt() = row.As<uint>(x.Index)
 

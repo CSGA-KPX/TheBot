@@ -31,74 +31,81 @@ type XivContentCollection private () =
     override x.InitializeCollection() =
         x.DbCollection.EnsureIndex(fun x -> x.Region) |> ignore
 
+        // CFC变动比较大的表，使用动态计算的方式来获得相关资料
+        // PvP这一列基本固定，不会改变
+
         seq {
             let col = ChinaDistroData.GetCollection()
+            let cfc = col.ContentFinderCondition
+            cfc.ResetToCsvHeader()
 
-            let c =
+            let contentNameCol =
+                [ // 从5开始总没错
+                  for i = 5 to cfc.Header.Headers.Count - 1 do
+                      let index = HeaderIndex i
+
+                      if cfc.Header.GetTypedFieldType(index) = XivCellType.String then
+                          yield index ]
+                |> List.head // 目前只有一列
+
+            let dfcContentCol =
+                let lastNumberIdx =
+                    seq { cfc.Header.Headers.Count - 1 .. -1 .. 0 }
+                    |> Seq.find (fun index ->
+                        let idx = HeaderIndex index
+                        cfc.Header.GetTypedFieldType(idx) = XivCellType.Number)
+                // +1 byte
+                // +6 LevelingRoulette	HighLevelRoulette	MSQRoulette	GuildHestRoulette	ExpertRoulette	TrialRoulette
+                HeaderIndex(lastNumberIdx + 1 + 6)
+
+            let dfc =
                 col.ContentFinderCondition
-                |> Seq.filter (fun row -> row.PvP.AsBool())
-                |> Seq.cache
+                |> Seq.filter (fun row -> row.PvP.AsBool() && row.As<bool>(dfcContentCol))
 
-            let colRange =
-                let row = (Seq.head c)
-                let colMid = row.DailyFrontlineChallenge.Index.ToHdrIndex
-                [ colMid - 2 .. colMid + 2 ]
-
-            let dfcCol =
-                colRange
-                |> List.choose (fun idx ->
-                    let idx = HeaderIndex idx
-
-                    if c |> Seq.exists (fun row -> row.As<bool>(idx)) then
-                        Some idx
-                    else
-                        None)
-                |> List.head
-
-            for row in c do
-                if row.As<bool>(dfcCol) = true then
-                    yield
-                        { LiteDbId = 0
-                          Region = VersionRegion.China
-                          ContentId = row.Key.Main
-                          Name = row.Name.AsString()
-                          IsDailyFrontlineChallengeRoulette = true }
+            for row in dfc do
+                yield
+                    { LiteDbId = 0
+                      Region = VersionRegion.China
+                      ContentId = row.Key.Main
+                      Name = row.As<string>(contentNameCol)
+                      IsDailyFrontlineChallengeRoulette = true }
         }
         |> x.DbCollection.InsertBulk
         |> ignore
 
         seq {
             let col = OfficalDistroData.GetCollection()
+            let cfc = col.ContentFinderCondition
+            cfc.InterferenceHeader()
+            let contentNameCol =
+                [ // 从5开始总没错
+                  for i = 5 to cfc.Header.Headers.Count - 1 do
+                      let index = HeaderIndex i
+                      if cfc.Header.GetTypedFieldType(index) = XivCellType.String then
+                          yield index ]
+                |> List.head // 目前只有一列
 
-            let c =
+            let dfcContentCol =
+                let lastNumberIdx =
+                    seq { cfc.Header.Headers.Count - 1 .. -1 .. 0 }
+                    |> Seq.find (fun index ->
+                        let idx = HeaderIndex index
+                        cfc.Header.GetTypedFieldType(idx) = XivCellType.Number)
+                // +1 byte
+                // +6 LevelingRoulette	HighLevelRoulette	MSQRoulette	GuildHestRoulette	ExpertRoulette	TrialRoulette
+                HeaderIndex(lastNumberIdx + 1 + 6)
+
+            let dfc =
                 col.ContentFinderCondition
-                |> Seq.filter (fun row -> row.PvP.AsBool())
-                |> Seq.cache
+                |> Seq.filter (fun row -> row.PvP.AsBool() && row.As<bool>(dfcContentCol))
 
-            let colRange =
-                let row = (Seq.head c)
-                let colMid = row.DailyFrontlineChallenge.Index.ToHdrIndex
-                [ colMid - 2 .. colMid + 2 ]
-
-            let dfcCol =
-                colRange
-                |> List.choose (fun idx ->
-                    let idx = HeaderIndex idx
-
-                    if c |> Seq.exists (fun row -> row.As<bool>(idx)) then
-                        Some idx
-                    else
-                        None)
-                |> List.head
-
-            for row in c do
-                if row.As<bool>(dfcCol) = true then
-                    yield
-                        { LiteDbId = 0
-                          Region = VersionRegion.Offical
-                          ContentId = row.Key.Main
-                          Name = row.Name.AsString()
-                          IsDailyFrontlineChallengeRoulette = true }
+            for row in dfc do
+                yield
+                    { LiteDbId = 0
+                      Region = VersionRegion.Offical
+                      ContentId = row.Key.Main
+                      Name = row.As<string>(contentNameCol)
+                      IsDailyFrontlineChallengeRoulette = true }
         }
         |> x.DbCollection.InsertBulk
         |> ignore
